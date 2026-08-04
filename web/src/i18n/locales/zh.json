@@ -141,6 +141,71 @@
       }
     }
   },
+  "joyhubHome": {
+    "badge": "公司统一 AI 能力平台",
+    "title": "找到能力，直接开始工作",
+    "description": "在一个入口发现和使用公司内部的 Agent、Skill、插件、MCP、在线工具与服务，每项能力都配有清晰的入口和对应文档。",
+    "searchPlaceholder": "搜索 Agent、技能、工具或你想完成的事情",
+    "searchHint": "可搜索名称、场景、部门和能力类型",
+    "centersEyebrow": "能力中心",
+    "centersTitle": "三种入口，一套统一体验",
+    "centersDescription": "先按能力形态进入对应中心，也可以直接从首页搜索你想解决的问题。",
+    "enterCenter": "进入中心",
+    "centers": {
+      "agents": {
+        "title": "Agent 中心",
+        "description": "发现公司内部可直接使用的 AI Agent、机器人和自动化助手。"
+      },
+      "skills": {
+        "title": "技能中心",
+        "description": "查找可安装、可复用的 Skill 包，以及脚本、模板和参考资料。"
+      },
+      "tools": {
+        "title": "工具中心",
+        "description": "集中使用在线工具、插件、MCP、内部服务与资源包。"
+      }
+    },
+    "scenariosEyebrow": "按场景发现",
+    "scenariosTitle": "从“我想完成什么”开始",
+    "scenariosDescription": "不需要先理解能力类型，选择工作场景即可搜索相关 Agent、技能和工具。",
+    "scenarios": {
+      "content": "内容生产",
+      "data": "数据分析",
+      "project": "项目管理",
+      "development": "研发提效",
+      "art": "美术资产处理"
+    },
+    "platformEyebrow": "统一机制",
+    "platformTitle": "让能力真正可用、可维护",
+    "platformDescription": "JoyHub 统一管理资源入口、说明文档、维护责任和可见范围，减少重复录入和失效信息。",
+    "platform": {
+      "visibility": {
+        "title": "部门可见",
+        "description": "员工只看到全公司公共内容和自己部门开放的内容。"
+      },
+      "documentation": {
+        "title": "对应文档",
+        "description": "每项资源关联一个主文档，承载使用、配置和维护说明。"
+      },
+      "publishing": {
+        "title": "开放发布",
+        "description": "所有员工都能贡献内容，并持续更新或主动下架。"
+      }
+    }
+  },
+  "skillCenter": {
+    "title": "技能中心",
+    "description": "发现、安装和复用公司内部成熟的 Skill 包、脚本、模板与参考资料。",
+    "visibility": "这里仅展示全公司可见，以及你所在部门可见的已发布技能。",
+    "publish": "发布 Skill",
+    "searchPlaceholder": "搜索 Skill、场景或能力",
+    "sortLabel": "排序",
+    "newest": "最新发布",
+    "popular": "热门下载",
+    "resultCount": "共 {{count}} 项",
+    "loadFailed": "技能加载失败，请稍后重试。",
+    "empty": "暂无匹配的 Skill"
+  },
   "home": {
     "subtitle": "技能注册中心",
     "description": "为开发者提供高效的技能管理、分发和协作平台",
