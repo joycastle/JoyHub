@@ -324,6 +324,83 @@ describe('install command — P1', () => {
     expect(meta.version).toBe('2.0.0')
   })
 
+  test.each([
+    'team/my-skill',
+    '@team/my-skill',
+    'team--my-skill'
+  ])('%s resolves the namespaced registry path', async (coordinate) => {
+    const env = await createTempHome()
+    registry = await startFakeRegistry({
+      token: 'sk_ok',
+      skills: [{
+        namespace: 'team',
+        slug: 'my-skill',
+        version: '1.0.0',
+        zipBytes: makeSkillZip()
+      }]
+    })
+
+    const installDir = join(env.cwd, 'skills-coordinate')
+    await mkdir(installDir, { recursive: true })
+
+    const result = await runCli(
+      [
+        'install', coordinate,
+        '--dir', installDir,
+        '--registry', registry.url,
+        '--token', 'sk_ok',
+        '--json'
+      ],
+      { HOME: env.home, USERPROFILE: env.home }
+    )
+
+    expect(result.exitCode).toBe(0)
+    expect(JSON.parse(result.stdout)).toMatchObject({
+      ok: true,
+      namespace: 'team',
+      slug: 'my-skill'
+    })
+    expect(registry.received.resolve).toMatchObject({
+      namespace: 'team',
+      slug: 'my-skill'
+    })
+  })
+
+  test('coordinate conflicting with --namespace fails before registry access', async () => {
+    const env = await createTempHome()
+    registry = await startFakeRegistry({
+      token: 'sk_ok',
+      skills: [{
+        namespace: 'team',
+        slug: 'my-skill',
+        version: '1.0.0',
+        zipBytes: makeSkillZip()
+      }]
+    })
+
+    const installDir = join(env.cwd, 'skills-coordinate-conflict')
+    await mkdir(installDir, { recursive: true })
+
+    const result = await runCli(
+      [
+        'install', '@team/my-skill',
+        '--namespace', 'other',
+        '--dir', installDir,
+        '--registry', registry.url,
+        '--token', 'sk_ok',
+        '--json'
+      ],
+      { HOME: env.home, USERPROFILE: env.home }
+    )
+
+    expect(result.exitCode).toBe(5)
+    expect(JSON.parse(result.stderr)).toMatchObject({
+      ok: false,
+      exitCode: 5
+    })
+    expect(registry.received.resolve).toBeNull()
+  })
+
   // -------------------------------------------------------------------------
   // NOTE: multi-target interactive selection (TTY branch) is not tested here
   // because Bun.spawn does not support PTY allocation. The interactive path

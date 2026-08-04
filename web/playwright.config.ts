@@ -1,5 +1,15 @@
 import { defineConfig, devices } from '@playwright/test'
 
+const localNoProxyHosts = ['localhost', '127.0.0.1', '::1']
+const mergedNoProxy = Array.from(new Set([
+  ...(process.env.NO_PROXY?.split(',').filter(Boolean) ?? []),
+  ...(process.env.no_proxy?.split(',').filter(Boolean) ?? []),
+  ...localNoProxyHosts,
+])).join(',')
+
+process.env.NO_PROXY = mergedNoProxy
+process.env.no_proxy = mergedNoProxy
+
 export default defineConfig({
   testDir: './e2e',
   fullyParallel: false,
@@ -9,7 +19,7 @@ export default defineConfig({
   workers: Number(process.env.PLAYWRIGHT_WORKERS ?? 1),
   reporter: 'html',
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL: 'http://127.0.0.1:3000',
     trace: 'on-first-retry',
     screenshot: 'on',
   },
@@ -21,7 +31,7 @@ export default defineConfig({
   ],
   webServer: {
     command: 'pnpm exec vite --host 127.0.0.1 --port 3000 --strictPort',
-    url: 'http://localhost:3000',
+    url: 'http://127.0.0.1:3000',
     reuseExistingServer: true,
     timeout: 120000,
   },

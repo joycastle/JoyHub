@@ -231,6 +231,20 @@ class LocalAuthServiceTest {
     }
 
     @Test
+    void changePassword_withoutLocalCredential_rejectsRequest() {
+        given(credentialRepository.findByUserId("oauth-only")).willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.changePassword("oauth-only", "old", "Newpass123!"))
+            .isInstanceOf(AuthFlowException.class)
+            .hasMessageContaining("error.auth.local.notEnabled")
+            .extracting("status")
+            .isEqualTo(HttpStatus.BAD_REQUEST);
+
+        verify(passwordEncoder, never()).matches(any(), any());
+        verify(credentialRepository, never()).save(any(LocalCredential.class));
+    }
+
+    @Test
     void register_rejectsInvalidEmailFormat() {
         given(credentialRepository.existsByUsernameIgnoreCase("alice")).willReturn(false);
 

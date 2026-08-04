@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type MouseEvent } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useParams, useNavigate, useRouterState, useSearch } from '@tanstack/react-router'
+import { Link, useParams, useNavigate, useRouterState, useSearch } from '@tanstack/react-router'
 import { useQueryClient } from '@tanstack/react-query'
 import { ArrowLeft, ChevronDown, ChevronUp, Folder, Globe, Lock, RefreshCw, Terminal, User } from 'lucide-react'
 import { MarkdownRenderer } from '@/features/skill/markdown-renderer'
@@ -29,7 +29,7 @@ import { ApiError, buildApiUrl, WEB_API_PREFIX } from '@/api/client'
 import { SecurityAuditSummary } from '@/features/security-audit/security-audit-summary'
 import { normalizeVersionStatusForDisplay } from '@/shared/lib/version-status-display'
 import { incrementSkillDownloadCount } from '@/shared/lib/skill-download-cache'
-import { getSkillSquareSearch, normalizeSkillDetailReturnTo } from '@/shared/lib/skill-navigation'
+import { getSkillLabelSearch, getSkillSquareSearch, normalizeSkillDetailReturnTo } from '@/shared/lib/skill-navigation'
 import { formatCompactCount } from '@/shared/lib/number-format'
 import { formatLocalDateTime } from '@/shared/lib/date-time'
 import { resolveDocumentationFilePath } from '@/shared/lib/skill-documentation'
@@ -248,8 +248,12 @@ export function SkillDetailPage() {
     setPreviewDialogOpen(true)
   }
 
-  const handleOverviewLinkClick = (href: string, event: MouseEvent<HTMLAnchorElement>) => {
-    const resolution = resolvePackageRelativeLink(href, documentationPath, files)
+  const handlePackageMarkdownLinkClick = (
+    href: string,
+    event: MouseEvent<HTMLAnchorElement>,
+    currentFilePath: string | null | undefined,
+  ) => {
+    const resolution = resolvePackageRelativeLink(href, currentFilePath, files)
 
     if (resolution.status === 'ignored') {
       return
@@ -264,6 +268,14 @@ export function SkillDetailPage() {
     }
 
     toast.error(t('skillDetail.packageLinkMissingTitle'), t('skillDetail.packageLinkMissingDescription'))
+  }
+
+  const handleOverviewLinkClick = (href: string, event: MouseEvent<HTMLAnchorElement>) => {
+    handlePackageMarkdownLinkClick(href, event, documentationPath)
+  }
+
+  const handlePreviewLinkClick = (href: string, event: MouseEvent<HTMLAnchorElement>) => {
+    handlePackageMarkdownLinkClick(href, event, previewNode?.path)
   }
 
   // Download a single file from the skill version
@@ -680,17 +692,19 @@ export function SkillDetailPage() {
           {(skill.labels?.length ?? 0) > 0 && (
             <div className="flex flex-wrap gap-2">
               {skill.labels!.map((label) => (
-                <span
+                <Link
                   key={label.slug}
+                  to="/search"
+                  search={getSkillLabelSearch(label.slug)}
                   className={cn(
-                    'inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium',
+                    'inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70 focus-visible:ring-offset-2',
                     label.type === 'PRIVILEGED'
-                      ? 'border-amber-500/40 bg-amber-100 text-amber-900'
-                      : 'border-slate-300 bg-slate-100 text-slate-800',
+                      ? 'border-amber-500/40 bg-amber-100 text-amber-900 hover:bg-amber-200/80'
+                      : 'border-slate-300 bg-slate-100 text-slate-800 hover:bg-slate-200/80',
                   )}
                 >
                   {label.displayName}
-                </span>
+                </Link>
               ))}
             </div>
           )}
@@ -1324,6 +1338,7 @@ export function SkillDetailPage() {
         isLoading={isLoadingPreview}
         error={previewError}
         onDownload={handleDownloadFile}
+        onLinkClick={handlePreviewLinkClick}
       />
     </div>
   )

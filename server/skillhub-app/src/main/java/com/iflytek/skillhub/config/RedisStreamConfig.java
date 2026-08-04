@@ -4,6 +4,7 @@ import com.iflytek.skillhub.domain.security.ScanTaskProducer;
 import com.iflytek.skillhub.domain.security.SecurityScanService;
 import com.iflytek.skillhub.domain.security.SecurityScanner;
 import com.iflytek.skillhub.domain.skill.SkillVersionRepository;
+import com.iflytek.skillhub.observability.MessageObservationSupport;
 import com.iflytek.skillhub.storage.ObjectStorageService;
 import com.iflytek.skillhub.stream.RedissonScanTaskProducer;
 import com.iflytek.skillhub.stream.ScanTaskConsumer;
@@ -37,8 +38,11 @@ public class RedisStreamConfig {
     private Duration reclaimInterval;
 
     @Bean
-    public RedissonScanTaskProducer redisScanTaskProducer(RedissonClient redissonClient) {
-        return new RedissonScanTaskProducer(redissonClient, streamKey);
+    public RedissonScanTaskProducer redisScanTaskProducer(
+            RedissonClient redissonClient,
+            MessageObservationSupport messageObservationSupport
+    ) {
+        return new RedissonScanTaskProducer(redissonClient, streamKey, messageObservationSupport);
     }
 
     @Bean
@@ -47,7 +51,8 @@ public class RedisStreamConfig {
                                              SecurityScanService securityScanService,
                                              SkillVersionRepository skillVersionRepository,
                                              ScanTaskProducer scanTaskProducer,
-                                             ObjectStorageService objectStorageService) {
+                                             ObjectStorageService objectStorageService,
+                                             MessageObservationSupport messageObservationSupport) {
         return new ScanTaskConsumer(
                 redissonClient,
                 streamKey,
@@ -60,7 +65,8 @@ public class RedisStreamConfig {
                 reclaimEnabled,
                 reclaimMinIdle,
                 reclaimBatchSize,
-                reclaimInterval
+                reclaimInterval,
+                messageObservationSupport
         );
     }
 }

@@ -15,6 +15,9 @@ import type {
   MergeVerifyRequest,
   ReviewSkillDetail,
   ReviewTask,
+  PromotionSortBy,
+  PromotionSortDirection,
+  PromotionStatus,
   PromotionTask,
   AuditLogItem,
   SkillSummary,
@@ -997,11 +1000,17 @@ export const promotionApi = {
     })
   },
 
-  async list(params: { status?: string; page?: number; size?: number }) {
+  async list(params: { status?: PromotionStatus; page?: number; size?: number; sortBy?: PromotionSortBy; sortDirection?: PromotionSortDirection }) {
     const searchParams = new URLSearchParams()
     searchParams.set('status', params.status ?? 'PENDING')
     searchParams.set('page', String(params.page ?? 0))
     searchParams.set('size', String(params.size ?? 20))
+    if (params.sortBy) {
+      searchParams.set('sortBy', params.sortBy)
+    }
+    if (params.sortDirection) {
+      searchParams.set('sortDirection', params.sortDirection)
+    }
     return fetchJson<{ items: PromotionTask[]; total: number; page: number; size: number }>(
       `${WEB_API_PREFIX}/promotions?${searchParams.toString()}`,
     )

@@ -3,6 +3,7 @@ package com.iflytek.skillhub.domain.skill.service;
 import com.iflytek.skillhub.domain.audit.AuditLogService;
 import com.iflytek.skillhub.domain.event.SkillStatusChangedEvent;
 import com.iflytek.skillhub.domain.namespace.NamespaceRole;
+import com.iflytek.skillhub.domain.review.ReviewTaskRepository;
 import com.iflytek.skillhub.domain.security.SecurityScanService;
 import com.iflytek.skillhub.domain.shared.exception.DomainBadRequestException;
 import com.iflytek.skillhub.domain.shared.exception.DomainForbiddenException;
@@ -41,6 +42,7 @@ public class SkillGovernanceService {
     private final SkillRepository skillRepository;
     private final SkillVersionRepository skillVersionRepository;
     private final SkillFileRepository skillFileRepository;
+    private final ReviewTaskRepository reviewTaskRepository;
     private final ObjectStorageService objectStorageService;
     private final AuditLogService auditLogService;
     private final ApplicationEventPublisher eventPublisher;
@@ -51,6 +53,7 @@ public class SkillGovernanceService {
     public SkillGovernanceService(SkillRepository skillRepository,
                                   SkillVersionRepository skillVersionRepository,
                                   SkillFileRepository skillFileRepository,
+                                  ReviewTaskRepository reviewTaskRepository,
                                   ObjectStorageService objectStorageService,
                                   AuditLogService auditLogService,
                                   ApplicationEventPublisher eventPublisher,
@@ -60,6 +63,7 @@ public class SkillGovernanceService {
         this.skillRepository = skillRepository;
         this.skillVersionRepository = skillVersionRepository;
         this.skillFileRepository = skillFileRepository;
+        this.reviewTaskRepository = reviewTaskRepository;
         this.objectStorageService = objectStorageService;
         this.auditLogService = auditLogService;
         this.eventPublisher = eventPublisher;
@@ -172,6 +176,8 @@ public class SkillGovernanceService {
             throw new DomainBadRequestException("error.skill.version.delete.lastVersion", version.getVersion());
         }
 
+        // Rejected versions retain terminal review history whose FK must not outlive the version.
+        reviewTaskRepository.deleteBySkillVersionIdIn(List.of(version.getId()));
         List<SkillFile> files = skillFileRepository.findByVersionId(version.getId());
         List<String> storageKeys = new ArrayList<>();
         files.stream()

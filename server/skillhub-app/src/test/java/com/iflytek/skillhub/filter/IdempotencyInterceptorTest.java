@@ -5,6 +5,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.iflytek.skillhub.domain.idempotency.IdempotencyRecord;
 import com.iflytek.skillhub.domain.idempotency.IdempotencyRecordRepository;
 import com.iflytek.skillhub.domain.idempotency.IdempotencyStatus;
+import com.iflytek.skillhub.observability.RequestIdAccessor;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,6 +39,8 @@ class IdempotencyInterceptorTest {
 
     @Mock
     private ValueOperations<String, String> valueOperations;
+    @Mock
+    private RequestIdAccessor requestIdAccessor;
 
     @Mock
     private HttpServletRequest request;
@@ -53,13 +56,20 @@ class IdempotencyInterceptorTest {
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
         clock = Clock.fixed(Instant.parse("2026-03-18T00:00:00Z"), ZoneOffset.UTC);
-        interceptor = new IdempotencyInterceptor(redisTemplate, idempotencyRecordRepository, objectMapper, clock);
+        interceptor = new IdempotencyInterceptor(
+                redisTemplate,
+                idempotencyRecordRepository,
+                objectMapper,
+                clock,
+                requestIdAccessor
+        );
     }
 
     @Test
     void testNewRequestPassesThrough() throws Exception {
         when(request.getMethod()).thenReturn("POST");
         when(request.getHeader("X-Request-Id")).thenReturn("req-123");
+        when(requestIdAccessor.current()).thenReturn("req-123");
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
         when(valueOperations.get("idempotency:req-123")).thenReturn(null);
         when(idempotencyRecordRepository.findByRequestId("req-123")).thenReturn(Optional.empty());
@@ -71,9 +81,27 @@ class IdempotencyInterceptorTest {
     }
 
     @Test
+    void testProvidedInvalidHeaderUsesEffectiveRequestContext() throws Exception {
+        when(request.getMethod()).thenReturn("POST");
+        when(request.getHeader("X-Request-Id")).thenReturn("invalid request id");
+        when(requestIdAccessor.current()).thenReturn("generated-valid-id");
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
+        when(valueOperations.get("idempotency:generated-valid-id")).thenReturn(null);
+        when(idempotencyRecordRepository.findByRequestId("generated-valid-id"))
+                .thenReturn(Optional.empty());
+
+        boolean result = interceptor.preHandle(request, response, new Object());
+
+        assertTrue(result);
+        verify(idempotencyRecordRepository).findByRequestId("generated-valid-id");
+        verify(idempotencyRecordRepository, never()).findByRequestId("invalid request id");
+    }
+
+    @Test
     void testDuplicateRequestReturnsCachedResponse() throws Exception {
         when(request.getMethod()).thenReturn("POST");
         when(request.getHeader("X-Request-Id")).thenReturn("req-456");
+        when(requestIdAccessor.current()).thenReturn("req-456");
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
         when(valueOperations.get("idempotency:req-456")).thenReturn("COMPLETED");
 
@@ -114,6 +142,7 @@ class IdempotencyInterceptorTest {
     void testAfterCompletionUpdatesRecord() throws Exception {
         when(request.getMethod()).thenReturn("POST");
         when(request.getHeader("X-Request-Id")).thenReturn("req-789");
+        when(requestIdAccessor.current()).thenReturn("req-789");
         when(response.getStatus()).thenReturn(200);
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
 

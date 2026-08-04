@@ -4085,9 +4085,19 @@ export interface components {
             id?: number;
             /** Format: int64 */
             sourceSkillId?: number;
+            sourceSkillDisplayName?: string;
+            sourceSkillSummary?: string;
             sourceNamespace?: string;
             sourceSkillSlug?: string;
             sourceVersion?: string;
+            /** Format: int32 */
+            sourceVersionFileCount?: number;
+            /** Format: int64 */
+            sourceVersionTotalSize?: number;
+            /** Format: int64 */
+            sourceSkillDownloadCount?: number;
+            /** Format: int32 */
+            sourceSkillStarCount?: number;
             targetNamespace?: string;
             /** Format: int64 */
             targetSkillId?: number;
@@ -4223,6 +4233,53 @@ export interface components {
         };
         AuthorizeRequest: {
             userCode?: string;
+        };
+        SessionBootstrapRequest: {
+            provider: string;
+        };
+        ApiResponseAuthMeResponse: {
+            /** Format: int32 */
+            code?: number;
+            msg?: string;
+            data?: components["schemas"]["AuthMeResponse"];
+            /** Format: date-time */
+            timestamp?: string;
+            requestId?: string;
+        };
+        AuthMeResponse: {
+            userId?: string;
+            displayName?: string;
+            email?: string;
+            avatarUrl?: string;
+            oauthProvider?: string;
+            canChangePassword?: boolean;
+            platformRoles?: string[];
+        };
+        LocalRegisterRequest: {
+            username: string;
+            password: string;
+            email: string;
+        };
+        PasswordResetRequestDto: {
+            email: string;
+        };
+        PasswordResetConfirmRequest: {
+            email: string;
+            code: string;
+            newPassword: string;
+        };
+        LocalLoginRequest: {
+            username: string;
+            password: string;
+        };
+        ChangePasswordRequest: {
+            currentPassword: string;
+            newPassword: string;
+        };
+        DirectLoginRequest: {
+            provider: string;
+            username: string;
+            password: string;
         };
         TokenRequest: {
             deviceCode?: string;
@@ -7521,9 +7578,11 @@ export interface operations {
     listPromotions: {
         parameters: {
             query?: {
-                status?: string;
+                status?: "PENDING" | "APPROVED" | "REJECTED";
                 page?: number;
                 size?: number;
+                sortBy?: "reviewedAt";
+                sortDirection?: "ASC" | "DESC";
             };
             header?: never;
             path?: never;
@@ -7569,9 +7628,11 @@ export interface operations {
     listPromotions_1: {
         parameters: {
             query?: {
-                status?: string;
+                status?: "PENDING" | "APPROVED" | "REJECTED";
                 page?: number;
                 size?: number;
+                sortBy?: "reviewedAt";
+                sortDirection?: "ASC" | "DESC";
             };
             header?: never;
             path?: never;

@@ -5,6 +5,7 @@ import com.iflytek.skillhub.domain.idempotency.IdempotencyRecord;
 import com.iflytek.skillhub.domain.idempotency.IdempotencyRecordRepository;
 import com.iflytek.skillhub.domain.idempotency.IdempotencyStatus;
 import com.iflytek.skillhub.dto.ApiResponse;
+import com.iflytek.skillhub.observability.RequestIdAccessor;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -34,15 +35,18 @@ public class IdempotencyInterceptor implements HandlerInterceptor {
     private final IdempotencyRecordRepository idempotencyRecordRepository;
     private final ObjectMapper objectMapper;
     private final Clock clock;
+    private final RequestIdAccessor requestIdAccessor;
 
     public IdempotencyInterceptor(StringRedisTemplate redisTemplate,
                                   IdempotencyRecordRepository idempotencyRecordRepository,
                                   ObjectMapper objectMapper,
-                                  Clock clock) {
+                                  Clock clock,
+                                  RequestIdAccessor requestIdAccessor) {
         this.redisTemplate = redisTemplate;
         this.idempotencyRecordRepository = idempotencyRecordRepository;
         this.objectMapper = objectMapper;
         this.clock = clock;
+        this.requestIdAccessor = requestIdAccessor;
     }
 
     /**
@@ -56,8 +60,8 @@ public class IdempotencyInterceptor implements HandlerInterceptor {
             return true;
         }
 
-        String requestId = request.getHeader(REQUEST_ID_HEADER);
-        if (requestId == null || requestId.isEmpty()) {
+        String requestId = resolveRequestId(request);
+        if (requestId == null) {
             return true;
         }
 
@@ -116,8 +120,8 @@ public class IdempotencyInterceptor implements HandlerInterceptor {
             return;
         }
 
-        String requestId = request.getHeader(REQUEST_ID_HEADER);
-        if (requestId == null || requestId.isEmpty()) {
+        String requestId = resolveRequestId(request);
+        if (requestId == null) {
             return;
         }
 
@@ -139,8 +143,16 @@ public class IdempotencyInterceptor implements HandlerInterceptor {
 
     private void writeDuplicateResponse(HttpServletResponse response) throws Exception {
         ApiResponse<Void> body = new ApiResponse<>(409, "error.request.duplicate", null,
-                Instant.now(clock), null);
+                Instant.now(clock), requestIdAccessor.current());
         response.setContentType("application/json;charset=UTF-8");
         response.getWriter().write(objectMapper.writeValueAsString(body));
+    }
+
+    private String resolveRequestId(HttpServletRequest request) {
+        String suppliedRequestId = request.getHeader(REQUEST_ID_HEADER);
+        if (suppliedRequestId == null || suppliedRequestId.isEmpty()) {
+            return null;
+        }
+        return requestIdAccessor.current();
     }
 }

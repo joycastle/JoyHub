@@ -122,7 +122,7 @@ curl -fsSL https://imageless.oss-cn-beijing.aliyuncs.com/runtime.sh | sh -s -- u
 curl -fsSL https://imageless.oss-cn-beijing.aliyuncs.com/runtime.sh | sh -s -- up --version v0.2.0
 ```
 
-> **注意**：升级前建议先备份数据库和对象存储。数据库迁移由 Flyway 自动执行。
+> **注意**：升级前建议先备份数据库和对象存储。数据库迁移由 Flyway 自动执行。升级不会清空数据库，已录入的技能包不会丢失。
 
 ## Q: 为什么管理员（admin）和普通用户都无法创建命名空间？
 
@@ -136,11 +136,199 @@ curl -fsSL https://imageless.oss-cn-beijing.aliyuncs.com/runtime.sh | sh -s -- u
 
 A: 使用 OpenClaw CLI 命令行工具时，可以通过 `<namespace>--<skill-name>` 的格式来指定命名空间进行操作（例如搜索、安装）。如果在网页端搜索遇到问题，也可以尝试通过先导出技能、再导入到目标命名空间的方式来完成跨空间操作。
 
+## Q: 推荐的部署方式是什么？可以自己拉镜像手动部署吗？
+
+A: 推荐使用官方一键部署脚本，不建议自己拉取镜像手动部署（手动部署容易出现登录后跳回登录页等初始化问题）：
+
+```bash
+curl -fsSL https://imageless.oss-cn-beijing.aliyuncs.com/runtime.sh | sh -s -- up --aliyun --public-url https://skillhub.your-company.com --version latest
+```
+
+脚本会执行一系列初始化操作，生成的运行时配置默认位于 `/tmp/skillhub-runtime/`（包含 `.env.release` 和 docker-compose 文件）。
+
+## Q: 部署后输入正确的账号密码，却又跳回登录页？
+
+A: 该现象多见于「手动部署」场景（接口异常或初始化未完成导致）。建议：
+
+1. 改用上面的一键脚本部署。
+2. 必要时清空 PostgreSQL 数据卷后重建再登录。
+3. 若前置了反向代理，检查代理配置是否正确转发。
+
+## Q: 如何修改 admin 密码？修改配置后不生效？
+
+A: 环境变量在容器创建时注入，修改后必须重新创建容器才会生效；仅执行 `restart` 不会重新注入环境变量。
+
+1. 修改运行时目录下的 `/tmp/skillhub-runtime/.env.release`（参考仓库 [.env.release.example](https://github.com/iflytek/skillhub/blob/main/.env.release.example)）。
+2. 重新创建相关容器：
+
+   ```bash
+   docker compose \
+     --env-file /tmp/skillhub-runtime/.env.release \
+     -f /tmp/skillhub-runtime/compose.release.yml \
+     up -d --force-recreate
+   ```
+
+3. 若此前密码已写入数据库导致仍不生效，可能需要清理对应数据后重新初始化。
+
+## Q: 修改 / 找回密码必须使用邮箱验证码吗？
+
+A: 是的，默认通过邮箱验证码修改或找回密码，因此需要先配置 SMTP。配置方法参考 [docs/19-smtp-password-reset-email-setup.md](https://github.com/iflytek/skillhub/blob/main/docs/19-smtp-password-reset-email-setup.md)。管理员也可在 `.env.release` 中进行重置。
+
+## Q: skill 可以起中文名吗？
+
+A: skill name 一般使用英文，目前不支持中文名（在 OpenClaw 中使用中文 skill 名会报错）。
+
+## Q: 未审核的 skill 可以下载吗？
+
+A: 只要拥有可查看的权限，一般都可以下载。
+
+## Q: 如何隐藏或删除登录页的 GitHub / GitLab SSO 登录方式？
+
+A: 修改 `application.yml`，注释或删除 `spring.security.oauth2.client.registration` 下的 `github` 和 `gitlab` 两块，并删除对应的 `provider` 段。Spring Boot 启动时便不会创建这两个注册，登录页也不会再显示对应入口。
+
+## Q: SkillHub 的安全扫描（Skill Scanner）是讯飞自研的吗？使用什么协议？
+
+A: SkillHub 内置安全扫描能力。其中扫描接入、任务编排、审计落库和部署集成由讯飞团队实现；底层扫描服务使用 Cisco 的 [cisco-ai-skill-scanner](https://github.com/cisco-ai-defense/skill-scanner)（Apache License 2.0，版权归 Cisco）。
+
+## Q: SkillHub 使用的 cisco-ai-skill-scanner 是哪个版本？
+
+A: `scanner/Dockerfile` 中直接执行 `pip install cisco-ai-skill-scanner`，未锁定版本，因此构建镜像时会拉取 PyPI 上的最新版本。如需固定版本，可在二次开发时自行锁定。
+
+## Q: 使用 CLI `skillhub publish` 报错 `registry returned 400` 怎么排查？
+
+A: 400 通常是后端校验未通过。常见原因：
+
+- `SKILL.md` 不在技能包根目录；
+- `SKILL.md` 的 frontmatter 缺少 `name` / `description` 或格式错误；
+- 名称或版本冲突（如 `error.skill.publish.nameConflict`，表示该 namespace 下已存在同名的已发布技能）——可改 `SKILL.md` 里的 `name`、换一个 namespace，或让管理员处理已有同名技能；
+- namespace 不存在，或你不是该 namespace 的成员；
+- 包内含疑似 token/secret，CLI 无法确认跳过；
+- 文件类型 / 大小 / 路径不合规。
+
+可用以下命令查看服务端日志定位：
+
+```bash
+docker logs --tail=300 <skillhub-server 容器名> 2>&1 | grep -Ei 'publish|SKILL.md|namespace|400|BadRequest'
+```
+
+## Q: 技能包的目录结构有什么要求？
+
+A: 技能包根目录必须包含一个 `SKILL.md` 文件，且其 frontmatter 需包含 `name`、`description` 等字段。
+
+## Q: 发布时报“技能包校验失败 / malformed input”怎么办？
+
+A: 该错误发生在 zip 解包读取文件名阶段，通常是压缩包不是 UTF-8 编码（例如用 Windows 自带压缩工具生成）或包内含中文路径导致。请使用 UTF-8 编码重新打包，并避免中文 / 特殊字符路径。
+
+## Q: 技能包能包含多少个文件？提示文件数超限怎么办？
+
+A: 默认上限为 **100 个文件**（这与 100MB 的大小限制是两回事）。如需放宽，修改配置项 `skillhub.publish.max-file-count`，或在部署时用环境变量覆盖：
+
+```bash
+SKILLHUB_PUBLISH_MAX_FILE_COUNT=500
+```
+
+修改后需重新创建容器才会生效；仅执行 `restart` 不会重新注入环境变量。注意 `compose.release.yml` 中也需引用该变量；较旧版本（如 v0.2.6）可能将该值写死，建议升级到最新版本。
+
+## Q: 使用 CLI（发布 / 下载等）对服务端版本有要求吗？
+
+A: 需要 SkillHub 服务端镜像 **v0.2.7 及以上** 才支持 CLI 功能。
+
+## Q: SkillHub 支持 MySQL 数据库吗？
+
+A: 目前仅支持 PostgreSQL，暂不支持 MySQL。
+
+## Q: SkillHub 可以用来分发 Plugin 吗？
+
+A: 暂不支持。
+
+## Q: 如何查看 SkillHub 的版本？想做定制（如修改 logo）怎么办？
+
+A:
+
+- 查看服务端镜像版本：
+
+```bash
+docker image inspect ghcr.io/iflytek/skillhub-server:latest --format '{{index .Config.Labels "org.opencontainers.image.version"}}'
+```
+
+- 查看 CLI 版本：`skillhub version`。
+- 如需定制（如修改 logo 等），建议基于最新代码进行二次开发并自行构建 docker 镜像。
+
+## Q: 页面能打开，但登录 / 注册接口返回 502？
+
+A: 页面由 `web` 容器提供，登录、注册等接口由 `web` 转发给 `server`（默认 `SKILLHUB_API_UPSTREAM=http://server:8080`）。出现「页面正常但 API 502」时，通常先检查 `server` 是否正常启动；upstream 配置、DNS 或容器网络异常也可能返回 502。
+
+排查顺序：
+
+```bash
+# 1. 看 server 是否处于运行状态
+docker compose --env-file .env.release -f compose.release.yml ps
+
+# 2. 看 server 启动日志中的第一条错误
+docker compose --env-file .env.release -f compose.release.yml logs server | head -50
+```
+
+一条常见的启动失败日志是：
+
+```
+SKILLHUB_DOWNLOAD_ANON_COOKIE_SECRET must not use the default placeholder
+```
+
+说明 `server` 读到的仍是模板里的占位值。在 `.env.release` 中改成自己的随机字符串（**至少 32 个字符**）后重建容器即可：
+
+```bash
+SKILLHUB_DOWNLOAD_ANON_COOKIE_SECRET=<替换成你自己的随机字符串，至少 32 个字符>
+```
+
+启动前可以先执行 `make validate-release-config`，它会校验 `.env.release`，提前暴露这类占位值和缺失项。
+
+## Q: 改了配置为什么不生效？
+
+A: 两个高频原因：
+
+1. **改错了文件**：`.env.release.example` 只是模板，Compose 实际读取的是 `--env-file` 指定的 `.env.release`。请先 `cp .env.release.example .env.release`，然后修改 `.env.release`。
+2. **只重启没重建**：环境变量在容器创建时注入，`restart` 不会重新注入。改完配置需要重建容器：
+
+```bash
+docker compose --env-file .env.release -f compose.release.yml up -d --force-recreate
+```
+
+## Q: SkillHub 运行时需要哪些外部依赖？
+
+A: 必需 PostgreSQL 和 Redis；对象存储支持 `local` 与 S3 两种模式，由 `SKILLHUB_STORAGE_PROVIDER` 控制。`.env.release.example` 显式配置为 `local`，但如果使用 `compose.release.yml` 时完全没有设置该变量，Compose 的回退值是 `s3`。建议始终显式设置；生产环境推荐使用 S3（通过 `SKILLHUB_STORAGE_S3_*` 配置）。数据库仅支持 PostgreSQL，暂不支持 MySQL。
+
+发布版 Compose 已内置 PostgreSQL 与 Redis，默认只绑定在 `127.0.0.1`。
+
+## Q: 通过 OAuth（GitHub / GitLab 等）登录的账号，如何取得管理员权限？
+
+A: OAuth 首次登录创建的是普通用户。需要由已有的 `SUPER_ADMIN`（例如初始化时的 bootstrap admin）在后台将其提升为管理员。
+
+`USER_ADMIN` 可以管理用户状态，并分配除 `SUPER_ADMIN` 之外的平台角色；但不能向任何账号授予 `SUPER_ADMIN`，也不能修改已有 `SUPER_ADMIN` 账号的角色。这两类操作只有 `SUPER_ADMIN` 可以执行。
+
+## Q: 如何批量安装多个技能包？
+
+A: CLI 的 `install` 一次处理一个技能包。下面两个示例都通过 `--dir` 将技能批量安装到同一个目标根目录；每个技能实际位于 `$target_dir/<skill-slug>/`：
+
+```bash
+target_dir=/opt/skillhub-skills
+
+# 逐个安装
+for skill in skill-a skill-b skill-c; do
+  skillhub install "$skill" --dir "$target_dir"
+done
+
+# 或从清单文件读取（每行一个技能名）
+xargs -a skills.txt -I {} skillhub install "{}" --dir "$target_dir"
+```
+
+自 **SkillHub Server v0.2.12** 起，公开技能支持匿名搜索与安装；如果配置了无效的 Bearer Token，命令会直接失败而不再回退匿名访问，遇到这种情况请更新凭据或先移除无效 Token。
+
 ## Q: 遇到问题怎么办？
 
 A: 可以通过以下方式获取帮助：
 
 - **GitHub Issues**: https://github.com/iflytek/skillhub/issues
+- **在线文档**: https://iflytek.github.io/skillhub/
 - **文档**: 参考项目 README.md
 - **社区讨论**: https://github.com/iflytek/skillhub/discussions
 

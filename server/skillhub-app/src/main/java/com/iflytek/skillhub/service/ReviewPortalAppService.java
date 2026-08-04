@@ -13,11 +13,11 @@ import com.iflytek.skillhub.domain.shared.exception.DomainForbiddenException;
 import com.iflytek.skillhub.domain.shared.exception.DomainNotFoundException;
 import com.iflytek.skillhub.dto.PageResponse;
 import com.iflytek.skillhub.dto.ReviewTaskResponse;
+import com.iflytek.skillhub.observability.RequestIdAccessor;
 import com.iflytek.skillhub.repository.GovernanceQueryRepository;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.slf4j.MDC;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -34,19 +34,22 @@ public class ReviewPortalAppService {
     private final GovernanceQueryRepository governanceQueryRepository;
     private final RbacService rbacService;
     private final AuditLogService auditLogService;
+    private final RequestIdAccessor requestIdAccessor;
 
     public ReviewPortalAppService(ReviewService reviewService,
                                   ReviewTaskRepository reviewTaskRepository,
                                   NamespaceRepository namespaceRepository,
                                   GovernanceQueryRepository governanceQueryRepository,
                                   RbacService rbacService,
-                                  AuditLogService auditLogService) {
+                                  AuditLogService auditLogService,
+                                  RequestIdAccessor requestIdAccessor) {
         this.reviewService = reviewService;
         this.reviewTaskRepository = reviewTaskRepository;
         this.namespaceRepository = namespaceRepository;
         this.governanceQueryRepository = governanceQueryRepository;
         this.rbacService = rbacService;
         this.auditLogService = auditLogService;
+        this.requestIdAccessor = requestIdAccessor;
     }
 
     public ReviewTaskResponse submitReview(Long skillVersionId,
@@ -256,7 +259,7 @@ public class ReviewPortalAppService {
                 action,
                 "REVIEW_TASK",
                 targetId,
-                MDC.get("requestId"),
+                requestIdAccessor.current(),
                 auditContext != null ? auditContext.clientIp() : null,
                 auditContext != null ? auditContext.userAgent() : null,
                 detailJson

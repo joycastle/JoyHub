@@ -5,8 +5,8 @@ import com.iflytek.skillhub.controller.BaseApiController;
 import com.iflytek.skillhub.dto.ApiResponse;
 import com.iflytek.skillhub.dto.ApiResponseFactory;
 import com.iflytek.skillhub.domain.audit.AuditLogService;
+import com.iflytek.skillhub.observability.RequestIdAccessor;
 import jakarta.servlet.http.HttpServletRequest;
-import org.slf4j.MDC;
 import com.iflytek.skillhub.search.SearchRebuildService;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -23,13 +23,16 @@ public class AdminSearchController extends BaseApiController {
 
     private final SearchRebuildService searchRebuildService;
     private final AuditLogService auditLogService;
+    private final RequestIdAccessor requestIdAccessor;
 
     public AdminSearchController(ApiResponseFactory responseFactory,
                                  SearchRebuildService searchRebuildService,
-                                 AuditLogService auditLogService) {
+                                 AuditLogService auditLogService,
+                                 RequestIdAccessor requestIdAccessor) {
         super(responseFactory);
         this.searchRebuildService = searchRebuildService;
         this.auditLogService = auditLogService;
+        this.requestIdAccessor = requestIdAccessor;
     }
 
     @PostMapping("/rebuild")
@@ -42,7 +45,7 @@ public class AdminSearchController extends BaseApiController {
                 "REBUILD_SEARCH_INDEX",
                 "SEARCH_INDEX",
                 null,
-                MDC.get("requestId"),
+                requestIdAccessor.current(),
                 httpRequest.getRemoteAddr(),
                 httpRequest.getHeader("User-Agent"),
                 "{\"scope\":\"ALL\"}"

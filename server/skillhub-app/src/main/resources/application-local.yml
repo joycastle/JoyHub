@@ -38,8 +38,8 @@ skillhub:
     enabled: false
   profile:
     moderation:
-      machine-review: false
-      human-review: false
+      machine-review: ${SKILLHUB_PROFILE_MACHINE_REVIEW_ENABLED:false}
+      human-review: ${SKILLHUB_PROFILE_HUMAN_REVIEW_ENABLED:false}
   ratelimit:
     download:
       anonymous-cookie-secret: ${SKILLHUB_DOWNLOAD_ANON_COOKIE_SECRET:local-dev-download-secret-32-bytes}

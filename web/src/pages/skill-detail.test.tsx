@@ -3,7 +3,7 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { MouseEvent } from 'react'
+import type { MouseEvent, ReactNode } from 'react'
 import type { SkillFile } from '@/api/types'
 
 const toastMocks = vi.hoisted(() => ({
@@ -32,6 +32,21 @@ vi.mock('@tanstack/react-router', () => ({
   useParams: () => ({ namespace: 'global', slug: 'demo-skill' }),
   useRouterState: () => ({ pathname: '/space/global/demo-skill', searchStr: '', hash: '' }),
   useSearch: () => ({ returnTo: '/dashboard/skills' }),
+  Link: ({
+    to,
+    search,
+    children,
+    className,
+  }: {
+    to: string
+    search?: Record<string, unknown>
+    children?: ReactNode
+    className?: string
+  }) => (
+    <a href={to} data-search={JSON.stringify(search ?? {})} className={className}>
+      {children}
+    </a>
+  ),
 }))
 
 vi.mock('react-i18next', async () => {
@@ -127,8 +142,27 @@ vi.mock('@/features/skill/markdown-renderer', () => ({
 }))
 
 vi.mock('@/features/skill/file-preview-dialog', () => ({
-  FilePreviewDialog: ({ open, node }: { open: boolean; node: { path: string } | null }) => (
-    open && node ? <div role="dialog">preview:{node.path}</div> : null
+  FilePreviewDialog: ({
+    open,
+    node,
+    onLinkClick,
+  }: {
+    open: boolean
+    node: { path: string } | null
+    onLinkClick?: (href: string, event: MouseEvent<HTMLAnchorElement>) => void
+  }) => (
+    open && node
+      ? (
+          <div role="dialog">
+            preview:{node.path}
+            {onLinkClick && (
+              <a href="nested.md" onClick={(event) => onLinkClick('nested.md', event)}>
+                Nested
+              </a>
+            )}
+          </div>
+        )
+      : null
   ),
 }))
 
@@ -271,7 +305,9 @@ describe('SkillDetailPage', () => {
     useSkillFileMock.mockReturnValue({ data: null, isLoading: false, error: null })
   })
 
-  it('shows hard delete action for the skill owner', () => {
+  it('shows hard delete action for a super admin', () => {
+    hasRoleMock.mockImplementation((role: string) => role === 'SUPER_ADMIN')
+
     const html = renderToStaticMarkup(<SkillDetailPage />)
 
     expect(html).toContain('skillDetail.deleteSkill')
@@ -330,6 +366,25 @@ describe('SkillDetailPage', () => {
     expect(html).toContain('skillDetail.addLabel')
   })
 
+  it('links skill label chips to the search page filtered by that label', () => {
+    useSkillDetailMock.mockReturnValue({
+      data: createSkill({
+        ownerId: 'someone-else',
+        canManageLifecycle: false,
+        labels: [{ slug: 'code-generation', type: 'RECOMMENDED', displayName: 'Code Generation' }],
+      }),
+      isLoading: false,
+      isFetching: false,
+      error: null,
+    })
+
+    const html = renderToStaticMarkup(<SkillDetailPage />)
+
+    expect(html).toContain('href="/search"')
+    expect(html).toContain('&quot;label&quot;:&quot;code-generation&quot;')
+    expect(html).toContain('Code Generation')
+  })
+
   it('hides the label management panel when the viewer lacks label permissions', () => {
     useSkillDetailMock.mockReturnValue({
       data: createSkill({
@@ -360,7 +415,7 @@ describe('SkillDetailPage', () => {
     expect(html).not.toContain('__RATING_WIDGET__')
   })
 
-  it('renders rejected owner preview without pending-review copy', () => {
+  it('renders rejected owner preview without governance review copy', () => {
     useSkillDetailMock.mockReturnValue({
       data: createSkill({
         canInteract: false,
@@ -391,14 +446,15 @@ describe('SkillDetailPage', () => {
 
     const html = renderToStaticMarkup(<SkillDetailPage />)
 
-    expect(html).toContain('skillDetail.rejectedBadge')
-    expect(html).toContain('skillDetail.rejectedFeedbackTitle')
-    expect(html).toContain('manifest validation failed')
+    expect(html).toContain('v1.1.0')
+    expect(html).not.toContain('skillDetail.rejectedBadge')
+    expect(html).not.toContain('skillDetail.rejectedFeedbackTitle')
+    expect(html).not.toContain('manifest validation failed')
     expect(html).not.toContain('skillDetail.pendingPreviewBadge')
     expect(html).not.toContain('skillDetail.pendingPreviewTitle')
   })
 
-  it('renders pending review status in the header for scan-failed owner preview versions', () => {
+  it('renders scan-failed owner preview without governance status copy', () => {
     useSkillDetailMock.mockReturnValue({
       data: createSkill({
         canInteract: false,
@@ -428,7 +484,8 @@ describe('SkillDetailPage', () => {
 
     const html = renderToStaticMarkup(<SkillDetailPage />)
 
-    expect(html).toContain('skillDetail.versionStatusPendingReview')
+    expect(html).toContain('v1.2.0')
+    expect(html).not.toContain('skillDetail.versionStatusPendingReview')
     expect(html).not.toContain('skillDetail.versionStatusScanFailed')
   })
 
@@ -487,6 +544,25 @@ describe('SkillDetailPage', () => {
     fireEvent.click(screen.getByRole('link', { name: 'Usage' }))
 
     expect(screen.getByRole('dialog').textContent).toContain('preview:docs/usage.md')
+    expect(toastMocks.error).not.toHaveBeenCalled()
+  })
+
+  it('resolves links inside previewed markdown files against the previewed file path', () => {
+    useSkillFilesMock.mockReturnValue({
+      data: [
+        createSkillFile('README.md'),
+        createSkillFile('docs/usage.md'),
+        createSkillFile('docs/nested.md'),
+      ],
+    })
+
+    render(<SkillDetailPage />)
+    fireEvent.click(screen.getByRole('link', { name: 'Usage' }))
+    expect(screen.getByRole('dialog').textContent).toContain('preview:docs/usage.md')
+
+    fireEvent.click(screen.getByRole('link', { name: 'Nested' }))
+
+    expect(screen.getByRole('dialog').textContent).toContain('preview:docs/nested.md')
     expect(toastMocks.error).not.toHaveBeenCalled()
   })
 

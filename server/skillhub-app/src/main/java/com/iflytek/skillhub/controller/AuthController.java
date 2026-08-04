@@ -12,6 +12,7 @@ import com.iflytek.skillhub.dto.ApiResponseFactory;
 import com.iflytek.skillhub.dto.AuthMeResponse;
 import com.iflytek.skillhub.dto.AuthMethodResponse;
 import com.iflytek.skillhub.dto.AuthProviderResponse;
+import com.iflytek.skillhub.service.AuthMeResponseAssembler;
 import com.iflytek.skillhub.service.AuthMethodCatalog;
 import com.iflytek.skillhub.exception.UnauthorizedException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -37,17 +38,20 @@ public class AuthController extends BaseApiController {
     private final UserRoleBindingRepository userRoleBindingRepository;
     private final PlatformSessionService platformSessionService;
     private final UserAccountRepository userAccountRepository;
+    private final AuthMeResponseAssembler authMeResponseAssembler;
 
     public AuthController(ApiResponseFactory responseFactory,
                           AuthMethodCatalog authMethodCatalog,
                           UserRoleBindingRepository userRoleBindingRepository,
                           PlatformSessionService platformSessionService,
-                          UserAccountRepository userAccountRepository) {
+                          UserAccountRepository userAccountRepository,
+                          AuthMeResponseAssembler authMeResponseAssembler) {
         super(responseFactory);
         this.authMethodCatalog = authMethodCatalog;
         this.userRoleBindingRepository = userRoleBindingRepository;
         this.platformSessionService = platformSessionService;
         this.userAccountRepository = userAccountRepository;
+        this.authMeResponseAssembler = authMeResponseAssembler;
     }
 
     @GetMapping("/me")
@@ -81,7 +85,7 @@ public class AuthController extends BaseApiController {
                     freshRoles);
             platformSessionService.establishSession(principal, request, false);
         }
-        return ok("response.success.read", AuthMeResponse.from(principal));
+        return ok("response.success.read", authMeResponseAssembler.from(principal));
     }
 
     @GetMapping("/providers")

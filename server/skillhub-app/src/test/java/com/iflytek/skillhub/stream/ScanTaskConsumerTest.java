@@ -14,8 +14,11 @@ import com.iflytek.skillhub.domain.security.SecurityVerdict;
 import com.iflytek.skillhub.domain.skill.SkillVersion;
 import com.iflytek.skillhub.domain.skill.SkillVersionRepository;
 import com.iflytek.skillhub.domain.skill.SkillVersionStatus;
+import com.iflytek.skillhub.observability.MessageObservationSupport;
+import com.iflytek.skillhub.observability.RequestIdAccessor;
 import com.iflytek.skillhub.storage.ObjectStorageService;
 import com.iflytek.skillhub.storage.ObjectMetadata;
+import io.micrometer.observation.ObservationRegistry;
 import org.junit.jupiter.api.Test;
 import org.redisson.api.RStream;
 import org.redisson.api.RedissonClient;
@@ -303,7 +306,8 @@ class ScanTaskConsumerTest {
                     securityScanService,
                     skillVersionRepository,
                     scanTaskProducer,
-                    objectStorageService
+                    objectStorageService,
+                    new MessageObservationSupport(ObservationRegistry.NOOP, new RequestIdAccessor())
             );
             this.stream = mock(RStream.class);
         }
@@ -412,6 +416,11 @@ class ScanTaskConsumerTest {
 
         @Override
         public Optional<SkillVersion> findBySkillIdAndVersion(Long skillId, String version) {
+            throw unsupported();
+        }
+
+        @Override
+        public List<SkillVersion> findBySkillIdForUpdate(Long skillId) {
             throw unsupported();
         }
 

@@ -30,28 +30,28 @@ class ProfileModerationPropertiesBindingTest {
     }
 
     @Test
-    void localProfile_enablesMachineAndHumanReviewByDefault() throws IOException {
+    void localProfile_disablesMachineAndHumanReviewByDefault() throws IOException {
         ProfileModerationProperties properties = bindProperties(
                 List.of("application-local.yml", "application.yml"),
                 Map.of()
         );
 
-        assertTrue(properties.machineReview());
-        assertTrue(properties.humanReview());
+        assertFalse(properties.machineReview());
+        assertFalse(properties.humanReview());
     }
 
     @Test
-    void localProfile_allowsEnvironmentVariablesToOverrideDefaults() throws IOException {
+    void localProfile_allowsEnvironmentVariablesToEnableReview() throws IOException {
         ProfileModerationProperties properties = bindProperties(
                 List.of("application-local.yml", "application.yml"),
                 Map.of(
-                        "SKILLHUB_PROFILE_MACHINE_REVIEW_ENABLED", "false",
-                        "SKILLHUB_PROFILE_HUMAN_REVIEW_ENABLED", "false"
+                        "SKILLHUB_PROFILE_MACHINE_REVIEW_ENABLED", "true",
+                        "SKILLHUB_PROFILE_HUMAN_REVIEW_ENABLED", "true"
                 )
         );
 
-        assertFalse(properties.machineReview());
-        assertFalse(properties.humanReview());
+        assertTrue(properties.machineReview());
+        assertTrue(properties.humanReview());
     }
 
     private ProfileModerationProperties bindProperties(List<String> resourceNames,

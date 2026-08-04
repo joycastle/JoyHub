@@ -1,9 +1,7 @@
 package com.iflytek.skillhub.controller.portal;
 
-import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 import com.iflytek.skillhub.domain.skill.validation.PackageEntry;
@@ -163,7 +161,19 @@ class SkillPublishControllerTest {
     }
 
     @Test
-    void publish_nestedSkillMdReturnsWarningForIgnoredFiles() throws Exception {
+    void publish_nestedSkillMdKeepsCompleteBundle() throws Exception {
+        SkillVersion version = new SkillVersion(12L, "1.0.0", "usr_1");
+        version.setStatus(SkillVersionStatus.PENDING_REVIEW);
+        version.setFileCount(2);
+        version.setTotalSize(128L);
+        ReflectionTestUtils.setField(version, "id", 34L);
+
+        given(skillPublishService.publishFromEntries(
+            eq("global"), ArgumentMatchers.<List<PackageEntry>>any(),
+            eq("usr_1"), eq(SkillVisibility.PUBLIC),
+            eq(Set.of("SUPER_ADMIN")), eq(false)))
+            .willReturn(new SkillPublishService.PublishResult(12L, "demo-skill", version));
+
         PlatformPrincipal principal = new PlatformPrincipal(
             "usr_1", "publisher", "publisher@example.com", "", "local", Set.of("SUPER_ADMIN"));
         var auth = new UsernamePasswordAuthenticationToken(
@@ -178,12 +188,14 @@ class SkillPublishControllerTest {
                 .param("visibility", "PUBLIC")
                 .with(authentication(auth))
                 .with(csrf()))
-            .andExpect(status().isBadRequest())
-            .andExpect(jsonPath("$.msg").value(
-                org.hamcrest.Matchers.containsString("stray.txt")));
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.code").value(0));
 
-        verify(skillPublishService, never()).publishFromEntries(
-            eq("global"), anyList(), eq("usr_1"),
+        verify(skillPublishService).publishFromEntries(
+            eq("global"), ArgumentMatchers.argThat(entries ->
+                entries.stream().anyMatch(entry -> entry.path().equals("my-skill/SKILL.md"))
+                    && entries.stream().anyMatch(entry -> entry.path().equals("stray.txt"))),
+            eq("usr_1"),
             eq(SkillVisibility.PUBLIC), eq(Set.of("SUPER_ADMIN")), eq(false));
     }
 

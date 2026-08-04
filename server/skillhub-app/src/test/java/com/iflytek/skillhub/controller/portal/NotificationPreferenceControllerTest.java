@@ -15,6 +15,7 @@ import com.iflytek.skillhub.notification.domain.NotificationCategory;
 import com.iflytek.skillhub.notification.domain.NotificationChannel;
 import com.iflytek.skillhub.notification.service.NotificationPreferenceService;
 import com.iflytek.skillhub.notification.service.NotificationPreferenceService.PreferenceView;
+import com.iflytek.skillhub.observability.RequestIdAccessor;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -41,7 +42,8 @@ class NotificationPreferenceControllerTest {
         messageSource.addMessage("response.success.updated", java.util.Locale.getDefault(), "ok");
         ApiResponseFactory responseFactory = new ApiResponseFactory(
                 messageSource,
-                Clock.fixed(Instant.parse("2026-03-23T00:00:00Z"), ZoneOffset.UTC)
+                Clock.fixed(Instant.parse("2026-03-23T00:00:00Z"), ZoneOffset.UTC),
+                new RequestIdAccessor()
         );
         controller = new NotificationPreferenceController(preferenceService, responseFactory);
     }

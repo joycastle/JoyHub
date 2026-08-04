@@ -27,7 +27,7 @@ vi.mock('@/api/client', () => ({
 }))
 
 vi.mock('@/features/auth/login-button', () => ({
-  LoginButton: () => null,
+  LoginButton: () => <div>feishu-login-button</div>,
 }))
 
 vi.mock('@/features/auth/session-bootstrap-entry', () => ({
@@ -35,7 +35,9 @@ vi.mock('@/features/auth/session-bootstrap-entry', () => ({
 }))
 
 vi.mock('@/features/auth/use-auth-methods', () => ({
-  useAuthMethods: () => ({ data: [] }),
+  useAuthMethods: () => ({
+    data: [{ methodType: 'OAUTH_REDIRECT', provider: 'feishu' }],
+  }),
 }))
 
 vi.mock('@/features/auth/use-password-login', () => ({
@@ -69,11 +71,13 @@ describe('LoginPage', () => {
     expect(typeof LoginPage).toBe('function')
   })
 
-  it('renders the login title and form elements', () => {
+  it('renders the Feishu login entry', () => {
     const html = renderToStaticMarkup(<LoginPage />)
 
     expect(html).toContain('login.title')
     expect(html).toContain('login.subtitle')
-    expect(html).toContain('login.submit')
+    expect(html).toContain('login.oauthHint')
+    expect(html).toContain('feishu-login-button')
+    expect(html).not.toContain('Feishu login is not configured')
   })
 })

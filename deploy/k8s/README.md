@@ -59,10 +59,14 @@ cp secret.yaml.example secret.yaml
 | spring-datasource-url | PostgreSQL 连接 URL | 是 |
 | spring-datasource-username | 数据库用户名 | 是 |
 | spring-datasource-password | 数据库密码 | 是 |
+| redis-password | Redis 数据节点密码 | 否 |
+| redis-sentinel-password | Redis Sentinel 独立密码 | 否 |
 | bootstrap-admin-password | 管理员密码 | 是 |
 | oauth2-github-client-id | GitHub OAuth ID | 否 |
 | oauth2-github-client-secret | GitHub OAuth 密钥 | 否 |
 | skill-scanner-llm-api-key | LLM API 密钥 | 否 |
+| skill-scanner-llm-base-url | 本地/自定义 LLM 服务地址 | 否 |
+| skill-scanner-llm-model | Scanner 使用的 LLM 模型名 | 否 |
 
 ### 3. 选择部署方式
 
@@ -84,9 +88,38 @@ redis-host: your-redis-host
 redis-port: "6379"
 ```
 
-2. 修改 `base/secret.yaml` 中的数据库连接：
+连接外部 Redis Cluster 时改为配置节点列表。保留 `redis-host`/`redis-port`
+不会影响 Cluster 选择：
+
+```yaml
+redis-cluster-nodes: "redis-0.example.com:6379,redis-1.example.com:6379,redis-2.example.com:6379"
+redis-cluster-max-redirects: "5"
+redis-username: "skillhub"
+redis-ssl-enabled: "true"
+redis-connect-timeout: "5s"
+redis-timeout: "3s"
+redis-client-name: "skillhub"
+```
+
+所有 Cluster 节点通告的地址都必须能从 Server Pod 访问。Redis Cluster 只支持
+数据库 `0`。
+
+连接外部 Redis Sentinel 时配置 master、节点和独立 ACL；Sentinel 配置优先于
+Cluster 和单机 host/port：
+
+```yaml
+redis-username: "skillhub"
+redis-sentinel-master: "mymaster"
+redis-sentinel-nodes: "sentinel-0.example.com:26379,sentinel-1.example.com:26379,sentinel-2.example.com:26379"
+redis-sentinel-username: "sentinel-user"
+redis-sentinel-check-list: "true"
+```
+
+2. 修改 `base/secret.yaml` 中的数据库和 Redis 凭据：
 ```yaml
 spring-datasource-url: jdbc:postgresql://your-postgres-host:5432/skillhub
+redis-password: your-redis-password
+redis-sentinel-password: your-sentinel-password
 ```
 
 3. 部署：
@@ -169,6 +202,17 @@ kubectl apply -k overlays/with-infra/  # 或 overlays/external/
 |---|---|---|
 | redis-host | redis | Redis 主机地址 |
 | redis-port | 6379 | Redis 端口 |
+| redis-cluster-nodes | 未设置 | 外部 Redis Cluster 节点，逗号分隔的 `host:port` |
+| redis-cluster-max-redirects | 未设置 | Cluster MOVED/ASK 最大重定向次数 |
+| redis-sentinel-master | 未设置 | Sentinel master set 名称 |
+| redis-sentinel-nodes | 未设置 | Sentinel 节点，逗号分隔的 `host:port` |
+| redis-sentinel-username | 未设置 | Sentinel ACL 用户名 |
+| redis-sentinel-check-list | true | 是否校验 Sentinel 返回的节点列表 |
+| redis-username | 未设置 | Redis ACL 用户名 |
+| redis-ssl-enabled | 未设置 | 是否使用 TLS |
+| redis-connect-timeout | 未设置 | Redis 建连超时 |
+| redis-timeout | 未设置 | Redis 命令超时 |
+| redis-client-name | 未设置 | Redis 客户端名称 |
 | storage-base-path | /var/lib/skillhub/storage | 技能存储路径 |
 | skillhub-storage-provider | local | 存储类型（local/s3） |
 | skill-scanner-enabled | true | 是否启用扫描器 |
@@ -188,10 +232,13 @@ kubectl apply -k overlays/with-infra/  # 或 overlays/external/
 | spring-datasource-url | PostgreSQL 连接 URL | 是 |
 | spring-datasource-username | 数据库用户名 | 是 |
 | spring-datasource-password | 数据库密码 | 是 |
+| redis-password | Redis 数据节点密码 | 否 |
+| redis-sentinel-password | Redis Sentinel 独立密码 | 否 |
 | bootstrap-admin-password | 管理员密码 | 是 |
 | oauth2-github-client-id | GitHub OAuth ID | 否 |
 | oauth2-github-client-secret | GitHub OAuth 密钥 | 否 |
 | skill-scanner-llm-api-key | LLM API 密钥 | 否 |
+| skill-scanner-llm-base-url | 本地/自定义 LLM 服务地址 | 否 |
 | skill-scanner-llm-model | LLM 模型名称 | 否 |
 
 ### 存储配置
@@ -232,6 +279,12 @@ skillhub-storage-s3-secret-key: your-secret-key
 | skillhub-storage-pvc | 10Gi | 技能文件存储 |
 | postgres-data-0 | 10Gi | PostgreSQL 数据（with-infra only） |
 | redis-data-0 | 5Gi | Redis 数据（with-infra only） |
+
+#### PostgreSQL 数据目录兼容性
+
+`with-infra` 会在启动时检查 PostgreSQL PVC 根目录：如果已存在 `PG_VERSION`，继续使用根目录中的旧集群；否则在 `pgdata/` 子目录初始化新集群，避免新 ext4 卷中的 `lost+found` 阻止 `initdb`。升级现有部署不需要移动数据库文件。
+
+回滚到不包含该检测逻辑的旧清单时，如果集群位于 `pgdata/`，必须保留当前启动命令，或显式设置 `PGDATA=/var/lib/postgresql/data/pgdata`。不要把正在运行的数据库目录手动移动到 PVC 根目录。
 
 ## 镜像说明
 

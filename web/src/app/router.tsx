@@ -5,6 +5,7 @@ import { getCurrentUser } from '@/api/client'
 import { RoleGuard } from '@/shared/components/role-guard'
 import { createRequireAuth } from '@/shared/lib/auth-route'
 import { isApiTokensEnabled } from '@/shared/config/features'
+import { clearDynamicImportReloadGuard, recoverFromDynamicImportError } from '@/shared/lib/dynamic-import-recovery'
 import { normalizeSearchQuery } from '@/shared/lib/search-query'
 import type { CatalogResourceKind } from '@/api/types'
 import { CATALOG_RESOURCE_KINDS } from '@/entities/catalog-resource/catalog-resource-kind'
@@ -28,7 +29,15 @@ function createLazyRouteComponent<TModule extends Record<string, unknown>>(
   // Lazy route modules are wrapped in a uniform suspense fallback so route transitions behave
   // consistently across public and dashboard pages.
   const LazyComponent = lazy(async () => {
-    const module = await importer()
+    const module = await importer().catch((error) => {
+      if (recoverFromDynamicImportError(error)) {
+        return new Promise<never>(() => {})
+      }
+      throw error
+    })
+    // Router resolution can finish before React.lazy imports the route module. Only clear the
+    // one-time reload guard after the chunk itself has loaded successfully.
+    clearDynamicImportReloadGuard()
     return { default: module[exportName] as ComponentType<Record<string, unknown>> }
   })
 

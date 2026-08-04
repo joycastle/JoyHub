@@ -37,6 +37,8 @@ import java.util.stream.Collectors;
 public class AdminUserAppService {
 
     private static final Set<UserStatus> MANAGEABLE_STATUSES = Set.of(UserStatus.ACTIVE, UserStatus.DISABLED);
+    private static final String SUPER_ADMIN_ROLE = "SUPER_ADMIN";
+    private static final String USER_ROLE = "USER";
 
     private final AdminUserSearchRepository adminUserSearchRepository;
     private final UserAccountRepository userAccountRepository;
@@ -83,15 +85,17 @@ public class AdminUserAppService {
         UserAccount user = loadUser(userId);
         rejectSystemAccountMutation(user);
         String normalizedRoleCode = normalizeRoleCode(roleCode);
+        boolean targetHasSuperAdminRole = userRoleBindingRepository.findByUserId(user.getId()).stream()
+                .anyMatch(binding -> SUPER_ADMIN_ROLE.equals(binding.getRole().getCode()));
 
-        if ("SUPER_ADMIN".equals(normalizedRoleCode)
-                && (actorPlatformRoles == null || !actorPlatformRoles.contains("SUPER_ADMIN"))) {
+        if ((SUPER_ADMIN_ROLE.equals(normalizedRoleCode) || targetHasSuperAdminRole)
+                && (actorPlatformRoles == null || !actorPlatformRoles.contains(SUPER_ADMIN_ROLE))) {
             throw new DomainForbiddenException("error.admin.user.role.superAdmin.assignDenied");
         }
 
         userRoleBindingRepository.deleteByUserId(user.getId());
 
-        if (!"USER".equals(normalizedRoleCode)) {
+        if (!USER_ROLE.equals(normalizedRoleCode)) {
             Role role = roleRepository.findByCode(normalizedRoleCode)
                     .orElseThrow(() -> new DomainBadRequestException("error.admin.user.role.invalid", roleCode));
             userRoleBindingRepository.save(new UserRoleBinding(user.getId(), role));

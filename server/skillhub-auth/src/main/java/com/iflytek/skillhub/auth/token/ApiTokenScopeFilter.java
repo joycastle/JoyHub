@@ -6,7 +6,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -61,11 +60,10 @@ public class ApiTokenScopeFilter extends OncePerRequestFilter {
             return;
         }
 
-        accessDeniedHandler.handle(
-            request,
-            response,
-            new AccessDeniedException(decision.message())
-        );
+        ApiTokenAccessDeniedException exception = decision.requiredScope() != null
+                ? ApiTokenAccessDeniedException.missingScope(decision.requiredScope())
+                : ApiTokenAccessDeniedException.unsupportedEndpoint(request.getRequestURI());
+        accessDeniedHandler.handle(request, response, exception);
     }
 
     @Override

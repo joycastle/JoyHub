@@ -20,6 +20,9 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.ActiveProfiles;
@@ -109,6 +112,179 @@ class PromotionPortalControllerTest {
     }
 
     @Test
+    void listPromotions_defaultsToPendingWithStableSubmittedSort() throws Exception {
+        PromotionRequest request = createPromotionRequest(1L, "user-1");
+        stubNamespaceRoles("admin", List.of());
+        given(rbacService.getUserRoleCodes("admin")).willReturn(Set.of("SKILL_ADMIN"));
+        PageRequest pageable = PageRequest.of(
+                0,
+                20,
+                Sort.by(
+                        new Sort.Order(Sort.Direction.DESC, "submittedAt"),
+                        new Sort.Order(Sort.Direction.DESC, "id")
+                )
+        );
+        given(promotionRequestRepository.findByStatus(ReviewTaskStatus.PENDING, pageable))
+                .willReturn(new PageImpl<>(List.of(request), pageable, 1));
+        stubPromotionListResponse(List.of(request));
+
+        mockMvc.perform(get("/api/v1/promotions").with(auth("admin")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data.items[0].id").value(1L))
+                .andExpect(jsonPath("$.data.total").value(1));
+
+        verify(promotionRequestRepository).findByStatus(ReviewTaskStatus.PENDING, pageable);
+    }
+
+    @Test
+    void listPromotions_sortsApprovedHistoryByReviewedAtDescendingByDefault() throws Exception {
+        PromotionRequest request = createPromotionRequest(1L, "user-1");
+        stubNamespaceRoles("admin", List.of());
+        given(rbacService.getUserRoleCodes("admin")).willReturn(Set.of("SKILL_ADMIN"));
+        PageRequest pageable = PageRequest.of(1, 5);
+        given(promotionRequestRepository.findHistoryByStatusOrderByReviewedAtDesc(ReviewTaskStatus.APPROVED, pageable))
+                .willReturn(new PageImpl<>(List.of(request), pageable, 1));
+        stubPromotionListResponse(List.of(request));
+
+        mockMvc.perform(get("/api/web/promotions")
+                        .param("status", "APPROVED")
+                        .param("page", "1")
+                        .param("size", "5")
+                        .param("sortBy", "reviewedAt")
+                        .with(auth("admin")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0));
+
+        verify(promotionRequestRepository).findHistoryByStatusOrderByReviewedAtDesc(ReviewTaskStatus.APPROVED, pageable);
+    }
+
+    @Test
+    void listPromotions_sortsRejectedHistoryByReviewedAtAscending() throws Exception {
+        PromotionRequest request = createPromotionRequest(1L, "user-1");
+        stubNamespaceRoles("admin", List.of());
+        given(rbacService.getUserRoleCodes("admin")).willReturn(Set.of("SUPER_ADMIN"));
+        PageRequest pageable = PageRequest.of(0, 10);
+        given(promotionRequestRepository.findHistoryByStatusOrderByReviewedAtAsc(ReviewTaskStatus.REJECTED, pageable))
+                .willReturn(new PageImpl<>(List.of(request), pageable, 1));
+        stubPromotionListResponse(List.of(request));
+
+        mockMvc.perform(get("/api/web/promotions")
+                        .param("status", "REJECTED")
+                        .param("page", "0")
+                        .param("size", "10")
+                        .param("sortBy", "reviewedAt")
+                        .param("sortDirection", "ASC")
+                        .with(auth("admin")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0));
+
+        verify(promotionRequestRepository).findHistoryByStatusOrderByReviewedAtAsc(ReviewTaskStatus.REJECTED, pageable);
+    }
+
+    @Test
+    void listPromotions_rejectsInvalidStatus() throws Exception {
+        stubNamespaceRoles("admin", List.of());
+        given(rbacService.getUserRoleCodes("admin")).willReturn(Set.of("SKILL_ADMIN"));
+
+        mockMvc.perform(get("/api/v1/promotions")
+                        .param("status", "DONE")
+                        .header("Accept-Language", "en")
+                        .locale(java.util.Locale.ENGLISH)
+                        .with(auth("admin")))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.msg").value(org.hamcrest.Matchers.containsString("DONE")));
+    }
+
+    @Test
+    void listPromotions_rejectsBlankStatus() throws Exception {
+        stubNamespaceRoles("admin", List.of());
+        given(rbacService.getUserRoleCodes("admin")).willReturn(Set.of("SKILL_ADMIN"));
+
+        mockMvc.perform(get("/api/v1/promotions")
+                        .param("status", "")
+                        .header("Accept-Language", "en")
+                        .locale(java.util.Locale.ENGLISH)
+                        .with(auth("admin")))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void listPromotions_rejectsPendingSortFieldEvenWhenBlank() throws Exception {
+        stubNamespaceRoles("admin", List.of());
+        given(rbacService.getUserRoleCodes("admin")).willReturn(Set.of("SKILL_ADMIN"));
+
+        mockMvc.perform(get("/api/v1/promotions")
+                        .param("status", "PENDING")
+                        .param("sortBy", "")
+                        .header("Accept-Language", "en")
+                        .locale(java.util.Locale.ENGLISH)
+                        .with(auth("admin")))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void listPromotions_rejectsPendingSortDirectionEvenWhenBlank() throws Exception {
+        stubNamespaceRoles("admin", List.of());
+        given(rbacService.getUserRoleCodes("admin")).willReturn(Set.of("SKILL_ADMIN"));
+
+        mockMvc.perform(get("/api/v1/promotions")
+                        .param("status", "PENDING")
+                        .param("sortDirection", "")
+                        .header("Accept-Language", "en")
+                        .locale(java.util.Locale.ENGLISH)
+                        .with(auth("admin")))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void listPromotions_rejectsInvalidHistorySortField() throws Exception {
+        stubNamespaceRoles("admin", List.of());
+        given(rbacService.getUserRoleCodes("admin")).willReturn(Set.of("SKILL_ADMIN"));
+
+        mockMvc.perform(get("/api/web/promotions")
+                        .param("status", "APPROVED")
+                        .param("sortBy", "submittedAt")
+                        .param("sortDirection", "DESC")
+                        .header("Accept-Language", "en")
+                        .locale(java.util.Locale.ENGLISH)
+                        .with(auth("admin")))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.msg").value(org.hamcrest.Matchers.containsString("submittedAt")));
+    }
+
+    @Test
+    void listPromotions_rejectsInvalidHistorySortDirection() throws Exception {
+        stubNamespaceRoles("admin", List.of());
+        given(rbacService.getUserRoleCodes("admin")).willReturn(Set.of("SKILL_ADMIN"));
+
+        mockMvc.perform(get("/api/web/promotions")
+                        .param("status", "APPROVED")
+                        .param("sortBy", "reviewedAt")
+                        .param("sortDirection", "SIDEWAYS")
+                        .header("Accept-Language", "en")
+                        .locale(java.util.Locale.ENGLISH)
+                        .with(auth("admin")))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.msg").value(org.hamcrest.Matchers.containsString("SIDEWAYS")));
+    }
+
+    @Test
+    void listPromotions_rejectsBlankHistorySortDirection() throws Exception {
+        stubNamespaceRoles("admin", List.of());
+        given(rbacService.getUserRoleCodes("admin")).willReturn(Set.of("SKILL_ADMIN"));
+
+        mockMvc.perform(get("/api/web/promotions")
+                        .param("status", "APPROVED")
+                        .param("sortBy", "reviewedAt")
+                        .param("sortDirection", "")
+                        .header("Accept-Language", "en")
+                        .locale(java.util.Locale.ENGLISH)
+                        .with(auth("admin")))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void getPromotionDetail_allowsSubmitter() throws Exception {
         PromotionRequest request = createPromotionRequest(1L, "user-1");
         stubNamespaceRoles("user-1", List.of());
@@ -140,9 +316,15 @@ class PromotionPortalControllerTest {
         given(governanceQueryRepository.getPromotionResponse(request)).willReturn(new PromotionResponseDto(
                 request.getId(),
                 request.getSourceSkillId(),
+                "Skill A",
+                "Skill A summary",
                 "team-a",
                 "skill-a",
                 "1.0.0",
+                3,
+                2048L,
+                7L,
+                2,
                 "global",
                 request.getTargetSkillId(),
                 request.getStatus().name(),
@@ -154,6 +336,36 @@ class PromotionPortalControllerTest {
                 request.getSubmittedAt(),
                 request.getReviewedAt()
         ));
+    }
+
+    private void stubPromotionListResponse(List<PromotionRequest> requests) {
+        given(governanceQueryRepository.getPromotionResponses(requests)).willReturn(
+                requests.stream()
+                        .map(request -> new PromotionResponseDto(
+                                request.getId(),
+                                request.getSourceSkillId(),
+                                "Skill A",
+                                "Skill A summary",
+                                "team-a",
+                                "skill-a",
+                                "1.0.0",
+                                3,
+                                2048L,
+                                7L,
+                                2,
+                                "global",
+                                request.getTargetSkillId(),
+                                request.getStatus().name(),
+                                request.getSubmittedBy(),
+                                "Submitter",
+                                request.getReviewedBy(),
+                                null,
+                                request.getReviewComment(),
+                                request.getSubmittedAt(),
+                                request.getReviewedAt()
+                        ))
+                        .toList()
+        );
     }
 
     private void stubNamespaceRoles(String userId, List<NamespaceMember> members) {
