@@ -18,6 +18,19 @@ spec:
       containers:
         - name: postgres
           image: postgres:16-alpine
+          # Legacy installations store PostgreSQL directly at the PVC root.
+          # Fresh ext4 volumes may contain lost+found, so initialize new clusters
+          # in a child directory without hiding an existing root-level cluster.
+          command:
+            - sh
+            - -ec
+            - |
+              if [ -f /var/lib/postgresql/data/PG_VERSION ]; then
+                export PGDATA=/var/lib/postgresql/data
+              else
+                export PGDATA=/var/lib/postgresql/data/pgdata
+              fi
+              exec docker-entrypoint.sh postgres
           ports:
             - containerPort: 5432
               name: postgres

@@ -11,6 +11,7 @@ interface User {
   avatarUrl?: string
   platformRoles?: string[]
   oauthProvider?: string
+  canChangePassword?: boolean
 }
 
 interface UserMenuProps {
@@ -30,7 +31,7 @@ export function UserMenu({ user, triggerClassName }: UserMenuProps) {
   const isUserAdmin = hasRole('USER_ADMIN') || hasRole('SUPER_ADMIN')
   const isAuditor = hasRole('AUDITOR') || hasRole('SUPER_ADMIN')
   const isSuperAdmin = hasRole('SUPER_ADMIN')
-  const isLocalAccount = !user.oauthProvider
+  const canChangePassword = user.canChangePassword === true
   const open = isHovered || isClickOpen
 
   const clearCloseTimer = () => {
@@ -170,7 +171,7 @@ export function UserMenu({ user, triggerClassName }: UserMenuProps) {
             <Link to="/settings/notifications" className={menuItemClassName} onClick={closeMenu}>
               {t('user.menu.notifications')}
             </Link>
-            {isLocalAccount ? (
+            {canChangePassword ? (
               <Link to="/settings/security" className={menuItemClassName} onClick={closeMenu}>
                 {t('user.menu.security')}
               </Link>

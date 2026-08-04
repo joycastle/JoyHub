@@ -14,6 +14,7 @@ import com.iflytek.skillhub.dto.LabelDefinitionResponse;
 import com.iflytek.skillhub.dto.LabelSortOrderItemRequest;
 import com.iflytek.skillhub.dto.LabelSortOrderUpdateRequest;
 import com.iflytek.skillhub.dto.LabelTranslationItemRequest;
+import com.iflytek.skillhub.observability.RequestIdAccessor;
 import java.time.Instant;
 import java.util.List;
 import java.util.Set;
@@ -40,7 +41,8 @@ class LabelAdminAppServiceTest {
             skillLabelService,
             auditLogService,
             rbacService,
-            labelSearchSyncService
+            labelSearchSyncService,
+            new RequestIdAccessor()
     );
 
     @Test

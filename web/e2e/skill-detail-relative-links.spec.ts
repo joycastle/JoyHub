@@ -28,8 +28,12 @@ test.describe('Skill Detail Relative Links (Real API)', () => {
         extraFiles: [
           {
             path: 'docs/usage.md',
-            content: '# Usage\n\nThis is linked documentation.',
+            content: '# Usage\n\nThis is linked documentation.\n\n[Nested](nested.md)',
           },
+          {
+            path: 'docs/nested.md',
+            content: '# Nested\n\nSecond-level linked documentation.',
+          }
         ],
       })
 
@@ -40,6 +44,11 @@ test.describe('Skill Detail Relative Links (Real API)', () => {
       await page.getByRole('link', { name: 'Usage' }).click()
       await expect(page.getByRole('dialog')).toContainText('usage.md')
       await expect(page.getByRole('dialog')).toContainText('This is linked documentation.')
+      await expect(page.getByRole('dialog').getByRole('link', { name: 'Nested' })).toBeVisible()
+
+      await page.getByRole('dialog').getByRole('link', { name: 'Nested' }).click()
+      await expect(page.getByRole('dialog')).toContainText('nested.md')
+      await expect(page.getByRole('dialog')).toContainText('Second-level linked documentation.')
 
       await page.getByRole('button', { name: 'Close' }).click()
       await expect(page.getByRole('dialog')).toBeHidden()

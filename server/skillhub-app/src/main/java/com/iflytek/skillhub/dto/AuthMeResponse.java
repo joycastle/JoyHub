@@ -10,15 +10,17 @@ public record AuthMeResponse(
         String email,
         String avatarUrl,
         String oauthProvider,
+        boolean canChangePassword,
         Set<String> platformRoles
 ) {
-    public static AuthMeResponse from(PlatformPrincipal principal) {
+    public static AuthMeResponse from(PlatformPrincipal principal, boolean canChangePassword) {
         return new AuthMeResponse(
                 principal.userId(),
                 principal.displayName(),
                 principal.email() != null ? principal.email() : "",
                 principal.avatarUrl() != null ? principal.avatarUrl() : "",
                 principal.oauthProvider(),
+                canChangePassword,
                 principal.platformRoles()
         );
     }

@@ -26,7 +26,10 @@ public class SkillScannerConfig {
 
     @Bean
     @ConditionalOnProperty(prefix = "skillhub.security.scanner", name = "enabled", havingValue = "true")
-    public HttpClient scannerHttpClient(SkillScannerProperties properties) {
+    public HttpClient scannerHttpClient(
+            WebClient.Builder webClientBuilder,
+            SkillScannerProperties properties
+    ) {
         int readTimeoutMs = properties.getReadTimeoutMs();
         int connectTimeoutMs = properties.getConnectTimeoutMs();
 
@@ -52,7 +55,7 @@ public class SkillScannerConfig {
                 .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(100 * 1024 * 1024))
                 .build();
 
-        WebClient webClient = WebClient.builder()
+        WebClient webClient = webClientBuilder.clone()
                 .clientConnector(new ReactorClientHttpConnector(reactorClient))
                 .exchangeStrategies(strategies)
                 .build();

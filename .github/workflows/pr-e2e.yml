@@ -37,6 +37,9 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Verify Kubernetes PostgreSQL data-directory compatibility
+        run: bash scripts/tests/k8s-postgres-storage-test.sh
+
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
         with:

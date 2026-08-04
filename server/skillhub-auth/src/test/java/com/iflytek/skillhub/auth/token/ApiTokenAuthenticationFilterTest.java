@@ -10,6 +10,7 @@ import com.iflytek.skillhub.domain.user.UserAccount;
 import com.iflytek.skillhub.domain.user.UserAccountRepository;
 import com.iflytek.skillhub.domain.user.UserStatus;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockFilterChain;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -42,6 +43,11 @@ class ApiTokenAuthenticationFilterTest {
         roleBindingRepository,
         scopeService
     );
+
+    @BeforeEach
+    void initializeSecurityContext() {
+        SecurityContextHolder.clearContext();
+    }
 
     @AfterEach
     void clearSecurityContext() {

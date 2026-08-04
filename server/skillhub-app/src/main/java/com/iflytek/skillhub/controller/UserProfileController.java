@@ -21,6 +21,7 @@ import com.iflytek.skillhub.dto.UpdateProfileRequest;
 import com.iflytek.skillhub.dto.UpdateProfileResponse;
 import com.iflytek.skillhub.dto.UserProfileResponse;
 import com.iflytek.skillhub.exception.UnauthorizedException;
+import com.iflytek.skillhub.observability.RequestIdAccessor;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.security.core.Authentication;
@@ -53,19 +54,22 @@ public class UserProfileController extends BaseApiController {
     private final ProfileChangeRequestRepository changeRequestRepository;
     private final PlatformSessionService platformSessionService;
     private final ProfileFieldPolicyConfig fieldPolicyConfig;
+    private final RequestIdAccessor requestIdAccessor;
 
     public UserProfileController(ApiResponseFactory responseFactory,
                                   UserProfileService userProfileService,
                                   UserAccountRepository userAccountRepository,
                                   ProfileChangeRequestRepository changeRequestRepository,
                                   PlatformSessionService platformSessionService,
-                                  ProfileFieldPolicyConfig fieldPolicyConfig) {
+                                  ProfileFieldPolicyConfig fieldPolicyConfig,
+                                  RequestIdAccessor requestIdAccessor) {
         super(responseFactory);
         this.userProfileService = userProfileService;
         this.userAccountRepository = userAccountRepository;
         this.changeRequestRepository = changeRequestRepository;
         this.platformSessionService = platformSessionService;
         this.fieldPolicyConfig = fieldPolicyConfig;
+        this.requestIdAccessor = requestIdAccessor;
     }
 
     /**
@@ -143,7 +147,7 @@ public class UserProfileController extends BaseApiController {
         UpdateProfileResult result = userProfileService.updateProfile(
                 principal.userId(),
                 changes,
-                httpRequest.getHeader("X-Request-Id"),
+                requestIdAccessor.current(),
                 resolveClientIp(httpRequest),
                 httpRequest.getHeader("User-Agent")
         );

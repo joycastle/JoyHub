@@ -8,6 +8,21 @@ data:
   # 使用内置 Redis（overlays/with-infra）：保持 redis
   redis-host: redis
   redis-port: "6379"
+  # 连接外部 Redis Cluster 时取消下面几行注释。Cluster 节点存在时，
+  # Spring Boot 会自动忽略上面的单机 host/port。
+  # redis-cluster-nodes: "redis-0.example.com:6379,redis-1.example.com:6379,redis-2.example.com:6379"
+  # redis-cluster-max-redirects: "5"
+  # redis-username: "skillhub"
+  # redis-ssl-enabled: "true"
+  # redis-connect-timeout: "5s"
+  # redis-timeout: "3s"
+  # redis-client-name: "skillhub"
+  # 连接外部 Redis Sentinel 时取消下面几行注释。Sentinel 配置优先于
+  # Cluster 和单机 host/port。
+  # redis-sentinel-master: "mymaster"
+  # redis-sentinel-nodes: "sentinel-0.example.com:26379,sentinel-1.example.com:26379,sentinel-2.example.com:26379"
+  # redis-sentinel-username: "sentinel-user"
+  # redis-sentinel-check-list: "true"
 
   # 技能存储路径
   storage-base-path: /var/lib/skillhub/storage

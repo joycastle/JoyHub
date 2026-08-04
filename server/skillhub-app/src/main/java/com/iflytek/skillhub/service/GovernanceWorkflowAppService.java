@@ -165,8 +165,13 @@ public class GovernanceWorkflowAppService {
         return promotionPortalAppService.rejectPromotion(promotionId, comment, userId, auditContext);
     }
 
-    public PageResponse<PromotionResponseDto> listPromotions(String status, int page, int size, String userId) {
-        return promotionPortalAppService.listPromotions(status, page, size, userId);
+    public PageResponse<PromotionResponseDto> listPromotions(String status,
+                                                             int page,
+                                                             int size,
+                                                             String sortBy,
+                                                             String sortDirection,
+                                                             String userId) {
+        return promotionPortalAppService.listPromotions(status, page, size, sortBy, sortDirection, userId);
     }
 
     public PageResponse<PromotionResponseDto> listPendingPromotions(int page, int size, String userId) {

@@ -6,7 +6,10 @@ import com.iflytek.skillhub.domain.security.ScanTaskProducer;
 import com.iflytek.skillhub.domain.security.SecurityScanService;
 import com.iflytek.skillhub.domain.security.SecurityScanner;
 import com.iflytek.skillhub.domain.skill.SkillVersionRepository;
+import com.iflytek.skillhub.observability.MessageObservationSupport;
+import com.iflytek.skillhub.observability.RequestIdAccessor;
 import com.iflytek.skillhub.storage.ObjectStorageService;
+import io.micrometer.observation.ObservationRegistry;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -25,7 +28,8 @@ class ScanTaskConsumerPathSafetyTest {
                 org.mockito.Mockito.mock(SecurityScanService.class),
                 org.mockito.Mockito.mock(SkillVersionRepository.class),
                 org.mockito.Mockito.mock(ScanTaskProducer.class),
-                org.mockito.Mockito.mock(ObjectStorageService.class)
+                org.mockito.Mockito.mock(ObjectStorageService.class),
+                new MessageObservationSupport(ObservationRegistry.NOOP, new RequestIdAccessor())
         );
         Path outsideFile = Files.createTempFile("scan-cleanup-", ".txt");
         Files.writeString(outsideFile, "keep");

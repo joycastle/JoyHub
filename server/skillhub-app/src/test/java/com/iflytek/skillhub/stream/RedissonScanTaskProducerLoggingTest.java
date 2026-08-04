@@ -5,6 +5,9 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import com.iflytek.skillhub.domain.security.ScanTask;
+import com.iflytek.skillhub.observability.MessageObservationSupport;
+import com.iflytek.skillhub.observability.RequestIdAccessor;
+import io.micrometer.observation.ObservationRegistry;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.redisson.api.RStream;
@@ -43,7 +46,11 @@ class RedissonScanTaskProducerLoggingTest {
         RedissonClient redissonClient = mock(RedissonClient.class);
         doReturn(typedStream).when(redissonClient).getStream("skillhub:scan:requests", StringCodec.INSTANCE);
         when(stream.add(any())).thenReturn(new StreamMessageId(1, 0));
-        RedissonScanTaskProducer producer = new RedissonScanTaskProducer(redissonClient, "skillhub:scan:requests");
+        RedissonScanTaskProducer producer = new RedissonScanTaskProducer(
+                redissonClient,
+                "skillhub:scan:requests",
+                new MessageObservationSupport(ObservationRegistry.NOOP, new RequestIdAccessor())
+        );
         attachAppender();
 
         producer.publishScanTask(new ScanTask(

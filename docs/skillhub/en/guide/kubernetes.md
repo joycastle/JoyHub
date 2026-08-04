@@ -63,6 +63,8 @@ cp secret.yaml.example secret.yaml
 | oauth2-github-client-id | GitHub OAuth ID | No |
 | oauth2-github-client-secret | GitHub OAuth secret | No |
 | skill-scanner-llm-api-key | LLM API key | No |
+| skill-scanner-llm-base-url | Local/custom LLM service base URL | No |
+| skill-scanner-llm-model | LLM model name used by the scanner | No |
 
 ### 3. Choose Deployment Method
 
@@ -211,6 +213,12 @@ skillhub-storage-s3-secret-key: your-secret-key
 - name: SKILLHUB_STORAGE_S3_REGION
   value: us-east-1
 ```
+
+### PostgreSQL data-directory compatibility
+
+The `with-infra` overlay checks the PostgreSQL PVC root at startup. If `PG_VERSION` already exists there, the legacy root-level cluster remains in use. Otherwise, a new cluster is initialized under `pgdata/`, avoiding the `lost+found` directory that can block `initdb` on a fresh ext4 volume. Existing installations do not need to move their database files during upgrade.
+
+When rolling back to an older manifest without this detection, keep the current startup command or set `PGDATA=/var/lib/postgresql/data/pgdata` explicitly if the cluster lives under `pgdata/`. Do not move an active database directory back to the PVC root by hand.
 
 ### Image Reference
 

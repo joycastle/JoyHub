@@ -30,6 +30,13 @@ vi.mock('@/shared/hooks/use-user-queries', () => ({
   }),
 }))
 
+vi.mock('@/shared/hooks/use-skill-repositories', () => ({
+  useSkillRepositories: () => ({
+    data: [{ slug: 'global', displayName: 'JoyHub公共库', defaultRepository: true }],
+    isLoading: false,
+  }),
+}))
+
 vi.mock('@/shared/lib/skill-lifecycle', () => ({
   getHeadlineVersion: () => null,
 }))

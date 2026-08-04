@@ -1,5 +1,8 @@
 package com.iflytek.skillhub.stream;
 
+import com.iflytek.skillhub.observability.MessageObservationSupport;
+import com.iflytek.skillhub.observability.RequestIdAccessor;
+import io.micrometer.observation.ObservationRegistry;
 import io.lettuce.core.RedisBusyException;
 import org.junit.jupiter.api.Test;
 import org.redisson.api.AutoClaimResult;
@@ -105,6 +108,25 @@ class AbstractStreamConsumerTest {
     }
 
     @Test
+    void handleMessage_restoresPropagatedRequestIdOnlyWhileProcessing() {
+        @SuppressWarnings("unchecked")
+        RStream<String, String> stream = mock(RStream.class);
+        RequestIdAccessor requestIdAccessor = new RequestIdAccessor();
+        TestConsumer consumer = new TestConsumer(stream, requestIdAccessor);
+
+        consumer.handleMessage(
+                new StreamMessageId(8, 0),
+                Map.of(
+                        "payload", "correlated",
+                        MessageObservationSupport.REQUEST_ID_FIELD, "request-stream-1"
+                )
+        );
+
+        assertThat(consumer.processedRequestId).isEqualTo("request-stream-1");
+        assertThat(requestIdAccessor.current()).isNull();
+    }
+
+    @Test
     void detectsBusyGroupWhenWrappedInRedisSystemException() {
         RedisSystemException wrapped = new RedisSystemException(
                 "Error in execution",
@@ -116,11 +138,27 @@ class AbstractStreamConsumerTest {
 
     private static class TestConsumer extends AbstractStreamConsumer<String> {
         private final RStream<String, String> stream;
+        private final RequestIdAccessor requestIdAccessor;
         private boolean fail;
+        private String processedRequestId;
 
         private TestConsumer(RStream<String, String> stream) {
-            super(mock(RedissonClient.class), "scan-stream", "scan-group", true, Duration.ofMinutes(2), 20, Duration.ofSeconds(30));
+            this(stream, new RequestIdAccessor());
+        }
+
+        private TestConsumer(RStream<String, String> stream, RequestIdAccessor requestIdAccessor) {
+            super(
+                    mock(RedissonClient.class),
+                    "scan-stream",
+                    "scan-group",
+                    true,
+                    Duration.ofMinutes(2),
+                    20,
+                    Duration.ofSeconds(30),
+                    new MessageObservationSupport(ObservationRegistry.NOOP, requestIdAccessor)
+            );
             this.stream = stream;
+            this.requestIdAccessor = requestIdAccessor;
         }
 
         @Override
@@ -154,6 +192,7 @@ class AbstractStreamConsumerTest {
 
         @Override
         protected void processBusiness(String payload) {
+            processedRequestId = requestIdAccessor.current();
             if (fail) {
                 throw new IllegalStateException("boom");
             }

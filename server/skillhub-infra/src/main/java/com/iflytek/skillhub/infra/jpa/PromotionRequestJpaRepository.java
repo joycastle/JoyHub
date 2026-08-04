@@ -3,6 +3,7 @@ package com.iflytek.skillhub.infra.jpa;
 import com.iflytek.skillhub.domain.review.PromotionRequest;
 import com.iflytek.skillhub.domain.review.PromotionRequestRepository;
 import com.iflytek.skillhub.domain.review.ReviewTaskStatus;
+import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -10,7 +11,6 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import java.util.Optional;
 
 /**
  * JPA-backed repository for promotion requests, including optimistic status updates.
@@ -24,6 +24,34 @@ public interface PromotionRequestJpaRepository extends JpaRepository<PromotionRe
     Optional<PromotionRequest> findBySourceSkillIdAndStatus(Long sourceSkillId, ReviewTaskStatus status);
 
     Page<PromotionRequest> findByStatus(ReviewTaskStatus status, Pageable pageable);
+
+    @Query(
+            value = """
+                SELECT p
+                FROM PromotionRequest p
+                WHERE p.status = :status
+                ORDER BY CASE WHEN p.reviewedAt IS NULL THEN 1 ELSE 0 END ASC,
+                         p.reviewedAt ASC,
+                         p.id ASC
+            """,
+            countQuery = "SELECT COUNT(p) FROM PromotionRequest p WHERE p.status = :status"
+    )
+    Page<PromotionRequest> findHistoryByStatusOrderByReviewedAtAsc(@Param("status") ReviewTaskStatus status,
+                                                                   Pageable pageable);
+
+    @Query(
+            value = """
+                SELECT p
+                FROM PromotionRequest p
+                WHERE p.status = :status
+                ORDER BY CASE WHEN p.reviewedAt IS NULL THEN 1 ELSE 0 END ASC,
+                         p.reviewedAt DESC,
+                         p.id DESC
+            """,
+            countQuery = "SELECT COUNT(p) FROM PromotionRequest p WHERE p.status = :status"
+    )
+    Page<PromotionRequest> findHistoryByStatusOrderByReviewedAtDesc(@Param("status") ReviewTaskStatus status,
+                                                                    Pageable pageable);
 
     boolean existsByTargetNamespaceId(Long targetNamespaceId);
 

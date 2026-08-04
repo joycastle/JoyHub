@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'bun:test'
 import { CliError } from '../../../src/shared/errors'
+import { EXIT } from '../../../src/shared/constants'
 import {
   computeStrictIsTTY,
   installCommand,
@@ -135,6 +136,63 @@ describe('installCommand dependency injection', () => {
   function fakeInstallSkill(): NonNullable<InstallCommandDeps['installSkill']> {
     return async () => ({ installed: [{ agent: 'codex', dir: '/home/u/.codex/skills/foo' }] })
   }
+
+  function fakeResolveInstallTargets(): NonNullable<InstallCommandDeps['resolveInstallTargets']> {
+    return async () => [{
+      agent: 'codex',
+      rootDir: '/home/u/.codex/skills',
+      scope: 'user',
+      source: 'explicit'
+    }] as AgentCandidate[]
+  }
+
+  test('passes a namespaced coordinate to installSkill', async () => {
+    let received: Parameters<NonNullable<InstallCommandDeps['installSkill']>>[0] | undefined
+    const deps: InstallCommandDeps = {
+      isTTY: () => false,
+      resolveInstallTargets: fakeResolveInstallTargets(),
+      installSkill: async (options) => {
+        received = options
+        return { installed: [{ agent: 'codex', dir: '/home/u/.codex/skills/my-skill' }] }
+      }
+    }
+
+    await installCommand('@team/my-skill', {
+      registry: 'http://localhost',
+      token: 'sk'
+    }, deps)
+
+    expect(received).toMatchObject({
+      namespace: 'team',
+      slug: 'my-skill'
+    })
+  })
+
+  test('rejects a conflicting namespace before installing', async () => {
+    let installCalls = 0
+    let error: unknown
+    const deps: InstallCommandDeps = {
+      isTTY: () => false,
+      resolveInstallTargets: fakeResolveInstallTargets(),
+      installSkill: async () => {
+        installCalls += 1
+        return { installed: [] }
+      }
+    }
+
+    try {
+      await installCommand('@team/my-skill', {
+        namespace: 'other',
+        registry: 'http://localhost',
+        token: 'sk'
+      }, deps)
+    } catch (caught) {
+      error = caught
+    }
+    expect(error).toBeInstanceOf(CliError)
+    expect((error as CliError).exitCode).toBe(EXIT.usage)
+    expect(installCalls).toBe(0)
+  })
 
   test('passes prompted scope and strict isTTY into resolveInstallTargets', async () => {
     const calls: { promptScope: number; resolverCalls: ResolveInstallTargetOptions[] } = {

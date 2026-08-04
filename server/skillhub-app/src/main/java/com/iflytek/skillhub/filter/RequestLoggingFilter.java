@@ -16,7 +16,6 @@ import org.springframework.web.util.ContentCachingRequestWrapper;
 import org.springframework.web.util.ContentCachingResponseWrapper;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.Set;
 
 /**
@@ -27,8 +26,6 @@ import java.util.Set;
 public class RequestLoggingFilter extends OncePerRequestFilter {
 
     private static final Logger log = LoggerFactory.getLogger(RequestLoggingFilter.class);
-    private static final int MAX_LOG_BODY_LENGTH = 200;
-
     private static final Set<String> SKIP_PREFIXES = Set.of(
             "/actuator", "/favicon.ico", "/assets/"
     );
@@ -85,11 +82,6 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
             sb.append(" | UA: ").append(truncate(userAgent, 80));
         }
 
-        String requestBody = getRequestBody(request);
-        if (requestBody != null && !requestBody.isBlank()) {
-            sb.append(" | Body: ").append(requestBody);
-        }
-
         log.info(sb.toString());
     }
 
@@ -115,18 +107,6 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
         response.setContentType(MediaType.TEXT_EVENT_STREAM_VALUE);
         response.setHeader(HttpHeaders.CACHE_CONTROL, "no-cache, no-transform");
         response.setHeader("X-Accel-Buffering", "no");
-    }
-
-    private String getRequestBody(ContentCachingRequestWrapper request) {
-        byte[] buf = request.getContentAsByteArray();
-        if (buf.length > 0) {
-            try {
-                return truncate(new String(buf, request.getCharacterEncoding()), MAX_LOG_BODY_LENGTH);
-            } catch (UnsupportedEncodingException e) {
-                return "[unknown encoding]";
-            }
-        }
-        return null;
     }
 
     private String truncate(String value, int maxLength) {

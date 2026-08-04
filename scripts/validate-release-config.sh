@@ -126,6 +126,74 @@ validate_min_length() {
   fi
 }
 
+validate_non_negative_integer() {
+  var_name="$1"
+  eval "var_value=\${$var_name:-}"
+  case "$var_value" in
+    "") ;;
+    *[!0-9]*) error "$var_name must be a non-negative integer" ;;
+  esac
+}
+
+validate_redis_nodes() {
+  var_name="$1"
+  eval "nodes=\${$var_name:-}"
+  if [ -z "$nodes" ]; then
+    return 0
+  fi
+
+  old_ifs="$IFS"
+  IFS=","
+  for node in $nodes; do
+    host=${node%:*}
+    port=${node##*:}
+    if [ -z "$host" ] || [ "$host" = "$node" ]; then
+      error "$var_name entries must use host:port"
+      continue
+    fi
+    case "$host" in
+      *[!A-Za-z0-9._-]*)
+        error "$var_name contains an invalid host: $host"
+        ;;
+    esac
+    case "$port" in
+      *[!0-9]*|"")
+        error "$var_name contains an invalid port: $node"
+        ;;
+      *)
+        if [ "$port" -lt 1 ] || [ "$port" -gt 65535 ]; then
+          error "$var_name port must be between 1 and 65535: $node"
+        fi
+        ;;
+    esac
+  done
+  IFS="$old_ifs"
+}
+
+validate_redis_sentinel_configuration() {
+  master="${SPRING_DATA_REDIS_SENTINEL_MASTER:-}"
+  nodes="${SPRING_DATA_REDIS_SENTINEL_NODES:-}"
+
+  if [ -n "$master" ] && [ -z "$nodes" ]; then
+    error "SPRING_DATA_REDIS_SENTINEL_NODES is required when SPRING_DATA_REDIS_SENTINEL_MASTER is set"
+  fi
+  if [ -n "$nodes" ] && [ -z "$master" ]; then
+    error "SPRING_DATA_REDIS_SENTINEL_MASTER is required when SPRING_DATA_REDIS_SENTINEL_NODES is set"
+  fi
+  validate_redis_nodes SPRING_DATA_REDIS_SENTINEL_NODES
+}
+
+validate_redis_cluster_database() {
+  if [ -z "${SPRING_DATA_REDIS_CLUSTER_NODES:-}" ]; then
+    return 0
+  fi
+
+  case "${SPRING_DATA_REDIS_DATABASE:-0}" in
+    0) ;;
+    *) error "SPRING_DATA_REDIS_DATABASE must be 0 when SPRING_DATA_REDIS_CLUSTER_NODES is set" ;;
+  esac
+}
+
 require_non_empty SKILLHUB_PUBLIC_BASE_URL
 validate_url SKILLHUB_PUBLIC_BASE_URL
 validate_no_trailing_slash SKILLHUB_PUBLIC_BASE_URL
@@ -151,13 +219,21 @@ reject_patterns SPRING_MAIL_PASSWORD "TODO_*" "todo_*" "replace*"
 
 validate_boolean SESSION_COOKIE_SECURE
 validate_boolean BOOTSTRAP_ADMIN_ENABLED
+validate_boolean SKILLHUB_TRUST_FORWARDED_PROTO
+validate_boolean SKILLHUB_BUILTIN_SKILLS_ENABLED
 validate_boolean SKILLHUB_STORAGE_S3_FORCE_PATH_STYLE
 validate_boolean SKILLHUB_STORAGE_S3_AUTO_CREATE_BUCKET
+validate_boolean SPRING_DATA_REDIS_SSL_ENABLED
+validate_boolean SKILLHUB_REDIS_SENTINEL_CHECK_SENTINELS_LIST
 
 validate_port POSTGRES_PORT
 validate_port REDIS_PORT
 validate_port API_PORT
 validate_port WEB_PORT
+validate_non_negative_integer SPRING_DATA_REDIS_CLUSTER_MAX_REDIRECTS
+validate_redis_nodes SPRING_DATA_REDIS_CLUSTER_NODES
+validate_redis_cluster_database
+validate_redis_sentinel_configuration
 
 require_non_empty POSTGRES_DB
 require_non_empty POSTGRES_USER

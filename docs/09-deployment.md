@@ -107,7 +107,56 @@ docker compose --env-file .env.release -f compose.release.yml up -d
 - Web UI: `SKILLHUB_PUBLIC_BASE_URL`
 - Backend API: `http://localhost:8080`
 
-### 5.2 关键文件
+### 5.2 连接外部 Redis Cluster
+
+发布 Compose 默认仍使用内置单机 Redis。连接外部 Redis Cluster 时，在
+`.env.release` 中设置标准 Spring Boot 配置，不需要额外的模式开关：
+
+```dotenv
+SPRING_DATA_REDIS_CLUSTER_NODES=redis-0.example.com:6379,redis-1.example.com:6379,redis-2.example.com:6379
+SPRING_DATA_REDIS_CLUSTER_MAX_REDIRECTS=5
+SPRING_DATA_REDIS_USERNAME=skillhub
+SPRING_DATA_REDIS_PASSWORD=replace-with-secret
+SPRING_DATA_REDIS_SSL_ENABLED=true
+SPRING_DATA_REDIS_CONNECT_TIMEOUT=5s
+SPRING_DATA_REDIS_TIMEOUT=3s
+```
+
+Cluster 节点返回给客户端的所有地址必须能从 `server` 容器访问。Redis Cluster
+只支持数据库 `0`；不要为 Cluster 设置非零的
+`SPRING_DATA_REDIS_DATABASE`。配置 Cluster 节点后，Spring Boot 自动忽略单机
+`host`/`port`，Compose 中的内置 Redis 容器仍会启动，但不会被 Server 使用。
+
+对真实 Cluster 运行功能检查：
+
+```bash
+REDIS_CLUSTER_TEST_NODES=redis-0.example.com:6379,redis-1.example.com:6379,redis-2.example.com:6379 \
+REDIS_CLUSTER_TEST_USERNAME=skillhub \
+REDIS_CLUSTER_TEST_PASSWORD=replace-with-secret \
+make test-redis-cluster
+```
+
+该检查覆盖 Spring Data 读写、Spring Session 保存/读取/删除和 Redisson Stream。
+
+### 5.3 连接外部 Redis Sentinel
+
+Sentinel 使用标准 Spring Boot 配置。数据节点和 Sentinel 可以使用不同 ACL：
+
+```dotenv
+SPRING_DATA_REDIS_SENTINEL_MASTER=mymaster
+SPRING_DATA_REDIS_SENTINEL_NODES=sentinel-0.example.com:26379,sentinel-1.example.com:26379,sentinel-2.example.com:26379
+SPRING_DATA_REDIS_USERNAME=skillhub
+SPRING_DATA_REDIS_PASSWORD=replace-with-data-node-secret
+SPRING_DATA_REDIS_SENTINEL_USERNAME=sentinel-user
+SPRING_DATA_REDIS_SENTINEL_PASSWORD=replace-with-sentinel-secret
+SKILLHUB_REDIS_SENTINEL_CHECK_SENTINELS_LIST=true
+```
+
+Sentinel 配置优先于 Cluster 和单机 `host`/`port`。在 Kubernetes 等 Sentinel
+返回地址与客户端入口不一致的环境中，可以将
+`SKILLHUB_REDIS_SENTINEL_CHECK_SENTINELS_LIST` 设为 `false`。
+
+### 5.4 关键文件
 
 - `compose.release.yml`
   - 使用发布镜像，不在用户机器上执行本地构建
@@ -121,7 +170,7 @@ docker compose --env-file .env.release -f compose.release.yml up -d
   - 在启动前校验 `.env.release`
   - 可提前拦截占位值、URL 格式错误、缺失的 OSS 凭据、危险的明文默认值
 
-### 5.3 镜像标签约定
+### 5.5 镜像标签约定
 
 - `edge`
   - `main` 分支最新构建
@@ -194,6 +243,9 @@ docker compose --env-file .env.release -f compose.release.yml up -d
 - 推荐将敏感变量放入 CI/CD Secret 或主机上的受控 `.env.release`
 - 外部对象存储通过 `SKILLHUB_STORAGE_S3_*` 注入
 - 前端反代和运行时 API 地址通过 `SKILLHUB_API_UPSTREAM` / `SKILLHUB_WEB_API_BASE_URL` 注入
+- `SKILLHUB_TRUST_FORWARDED_PROTO` 默认保持 `false`。只有 Web 容器仅能经由可信
+  TLS 终止代理访问，且该代理会覆盖客户端传入的 `X-Forwarded-Proto` 时才设为
+  `true`；否则客户端可伪造协议并影响 OAuth 回调、重定向和安全 Cookie 判断
 - 如果要开放真实登录，再补充 `OAUTH2_GITHUB_CLIENT_ID` / `OAUTH2_GITHUB_CLIENT_SECRET`
 - 如果要启用密码重置验证码邮件，参见：`docs/19-smtp-password-reset-email-setup.md`
 
@@ -268,8 +320,136 @@ override 或部署平台环境变量把上述 `SPRING_SECURITY_*` 变量注入 `
 | 维度 | 方案 |
 |------|------|
 | 健康检查 | `web/nginx-health`、`server/actuator/health` |
-| 日志 | 容器 stdout / stderr |
-| 指标 | Spring Boot Actuator，后续可接 Prometheus |
+| 请求关联 | 响应头和日志中的 `X-Request-Id` / `request.id` |
+| 日志 | 文本或 ECS 风格 JSON，均输出到容器 stdout / stderr |
+| Trace | `none`、Micrometer + OTel SDK、或外部 Java Agent 三选一 |
+| 指标 | Spring Boot Actuator；Prometheus 是可选后端，不是 Trace 前置条件 |
+
+### 10.1 通用配置
+
+默认配置不要求 Collector、SkyWalking 或 Elasticsearch：
+
+```dotenv
+SKILLHUB_TRACING_MODE=none
+SKILLHUB_LOG_FORMAT=json
+SKILLHUB_SERVICE_VERSION=v0.2.15
+SKILLHUB_SERVICE_ENVIRONMENT=production
+```
+
+发布 Compose 默认使用 ECS 风格 JSON，由 Filebeat、Fluent Bit 或容器平台采集 stdout。
+本地源码开发仍可使用 `SKILLHUB_LOG_FORMAT=text`。SkillHub 不直接连接 Elasticsearch。
+JSON 日志使用以下稳定字段：
+
+- `request.id`：SkillHub 请求、响应和审计关联 ID。
+- `trace.id`、`span.id`：当前存在有效 Trace 时输出。
+- `service.name`、`service.version`、`service.environment`。
+
+`SKILLHUB_LOG_ASYNC_QUEUE_SIZE` 默认是 `1024`。JSON 日志队列是有界且非阻塞的；采集端
+阻塞时允许丢弃日志以保护业务线程，数据库中的 `audit_log` 仍是审计事实来源。
+
+### 10.2 三种 Tracing 模式
+
+三种模式只能选择一种，切换后需要重启：
+
+| 模式 | 适用场景 | 必需配置 |
+|------|----------|----------|
+| `none` | 不部署链路追踪 | `SKILLHUB_TRACING_MODE=none` |
+| `otel-sdk` | 厂商中立 OTLP/Collector | 模式、采样率；需要导出时再配置 endpoint |
+| `external-agent` | 使用 SkyWalking Agent 原生能力 | 模式、唯一的外部 Agent；不得配置 OTLP endpoint |
+
+OTel SDK 模式的最小配置：
+
+```dotenv
+SKILLHUB_TRACING_MODE=otel-sdk
+SKILLHUB_LOG_FORMAT=json
+SKILLHUB_TRACING_SAMPLING_PROBABILITY=0.1
+MANAGEMENT_OTLP_TRACING_ENDPOINT=http://otel-collector:4318/v1/traces
+SKILLHUB_OTLP_TIMEOUT=5s
+SKILLHUB_OTLP_COMPRESSION=gzip
+```
+
+未设置 `MANAGEMENT_OTLP_TRACING_ENDPOINT` 时，`otel-sdk` 仍可建立进程内 Trace，但不会
+创建 OTLP Exporter，也不会尝试连接默认地址。`none` 或 `external-agent` 模式配置
+endpoint 会启动失败。
+
+External Agent 模式的应用侧配置：
+
+```dotenv
+SKILLHUB_TRACING_MODE=external-agent
+SKILLHUB_LOG_FORMAT=json
+```
+
+部署平台还必须通过 JVM 启动参数挂载且只挂载一个 Agent。SkillHub 无法可靠识别任意
+Java Agent，因此上线前应检查实际 `JAVA_TOOL_OPTIONS` 或容器启动命令，确认没有同时启用
+OTel Agent、SkyWalking Agent 和应用内 `otel-sdk`。SkyWalking Agent 模式可以通过官方
+Logback Toolkit 输出 `trace.id`；`span.id` 是否可用取决于 Agent 版本。
+
+### 10.3 OTel Collector 接入 SkyWalking
+
+下面是只转发 Trace 的最小 Collector 配置：
+
+```yaml
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch: {}
+
+exporters:
+  otlp/skywalking:
+    endpoint: skywalking-oap:11800
+    tls:
+      insecure: true
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp/skywalking]
+```
+
+SkyWalking OAP 10.3 还需要启用 OTLP Trace handler、Zipkin receiver 和 Zipkin query：
+
+```dotenv
+SW_OTEL_RECEIVER_ENABLED_HANDLERS=otlp-traces
+SW_RECEIVER_ZIPKIN=default
+SW_QUERY_ZIPKIN=default
+```
+
+应用使用 Collector 的 OTLP/HTTP `4318` 端口，Collector 使用 OAP 的 OTLP/gRPC
+`11800` 端口。生产环境应按网络边界配置 TLS；上例中的 `insecure: true` 只适用于受控的
+容器内部网络。
+
+SkyWalking 10.3 会把 OTLP Trace 转换为 Zipkin Trace，并通过 Zipkin Query/Lens 查询。
+这条路径不提供 SkyWalking Java Agent 的完整原生拓扑、慢 SQL 和 Profiling 能力。需要
+这些能力时使用 `external-agent`，不要同时启用 `otel-sdk`。
+
+### 10.4 日志与 Trace 联查
+
+JSON 日志由采集器写入 Elasticsearch 后，在 Kibana 通过 `trace.id` 查询；同一个
+`trace.id` 可在 SkyWalking 的 Zipkin Query/Lens 或 Agent 原生查询界面中定位调用链。
+`request.id` 始终可以用于 SkillHub 内部日志和审计关联。
+
+当采样率小于 `1.0` 时，日志仍是全量输出，因此部分日志虽有请求关联信息，但在
+SkyWalking 中没有被保留的 Trace。这是头部采样的预期行为。
+
+### 10.5 回滚
+
+遇到观测后端异常时：
+
+1. 将 `SKILLHUB_TRACING_MODE` 改为 `none`。
+2. 删除 `MANAGEMENT_OTLP_TRACING_ENDPOINT`。
+3. 需要进一步降低日志开销时，将 `SKILLHUB_LOG_FORMAT` 改为 `text`。
+4. 滚动重启 Server。
+
+关闭 Trace 和 JSON 日志不会改变请求、数据库或异步任务的业务语义。
+
+开发者接入统一标准的最小步骤、内部/外部 HTTP Client 传播边界和扩展点见：
+[可观测性开发者接入指南](./observability-developer-guide.md)。
 
 ## 11 安全扫描服务
 

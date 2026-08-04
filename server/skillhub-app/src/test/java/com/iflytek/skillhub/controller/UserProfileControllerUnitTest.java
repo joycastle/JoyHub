@@ -10,6 +10,7 @@ import com.iflytek.skillhub.domain.user.UserAccount;
 import com.iflytek.skillhub.domain.user.UserAccountRepository;
 import com.iflytek.skillhub.domain.user.UserProfileService;
 import com.iflytek.skillhub.dto.ApiResponseFactory;
+import com.iflytek.skillhub.observability.RequestIdAccessor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -54,9 +55,11 @@ class UserProfileControllerUnitTest {
     void setUp() {
         StaticMessageSource messageSource = new StaticMessageSource();
         messageSource.addMessage("response.success.read", Locale.getDefault(), "response.success.read");
+        RequestIdAccessor requestIdAccessor = new RequestIdAccessor();
         ApiResponseFactory responseFactory = new ApiResponseFactory(
                 messageSource,
-                Clock.fixed(Instant.parse("2026-03-19T08:00:00Z"), ZoneOffset.UTC)
+                Clock.fixed(Instant.parse("2026-03-19T08:00:00Z"), ZoneOffset.UTC),
+                requestIdAccessor
         );
         controller = new UserProfileController(
                 responseFactory,
@@ -64,7 +67,8 @@ class UserProfileControllerUnitTest {
                 userAccountRepository,
                 changeRequestRepository,
                 platformSessionService,
-                fieldPolicyConfig
+                fieldPolicyConfig,
+                requestIdAccessor
         );
         given(fieldPolicyConfig.fieldPolicies()).willReturn(Map.of(
                 "displayName", new ProfileFieldPolicyConfig.FieldPolicy(true, false),

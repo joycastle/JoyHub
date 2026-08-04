@@ -6,6 +6,7 @@ import com.iflytek.skillhub.domain.review.PromotionRequest;
 import com.iflytek.skillhub.domain.review.PromotionRequestRepository;
 import com.iflytek.skillhub.domain.review.PromotionService;
 import com.iflytek.skillhub.dto.PromotionResponseDto;
+import com.iflytek.skillhub.observability.RequestIdAccessor;
 import com.iflytek.skillhub.repository.GovernanceQueryRepository;
 import java.lang.reflect.Field;
 import java.util.Set;
@@ -47,7 +48,8 @@ class PromotionPortalAppServiceTest {
                 promotionRequestRepository,
                 governanceQueryRepository,
                 rbacService,
-                auditLogService
+                auditLogService,
+                new RequestIdAccessor()
         );
     }
 
@@ -136,9 +138,15 @@ class PromotionPortalAppServiceTest {
         return new PromotionResponseDto(
                 request.getId(),
                 request.getSourceSkillId(),
+                "Skill A",
+                "Skill A summary",
                 "team-a",
                 "skill-a",
                 "1.0.0",
+                3,
+                2048L,
+                7L,
+                2,
                 "global",
                 request.getTargetSkillId(),
                 request.getStatus().name(),

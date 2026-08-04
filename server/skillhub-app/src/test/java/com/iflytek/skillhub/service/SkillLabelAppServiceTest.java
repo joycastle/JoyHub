@@ -15,6 +15,7 @@ import com.iflytek.skillhub.domain.skill.SkillRepository;
 import com.iflytek.skillhub.domain.skill.SkillVisibility;
 import com.iflytek.skillhub.domain.skill.VisibilityChecker;
 import com.iflytek.skillhub.domain.skill.service.SkillSlugResolutionService;
+import com.iflytek.skillhub.observability.RequestIdAccessor;
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
@@ -70,7 +71,8 @@ class SkillLabelAppServiceTest {
                 rbacService,
                 auditLogService,
                 labelSearchSyncService,
-                skillSlugResolutionService
+                skillSlugResolutionService,
+                new RequestIdAccessor()
         );
     }
 

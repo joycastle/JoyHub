@@ -1,4 +1,4 @@
-import { access, mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises'
+import { access, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, test } from 'bun:test'
@@ -70,6 +70,62 @@ describe('installSkill', () => {
       targets: [{ agent: 'codex', rootDir, scope: 'project', source: 'explicit' }],
       force: false
     })).rejects.toThrow('skill already installed')
+  })
+
+  test('preflights all targets before writing when a later target is occupied', async () => {
+    globalThis.fetch = installFetch({ 'SKILL.md': '# Demo' })
+    const home = await mkdtemp(join(tmpdir(), 'skillhub-install-home-'))
+    const firstRoot = await mkdtemp(join(tmpdir(), 'skillhub-install-first-root-'))
+    const secondRoot = await mkdtemp(join(tmpdir(), 'skillhub-install-second-root-'))
+    const firstSkillDir = join(firstRoot, 'demo')
+    const secondSkillDir = join(secondRoot, 'demo')
+    await mkdir(secondSkillDir, { recursive: true })
+
+    await expect(installSkill({
+      registry: 'http://registry.test',
+      namespace: 'global',
+      slug: 'demo',
+      targets: [
+        { agent: 'codex', rootDir: firstRoot, scope: 'project', source: 'explicit' },
+        { agent: 'claude-code', rootDir: secondRoot, scope: 'project', source: 'explicit' }
+      ],
+      force: false,
+      home
+    })).rejects.toThrow(`skill already installed at ${secondSkillDir}`)
+
+    expect(await exists(firstSkillDir)).toBe(false)
+    expect(await exists(join(home, '.skillhub', 'inventory.json'))).toBe(false)
+  })
+
+  test('rejects canonical target aliases before writing any installation', async () => {
+    globalThis.fetch = installFetch({ 'SKILL.md': '# Demo' })
+    const home = await mkdtemp(join(tmpdir(), 'skillhub-install-home-'))
+    const targetParent = await mkdtemp(join(tmpdir(), 'skillhub-install-targets-'))
+    const genericRoot = join(targetParent, 'generic')
+    const codexRoot = join(targetParent, 'codex')
+    const skillDir = join(genericRoot, 'demo')
+    try {
+      await mkdir(genericRoot, { recursive: true })
+      await symlink(genericRoot, codexRoot, process.platform === 'win32' ? 'junction' : 'dir')
+
+      await expect(installSkill({
+        registry: 'http://registry.test',
+        namespace: 'global',
+        slug: 'demo',
+        targets: [
+          { agent: 'codex', rootDir: codexRoot, scope: 'user', source: 'detected' },
+          { agent: 'generic', rootDir: genericRoot, scope: 'user', source: 'fallback' }
+        ],
+        force: false,
+        home
+      })).rejects.toThrow('multiple install targets resolve to')
+
+      expect(await exists(skillDir)).toBe(false)
+      expect(await exists(join(home, '.skillhub', 'inventory.json'))).toBe(false)
+    } finally {
+      await rm(home, { recursive: true, force: true })
+      await rm(targetParent, { recursive: true, force: true })
+    }
   })
 
   test('force replaces the old skill directory instead of overlaying files', async () => {

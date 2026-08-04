@@ -1,18 +1,17 @@
 package com.iflytek.skillhub.exception;
 
 import com.iflytek.skillhub.auth.exception.AuthFlowException;
-import com.iflytek.skillhub.auth.rbac.PlatformPrincipal;
 import com.iflytek.skillhub.dto.ApiResponse;
 import com.iflytek.skillhub.dto.ApiResponseFactory;
 import com.iflytek.skillhub.domain.shared.exception.LocalizedDomainException;
 import com.iflytek.skillhub.domain.shared.exception.LocalizedMessage;
 import com.iflytek.skillhub.metrics.SkillHubMetrics;
+import com.iflytek.skillhub.observability.RequestIdAccessor;
 import com.iflytek.skillhub.security.SensitiveLogSanitizer;
 import com.iflytek.skillhub.storage.StorageAccessException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -34,13 +33,16 @@ public class GlobalExceptionHandler {
     private final ApiResponseFactory apiResponseFactory;
     private final SensitiveLogSanitizer sensitiveLogSanitizer;
     private final SkillHubMetrics metrics;
+    private final RequestIdAccessor requestIdAccessor;
 
     public GlobalExceptionHandler(ApiResponseFactory apiResponseFactory,
                                   SensitiveLogSanitizer sensitiveLogSanitizer,
-                                  SkillHubMetrics metrics) {
+                                  SkillHubMetrics metrics,
+                                  RequestIdAccessor requestIdAccessor) {
         this.apiResponseFactory = apiResponseFactory;
         this.sensitiveLogSanitizer = sensitiveLogSanitizer;
         this.metrics = metrics;
+        this.requestIdAccessor = requestIdAccessor;
     }
 
     @ExceptionHandler(LocalizedException.class)
@@ -110,11 +112,11 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Void>> handleStorageAccess(StorageAccessException ex, HttpServletRequest request) {
         metrics.incrementStorageAccessFailure(ex.getOperation());
         logger.warn(
-                "Object storage unavailable [requestId={}, method={}, path={}, userId={}, operation={}, key={}]",
-                MDC.get("requestId"),
+                "Object storage unavailable [requestId={}, method={}, path={}, authentication={}, operation={}, key={}]",
+                requestIdAccessor.current(),
                 request.getMethod(),
                 sensitiveLogSanitizer.sanitizeRequestTarget(request),
-                resolveUserId(request),
+                resolveAuthenticationState(request),
                 ex.getOperation(),
                 ex.getKey(),
                 ex
@@ -127,7 +129,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<?> handleAsyncRequestTimeout(AsyncRequestTimeoutException ex, HttpServletRequest request) {
         String path = request.getRequestURI();
         if (path != null && path.endsWith("/sse")) {
-            logger.debug("SSE timeout [requestId={}, path={}]", MDC.get("requestId"), path);
+            logger.debug("SSE timeout [requestId={}, path={}]", requestIdAccessor.current(), path);
             return ResponseEntity.noContent().build();
         }
 
@@ -139,38 +141,25 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleGlobalException(Exception ex, HttpServletRequest request) {
         logger.error(
-                "Unhandled API exception [requestId={}, method={}, path={}, userId={}]",
-                MDC.get("requestId"),
+                "Unhandled API exception [requestId={}, method={}, path={}, authentication={}]",
+                requestIdAccessor.current(),
                 request.getMethod(),
                 sensitiveLogSanitizer.sanitizeRequestTarget(request),
-                resolveUserId(request),
+                resolveAuthenticationState(request),
                 ex
         );
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
                 apiResponseFactory.error(500, "error.internal"));
     }
 
-    private void logHandledException(HttpStatus status, String messageCode, HttpServletRequest request, Object... detailArgs) {
-        if (detailArgs != null && detailArgs.length > 0) {
-            logger.info(
-                    "API request failed [requestId={}, status={}, method={}, path={}, userId={}, code={}, detail={}]",
-                    MDC.get("requestId"),
-                    status.value(),
-                    request.getMethod(),
-                    sensitiveLogSanitizer.sanitizeRequestTarget(request),
-                    resolveUserId(request),
-                    messageCode,
-                    java.util.Arrays.toString(detailArgs)
-            );
-            return;
-        }
+    private void logHandledException(HttpStatus status, String messageCode, HttpServletRequest request) {
         logger.info(
-                "API request failed [requestId={}, status={}, method={}, path={}, userId={}, code={}]",
-                MDC.get("requestId"),
+                "API request failed [requestId={}, status={}, method={}, path={}, authentication={}, code={}]",
+                requestIdAccessor.current(),
                 status.value(),
                 request.getMethod(),
                 sensitiveLogSanitizer.sanitizeRequestTarget(request),
-                resolveUserId(request),
+                resolveAuthenticationState(request),
                 messageCode
         );
     }
@@ -178,18 +167,16 @@ public class GlobalExceptionHandler {
     private ResponseEntity<ApiResponse<Void>> renderLocalizedError(LocalizedMessage error,
                                                                    HttpStatus status,
                                                                    HttpServletRequest request) {
-        logHandledException(status, error.messageCode(), request, error.messageArgs());
+        logHandledException(status, error.messageCode(), request);
         return ResponseEntity.status(status).body(
                 apiResponseFactory.error(status.value(), error.messageCode(), error.messageArgs()));
     }
 
-    private String resolveUserId(HttpServletRequest request) {
-        if (!(request.getUserPrincipal() instanceof Authentication authentication)) {
-            return "anonymous";
+    private String resolveAuthenticationState(HttpServletRequest request) {
+        if (request.getUserPrincipal() instanceof Authentication authentication
+                && authentication.isAuthenticated()) {
+            return "authenticated";
         }
-        if (authentication.getPrincipal() instanceof PlatformPrincipal principal) {
-            return principal.userId();
-        }
-        return authentication.getName();
+        return "anonymous";
     }
 }

@@ -319,7 +319,7 @@ Admin API 按最小权限拆分，不再统一要求 SUPER_ADMIN：
 |------|------|------|
 | GET | `/api/v1/admin/users` | 用户列表 |
 | GET | `/api/v1/admin/users/{id}` | 用户详情 |
-| PUT | `/api/v1/admin/users/{id}/roles` | 修改用户角色（USER_ADMIN 不可分配 SUPER_ADMIN） |
+| PUT | `/api/v1/admin/users/{id}/role` | 修改用户角色（USER_ADMIN 不可分配 SUPER_ADMIN，也不可修改已有 SUPER_ADMIN 的角色状态） |
 | POST | `/api/v1/admin/users/{id}/approve` | 审批待准入用户 |
 | POST | `/api/v1/admin/users/{id}/disable` | 封禁用户 |
 | POST | `/api/v1/admin/users/{id}/enable` | 解封用户 |

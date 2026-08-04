@@ -6,7 +6,7 @@ import { CliError } from '../shared/errors'
 import { EXIT } from '../shared/constants'
 import { extractZip } from '../platform/archive'
 import { readBoundedResponseBody } from '../platform/download'
-import { pathExists } from '../platform/paths'
+import { canonicalizeExistingPath, pathExists } from '../platform/paths'
 import type { AgentCandidate } from '../agents/types'
 
 export interface InstallOptions {
@@ -20,7 +20,40 @@ export interface InstallOptions {
   home?: string | undefined
 }
 
+async function preflightInstallTargets(
+  targets: AgentCandidate[],
+  slug: string,
+  force: boolean
+): Promise<Array<{ target: AgentCandidate; skillDir: string }>> {
+  const seenSkillDirs = new Set<string>()
+  const preparedTargets: Array<{ target: AgentCandidate; skillDir: string }> = []
+
+  for (const target of targets) {
+    const canonicalRootDir = await canonicalizeExistingPath(target.rootDir)
+    const canonicalSkillDir = join(canonicalRootDir, slug)
+    if (seenSkillDirs.has(canonicalSkillDir)) {
+      throw new CliError(`multiple install targets resolve to ${canonicalSkillDir}`, EXIT.usage, {
+        path: canonicalSkillDir,
+        next: 'select only one target for this directory'
+      })
+    }
+    seenSkillDirs.add(canonicalSkillDir)
+
+    const skillDir = join(target.rootDir, slug)
+    if (await pathExists(skillDir) && !force) {
+      throw new CliError(`skill already installed at ${skillDir}`, EXIT.filesystem, {
+        path: skillDir,
+        next: 'pass --force to overwrite'
+      })
+    }
+    preparedTargets.push({ target, skillDir })
+  }
+
+  return preparedTargets
+}
+
 export async function installSkill(options: InstallOptions): Promise<{ installed: Array<{ agent: string; dir: string }> }> {
+  const preparedTargets = await preflightInstallTargets(options.targets, options.slug, options.force)
   const client = new SkillHubClient(options.registry, options.token)
   const resolved = await client.resolve(options.namespace, options.slug, options.version)
   const response = await client.download(options.namespace, options.slug, resolved.version)
@@ -29,16 +62,7 @@ export async function installSkill(options: InstallOptions): Promise<{ installed
   const installed: Array<{ agent: string; dir: string }> = []
   const store = new InventoryStore(options.home)
 
-  for (const target of options.targets) {
-    const skillDir = join(target.rootDir, options.slug)
-
-    if (await pathExists(skillDir) && !options.force) {
-      throw new CliError(`skill already installed at ${skillDir}`, EXIT.filesystem, {
-        path: skillDir,
-        next: 'pass --force to overwrite'
-      })
-    }
-
+  for (const { target, skillDir } of preparedTargets) {
     await mkdir(target.rootDir, { recursive: true })
     const tempDir = await mkdtemp(join(target.rootDir, `.${options.slug}.install-`))
     let movedIntoPlace = false

@@ -36,16 +36,17 @@ class RequestLoggingFilterTest {
     }
 
     @Test
-    void doFilterInternal_truncatesLongRequestBodyAndOmitsResponseBody()
+    void doFilterInternal_omitsRequestAndResponseBodies()
             throws ServletException, IOException {
         RequestLoggingFilter filter = new RequestLoggingFilter();
-        String longBody = "x".repeat(5_000);
+        String requestBody = "{\"username\":\"alice\",\"password\":\"super-secret\"}";
+        String responseBody = "x".repeat(5_000);
         attachAppender();
 
         MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/test");
         request.setCharacterEncoding(StandardCharsets.UTF_8.name());
         request.setContentType("application/json");
-        request.setContent(longBody.getBytes(StandardCharsets.UTF_8));
+        request.setContent(requestBody.getBytes(StandardCharsets.UTF_8));
 
         MockHttpServletResponse response = new MockHttpServletResponse();
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
@@ -53,17 +54,17 @@ class RequestLoggingFilterTest {
         FilterChain filterChain = (req, res) -> {
             req.getReader().lines().count();
             res.setContentType("application/json");
-            res.getWriter().write(longBody);
+            res.getWriter().write(responseBody);
         };
 
         filter.doFilter(request, response, filterChain);
 
         List<String> loggedMessages = loggedMessages();
-        assertThat(loggedMessages).anySatisfy(message ->
-                assertThat(message).contains("Body: " + "x".repeat(200) + "...[truncated]"));
-        assertThat(loggedMessages).noneMatch(message -> message.contains("Body: " + longBody));
+        assertThat(loggedMessages).anyMatch(message -> message.contains("POST /api/test"));
+        assertThat(loggedMessages).noneMatch(message -> message.contains("Body:"));
+        assertThat(loggedMessages).noneMatch(message -> message.contains("super-secret"));
         assertThat(loggedMessages).noneMatch(message -> message.contains("Response Body:"));
-        assertThat(response.getContentAsString()).isEqualTo(longBody);
+        assertThat(response.getContentAsString()).isEqualTo(responseBody);
     }
 
     @Test

@@ -20,8 +20,13 @@ public class LabelSearchSyncService {
         this.searchRebuildService = searchRebuildService;
     }
 
+    @Async("skillhubEventExecutor")
     public void rebuildSkill(Long skillId) {
-        searchRebuildService.rebuildBySkill(skillId);
+        try {
+            searchRebuildService.rebuildBySkill(skillId);
+        } catch (RuntimeException ex) {
+            log.error("Failed to rebuild search document for skill {}", skillId, ex);
+        }
     }
 
     @Async("skillhubEventExecutor")

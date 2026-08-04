@@ -8,9 +8,13 @@ on:
       - '.env.release.draft'
       - 'compose.release.yml'
       - 'Makefile'
+      - 'web/Dockerfile'
+      - 'web/nginx.conf.template'
       - '.github/workflows/pr-cli.yml'
       - '.github/workflows/pr-e2e.yml'
+      - '.github/workflows/pr-helm-chart.yml'
       - '.github/workflows/pr-tests.yml'
+      - '.github/workflows/publish-chart.yml'
       - '.github/workflows/security.yml'
       - '.github/workflows/pr-scripts.yml'
       - '**/*.py'
@@ -33,5 +37,6 @@ jobs:
       - run: bash scripts/tests/publish-cli-test.sh
       - run: bash scripts/tests/runtime-secret-test.sh
       - run: bash scripts/tests/validate-release-config-test.sh
+      - run: bash scripts/tests/nginx-forwarded-proto-test.sh
       - run: bash scripts/tests/dev-web-host-test.sh
       - run: bash scripts/tests/workflow-security-test.sh

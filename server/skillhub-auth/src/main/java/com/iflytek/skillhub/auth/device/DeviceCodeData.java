@@ -19,7 +19,9 @@ public class DeviceCodeData implements Serializable {
     }
 
     public String getDeviceCode() { return deviceCode; }
+    public void setDeviceCode(String deviceCode) { this.deviceCode = deviceCode; }
     public String getUserCode() { return userCode; }
+    public void setUserCode(String userCode) { this.userCode = userCode; }
     public DeviceCodeStatus getStatus() { return status; }
     public void setStatus(DeviceCodeStatus status) { this.status = status; }
     public String getUserId() { return userId; }
