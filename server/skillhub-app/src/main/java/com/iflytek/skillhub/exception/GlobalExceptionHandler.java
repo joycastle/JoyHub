@@ -66,7 +66,7 @@ public class GlobalExceptionHandler {
             CatalogDomainException ex,
             HttpServletRequest request) {
         HttpStatus status = HttpStatus.valueOf(ex.status());
-        logHandledException(status, ex.code(), request, ex.arguments());
+        logHandledException(status, ex.code(), request);
         return ResponseEntity.status(status).body(
                 apiResponseFactory.error(status.value(), ex.code(), ex.arguments()));
     }
