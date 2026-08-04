@@ -69,6 +69,7 @@ package-lock.json
 .tmp/
 tmp/
 __pycache__/
+weekly/_site/
 
 # Git worktrees
 .worktrees/
@@ -83,6 +84,12 @@ docs/superpowers/
 
 # Local workspace metadata
 CLAUDE.md
+
+# Local report-generation skill
+.agents/skills/generate-skillhub-weekly-report/
+
+# Helm chart dependencies
+charts/skillhub/charts/*.tgz
 
 # Local config file
 .mcp.json

@@ -36,6 +36,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -44,6 +45,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -106,6 +108,12 @@ class PromotionApprovalFlowIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data.id").value(graph.request().getId()))
+                .andExpect(jsonPath("$.data.sourceSkillDisplayName").value(org.hamcrest.Matchers.startsWith("Promote Skill")))
+                .andExpect(jsonPath("$.data.sourceSkillSummary").value("Used to verify promotion approval flow."))
+                .andExpect(jsonPath("$.data.sourceVersionFileCount").value(0))
+                .andExpect(jsonPath("$.data.sourceVersionTotalSize").value(0))
+                .andExpect(jsonPath("$.data.sourceSkillDownloadCount").value(0))
+                .andExpect(jsonPath("$.data.sourceSkillStarCount").value(0))
                 .andExpect(jsonPath("$.data.status").value("APPROVED"))
                 .andExpect(jsonPath("$.data.reviewedBy").value(REVIEWER_ID))
                 .andExpect(jsonPath("$.data.reviewComment").value("ship it"));
@@ -187,6 +195,75 @@ class PromotionApprovalFlowIntegrationTest {
         assertThat(savedRequest.getTargetSkillId()).isNull();
     }
 
+    @Test
+    @Transactional
+    void listPromotions_sortsApprovedAndRejectedHistoryByReviewedAtWithNullsLastAndTieBreaker() throws Exception {
+        when(rbacService.getUserRoleCodes(REVIEWER_ID)).thenReturn(Set.of("SUPER_ADMIN"));
+
+        assertHistorySortForStatus(ReviewTaskStatus.APPROVED, "APPROVED");
+        assertHistorySortForStatus(ReviewTaskStatus.REJECTED, "REJECTED");
+    }
+
+    private void assertHistorySortForStatus(ReviewTaskStatus reviewStatus, String statusParam) throws Exception {
+        promotionRequestRepository.deleteAll();
+        promotionRequestRepository.flush();
+
+        PromotionGraph latest = createPromotionGraph();
+        PromotionGraph sameTimeOlderId = createPromotionGraph();
+        PromotionGraph sameTimeNewerId = createPromotionGraph();
+        PromotionGraph legacyNullReviewedAt = createPromotionGraph();
+
+        Instant sameReviewedAt = Instant.parse("2026-06-18T08:00:00Z");
+        markPromotionHistory(latest.request(), reviewStatus, Instant.parse("2026-06-18T09:00:00Z"));
+        markPromotionHistory(sameTimeOlderId.request(), reviewStatus, sameReviewedAt);
+        markPromotionHistory(sameTimeNewerId.request(), reviewStatus, sameReviewedAt);
+        markPromotionHistory(legacyNullReviewedAt.request(), reviewStatus, null);
+
+        mockMvc.perform(get("/api/web/promotions")
+                        .param("status", statusParam)
+                        .param("page", "0")
+                        .param("size", "2")
+                        .param("sortBy", "reviewedAt")
+                        .param("sortDirection", "DESC")
+                        .with(authentication(portalAuth(REVIEWER_ID, "SUPER_ADMIN"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items[0].id").value(latest.request().getId()))
+                .andExpect(jsonPath("$.data.items[1].id").value(sameTimeNewerId.request().getId()));
+
+        mockMvc.perform(get("/api/web/promotions")
+                        .param("status", statusParam)
+                        .param("page", "1")
+                        .param("size", "2")
+                        .param("sortBy", "reviewedAt")
+                        .param("sortDirection", "DESC")
+                        .with(authentication(portalAuth(REVIEWER_ID, "SUPER_ADMIN"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items[0].id").value(sameTimeOlderId.request().getId()))
+                .andExpect(jsonPath("$.data.items[1].id").value(legacyNullReviewedAt.request().getId()));
+
+        mockMvc.perform(get("/api/web/promotions")
+                        .param("status", statusParam)
+                        .param("page", "0")
+                        .param("size", "2")
+                        .param("sortBy", "reviewedAt")
+                        .param("sortDirection", "ASC")
+                        .with(authentication(portalAuth(REVIEWER_ID, "SUPER_ADMIN"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items[0].id").value(sameTimeOlderId.request().getId()))
+                .andExpect(jsonPath("$.data.items[1].id").value(sameTimeNewerId.request().getId()));
+
+        mockMvc.perform(get("/api/web/promotions")
+                        .param("status", statusParam)
+                        .param("page", "1")
+                        .param("size", "2")
+                        .param("sortBy", "reviewedAt")
+                        .param("sortDirection", "ASC")
+                        .with(authentication(portalAuth(REVIEWER_ID, "SUPER_ADMIN"))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items[0].id").value(latest.request().getId()))
+                .andExpect(jsonPath("$.data.items[1].id").value(legacyNullReviewedAt.request().getId()));
+    }
+
     private PromotionGraph createPromotionGraph() {
         return createPromotionGraph(SUBMITTER_ID);
     }
@@ -234,6 +311,14 @@ class PromotionApprovalFlowIntegrationTest {
         if (!userAccountRepository.existsById(userId)) {
             userAccountRepository.saveAndFlush(new UserAccount(userId, displayName, email, null));
         }
+    }
+
+    private void markPromotionHistory(PromotionRequest request, ReviewTaskStatus status, Instant reviewedAt) {
+        request.setStatus(status);
+        request.setReviewedBy(REVIEWER_ID);
+        request.setReviewComment(status == ReviewTaskStatus.APPROVED ? "approved" : "rejected");
+        request.setReviewedAt(reviewedAt);
+        promotionRequestRepository.saveAndFlush(request);
     }
 
     private UsernamePasswordAuthenticationToken portalAuth(String userId, String... roles) {

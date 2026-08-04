@@ -160,6 +160,63 @@ export interface BatchMemberResponse {
   results: BatchMemberResult[]
 }
 
+// JoyHub catalog types. The stricter aliases keep required API fields usable in feature code while
+// the generated OpenAPI model remains the source of truth for the wire contract.
+export type CatalogResourceKind =
+  | 'AGENT'
+  | 'PLUGIN'
+  | 'MCP_SERVER'
+  | 'ONLINE_TOOL'
+  | 'INTERNAL_SERVICE'
+  | 'KNOWLEDGE_BASE'
+  | 'TEMPLATE'
+  | 'RESOURCE_PACK'
+
+export type CatalogCenter = 'AGENT' | 'TOOL'
+export type CatalogResourceStatus = 'DRAFT' | 'PUBLISHED' | 'OFFLINE'
+export type CatalogMaintenanceStatus = 'ACTIVE' | 'MAINTENANCE' | 'DEPRECATED'
+export type CatalogVisibilityScope = 'COMPANY' | 'DEPARTMENTS'
+
+export type CatalogDepartment = components['schemas']['CatalogDepartmentResponse']
+export type CatalogOwner = components['schemas']['CatalogOwnerResponse']
+export type CatalogRelatedSkill = components['schemas']['CatalogRelatedSkillResponse']
+
+export type CatalogResourceSummary = Omit<
+  components['schemas']['CatalogResourceSummaryResponse'],
+  'id' | 'slug' | 'name' | 'summary' | 'kind'
+> & {
+  id: number
+  slug: string
+  name: string
+  summary: string
+  kind: CatalogResourceKind
+  status?: CatalogResourceStatus
+  maintenanceStatus?: CatalogMaintenanceStatus
+  visibilityScope?: CatalogVisibilityScope
+}
+
+export type CatalogResourceDetail = Omit<
+  components['schemas']['CatalogResourceDetailResponse'],
+  | 'id'
+  | 'slug'
+  | 'name'
+  | 'summary'
+  | 'kind'
+  | 'visibleDepartments'
+  | 'relatedResources'
+  | 'relatedSkills'
+> & CatalogResourceSummary & {
+  documentation?: string
+  visibleDepartments?: CatalogDepartment[]
+  relatedResources?: CatalogResourceSummary[]
+  relatedSkills?: CatalogRelatedSkill[]
+  artifactFilename?: string
+  artifactSize?: number
+  canManage?: boolean
+}
+
+export type CatalogResourceRequest = components['schemas']['CatalogResourceRequest']
+
 // Skill types
 export interface SkillSummary {
   id: number
@@ -409,22 +466,32 @@ export interface ReviewSkillDetail {
   activeVersion: string
 }
 
+export type PromotionStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
+export type PromotionSortDirection = 'ASC' | 'DESC'
+export type PromotionSortBy = 'reviewedAt'
+
 export interface PromotionTask {
   id: number
   sourceSkillId: number
+  sourceSkillDisplayName: string
+  sourceSkillSummary?: string | null
   sourceNamespace: string
   sourceSkillSlug: string
   sourceVersion: string
+  sourceVersionFileCount: number
+  sourceVersionTotalSize: number
+  sourceSkillDownloadCount: number
+  sourceSkillStarCount: number
   targetNamespace: string
-  targetSkillId?: number
-  status: 'PENDING' | 'APPROVED' | 'REJECTED'
+  targetSkillId?: number | null
+  status: PromotionStatus
   submittedBy: string
-  submittedByName?: string
-  reviewedBy?: string
-  reviewedByName?: string
-  reviewComment?: string
+  submittedByName?: string | null
+  reviewedBy?: string | null
+  reviewedByName?: string | null
+  reviewComment?: string | null
   submittedAt: string
-  reviewedAt?: string
+  reviewedAt?: string | null
 }
 
 export interface SkillReport {

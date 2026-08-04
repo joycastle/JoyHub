@@ -26,6 +26,7 @@
 
     <modules>
         <module>skillhub-app</module>
+        <module>skillhub-catalog</module>
         <module>skillhub-domain</module>
         <module>skillhub-auth</module>
         <module>skillhub-search</module>
@@ -36,6 +37,11 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>com.iflytek.skillhub</groupId>
+                <artifactId>skillhub-catalog</artifactId>
+                <version>${project.version}</version>
+            </dependency>
             <dependency>
                 <groupId>com.iflytek.skillhub</groupId>
                 <artifactId>skillhub-domain</artifactId>

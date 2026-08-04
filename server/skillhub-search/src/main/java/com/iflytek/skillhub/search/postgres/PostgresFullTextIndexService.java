@@ -6,6 +6,7 @@ import com.iflytek.skillhub.search.SearchEmbeddingService;
 import com.iflytek.skillhub.search.SearchIndexService;
 import com.iflytek.skillhub.search.SkillSearchDocument;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -32,7 +33,7 @@ public class PostgresFullTextIndexService implements SearchIndexService {
     }
 
     @Override
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void index(SkillSearchDocument document) {
         SkillSearchDocument normalizedDocument = normalize(document);
         Optional<SkillSearchDocumentEntity> existing = repository.findBySkillId(document.skillId());

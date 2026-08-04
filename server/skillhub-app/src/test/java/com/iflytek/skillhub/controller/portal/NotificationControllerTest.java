@@ -12,6 +12,7 @@ import com.iflytek.skillhub.notification.domain.Notification;
 import com.iflytek.skillhub.notification.domain.NotificationCategory;
 import com.iflytek.skillhub.notification.service.NotificationService;
 import com.iflytek.skillhub.notification.sse.SseEmitterManager;
+import com.iflytek.skillhub.observability.RequestIdAccessor;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -42,7 +43,8 @@ class NotificationControllerTest {
         messageSource.addMessage("response.success.read", java.util.Locale.getDefault(), "ok");
         ApiResponseFactory responseFactory = new ApiResponseFactory(
                 messageSource,
-                Clock.fixed(Instant.parse("2026-03-20T00:00:00Z"), ZoneOffset.UTC)
+                Clock.fixed(Instant.parse("2026-03-20T00:00:00Z"), ZoneOffset.UTC),
+                new RequestIdAccessor()
         );
         controller = new NotificationController(notificationService, sseEmitterManager, new ObjectMapper(), responseFactory);
     }

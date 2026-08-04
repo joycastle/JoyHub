@@ -1,136 +1,92 @@
+import { useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
+import { Plus } from 'lucide-react'
 import { SearchBar } from '@/features/search/search-bar'
 import { SkillCard } from '@/features/skill/skill-card'
 import { SkeletonList } from '@/shared/components/skeleton-loader'
 import { useSearchSkills } from '@/shared/hooks/use-skill-queries'
 import { normalizeSearchQuery } from '@/shared/lib/search-query'
 import { Button } from '@/shared/ui/button'
-import { BrandMark } from '@/shared/components/brand-mark'
+import { APP_SHELL_PAGE_CLASS_NAME } from '@/app/page-shell-style'
 
-const HERO_CTA_CLASS =
-  'inline-flex min-w-[9.5rem] items-center justify-center rounded-xl border border-[hsl(var(--primary)/0.35)] bg-white px-8 py-3 text-base font-medium text-[hsl(var(--primary))] transition-colors hover:bg-[hsl(var(--secondary))]'
+type SkillSort = 'newest' | 'downloads'
 
+/** Skill discovery center. The product landing page is intentionally kept separate. */
 export function HomePage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
-
-  const { data: popularSkills, isLoading: isLoadingPopular } = useSearchSkills({
-    sort: 'downloads',
-    size: 6,
+  const [query, setQuery] = useState('')
+  const [sort, setSort] = useState<SkillSort>('newest')
+  const { data, isLoading, isError, isFetching } = useSearchSkills({
+    q: query,
+    sort,
+    size: 48,
   })
 
-  const { data: latestSkills, isLoading: isLoadingLatest } = useSearchSkills({
-    sort: 'newest',
-    size: 6,
-  })
-
-  const handleSearch = (query: string) => {
-    navigate({ to: '/search', search: { q: normalizeSearchQuery(query), sort: 'relevance', page: 0, starredOnly: false } })
-  }
-
-  const handleSkillClick = (namespace: string, slug: string) => {
-    navigate({ to: `/space/${namespace}/${encodeURIComponent(slug)}` })
+  const handleSearch = (value: string) => {
+    setQuery(normalizeSearchQuery(value))
   }
 
   return (
-    <div className="space-y-20">
-      <div className="text-center space-y-8 py-16 animate-fade-up">
-        <div className="space-y-4">
-          <h1 className="text-6xl md:text-7xl lg:text-8xl font-bold text-brand-gradient leading-tight">
-            {t('brand.name')}
-          </h1>
-          <p className="text-xl md:text-2xl max-w-2xl mx-auto" style={{ color: 'hsl(var(--text-secondary))' }}>
-            {t('brand.tagline')}
-          </p>
-          <div className="flex justify-center pt-2">
-            <BrandMark size="lg" />
+    <div className={APP_SHELL_PAGE_CLASS_NAME}>
+      <section className="rounded-3xl border border-violet-200/60 bg-gradient-to-br from-violet-100/80 via-background to-sky-100/60 px-7 py-12 md:px-12">
+        <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
+          <div className="max-w-3xl space-y-4">
+            <div className="text-sm font-semibold uppercase tracking-[0.2em] text-primary">JoyHub 2.0</div>
+            <h1 className="text-4xl font-bold tracking-tight md:text-5xl">{t('skillCenter.title')}</h1>
+            <p className="text-lg leading-8 text-muted-foreground">{t('skillCenter.description')}</p>
+            <p className="text-sm text-muted-foreground">{t('skillCenter.visibility')}</p>
           </div>
+          <Button size="lg" className="shrink-0" onClick={() => navigate({ to: '/dashboard/publish' })}>
+            <Plus className="mr-2 h-4 w-4" />
+            {t('skillCenter.publish')}
+          </Button>
         </div>
 
-        <div className="max-w-2xl mx-auto animate-fade-up delay-1">
-          <SearchBar onSearch={handleSearch} />
+        <div className="mt-8 max-w-2xl">
+          <SearchBar
+            placeholder={t('skillCenter.searchPlaceholder')}
+            isSearching={isFetching && !isLoading}
+            onSearch={handleSearch}
+          />
         </div>
+      </section>
 
-        <div className="flex items-center justify-center gap-3 animate-fade-up delay-2">
-          <button
-            type="button"
-            className={HERO_CTA_CLASS}
-            onClick={() => navigate({ to: '/search', search: { q: '', sort: 'relevance', page: 0, starredOnly: false } })}
-          >
-            {t('home.browseSkills')}
-          </button>
-          <button
-            type="button"
-            className={HERO_CTA_CLASS}
-            onClick={() => navigate({ to: '/dashboard/publish' })}
-          >
-            {t('home.publishSkill')}
-          </button>
-        </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="mr-1 text-sm font-medium text-muted-foreground">{t('skillCenter.sortLabel')}</span>
+        <Button variant={sort === 'newest' ? 'default' : 'outline'} size="sm" onClick={() => setSort('newest')}>
+          {t('skillCenter.newest')}
+        </Button>
+        <Button variant={sort === 'downloads' ? 'default' : 'outline'} size="sm" onClick={() => setSort('downloads')}>
+          {t('skillCenter.popular')}
+        </Button>
+        {!isLoading && data ? (
+          <span className="ml-auto text-sm text-muted-foreground">{t('skillCenter.resultCount', { count: data.total })}</span>
+        ) : null}
       </div>
 
-      <section className="space-y-6 animate-fade-up">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-3xl font-bold tracking-tight mb-2" style={{ color: 'hsl(var(--foreground))' }}>
-              {t('home.popularTitle')}
-            </h2>
-            <p style={{ color: 'hsl(var(--text-secondary))' }}>{t('home.popularDescription')}</p>
-          </div>
-          <Button
-            variant="ghost"
-            onClick={() => navigate({ to: '/search', search: { q: '', sort: 'downloads', page: 0, starredOnly: false } })}
-          >
-            {t('home.viewAll')}
-          </Button>
+      {isLoading ? <SkeletonList count={9} /> : null}
+      {isError ? (
+        <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-5 text-destructive">
+          {t('skillCenter.loadFailed')}
         </div>
-        {isLoadingPopular ? (
-          <SkeletonList count={6} />
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {popularSkills?.items.map((skill, idx) => (
-              <div key={skill.id} className={`animate-fade-up delay-${Math.min(idx + 1, 6)}`}>
-                <SkillCard
-                  skill={skill}
-                  onClick={() => handleSkillClick(skill.namespace, skill.slug)}
-                />
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
-
-      <section className="space-y-6 animate-fade-up">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-3xl font-bold tracking-tight mb-2" style={{ color: 'hsl(var(--foreground))' }}>
-              {t('home.latestTitle')}
-            </h2>
-            <p style={{ color: 'hsl(var(--text-secondary))' }}>{t('home.latestDescription')}</p>
-          </div>
-          <Button
-            variant="ghost"
-            onClick={() => navigate({ to: '/search', search: { q: '', sort: 'newest', page: 0, starredOnly: false } })}
-          >
-            {t('home.viewAll')}
-          </Button>
+      ) : null}
+      {!isLoading && !isError && data?.items.length === 0 ? (
+        <div className="rounded-2xl border border-dashed p-16 text-center text-muted-foreground">
+          {t('skillCenter.empty')}
         </div>
-        {isLoadingLatest ? (
-          <SkeletonList count={6} />
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {latestSkills?.items.map((skill, idx) => (
-              <div key={skill.id} className={`animate-fade-up delay-${Math.min(idx + 1, 6)}`}>
-                <SkillCard
-                  skill={skill}
-                  onClick={() => handleSkillClick(skill.namespace, skill.slug)}
-                />
-              </div>
-            ))}
+      ) : null}
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+        {data?.items.map((skill, index) => (
+          <div key={skill.id} className={`h-full animate-fade-up delay-${Math.min(index % 6 + 1, 6)}`}>
+            <SkillCard
+              skill={skill}
+              onClick={() => navigate({ to: `/space/${skill.namespace}/${encodeURIComponent(skill.slug)}` })}
+            />
           </div>
-        )}
-      </section>
+        ))}
+      </div>
     </div>
   )
 }

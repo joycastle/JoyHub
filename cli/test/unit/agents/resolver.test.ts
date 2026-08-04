@@ -1,5 +1,9 @@
+import { mkdir, mkdtemp, rm, symlink } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { describe, expect, test } from 'bun:test'
 import { resolveInstallTargets } from '../../../src/agents/resolver'
+import type { AgentCandidate } from '../../../src/agents/types'
 
 describe('resolveInstallTargets', () => {
   test('rejects dir and agent together before filesystem writes', async () => {
@@ -215,5 +219,37 @@ describe('resolveInstallTargets', () => {
     expect(targets).toHaveLength(1)
     expect(targets[0]!.rootDir).toBe('/home/u/.codex/skills')
     expect(targets[0]!.scope).toBe('user')
+  })
+
+  test('deduplicates a symlinked detected target and the generic user target', async () => {
+    const home = await mkdtemp(join(tmpdir(), 'skillhub-resolver-home-'))
+    const genericRoot = join(home, '.agents', 'skills')
+    const codexRoot = join(home, '.codex', 'skills')
+    const codex: AgentCandidate = {
+      agent: 'codex',
+      rootDir: codexRoot,
+      scope: 'user',
+      source: 'detected'
+    }
+
+    try {
+      await mkdir(genericRoot, { recursive: true })
+      await mkdir(join(home, '.codex'), { recursive: true })
+      await symlink(genericRoot, codexRoot, process.platform === 'win32' ? 'junction' : 'dir')
+
+      const targets = await resolveInstallTargets({
+        cwd: '/repo',
+        home,
+        agents: [],
+        scope: 'user',
+        json: false,
+        interactive: true,
+        detected: [codex]
+      })
+
+      expect(targets).toEqual([codex])
+    } finally {
+      await rm(home, { recursive: true, force: true })
+    }
   })
 })

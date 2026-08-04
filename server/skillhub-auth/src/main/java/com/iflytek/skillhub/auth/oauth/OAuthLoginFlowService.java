@@ -1,6 +1,7 @@
 package com.iflytek.skillhub.auth.oauth;
 
 import com.iflytek.skillhub.auth.identity.IdentityBindingService;
+import com.iflytek.skillhub.auth.organization.FeishuDepartmentMembershipSyncService;
 import com.iflytek.skillhub.auth.policy.AccessDecision;
 import com.iflytek.skillhub.auth.policy.AccessPolicy;
 import com.iflytek.skillhub.auth.rbac.PlatformPrincipal;
@@ -20,6 +21,8 @@ import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Flow owner for browser OAuth login. It centralizes the stages of remembering
@@ -29,20 +32,25 @@ import org.springframework.stereotype.Service;
 @Service
 public class OAuthLoginFlowService {
 
+    private static final Logger log = LoggerFactory.getLogger(OAuthLoginFlowService.class);
+
     private final OAuth2UserService<OAuth2UserRequest, OAuth2User> oAuth2UserService;
     private final Map<String, OAuthClaimsExtractor> extractors;
     private final AccessPolicy accessPolicy;
     private final IdentityBindingService identityBindingService;
+    private final FeishuDepartmentMembershipSyncService departmentMembershipSyncService;
 
     public OAuthLoginFlowService(List<OAuthClaimsExtractor> extractorList,
                                  AccessPolicy accessPolicy,
                                  IdentityBindingService identityBindingService,
-                                 FeishuOAuth2UserService feishuOAuth2UserService) {
+                                 FeishuOAuth2UserService feishuOAuth2UserService,
+                                 FeishuDepartmentMembershipSyncService departmentMembershipSyncService) {
         this.extractors = extractorList.stream()
                 .collect(Collectors.toMap(OAuthClaimsExtractor::getProvider, Function.identity()));
         this.accessPolicy = accessPolicy;
         this.identityBindingService = identityBindingService;
         this.oAuth2UserService = feishuOAuth2UserService;
+        this.departmentMembershipSyncService = departmentMembershipSyncService;
     }
 
     public AuthenticatedLoginContext loadLoginContext(OAuth2UserRequest request) {
@@ -58,6 +66,12 @@ public class OAuthLoginFlowService {
 
         OAuthClaims claims = extractor.extract(request, upstreamUser);
         PlatformPrincipal principal = authenticate(claims);
+        try {
+            departmentMembershipSyncService.synchronize(principal.userId(), claims);
+        } catch (RuntimeException ex) {
+            // Directory synchronization enriches authorization but must not lock employees out.
+            log.warn("Department synchronization failed for userId={}: {}", principal.userId(), ex.getMessage());
+        }
         return new AuthenticatedLoginContext(upstreamUser, principal);
     }
 

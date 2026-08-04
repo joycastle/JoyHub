@@ -122,7 +122,7 @@ curl -fsSL https://imageless.oss-cn-beijing.aliyuncs.com/runtime.sh | sh -s -- u
 curl -fsSL https://imageless.oss-cn-beijing.aliyuncs.com/runtime.sh | sh -s -- up --version v0.2.0
 ```
 
-> **Note**: It is recommended to back up the database and object storage before upgrading. Database migrations are handled automatically by Flyway.
+> **Note**: It is recommended to back up the database and object storage before upgrading. Database migrations are handled automatically by Flyway. Upgrading does not wipe the database, so already-registered skill packages will not be lost.
 
 ## Q: Why can't administrators (admin) and regular users create namespaces?
 
@@ -136,11 +136,199 @@ curl -fsSL https://imageless.oss-cn-beijing.aliyuncs.com/runtime.sh | sh -s -- u
 
 A: When using the OpenClaw CLI, you can specify the namespace using the `<namespace>--<skill-name>` format for operations like search or installation. If you encounter issues finding it on the web interface, you can also manage it by exporting the skill package and importing it into your target namespace.
 
+## Q: What is the recommended deployment method? Can I pull the images and deploy manually?
+
+A: We recommend the official one-line deployment script. Pulling images and deploying manually is not recommended (manual deployment is prone to initialization issues such as being redirected back to the login page after logging in):
+
+```bash
+curl -fsSL https://imageless.oss-cn-beijing.aliyuncs.com/runtime.sh | sh -s -- up --aliyun --public-url https://skillhub.your-company.com --version latest
+```
+
+The script performs a series of initialization steps. The generated runtime configuration is located at `/tmp/skillhub-runtime/` by default (containing `.env.release` and the docker-compose file).
+
+## Q: After deployment, I enter the correct username and password but get redirected back to the login page?
+
+A: This is most commonly seen with **manual deployment** (caused by API errors or incomplete initialization). Suggestions:
+
+1. Switch to the one-line script above for deployment.
+2. If necessary, clear and recreate the PostgreSQL data volume, then log in again.
+3. If a reverse proxy is in front, verify that it forwards requests correctly.
+
+## Q: How do I change the admin password? Why don't my config changes take effect?
+
+A: Environment variables are injected when a container is created, so you must recreate the containers after changing them; `restart` alone does not re-inject environment variables.
+
+1. Edit `/tmp/skillhub-runtime/.env.release` in the runtime directory (refer to [.env.release.example](https://github.com/iflytek/skillhub/blob/main/.env.release.example)).
+2. Recreate the relevant containers:
+
+   ```bash
+   docker compose \
+     --env-file /tmp/skillhub-runtime/.env.release \
+     -f /tmp/skillhub-runtime/compose.release.yml \
+     up -d --force-recreate
+   ```
+
+3. If the password was already persisted to the database and the change still doesn't take effect, you may need to clear the corresponding data and re-initialize.
+
+## Q: Is an email verification code required to change / reset a password?
+
+A: Yes. By default, passwords are changed or reset via an email verification code, so SMTP must be configured first. See [docs/19-smtp-password-reset-email-setup.md](https://github.com/iflytek/skillhub/blob/main/docs/19-smtp-password-reset-email-setup.md). Administrators can also reset it via `.env.release`.
+
+## Q: Can a skill have a Chinese name?
+
+A: Skill names are generally in English; Chinese names are not currently supported (using a Chinese skill name in OpenClaw will cause an error).
+
+## Q: Can unreviewed skills be downloaded?
+
+A: As long as you have permission to view it, it can generally be downloaded.
+
+## Q: How do I hide or remove the GitHub / GitLab SSO login options on the login page?
+
+A: Edit `application.yml` and comment out or delete the `github` and `gitlab` blocks under `spring.security.oauth2.client.registration`, along with their corresponding `provider` sections. Spring Boot then won't create these registrations at startup, and the login page won't show those entries.
+
+## Q: Is SkillHub's security scanning (Skill Scanner) developed in-house by iFLYTEK? What license does it use?
+
+A: SkillHub has built-in security scanning. The scanner integration, task orchestration, audit persistence, and deployment integration are implemented by the iFLYTEK team; the underlying scanning service uses Cisco's [cisco-ai-skill-scanner](https://github.com/cisco-ai-defense/skill-scanner) (Apache License 2.0, copyright Cisco).
+
+## Q: Which version of cisco-ai-skill-scanner does SkillHub use?
+
+A: `scanner/Dockerfile` runs `pip install cisco-ai-skill-scanner` directly without pinning a version, so the latest version on PyPI is pulled when the image is built. To pin a version, do so yourself when customizing the build.
+
+## Q: How do I troubleshoot a `registry returned 400` error from `skillhub publish` (CLI)?
+
+A: A 400 usually means backend validation failed. Common causes:
+
+- `SKILL.md` is not in the package root directory;
+- `SKILL.md` frontmatter is missing `name` / `description` or is malformed;
+- name or version conflict (e.g. `error.skill.publish.nameConflict`, meaning a skill with the same name is already published in that namespace) — change `name` in `SKILL.md`, use another namespace, or have an admin handle the existing skill;
+- the namespace does not exist, or you are not a member of it;
+- the package contains suspected tokens/secrets that the CLI cannot confirm skipping;
+- file type / size / path is not allowed.
+
+You can inspect the server logs to locate the cause:
+
+```bash
+docker logs --tail=300 <skillhub-server container> 2>&1 | grep -Ei 'publish|SKILL.md|namespace|400|BadRequest'
+```
+
+## Q: What directory structure does a skill package require?
+
+A: The package root directory must contain a `SKILL.md` file, whose frontmatter must include fields such as `name` and `description`.
+
+## Q: Publishing fails with "package validation failed / malformed input" — what do I do?
+
+A: This error occurs while unzipping and reading file names, usually because the archive is not UTF-8 encoded (e.g. created with the built-in Windows compression tool) or contains Chinese/non-ASCII paths. Repackage using UTF-8 encoding and avoid Chinese / special-character paths.
+
+## Q: How many files can a skill package contain? What if I hit the file-count limit?
+
+A: The default limit is **100 files** (this is separate from the 100MB size limit). To raise it, change the `skillhub.publish.max-file-count` setting, or override it via an environment variable at deploy time:
+
+```bash
+SKILLHUB_PUBLISH_MAX_FILE_COUNT=500
+```
+
+Recreate the containers for the change to take effect; `restart` alone does not re-inject environment variables. Note that `compose.release.yml` must also reference this variable; older versions (e.g. v0.2.6) may hard-code the value, so upgrading to the latest version is recommended.
+
+## Q: Is there a server version requirement for using the CLI (publish / download, etc.)?
+
+A: A SkillHub server image of **v0.2.7 or later** is required for CLI features.
+
+## Q: Does SkillHub support MySQL?
+
+A: Currently only PostgreSQL is supported; MySQL is not supported.
+
+## Q: Can SkillHub be used to distribute Plugins?
+
+A: Not supported for now.
+
+## Q: How do I check the SkillHub version? How do I customize it (e.g. change the logo)?
+
+A:
+
+- Check the server image version:
+
+```bash
+docker image inspect ghcr.io/iflytek/skillhub-server:latest --format '{{index .Config.Labels "org.opencontainers.image.version"}}'
+```
+
+- Check the CLI version: `skillhub version`.
+- For customization (e.g. changing the logo), it is recommended to fork the latest code, modify it, and build your own Docker image.
+
+## Q: The page loads, but the login / register APIs return 502?
+
+A: The page is served by the `web` container, while login, register and other APIs are proxied by `web` to `server` (default `SKILLHUB_API_UPSTREAM=http://server:8080`). When the page works but the API returns 502, check whether `server` started correctly first; a wrong upstream, DNS, or container-network problem can also produce a 502.
+
+Troubleshooting order:
+
+```bash
+# 1. Check whether server is running
+docker compose --env-file .env.release -f compose.release.yml ps
+
+# 2. Look at the first error in the server startup log
+docker compose --env-file .env.release -f compose.release.yml logs server | head -50
+```
+
+One common startup failure is:
+
+```
+SKILLHUB_DOWNLOAD_ANON_COOKIE_SECRET must not use the default placeholder
+```
+
+This means `server` still reads the placeholder from the template. Replace it in `.env.release` with your own random string (**at least 32 characters**) and recreate the containers:
+
+```bash
+SKILLHUB_DOWNLOAD_ANON_COOKIE_SECRET=<your own random string, at least 32 characters>
+```
+
+Running `make validate-release-config` before startup validates `.env.release` and surfaces placeholders and missing values early.
+
+## Q: Why doesn't my configuration change take effect?
+
+A: Two common causes:
+
+1. **Edited the wrong file**: `.env.release.example` is only a template; Compose reads the file passed via `--env-file`, i.e. `.env.release`. Run `cp .env.release.example .env.release` first, then edit `.env.release`.
+2. **Restarted instead of recreated**: environment variables are injected when the container is created, and `restart` does not re-inject them. Recreate the containers after a config change:
+
+```bash
+docker compose --env-file .env.release -f compose.release.yml up -d --force-recreate
+```
+
+## Q: What external dependencies does SkillHub require at runtime?
+
+A: PostgreSQL and Redis are required. Object storage supports both `local` and S3, controlled by `SKILLHUB_STORAGE_PROVIDER`. `.env.release.example` explicitly selects `local`, but if the variable is completely unset when using `compose.release.yml`, the Compose fallback is `s3`. Set it explicitly; S3 is recommended for production (configured via `SKILLHUB_STORAGE_S3_*`). Only PostgreSQL is supported as the database — MySQL is not.
+
+The release Compose file already bundles PostgreSQL and Redis, bound to `127.0.0.1` by default.
+
+## Q: How does an account created through OAuth (GitHub / GitLab, etc.) get admin rights?
+
+A: The first OAuth login creates a regular user. An existing `SUPER_ADMIN` (for example the bootstrap admin created during initialization) has to promote it from the admin console.
+
+A `USER_ADMIN` can manage user status and assign platform roles other than `SUPER_ADMIN`, but cannot grant `SUPER_ADMIN` to any account or change the role of an existing `SUPER_ADMIN`. Only a `SUPER_ADMIN` can perform those two operations.
+
+## Q: How do I install multiple skills in bulk?
+
+A: The CLI `install` command handles one skill at a time. Both examples below use `--dir` to install the skills under the same target root; each skill is placed in `$target_dir/<skill-slug>/`:
+
+```bash
+target_dir=/opt/skillhub-skills
+
+# install one by one
+for skill in skill-a skill-b skill-c; do
+  skillhub install "$skill" --dir "$target_dir"
+done
+
+# or read from a manifest file (one skill name per line)
+xargs -a skills.txt -I {} skillhub install "{}" --dir "$target_dir"
+```
+
+Since **SkillHub Server v0.2.12**, public skills support anonymous search and install. Note that an invalid bearer token now fails the command instead of falling back to anonymous access — update or remove the stale credential in that case.
+
 ## Q: What should I do if I encounter issues?
 
 A: You can get help through the following channels:
 
 - **GitHub Issues**: https://github.com/iflytek/skillhub/issues
+- **Online Docs**: https://iflytek.github.io/skillhub/
 - **Documentation**: Refer to the project README.md
 - **Community Discussions**: https://github.com/iflytek/skillhub/discussions
 

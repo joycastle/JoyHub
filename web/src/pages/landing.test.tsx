@@ -15,10 +15,6 @@ vi.mock('react-i18next', async () => {
   }
 })
 
-vi.mock('lucide-react', () => ({
-  Search: () => null,
-}))
-
 vi.mock('@/shared/components/brand-mark', () => ({
   BrandMark: () => null,
 }))
@@ -43,6 +39,7 @@ vi.mock('@/shared/hooks/use-in-view', () => ({
 }))
 
 vi.mock('@/shared/lib/search-query', () => ({
+  MAX_SEARCH_INPUT_LENGTH: 200,
   normalizeSearchQuery: (q: string) => q.trim(),
 }))
 
@@ -58,10 +55,12 @@ describe('LandingPage', () => {
     expect(typeof LandingPage).toBe('function')
   })
 
-  it('renders the brand name in the hero section', () => {
+  it('renders the unified JoyHub capability entry', () => {
     const html = renderToStaticMarkup(<LandingPage />)
 
-    expect(html).toContain('brand.name')
-    expect(html).toContain('brand.tagline')
+    expect(html).toContain('joyhubHome.title')
+    expect(html).toContain('joyhubHome.centers.agents.title')
+    expect(html).toContain('joyhubHome.centers.skills.title')
+    expect(html).toContain('joyhubHome.centers.tools.title')
   })
 })

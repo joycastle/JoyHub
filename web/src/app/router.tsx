@@ -5,7 +5,10 @@ import { getCurrentUser } from '@/api/client'
 import { RoleGuard } from '@/shared/components/role-guard'
 import { createRequireAuth } from '@/shared/lib/auth-route'
 import { isApiTokensEnabled } from '@/shared/config/features'
+import { clearDynamicImportReloadGuard, recoverFromDynamicImportError } from '@/shared/lib/dynamic-import-recovery'
 import { normalizeSearchQuery } from '@/shared/lib/search-query'
+import type { CatalogResourceKind } from '@/api/types'
+import { CATALOG_RESOURCE_KINDS } from '@/entities/catalog-resource/catalog-resource-kind'
 
 /**
  * Central route registry for the SkillHub web app.
@@ -26,7 +29,15 @@ function createLazyRouteComponent<TModule extends Record<string, unknown>>(
   // Lazy route modules are wrapped in a uniform suspense fallback so route transitions behave
   // consistently across public and dashboard pages.
   const LazyComponent = lazy(async () => {
-    const module = await importer()
+    const module = await importer().catch((error) => {
+      if (recoverFromDynamicImportError(error)) {
+        return new Promise<never>(() => {})
+      }
+      throw error
+    })
+    // Router resolution can finish before React.lazy imports the route module. Only clear the
+    // one-time reload guard after the chunk itself has loaded successfully.
+    clearDynamicImportReloadGuard()
     return { default: module[exportName] as ComponentType<Record<string, unknown>> }
   })
 
@@ -64,6 +75,9 @@ function createRoleProtectedRouteComponent<TModule extends Record<string, unknow
 
 const LandingPage = createLazyRouteComponent(() => import('@/pages/landing'), 'LandingPage')
 const HomePage = createLazyRouteComponent(() => import('@/pages/home'), 'HomePage')
+const AgentsPage = createLazyRouteComponent(() => import('@/pages/catalog-center'), 'AgentsPage')
+const ToolsPage = createLazyRouteComponent(() => import('@/pages/catalog-center'), 'ToolsPage')
+const CatalogResourcePage = createLazyRouteComponent(() => import('@/pages/catalog-resource'), 'CatalogResourcePage')
 const LoginPage = createLazyRouteComponent(() => import('@/pages/login'), 'LoginPage')
 const PrivacyPolicyPage = createLazyRouteComponent(() => import('@/pages/privacy'), 'PrivacyPolicyPage')
 const SearchPage = createLazyRouteComponent(() => import('@/pages/search'), 'SearchPage')
@@ -74,6 +88,8 @@ const SkillVersionComparePage = createLazyRouteComponent(() => import('@/pages/s
 const DashboardPage = createLazyRouteComponent(() => import('@/pages/dashboard'), 'DashboardPage')
 const MySkillsPage = createLazyRouteComponent(() => import('@/pages/dashboard/my-skills'), 'MySkillsPage')
 const PublishPage = createLazyRouteComponent(() => import('@/pages/dashboard/publish'), 'PublishPage')
+const MyCatalogPage = createLazyRouteComponent(() => import('@/pages/dashboard/catalog'), 'MyCatalogPage')
+const PublishResourcePage = createLazyRouteComponent(() => import('@/pages/dashboard/publish-resource'), 'PublishResourcePage')
 const MyStarsPage = createLazyRouteComponent(() => import('@/pages/dashboard/stars'), 'MyStarsPage')
 const MySubscriptionsPage = createLazyRouteComponent(() => import('@/pages/dashboard/subscriptions'), 'MySubscriptionsPage')
 const NotificationsPage = createLazyRouteComponent(() => import('@/pages/notifications'), 'NotificationsPage')
@@ -132,6 +148,27 @@ const skillsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: 'skills',
   component: HomePage,
+})
+
+const agentsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: 'agents',
+  beforeLoad: requireAuth,
+  component: AgentsPage,
+})
+
+const toolsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: 'tools',
+  beforeLoad: requireAuth,
+  component: ToolsPage,
+})
+
+const catalogResourceRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: 'catalog/$slug',
+  beforeLoad: requireAuth,
+  component: CatalogResourcePage,
 })
 
 const loginRoute = createRoute({
@@ -253,6 +290,25 @@ const dashboardPublishRoute = createRoute({
   component: PublishPage,
 })
 
+const dashboardCatalogRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: 'dashboard/catalog',
+  beforeLoad: requireAuth,
+  component: MyCatalogPage,
+})
+
+const dashboardCatalogPublishRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: 'dashboard/catalog/new',
+  beforeLoad: requireAuth,
+  validateSearch: (search: Record<string, unknown>): { kind?: CatalogResourceKind } => ({
+    kind: typeof search.kind === 'string' && CATALOG_RESOURCE_KINDS.includes(search.kind as CatalogResourceKind)
+      ? search.kind as CatalogResourceKind
+      : undefined,
+  }),
+  component: PublishResourcePage,
+})
+
 const dashboardStarsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: 'dashboard/stars',
@@ -360,6 +416,9 @@ const adminLabelsRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   landingRoute,
   skillsRoute,
+  agentsRoute,
+  toolsRoute,
+  catalogResourceRoute,
   loginRoute,
   registerRoute,
   resetPasswordRoute,
@@ -372,6 +431,8 @@ const routeTree = rootRoute.addChildren([
   dashboardRoute,
   dashboardSkillsRoute,
   dashboardPublishRoute,
+  dashboardCatalogRoute,
+  dashboardCatalogPublishRoute,
   dashboardStarsRoute,
   dashboardSubscriptionsRoute,
   dashboardNotificationsRoute,

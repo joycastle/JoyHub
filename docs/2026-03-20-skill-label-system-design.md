@@ -419,7 +419,7 @@ ClawHub CLI 兼容层的搜索接口 `GET /api/v1/search` 一期不支持 label 
 
 ### 7.1 搜索页
 
-- 搜索框下方增加分类板块，水平排列 label 列表（数据来自 `GET /api/v1/labels`）
+- 搜索框下方增加分类板块，水平排列 label 列表（数据来自 `GET /api/v1/labels`）；标签过多时应允许换行（`flex-wrap`），避免单行溢出
 - 每个 label 显示当前语言的 display_name，fallback 顺序：当前语言 → en → slug
 - 点击某个 label 高亮选中，搜索请求追加 `label` 参数；再次点击取消选中
 - Label 之间单选互斥：点击另一个 label 切换选中，不支持组合筛选
@@ -429,6 +429,8 @@ ClawHub CLI 兼容层的搜索接口 `GET /api/v1/search` 一期不支持 label 
 
 - 在 skill 信息区域以 chip/badge 形式展示该 skill 的所有 label
 - 特权标签使用不同的视觉样式区分（不同颜色或图标）
+- 点击 chip 导航到搜索页并带上 `label=<slug>`（与 §7.1 同一筛选语义，便于从详情发现同标签技能）；默认清空关键词、`sort=newest`、`page=0`
+- 若该 slug 不在搜索页可见筛选列表中（例如 `visible_in_filter=false` 的 PRIVILEGED），URL 仍可携带 `label` 并生效，但筛选条上可能没有对应高亮按钮
 - 有权限的用户（owner / 命名空间管理员 / 超级管理员）看到编辑入口
 - 编辑交互：弹出面板；超级管理员可从全部 label definition 中勾选/取消勾选，owner / 命名空间管理员仅可操作搜索页可见的 RECOMMENDED 标签
 - 特权标签区域仅超级管理员可见和可操作

@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os'
 import { execFileSync } from 'node:child_process'
 import path from 'node:path'
 import type { APIRequestContext, Page, TestInfo } from '@playwright/test'
+import type { components } from '../../src/api/generated/schema'
 import { csrfHeaders } from './csrf'
 
 type CleanupTask = () => Promise<void>
@@ -32,14 +33,9 @@ export interface SeededReviewData {
   skill: SeededSkill
 }
 
-interface ReviewTaskSummary {
-  id: number
-  namespace: string
-  skillSlug: string
-  status: string
-  submittedBy: string
-  version: string
-}
+type ReviewTaskResponse = components['schemas']['ReviewTaskResponse']
+type SkillVersionResponse = components['schemas']['SkillVersionResponse']
+type SkillVersionStatus = NonNullable<SkillVersionResponse['status']>
 
 interface NamespaceCandidate {
   userId: string
@@ -463,19 +459,17 @@ export class E2eTestDataBuilder {
   async waitForPendingReview(namespaceSlug: string, skillSlug: string, version: string): Promise<number> {
     for (let attempt = 0; attempt < 20; attempt += 1) {
       try {
-        const page = await parseEnvelope<{
-          items: ReviewTaskSummary[]
-        }>(
+        const page = await parseEnvelope<components['schemas']['PageResponseReviewTaskResponse']>(
           await this.request.get('/api/web/reviews?status=PENDING&page=0&size=100&sortDirection=DESC'),
         )
 
-        const matched = page.items.find((item) =>
+        const matched = page.items?.find((item) =>
           item.namespace === namespaceSlug &&
           item.skillSlug === skillSlug &&
           item.version === version &&
           item.status === 'PENDING',
         )
-        if (matched) {
+        if (matched?.id != null) {
           return matched.id
         }
       } catch {
@@ -486,6 +480,38 @@ export class E2eTestDataBuilder {
     }
 
     throw new Error(`Timed out waiting for pending review ${namespaceSlug}/${skillSlug}@${version}`)
+  }
+
+  async waitForVersionStatus(
+    namespaceSlug: string,
+    skillSlug: string,
+    version: string,
+    expectedStatus: SkillVersionStatus,
+  ): Promise<number> {
+    for (let attempt = 0; attempt < 60; attempt += 1) {
+      try {
+        const page = await parseEnvelope<components['schemas']['PageResponseSkillVersionResponse']>(
+          await this.request.get(
+            `/api/web/skills/${encodeURIComponent(namespaceSlug)}/${encodeURIComponent(skillSlug)}/versions?page=0&size=100`,
+          ),
+        )
+
+        const matched = page.items?.find((item) =>
+          item.version === version && item.status === expectedStatus,
+        )
+        if (matched?.id != null) {
+          return matched.id
+        }
+      } catch {
+        // Security scanning and version projection can complete asynchronously.
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 1_000))
+    }
+
+    throw new Error(
+      `Timed out waiting for ${namespaceSlug}/${skillSlug}@${version} to reach ${expectedStatus}`,
+    )
   }
 
   async approveReview(reviewTaskId: number, comment = 'Approved by Playwright E2E'): Promise<void> {
@@ -510,6 +536,15 @@ export class E2eTestDataBuilder {
       }
     }
     throw lastError instanceof Error ? lastError : new Error('approveReview timed out')
+  }
+
+  async rejectReview(reviewTaskId: number, comment = 'Rejected by Playwright E2E'): Promise<void> {
+    await parseEnvelope<ReviewTaskResponse>(
+      await this.request.post(`/api/web/reviews/${reviewTaskId}/reject`, {
+        data: { comment },
+        headers: await csrfHeaders(this.page),
+      }),
+    )
   }
 
   async searchNamespaceMemberCandidates(slug: string, search: string): Promise<NamespaceCandidate[]> {

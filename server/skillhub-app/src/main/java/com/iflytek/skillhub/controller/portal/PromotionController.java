@@ -10,6 +10,8 @@ import com.iflytek.skillhub.dto.PromotionRequestDto;
 import com.iflytek.skillhub.dto.PromotionResponseDto;
 import com.iflytek.skillhub.service.AuditRequestContext;
 import com.iflytek.skillhub.service.GovernanceWorkflowAppService;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Map;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -81,11 +83,19 @@ public class PromotionController extends BaseApiController {
     }
 
     @GetMapping
-    public ApiResponse<PageResponse<PromotionResponseDto>> listPromotions(@RequestParam(defaultValue = "PENDING") String status,
+    public ApiResponse<PageResponse<PromotionResponseDto>> listPromotions(@Parameter(schema = @Schema(allowableValues = {"PENDING", "APPROVED", "REJECTED"}, defaultValue = "PENDING"))
+                                                                          @RequestParam(required = false) String status,
                                                                           @RequestParam(defaultValue = "0") int page,
                                                                           @RequestParam(defaultValue = "20") int size,
+                                                                          @Parameter(schema = @Schema(allowableValues = {"reviewedAt"}))
+                                                                          @RequestParam(required = false) String sortBy,
+                                                                          @Parameter(schema = @Schema(allowableValues = {"ASC", "DESC"}, defaultValue = "DESC"))
+                                                                          @RequestParam(required = false) String sortDirection,
                                                                           @RequestAttribute("userId") String userId) {
-        return ok("response.success.read", governanceWorkflowAppService.listPromotions(status, page, size, userId));
+        return ok(
+                "response.success.read",
+                governanceWorkflowAppService.listPromotions(status, page, size, sortBy, sortDirection, userId)
+        );
     }
 
     @GetMapping("/pending")

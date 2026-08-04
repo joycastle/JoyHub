@@ -44,9 +44,9 @@ import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.lang.reflect.Method;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
-import java.lang.reflect.Method;
 import java.security.MessageDigest;
 import java.util.HexFormat;
 import java.util.List;
@@ -58,10 +58,14 @@ class BuiltinSkillInitializerTest {
 
     private static final String GLOBAL = "global";
     private static final String PUBLISHER = "builtin-skill-publisher";
+    private static final byte[] PACKAGE_BYTES = "zip".getBytes(StandardCharsets.UTF_8);
+    private static final String PACKAGE_SHA256 =
+            "4a70fe9aa6436e02c2dea340fbd1e352e4ef2d8ce6ca52ad25d4b95471fc8bf2";
     private static final ManifestItem ITEM = new ManifestItem(
             "skillhub-hello",
             "1.0.0",
-            "https://bjcdn.openstorage.cn/skills/skillhub-hello.zip"
+            "https://bjcdn.openstorage.cn/skills/skillhub-hello.zip",
+            PACKAGE_SHA256
     );
 
     @Mock private BuiltinSkillManifestLoader manifestLoader;
@@ -215,7 +219,8 @@ class BuiltinSkillInitializerTest {
         ManifestItem malformed = new ManifestItem(
                 "skillhub-hello",
                 "1.0.0",
-                "https://bjcdn.openstorage.cn/skills/%zz.zip"
+                "https://bjcdn.openstorage.cn/skills/%zz.zip",
+                PACKAGE_SHA256
         );
         givenManifestAndSystemPublisher(List.of(malformed));
         when(skillRepository.findByNamespaceIdAndSlug(1L, "skillhub-hello")).thenReturn(List.of());
@@ -225,6 +230,25 @@ class BuiltinSkillInitializerTest {
         verify(downloader, never()).download(any());
         verify(skillPublishService, never()).publishFromEntries(any(), any(), any(), any(), any(), anyBoolean());
         assertThat(output).doesNotContain("Failed to synchronize built-in skill slug=skillhub-hello");
+    }
+
+    @Test
+    void skipsPackageWithMismatchedSha256BeforeExtraction() throws Exception {
+        ManifestItem mismatched = new ManifestItem(
+                "skillhub-hello",
+                "1.0.0",
+                ITEM.url(),
+                "0000000000000000000000000000000000000000000000000000000000000000"
+        );
+        givenManifestAndSystemPublisher(List.of(mismatched));
+        when(skillRepository.findByNamespaceIdAndSlug(1L, "skillhub-hello")).thenReturn(List.of());
+        when(downloader.download(URI.create(mismatched.url()))).thenReturn(Optional.of(PACKAGE_BYTES));
+
+        runInitializer();
+
+        verify(downloader).download(URI.create(mismatched.url()));
+        verify(extractor, never()).extract(any());
+        verify(skillPublishService, never()).publishFromEntries(any(), any(), any(), any(), any(), anyBoolean());
     }
 
     @Test
@@ -340,14 +364,14 @@ class BuiltinSkillInitializerTest {
     }
 
     private void givenExtractedPackage(List<PackageEntry> entries) throws Exception {
-        byte[] bytes = "zip".getBytes(StandardCharsets.UTF_8);
         when(namespaceRepository.findBySlug(GLOBAL)).thenReturn(Optional.of(globalNamespace));
         when(manifestLoader.load()).thenReturn(List.of(ITEM));
         lenient().when(userAccountRepository.findById(PUBLISHER)).thenReturn(Optional.of(systemPublisher()));
         lenient().when(namespaceMemberRepository.findByNamespaceIdAndUserId(1L, PUBLISHER))
                 .thenReturn(Optional.of(new NamespaceMember(1L, PUBLISHER, NamespaceRole.OWNER)));
-        when(downloader.download(URI.create(ITEM.url()))).thenReturn(Optional.of(bytes));
-        when(extractor.extract(bytes)).thenReturn(new SkillPackageArchiveExtractor.ExtractionResult(entries, List.of()));
+        when(downloader.download(URI.create(ITEM.url()))).thenReturn(Optional.of(PACKAGE_BYTES));
+        when(extractor.extract(PACKAGE_BYTES))
+                .thenReturn(new SkillPackageArchiveExtractor.ExtractionResult(entries, List.of()));
     }
 
     private void givenManifestAndSystemPublisher() {

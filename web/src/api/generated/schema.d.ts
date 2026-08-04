@@ -324,6 +324,42 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/web/catalog/resources/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a viewer-specific Catalog resource detail */
+        get: operations["detail"];
+        /** Update a maintained Catalog resource */
+        put: operations["update"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/catalog/resources/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a viewer-specific Catalog resource detail */
+        get: operations["detail_1"];
+        /** Update a maintained Catalog resource */
+        put: operations["update_1"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/tokens/{id}/expiration": {
         parameters: {
             query?: never;
@@ -622,6 +658,38 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["archiveSkill_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/skills/{namespace}/publish-batch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["publishBatch"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/web/skills/{namespace}/publish-batch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["publishBatch_1"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1172,6 +1240,180 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/catalog/resources/{slug}/transfer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Transfer Catalog resource maintenance ownership */
+        post: operations["transfer"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/web/catalog/resources/{slug}/transfer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Transfer Catalog resource maintenance ownership */
+        post: operations["transfer_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/web/catalog/resources/{slug}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Publish or republish a Catalog resource */
+        post: operations["publish_2"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/catalog/resources/{slug}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Publish or republish a Catalog resource */
+        post: operations["publish_3"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/web/catalog/resources/{slug}/offline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Take a Catalog resource offline */
+        post: operations["offline"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/catalog/resources/{slug}/offline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Take a Catalog resource offline */
+        post: operations["offline_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/catalog/resources/{slug}/artifact": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download a visible Catalog artifact */
+        get: operations["downloadArtifact"];
+        put?: never;
+        /** Upload or replace a Catalog ZIP artifact */
+        post: operations["uploadArtifact"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/web/catalog/resources/{slug}/artifact": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Download a visible Catalog artifact */
+        get: operations["downloadArtifact_1"];
+        put?: never;
+        /** Upload or replace a Catalog ZIP artifact */
+        post: operations["uploadArtifact_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/web/catalog/resources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search visible published Catalog resources */
+        get: operations["search_1"];
+        put?: never;
+        /** Create a Catalog resource */
+        post: operations["create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/catalog/resources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search visible published Catalog resources */
+        get: operations["search_2"];
+        put?: never;
+        /** Create a Catalog resource */
+        post: operations["create_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/tokens": {
         parameters: {
             query?: never;
@@ -1181,7 +1423,7 @@ export interface paths {
         };
         get: operations["list_2"];
         put?: never;
-        post: operations["create"];
+        post: operations["create_2"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1245,7 +1487,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["publish_2"];
+        post: operations["publish_4"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1262,118 +1504,6 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["authorizeDevice"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/auth/session/bootstrap": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["bootstrapSession"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/auth/local/register": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["register"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/auth/local/password-reset/request": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["requestPasswordReset"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/auth/local/password-reset/confirm": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["confirmPasswordReset"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/auth/local/login": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["login"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/auth/local/change-password": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["changePassword"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/auth/direct/login": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post: operations["directLogin"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1677,7 +1807,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["publish_3"];
+        post: operations["publish_5"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2372,6 +2502,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/repositories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listRepositories"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/web/repositories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listRepositories_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/web/promotions/{id}": {
         parameters: {
             query?: never;
@@ -2852,6 +3014,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/web/catalog/me/resources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Catalog resources maintained by the current user */
+        get: operations["mine"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/catalog/me/resources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Catalog resources maintained by the current user */
+        get: operations["mine_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/whoami": {
         parameters: {
             query?: never;
@@ -2907,7 +3103,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["search_1"];
+        get: operations["search_3"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3163,7 +3359,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["search_2"];
+        get: operations["search_4"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3180,6 +3376,70 @@ export interface paths {
             cookie?: never;
         };
         get: operations["whoami_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/agent/v1/skills/{namespace}/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["detail_2"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/agent/v1/skills/{namespace}/{slug}/versions/{version}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["downloadVersion_3"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/agent/v1/skills/{namespace}/{slug}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["downloadLatest_3"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/agent/v1/skills/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["search_5"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3477,6 +3737,110 @@ export interface components {
             /** Format: date-time */
             updatedAt?: string;
         };
+        CatalogResourceRequest: {
+            slug: string;
+            name: string;
+            summary: string;
+            /** @enum {string} */
+            kind: "AGENT" | "PLUGIN" | "MCP_SERVER" | "ONLINE_TOOL" | "INTERNAL_SERVICE" | "KNOWLEDGE_BASE" | "TEMPLATE" | "RESOURCE_PACK";
+            icon?: string;
+            accessUrl?: string;
+            documentation?: string;
+            version?: string;
+            /** Format: int64 */
+            primaryDepartmentId?: number;
+            /** @enum {string} */
+            maintenanceStatus?: "ACTIVE" | "MAINTENANCE" | "DEPRECATED";
+            /** @enum {string} */
+            visibilityScope?: "COMPANY" | "DEPARTMENTS";
+            visibleDepartmentIds?: number[];
+            scenarios?: string[];
+            tags?: string[];
+            relatedResourceIds?: number[];
+            relatedSkillIds?: number[];
+            publish?: boolean;
+        };
+        ApiResponseCatalogResourceDetailResponse: {
+            /** Format: int32 */
+            code?: number;
+            msg?: string;
+            data?: components["schemas"]["CatalogResourceDetailResponse"];
+            /** Format: date-time */
+            timestamp?: string;
+            requestId?: string;
+        };
+        CatalogDepartmentResponse: {
+            /** Format: int64 */
+            id?: number;
+            slug?: string;
+            name?: string;
+        };
+        CatalogOwnerResponse: {
+            id?: string;
+            displayName?: string;
+        };
+        CatalogRelatedSkillResponse: {
+            /** Format: int64 */
+            id?: number;
+            namespace?: string;
+            slug?: string;
+            name?: string;
+            summary?: string;
+        };
+        CatalogResourceDetailResponse: {
+            /** Format: int64 */
+            id?: number;
+            slug?: string;
+            name?: string;
+            summary?: string;
+            kind?: string;
+            icon?: string;
+            accessUrl?: string;
+            documentation?: string;
+            version?: string;
+            department?: components["schemas"]["CatalogDepartmentResponse"];
+            owner?: components["schemas"]["CatalogOwnerResponse"];
+            status?: string;
+            maintenanceStatus?: string;
+            visibilityScope?: string;
+            visibleDepartments?: components["schemas"]["CatalogDepartmentResponse"][];
+            scenarios?: string[];
+            tags?: string[];
+            relatedResources?: components["schemas"]["CatalogResourceSummaryResponse"][];
+            relatedSkills?: components["schemas"]["CatalogRelatedSkillResponse"][];
+            artifactAvailable?: boolean;
+            artifactFilename?: string;
+            /** Format: int64 */
+            artifactSize?: number;
+            canManage?: boolean;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+            /** Format: date-time */
+            publishedAt?: string;
+        };
+        CatalogResourceSummaryResponse: {
+            /** Format: int64 */
+            id?: number;
+            slug?: string;
+            name?: string;
+            summary?: string;
+            kind?: string;
+            icon?: string;
+            accessUrl?: string;
+            version?: string;
+            department?: components["schemas"]["CatalogDepartmentResponse"];
+            owner?: components["schemas"]["CatalogOwnerResponse"];
+            status?: string;
+            maintenanceStatus?: string;
+            visibilityScope?: string;
+            scenarios?: string[];
+            tags?: string[];
+            artifactAvailable?: boolean;
+            /** Format: date-time */
+            updatedAt?: string;
+        };
         TokenExpirationUpdateRequest: {
             expiresAt?: string;
         };
@@ -3619,14 +3983,34 @@ export interface components {
         AdminSkillActionRequest: {
             reason?: string;
         };
-        ApiResponsePublishResponse: {
+        ApiResponseBatchPublishResponse: {
             /** Format: int32 */
             code?: number;
             msg?: string;
-            data?: components["schemas"]["PublishResponse"];
+            data?: components["schemas"]["BatchPublishResponse"];
             /** Format: date-time */
             timestamp?: string;
             requestId?: string;
+        };
+        BatchPublishItemResult: {
+            filename?: string;
+            success?: boolean;
+            needsConfirmation?: boolean;
+            publish?: components["schemas"]["PublishResponse"];
+            errorCode?: string;
+            errorMessage?: string;
+            warnings?: string[];
+        };
+        BatchPublishResponse: {
+            /** Format: int32 */
+            total?: number;
+            /** Format: int32 */
+            succeeded?: number;
+            /** Format: int32 */
+            failed?: number;
+            /** Format: int32 */
+            needsConfirmation?: number;
+            items?: components["schemas"]["BatchPublishItemResult"][];
         };
         PublishResponse: {
             /** Format: int64 */
@@ -3639,6 +4023,15 @@ export interface components {
             fileCount?: number;
             /** Format: int64 */
             totalSize?: number;
+        };
+        ApiResponsePublishResponse: {
+            /** Format: int32 */
+            code?: number;
+            msg?: string;
+            data?: components["schemas"]["PublishResponse"];
+            /** Format: date-time */
+            timestamp?: string;
+            requestId?: string;
         };
         ReviewActionRequest: {
             comment?: string;
@@ -3692,9 +4085,19 @@ export interface components {
             id?: number;
             /** Format: int64 */
             sourceSkillId?: number;
+            sourceSkillDisplayName?: string;
+            sourceSkillSummary?: string;
             sourceNamespace?: string;
             sourceSkillSlug?: string;
             sourceVersion?: string;
+            /** Format: int32 */
+            sourceVersionFileCount?: number;
+            /** Format: int64 */
+            sourceVersionTotalSize?: number;
+            /** Format: int64 */
+            sourceSkillDownloadCount?: number;
+            /** Format: int32 */
+            sourceSkillStarCount?: number;
             targetNamespace?: string;
             /** Format: int64 */
             targetSkillId?: number;
@@ -3789,6 +4192,9 @@ export interface components {
             createdAt?: string;
             readAt?: string;
         };
+        CatalogTransferRequest: {
+            newOwnerId: string;
+        };
         TokenCreateRequest: {
             name: string;
             scopes?: string[];
@@ -3846,6 +4252,7 @@ export interface components {
             email?: string;
             avatarUrl?: string;
             oauthProvider?: string;
+            canChangePassword?: boolean;
             platformRoles?: string[];
         };
         LocalRegisterRequest: {
@@ -4358,6 +4765,20 @@ export interface components {
             /** Format: int32 */
             size?: number;
         };
+        ApiResponseListSkillRepositoryResponse: {
+            /** Format: int32 */
+            code?: number;
+            msg?: string;
+            data?: components["schemas"]["SkillRepositoryResponse"][];
+            /** Format: date-time */
+            timestamp?: string;
+            requestId?: string;
+        };
+        SkillRepositoryResponse: {
+            slug?: string;
+            displayName?: string;
+            defaultRepository?: boolean;
+        };
         ApiResponsePageResponsePromotionResponseDto: {
             /** Format: int32 */
             code?: number;
@@ -4631,6 +5052,24 @@ export interface components {
             /** Format: int32 */
             size?: number;
         };
+        ApiResponsePageResponseCatalogResourceSummaryResponse: {
+            /** Format: int32 */
+            code?: number;
+            msg?: string;
+            data?: components["schemas"]["PageResponseCatalogResourceSummaryResponse"];
+            /** Format: date-time */
+            timestamp?: string;
+            requestId?: string;
+        };
+        PageResponseCatalogResourceSummaryResponse: {
+            items?: components["schemas"]["CatalogResourceSummaryResponse"][];
+            /** Format: int64 */
+            total?: number;
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+        };
         ClawHubWhoamiResponse: {
             user?: components["schemas"]["User"];
         };
@@ -4841,6 +5280,23 @@ export interface components {
             displayName?: string;
             actionUrl?: string;
         };
+        ApiResponseAuthMeResponse: {
+            /** Format: int32 */
+            code?: number;
+            msg?: string;
+            data?: components["schemas"]["AuthMeResponse"];
+            /** Format: date-time */
+            timestamp?: string;
+            requestId?: string;
+        };
+        AuthMeResponse: {
+            userId?: string;
+            displayName?: string;
+            email?: string;
+            avatarUrl?: string;
+            oauthProvider?: string;
+            platformRoles?: string[];
+        };
         AdminUserSummaryResponse: {
             id?: string;
             username?: string;
@@ -5025,6 +5481,47 @@ export interface components {
             handle?: string;
             displayName?: string;
             email?: string;
+        };
+        AgentSkillDetailResponse: {
+            namespace?: string;
+            slug?: string;
+            title?: string;
+            summary?: string;
+            version?: string;
+            fingerprint?: string;
+            downloadUrl?: string;
+        };
+        ApiResponseAgentSkillDetailResponse: {
+            /** Format: int32 */
+            code?: number;
+            msg?: string;
+            data?: components["schemas"]["AgentSkillDetailResponse"];
+            /** Format: date-time */
+            timestamp?: string;
+            requestId?: string;
+        };
+        AgentSkillSearchItemResponse: {
+            namespace?: string;
+            slug?: string;
+            latestVersion?: string;
+            summary?: string;
+            downloadUrl?: string;
+        };
+        AgentSkillSearchResponse: {
+            items?: components["schemas"]["AgentSkillSearchItemResponse"][];
+            /** Format: int64 */
+            total?: number;
+            /** Format: int32 */
+            limit?: number;
+        };
+        ApiResponseAgentSkillSearchResponse: {
+            /** Format: int32 */
+            code?: number;
+            msg?: string;
+            data?: components["schemas"]["AgentSkillSearchResponse"];
+            /** Format: date-time */
+            timestamp?: string;
+            requestId?: string;
         };
         ApiResponseSkillDeleteResponse: {
             /** Format: int32 */
@@ -5998,6 +6495,102 @@ export interface operations {
             };
         };
     };
+    detail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseCatalogResourceDetailResponse"];
+                };
+            };
+        };
+    };
+    update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CatalogResourceRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseCatalogResourceDetailResponse"];
+                };
+            };
+        };
+    };
+    detail_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseCatalogResourceDetailResponse"];
+                };
+            };
+        };
+    };
+    update_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CatalogResourceRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseCatalogResourceDetailResponse"];
+                };
+            };
+        };
+    };
     updateExpiration: {
         parameters: {
             query?: never;
@@ -6514,6 +7107,58 @@ export interface operations {
             };
         };
     };
+    publishBatch: {
+        parameters: {
+            query: {
+                files: string[];
+                visibility: string;
+                confirmWarnings?: boolean;
+            };
+            header?: never;
+            path: {
+                namespace: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseBatchPublishResponse"];
+                };
+            };
+        };
+    };
+    publishBatch_1: {
+        parameters: {
+            query: {
+                files: string[];
+                visibility: string;
+                confirmWarnings?: boolean;
+            };
+            header?: never;
+            path: {
+                namespace: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseBatchPublishResponse"];
+                };
+            };
+        };
+    };
     publish: {
         parameters: {
             query: {
@@ -6933,9 +7578,11 @@ export interface operations {
     listPromotions: {
         parameters: {
             query?: {
-                status?: string;
+                status?: "PENDING" | "APPROVED" | "REJECTED";
                 page?: number;
                 size?: number;
+                sortBy?: "reviewedAt";
+                sortDirection?: "ASC" | "DESC";
             };
             header?: never;
             path?: never;
@@ -6981,9 +7628,11 @@ export interface operations {
     listPromotions_1: {
         parameters: {
             query?: {
-                status?: string;
+                status?: "PENDING" | "APPROVED" | "REJECTED";
                 page?: number;
                 size?: number;
+                sortBy?: "reviewedAt";
+                sortDirection?: "ASC" | "DESC";
             };
             header?: never;
             path?: never;
@@ -7558,6 +8207,352 @@ export interface operations {
             };
         };
     };
+    transfer: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CatalogTransferRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseCatalogResourceDetailResponse"];
+                };
+            };
+        };
+    };
+    transfer_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CatalogTransferRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseCatalogResourceDetailResponse"];
+                };
+            };
+        };
+    };
+    publish_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseCatalogResourceDetailResponse"];
+                };
+            };
+        };
+    };
+    publish_3: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseCatalogResourceDetailResponse"];
+                };
+            };
+        };
+    };
+    offline: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseCatalogResourceDetailResponse"];
+                };
+            };
+        };
+    };
+    offline_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseCatalogResourceDetailResponse"];
+                };
+            };
+        };
+    };
+    downloadArtifact: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+        };
+    };
+    uploadArtifact: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseCatalogResourceDetailResponse"];
+                };
+            };
+        };
+    };
+    downloadArtifact_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+        };
+    };
+    uploadArtifact_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseCatalogResourceDetailResponse"];
+                };
+            };
+        };
+    };
+    search_1: {
+        parameters: {
+            query?: {
+                q?: string;
+                center?: string;
+                kind?: "AGENT" | "PLUGIN" | "MCP_SERVER" | "ONLINE_TOOL" | "INTERNAL_SERVICE" | "KNOWLEDGE_BASE" | "TEMPLATE" | "RESOURCE_PACK";
+                scenario?: string;
+                departmentId?: number;
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponsePageResponseCatalogResourceSummaryResponse"];
+                };
+            };
+        };
+    };
+    create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CatalogResourceRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseCatalogResourceDetailResponse"];
+                };
+            };
+        };
+    };
+    search_2: {
+        parameters: {
+            query?: {
+                q?: string;
+                center?: string;
+                kind?: "AGENT" | "PLUGIN" | "MCP_SERVER" | "ONLINE_TOOL" | "INTERNAL_SERVICE" | "KNOWLEDGE_BASE" | "TEMPLATE" | "RESOURCE_PACK";
+                scenario?: string;
+                departmentId?: number;
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponsePageResponseCatalogResourceSummaryResponse"];
+                };
+            };
+        };
+    };
+    create_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CatalogResourceRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseCatalogResourceDetailResponse"];
+                };
+            };
+        };
+    };
     list_2: {
         parameters: {
             query?: {
@@ -7581,7 +8576,7 @@ export interface operations {
             };
         };
     };
-    create: {
+    create_2: {
         parameters: {
             query?: never;
             header?: never;
@@ -7719,7 +8714,7 @@ export interface operations {
             };
         };
     };
-    publish_2: {
+    publish_4: {
         parameters: {
             query: {
                 namespace: string;
@@ -7769,174 +8764,6 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ApiResponseMessageResponse"];
-                };
-            };
-        };
-    };
-    bootstrapSession: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SessionBootstrapRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiResponseAuthMeResponse"];
-                };
-            };
-        };
-    };
-    register: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["LocalRegisterRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiResponseAuthMeResponse"];
-                };
-            };
-        };
-    };
-    requestPasswordReset: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PasswordResetRequestDto"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-        };
-    };
-    confirmPasswordReset: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PasswordResetConfirmRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-        };
-    };
-    login: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["LocalLoginRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiResponseAuthMeResponse"];
-                };
-            };
-        };
-    };
-    changePassword: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ChangePasswordRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-        };
-    };
-    directLogin: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["DirectLoginRequest"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiResponseAuthMeResponse"];
                 };
             };
         };
@@ -8383,7 +9210,7 @@ export interface operations {
             };
         };
     };
-    publish_3: {
+    publish_5: {
         parameters: {
             query?: never;
             header?: never;
@@ -9572,6 +10399,46 @@ export interface operations {
             };
         };
     };
+    listRepositories: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseListSkillRepositoryResponse"];
+                };
+            };
+        };
+    };
+    listRepositories_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseListSkillRepositoryResponse"];
+                };
+            };
+        };
+    };
     getPromotionDetail: {
         parameters: {
             query?: never;
@@ -10244,6 +11111,52 @@ export interface operations {
             };
         };
     };
+    mine: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponsePageResponseCatalogResourceSummaryResponse"];
+                };
+            };
+        };
+    };
+    mine_1: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponsePageResponseCatalogResourceSummaryResponse"];
+                };
+            };
+        };
+    };
     whoami: {
         parameters: {
             query?: never;
@@ -10333,7 +11246,7 @@ export interface operations {
             };
         };
     };
-    search_1: {
+    search_3: {
         parameters: {
             query: {
                 q: string;
@@ -10709,7 +11622,7 @@ export interface operations {
             };
         };
     };
-    search_2: {
+    search_4: {
         parameters: {
             query?: {
                 q?: string;
@@ -10748,6 +11661,101 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ApiResponseCliWhoAmIResponse"];
+                };
+            };
+        };
+    };
+    detail_2: {
+        parameters: {
+            query?: {
+                version?: string;
+            };
+            header?: never;
+            path: {
+                namespace: string;
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseAgentSkillDetailResponse"];
+                };
+            };
+        };
+    };
+    downloadVersion_3: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                namespace: string;
+                slug: string;
+                version: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+        };
+    };
+    downloadLatest_3: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                namespace: string;
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+        };
+    };
+    search_5: {
+        parameters: {
+            query?: {
+                q?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseAgentSkillSearchResponse"];
                 };
             };
         };

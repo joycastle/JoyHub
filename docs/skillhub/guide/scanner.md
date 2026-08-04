@@ -79,6 +79,8 @@ Skill Scanner 执行多引擎分析
 | `SKILLHUB_SCANNER_USE_LLM` | 启用 LLM 分析 | `false` |
 | `SKILLHUB_SCANNER_LLM_PROVIDER` | LLM 提供商（anthropic / openai / azure） | `anthropic` |
 | `SKILL_SCANNER_LLM_API_KEY` | LLM API 密钥 | - |
+| `SKILL_SCANNER_LLM_BASE_URL` | 本地/自定义 LLM 服务地址 | - |
+| `SKILL_SCANNER_LLM_MODEL` | LLM 模型名称 | - |
 
 ### 部署说明
 

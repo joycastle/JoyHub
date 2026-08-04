@@ -182,7 +182,7 @@ describe('MySkillsPage', () => {
     expect(buttonRecords.some((button) => button.label === 'mySkills.update')).toBe(false)
   })
 
-  it('falls back to public visibility when the skill card data has no visibility field', () => {
+  it('falls back to warehouse visibility when the skill card data has no visibility field', () => {
     useMySkillsMock.mockReturnValue({
       data: {
         items: [
@@ -212,7 +212,7 @@ describe('MySkillsPage', () => {
       to: '/dashboard/publish',
       search: {
         namespace: 'team-ai',
-        visibility: 'PUBLIC',
+        visibility: 'WAREHOUSE',
       },
     })
   })

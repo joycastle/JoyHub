@@ -13,6 +13,10 @@
     <dependencies>
         <dependency>
             <groupId>com.iflytek.skillhub</groupId>
+            <artifactId>skillhub-catalog</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.iflytek.skillhub</groupId>
             <artifactId>skillhub-domain</artifactId>
         </dependency>
         <dependency>

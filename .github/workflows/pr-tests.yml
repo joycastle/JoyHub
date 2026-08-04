@@ -67,6 +67,9 @@ jobs:
       - name: Ensure Maven wrapper is executable
         run: chmod +x server/mvnw
 
+      - name: Validate built-in Skill packages
+        run: make test-builtin-skills
+
       - name: Run backend unit tests
         run: make test-backend
 
@@ -88,7 +91,9 @@ jobs:
           filters: |
             docs:
               - 'docs/skillhub/**'
+              - 'weekly/**'
               - '.github/workflows/pr-tests.yml'
+              - '.github/workflows/deploy-docs.yml'
 
       - name: Set up Node.js
         if: steps.changed.outputs.docs == 'true'
@@ -105,3 +110,12 @@ jobs:
       - name: Build VitePress site
         if: steps.changed.outputs.docs == 'true'
         run: cd docs/skillhub && npm run build
+
+      - name: Build and validate weekly reports
+        if: steps.changed.outputs.docs == 'true'
+        run: |
+          python3 weekly/scripts/build_site.py \
+            --source weekly/site \
+            --output docs/skillhub/.vitepress/dist/weekly
+          python3 weekly/scripts/validate_site.py \
+            docs/skillhub/.vitepress/dist/weekly

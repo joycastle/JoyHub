@@ -10,10 +10,8 @@ class AuthMethodCatalogTest {
     @Test
     void listMethodsShouldExposeOnlyFeishuOAuth() {
         OAuth2ClientProperties oauthProperties = new OAuth2ClientProperties();
-        OAuth2ClientProperties.Registration feishu = new OAuth2ClientProperties.Registration();
-        feishu.setClientName("飞书");
-        oauthProperties.getRegistration().put("feishu", feishu);
-        oauthProperties.getRegistration().put("github", new OAuth2ClientProperties.Registration());
+        oauthProperties.getRegistration().put("feishu", registration("production-client", "飞书"));
+        oauthProperties.getRegistration().put("github", registration("github-client", "GitHub"));
 
         AuthMethodCatalog catalog = new AuthMethodCatalog(oauthProperties);
 
@@ -32,9 +30,8 @@ class AuthMethodCatalogTest {
     @Test
     void listOAuthProvidersShouldExposeOnlyFeishu() {
         OAuth2ClientProperties oauthProperties = new OAuth2ClientProperties();
-        OAuth2ClientProperties.Registration feishu = new OAuth2ClientProperties.Registration();
-        feishu.setClientName("飞书");
-        oauthProperties.getRegistration().put("feishu", feishu);
+        oauthProperties.getRegistration().put("feishu", registration("production-client", "飞书"));
+        oauthProperties.getRegistration().put("github", registration("github-client", "GitHub"));
 
         AuthMethodCatalog catalog = new AuthMethodCatalog(oauthProperties);
 
@@ -46,5 +43,23 @@ class AuthMethodCatalogTest {
                 assertThat(provider.name()).isEqualTo("飞书");
                 assertThat(provider.authorizationUrl()).isEqualTo("/oauth2/authorization/feishu");
             });
+    }
+
+    @Test
+    void catalogsShouldHideInvalidFeishuConfiguration() {
+        OAuth2ClientProperties oauthProperties = new OAuth2ClientProperties();
+        oauthProperties.getRegistration().put("feishu", registration("PLACEHOLDER", "飞书"));
+
+        AuthMethodCatalog catalog = new AuthMethodCatalog(oauthProperties);
+
+        assertThat(catalog.listOAuthProviders(null)).isEmpty();
+        assertThat(catalog.listMethods(null)).isEmpty();
+    }
+
+    private static OAuth2ClientProperties.Registration registration(String clientId, String clientName) {
+        OAuth2ClientProperties.Registration registration = new OAuth2ClientProperties.Registration();
+        registration.setClientId(clientId);
+        registration.setClientName(clientName);
+        return registration;
     }
 }

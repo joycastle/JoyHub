@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 @Component
 public class BuiltinSkillManifestLoader {
@@ -24,6 +25,7 @@ public class BuiltinSkillManifestLoader {
     static final int MAX_ITEMS = 100;
 
     private static final Logger log = LoggerFactory.getLogger(BuiltinSkillManifestLoader.class);
+    private static final Pattern SHA256_PATTERN = Pattern.compile("[0-9a-f]{64}");
 
     private final ObjectMapper objectMapper;
     private final ResourceLoader resourceLoader;
@@ -72,8 +74,22 @@ public class BuiltinSkillManifestLoader {
             String slug = text(itemNode, "slug");
             String version = text(itemNode, "version");
             String url = text(itemNode, "url");
-            if (!StringUtils.hasText(slug) || !StringUtils.hasText(version) || !StringUtils.hasText(url)) {
-                log.warn("Skipping built-in skill manifest item {} because slug, version, and url are required", index);
+            String sha256 = text(itemNode, "sha256");
+            if (!StringUtils.hasText(slug)
+                    || !StringUtils.hasText(version)
+                    || !StringUtils.hasText(url)
+                    || !StringUtils.hasText(sha256)) {
+                log.warn(
+                        "Skipping built-in skill manifest item {} because slug, version, url, and sha256 are required",
+                        index
+                );
+                continue;
+            }
+            if (!SHA256_PATTERN.matcher(sha256).matches()) {
+                log.warn(
+                        "Skipping built-in skill manifest item {} because sha256 must be 64 lowercase hexadecimal characters",
+                        index
+                );
                 continue;
             }
             try {
@@ -90,7 +106,7 @@ public class BuiltinSkillManifestLoader {
                 continue;
             }
 
-            items.add(new ManifestItem(slug, version, url));
+            items.add(new ManifestItem(slug, version, url, sha256));
         }
         return List.copyOf(items);
     }
@@ -103,6 +119,6 @@ public class BuiltinSkillManifestLoader {
         return value.asText().trim();
     }
 
-    public record ManifestItem(String slug, String version, String url) {
+    public record ManifestItem(String slug, String version, String url, String sha256) {
     }
 }

@@ -1,10 +1,10 @@
 package com.iflytek.skillhub.filter;
 
+import com.iflytek.skillhub.observability.RequestIdAccessor;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.slf4j.MDC;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
@@ -22,23 +22,25 @@ import java.util.UUID;
 public class RequestIdFilter extends OncePerRequestFilter {
 
     private static final String REQUEST_ID_HEADER = "X-Request-Id";
-    private static final String REQUEST_ID_MDC_KEY = "requestId";
+
+    private final RequestIdAccessor requestIdAccessor;
+
+    public RequestIdFilter(RequestIdAccessor requestIdAccessor) {
+        this.requestIdAccessor = requestIdAccessor;
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
         String requestId = request.getHeader(REQUEST_ID_HEADER);
-        if (requestId == null || requestId.isBlank()) {
+        if (!RequestIdAccessor.isValid(requestId)) {
             requestId = UUID.randomUUID().toString();
         }
 
-        MDC.put(REQUEST_ID_MDC_KEY, requestId);
         response.setHeader(REQUEST_ID_HEADER, requestId);
 
-        try {
+        try (RequestIdAccessor.Scope ignored = requestIdAccessor.open(requestId)) {
             filterChain.doFilter(request, response);
-        } finally {
-            MDC.remove(REQUEST_ID_MDC_KEY);
         }
     }
 }

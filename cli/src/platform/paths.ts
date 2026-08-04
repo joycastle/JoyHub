@@ -24,6 +24,15 @@ export async function pathExists(path: string): Promise<boolean> {
   }
 }
 
+export async function canonicalizeExistingPath(path: string): Promise<string> {
+  const { realpath } = await import('node:fs/promises')
+  try {
+    return await realpath(path)
+  } catch {
+    return path
+  }
+}
+
 export async function applyCredentialPermissions(path: string): Promise<void> {
   if (process.platform === 'win32') return
   const { chmod } = await import('node:fs/promises')

@@ -8,6 +8,7 @@ import { NotificationBell } from '@/features/notification/notification-bell'
 import { getAppHeaderClassName } from './layout-header-style'
 import { getAppMainContentLayout, resolveAppMainContentPathname } from './layout-main-content'
 import { BrandMark } from '@/shared/components/brand-mark'
+import { Search } from 'lucide-react'
 
 /**
  * Application shell shared by all routed pages.
@@ -45,10 +46,10 @@ export function Layout() {
     auth?: boolean
   }> = [
     { label: t('nav.landing'), to: '/', exact: true },
-    { label: t('nav.publish'), to: '/dashboard/publish', auth: true },
-    { label: t('nav.search'), to: '/search' },
-    { label: t('nav.dashboard'), to: '/dashboard', auth: true },
-    { label: t('nav.mySkills'), to: '/dashboard/skills', auth: true },
+    { label: 'Agent 中心', to: '/agents', auth: true },
+    { label: '工具中心', to: '/tools', auth: true },
+    { label: t('nav.home'), to: '/skills' },
+    { label: '我的内容', to: '/dashboard/catalog', auth: true },
   ]
 
   const isActive = (to: string, exact?: boolean) => {
@@ -96,6 +97,15 @@ export function Layout() {
         </nav>
 
         <div className="flex items-center gap-6 text-[15px] font-normal" style={{ color: 'hsl(var(--text-secondary))' }}>
+          <Link
+            to="/search"
+            search={{ q: '', sort: 'relevance', page: 0, starredOnly: false }}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-secondary hover:text-foreground"
+            aria-label={t('nav.search')}
+            title={t('nav.search')}
+          >
+            <Search className="h-5 w-5" strokeWidth={1.8} />
+          </Link>
           <LanguageSwitcher />
           {user && <NotificationBell />}
           {isLoading ? null : user ? (

@@ -1,5 +1,6 @@
 package com.iflytek.skillhub.stream;
 
+import com.iflytek.skillhub.observability.MessageObservationSupport;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import org.redisson.api.AutoClaimResult;
@@ -39,6 +40,7 @@ public abstract class AbstractStreamConsumer<T> {
     private final Duration reclaimMinIdle;
     private final int reclaimBatchSize;
     private final Duration reclaimInterval;
+    private final MessageObservationSupport messageObservationSupport;
     private final AtomicBoolean running = new AtomicBoolean(false);
 
     private RStream<String, String> stream;
@@ -47,8 +49,18 @@ public abstract class AbstractStreamConsumer<T> {
 
     protected AbstractStreamConsumer(RedissonClient redissonClient,
                                      String streamKey,
-                                     String groupName) {
-        this(redissonClient, streamKey, groupName, true, Duration.ofMinutes(2), 20, Duration.ofSeconds(30));
+                                     String groupName,
+                                     MessageObservationSupport messageObservationSupport) {
+        this(
+                redissonClient,
+                streamKey,
+                groupName,
+                true,
+                Duration.ofMinutes(2),
+                20,
+                Duration.ofSeconds(30),
+                messageObservationSupport
+        );
     }
 
     protected AbstractStreamConsumer(RedissonClient redissonClient,
@@ -57,7 +69,8 @@ public abstract class AbstractStreamConsumer<T> {
                                      boolean reclaimEnabled,
                                      Duration reclaimMinIdle,
                                      int reclaimBatchSize,
-                                     Duration reclaimInterval) {
+                                     Duration reclaimInterval,
+                                     MessageObservationSupport messageObservationSupport) {
         this.redissonClient = redissonClient;
         this.streamKey = streamKey;
         this.groupName = groupName;
@@ -65,6 +78,7 @@ public abstract class AbstractStreamConsumer<T> {
         this.reclaimMinIdle = reclaimMinIdle;
         this.reclaimBatchSize = reclaimBatchSize;
         this.reclaimInterval = reclaimInterval;
+        this.messageObservationSupport = messageObservationSupport;
         this.consumerName = consumerPrefix() + "-" + UUID.randomUUID().toString().substring(0, 8);
     }
 
@@ -191,10 +205,24 @@ public abstract class AbstractStreamConsumer<T> {
         if (messages == null || messages.isEmpty()) {
             return;
         }
+        // Scope each entry independently because one XREADGROUP batch may contain unrelated traces.
         messages.forEach(this::handleMessage);
     }
 
     void handleMessage(StreamMessageId messageId, Map<String, String> data) {
+        messageObservationSupport.observeProcess(
+                RedisStreamMessageCarrier.MESSAGING_SYSTEM,
+                streamKey,
+                data,
+                RedisStreamMessageCarrier.ADAPTER,
+                () -> {
+                    handleMessageInScope(messageId, data);
+                    return null;
+                }
+        );
+    }
+
+    private void handleMessageInScope(StreamMessageId messageId, Map<String, String> data) {
         T payload = parsePayload(messageId.toString(), data);
         if (payload == null) {
             acknowledge(messageId);
@@ -208,6 +236,7 @@ public abstract class AbstractStreamConsumer<T> {
             markCompleted(payload);
             acknowledge(messageId);
         } catch (Exception e) {
+            messageObservationSupport.recordCurrentError(e);
             handleFailure(payload, retryCount, e);
             acknowledge(messageId);
         }
@@ -215,6 +244,8 @@ public abstract class AbstractStreamConsumer<T> {
 
     private void handleFailure(T payload, int retryCount, Exception e) {
         if (retryCount < MAX_RETRY_COUNT) {
+            // Retry publication remains inside the current consumer scope, so the new producer
+            // span and message carrier continue the original trace.
             retryMessage(payload, retryCount + 1);
             return;
         }

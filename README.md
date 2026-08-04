@@ -15,6 +15,15 @@
 [![Java](https://img.shields.io/badge/java-21-ED8B00?logo=openjdk&logoColor=white)](https://openjdk.org/projects/jdk/21/)
 [![React](https://img.shields.io/badge/react-19-61DAFB?logo=react&logoColor=black)](https://react.dev)
 
+[![GitHub Stars](https://img.shields.io/github/stars/iflytek/skillhub?style=social)](https://github.com/iflytek/skillhub/stargazers)
+[![GitHub Watchers](https://img.shields.io/github/watchers/iflytek/skillhub?style=social)](https://github.com/iflytek/skillhub/watchers)
+
+</div>
+
+<div align="center">
+
+<a href="https://trendshift.io/repositories/24384?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-24384" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/24384" alt="iflytek%2Fskillhub | Trendshift" width="250" height="55"/></a>&nbsp;&nbsp;<a href="https://aaif.io/" target="_blank" rel="noopener noreferrer"><img src="https://cdn.sanity.io/images/4o10fa7h/production/16dd7d8270b673d376cadca831ab3d5ea003bb89-838x203.svg" alt="AAIF Associate Member" height="55"/></a>
+
 </div>
 
 <div align="center">
@@ -34,6 +43,22 @@ governed place to share agent skills. Publish a skill package, push
 it to a namespace, and let others find it through search or
 install it via CLI. Built for on-premise deployment behind your
 firewall, with the same polish you'd expect from a public registry.
+
+> ⭐ If SkillHub fits your team, **star** the repo to help other teams find it, and **Watch → Custom → Releases** to get notified when a new version ships.
+
+## Share Great Skills
+
+Great Skills become more valuable when they are shared. If you have a Skill that has
+proved useful in real work or everyday life, share it with the SkillHub community and
+help grow an open, practical Skill ecosystem. We welcome Skills for daily life, office
+work, learning and research, travel and events, content creation, data analysis, and
+software development—not only engineering workflows.
+
+High-quality community contributions may join the curated starter collection, making new
+SkillHub deployments useful from day one. You do not need to finish the full adaptation
+before joining in: [open an issue](https://github.com/iflytek/skillhub/issues/new/choose)
+with the Skill's source and the problem it solves, or submit a PR by following the
+[Skill sharing guide](./builtin-skills/README.md).
 
 ## Documentation
 
@@ -340,6 +365,20 @@ Basic Kubernetes manifests are available under [`deploy/k8s/`](./deploy/k8s):
 - `services.yaml`
 - `ingress.yaml`
 
+For a configurable deployment with bundled PostgreSQL and Redis dependencies,
+use the Helm chart under [`charts/skillhub/`](./charts/skillhub):
+
+```bash
+helm dependency build ./charts/skillhub
+helm upgrade --install skillhub ./charts/skillhub \
+  --namespace skillhub \
+  --create-namespace \
+  -f values-production.yaml
+```
+
+See the [Helm chart guide](./charts/skillhub/README.md) for required secrets,
+Ingress/TLS, external data services, storage migration, and upgrade constraints.
+
 Apply them after creating your own secret:
 
 ```bash
@@ -436,6 +475,19 @@ namespace `my-space` plus skill slug `my-skill`.
 
 📖 **[Complete OpenClaw Integration Guide →](./docs/openclaw-integration.md)**
 
+### [Hermes Agent](https://github.com/NousResearch/hermes-agent)
+
+[Hermes Agent](https://github.com/NousResearch/hermes-agent) uses the standard `SKILL.md` format and recursively discovers skills under `$HERMES_HOME/skills/`. Use SkillHub CLI's explicit `--dir` option to install a complete SkillHub package into Hermes without a registry adapter, then verify it with `hermes skills list`.
+
+📖 **[Complete Hermes Agent Integration Guide →](./docs/hermes-integration-en.md)**
+
+### [HarnessClaw Engine](https://github.com/harnessclaw/harnessclaw-engine)
+
+[HarnessClaw Engine](https://github.com/harnessclaw/harnessclaw-engine) is a Go LLM programming assistant engine that exposes its capabilities over WebSocket. It loads skills from `SKILL.md` files with YAML frontmatter and parameter substitution, scanning each configured directory for `skill-name/SKILL.md` (default `~/.harnessclaw/workspace/skills/`, with earlier directories taking priority on name conflicts). Install a SkillHub package straight into that directory with the CLI's `--dir` option, no registry adapter required:
+
+```bash
+npx clawhub --dir ~/.harnessclaw/workspace/skills install my-skill
+```
 ### [AstronClaw](https://agent.xfyun.cn/astron-claw)
 
 [AstronClaw](https://agent.xfyun.cn/astron-claw) is a cloud AI assistant built on OpenClaw's core capabilities, providing 24/7 online service through enterprise platforms like WeChat Work, DingTalk, and Feishu. It features a built-in skill system with over 130 official skills. You can connect it to a self-hosted SkillHub registry to enable one-click skill installation, search repository, dialogue-based automatic installation, and even custom skills management within your organization.

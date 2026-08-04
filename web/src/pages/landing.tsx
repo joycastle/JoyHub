@@ -1,166 +1,179 @@
 import { Link, useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
+import {
+  ArrowRight,
+  Bot,
+  Boxes,
+  Briefcase,
+  Code2,
+  Database,
+  FileText,
+  Palette,
+  Search,
+  ShieldCheck,
+  Sparkles,
+  UploadCloud,
+  Wrench,
+  type LucideIcon,
+} from 'lucide-react'
+import { SearchBar } from '@/features/search/search-bar'
 import { normalizeSearchQuery } from '@/shared/lib/search-query'
-import { Search as SearchIcon } from 'lucide-react'
-import { SkillCard } from '@/features/skill/skill-card'
-import { SkeletonList } from '@/shared/components/skeleton-loader'
-import { useSearchSkills } from '@/shared/hooks/use-skill-queries'
-import { useInView } from '@/shared/hooks/use-in-view'
-import { Button } from '@/shared/ui/button'
-import { BrandMark } from '@/shared/components/brand-mark'
 
-const HERO_CTA_CLASS =
-  'inline-flex min-w-[9.5rem] items-center justify-center rounded-xl border border-[hsl(var(--primary)/0.35)] bg-white px-8 py-3 text-base font-medium text-[hsl(var(--primary))] transition-colors hover:bg-[hsl(var(--secondary))]'
+interface HomeEntry {
+  key: 'agents' | 'skills' | 'tools'
+  to: '/agents' | '/skills' | '/tools'
+  icon: LucideIcon
+  accentClassName: string
+}
 
-/**
- * Marketing-style landing page for unauthenticated and first-time visitors.
- */
+const CENTER_ENTRIES: HomeEntry[] = [
+  { key: 'agents', to: '/agents', icon: Bot, accentClassName: 'from-blue-500/15 to-cyan-400/5 text-blue-600' },
+  { key: 'skills', to: '/skills', icon: Boxes, accentClassName: 'from-violet-500/15 to-fuchsia-400/5 text-violet-600' },
+  { key: 'tools', to: '/tools', icon: Wrench, accentClassName: 'from-emerald-500/15 to-teal-400/5 text-emerald-600' },
+]
+
+const SCENARIOS: Array<{ key: string; query: string; icon: LucideIcon }> = [
+  { key: 'content', query: '内容生产', icon: Sparkles },
+  { key: 'data', query: '数据分析', icon: Database },
+  { key: 'project', query: '项目管理', icon: Briefcase },
+  { key: 'development', query: '研发提效', icon: Code2 },
+  { key: 'art', query: '美术资产处理', icon: Palette },
+]
+
+const PLATFORM_FEATURES: Array<{ key: string; icon: LucideIcon }> = [
+  { key: 'visibility', icon: ShieldCheck },
+  { key: 'documentation', icon: FileText },
+  { key: 'publishing', icon: UploadCloud },
+]
+
+/** JoyHub product home: a unified starting point for every internal AI capability. */
 export function LandingPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
 
-  const { data: popularSkills, isLoading: isLoadingPopular } = useSearchSkills({
-    sort: 'downloads',
-    size: 6,
-  })
-
-  const { data: latestSkills, isLoading: isLoadingLatest } = useSearchSkills({
-    sort: 'newest',
-    size: 6,
-  })
-
-  const handleSkillClick = (namespace: string, slug: string) => {
-    navigate({ to: `/space/${namespace}/${encodeURIComponent(slug)}` })
-  }
-
-  const heroView = useInView()
-  const popularView = useInView()
-  const latestView = useInView()
-
   const handleSearch = (query: string) => {
-    const normalized = normalizeSearchQuery(query)
     navigate({
       to: '/search',
-      search: { q: normalized, sort: 'relevance', page: 0, starredOnly: false },
+      search: { q: normalizeSearchQuery(query), sort: 'relevance', page: 0, starredOnly: false },
     })
   }
 
+  const searchScenario = (query: string) => {
+    navigate({ to: '/search', search: { q: query, sort: 'relevance', page: 0, starredOnly: false } })
+  }
+
   return (
-    <>
-      <main ref={heroView.ref} className={`relative z-10 flex flex-col items-center pt-16 pb-20 px-4 md:pt-24 scroll-fade-up${heroView.inView ? ' in-view' : ''}`}>
-        <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-brand-gradient mb-4">
-          {t('brand.name')}
-        </h1>
-        <p
-          className="text-base md:text-lg text-center max-w-2xl mb-10 leading-relaxed"
-          style={{ color: 'hsl(var(--text-secondary))' }}
-        >
-          {t('brand.tagline')}
-        </p>
-
-        <div className="w-full max-w-2xl mb-8">
-          <div
-            className="flex items-center bg-white rounded-xl border shadow-sm px-5 py-3.5"
-            style={{ borderColor: 'hsl(var(--border))' }}
-          >
-            <SearchIcon className="w-5 h-5 flex-shrink-0 mr-3" style={{ color: 'hsl(var(--text-placeholder))' }} strokeWidth={1.5} />
-            <input
-              type="text"
-              placeholder={t('landing.hero.searchPlaceholder')}
-              className="hero-input flex-1 bg-transparent outline-none text-base"
-              style={{ color: 'hsl(var(--foreground))' }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  handleSearch((e.target as HTMLInputElement).value)
-                }
-              }}
-            />
-          </div>
-        </div>
-
-        <div className="flex flex-wrap justify-center gap-3 mb-14">
-          <Link
-            to="/search"
-            search={{ q: '', sort: 'relevance', page: 0, starredOnly: false }}
-            className={HERO_CTA_CLASS}
-          >
-            {t('landing.hero.exploreSkills')}
-          </Link>
-          <Link to="/dashboard/publish" className={HERO_CTA_CLASS}>
-            {t('landing.hero.publishSkill')}
-          </Link>
-        </div>
-
-        <div className="flex justify-center">
-          <BrandMark size="lg" />
-        </div>
-      </main>
-
-      <section ref={popularView.ref} className={`relative z-10 w-full py-20 md:py-24 px-6 scroll-fade-up${popularView.inView ? ' in-view' : ''}`} style={{ background: 'var(--bg-page, hsl(var(--background)))' }}>
-        <div className="max-w-6xl mx-auto space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-3xl font-bold tracking-tight mb-2" style={{ color: 'hsl(var(--foreground))' }}>
-                {t('home.popularTitle')}
-              </h2>
-              <p style={{ color: 'hsl(var(--text-secondary))' }}>{t('home.popularDescription')}</p>
+    <div className="relative z-10">
+      <section className="px-5 pb-16 pt-16 md:px-10 md:pb-24 md:pt-24">
+        <div className="mx-auto max-w-6xl overflow-hidden rounded-[2rem] border border-primary/15 bg-gradient-to-br from-blue-100/90 via-white to-violet-100/70 px-6 py-14 shadow-[0_30px_100px_-55px_rgba(37,99,235,0.55)] md:px-14 md:py-20">
+          <div className="mx-auto max-w-4xl text-center">
+            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-white/80 px-4 py-2 text-sm font-semibold text-primary shadow-sm">
+              <Sparkles className="h-4 w-4" />
+              {t('joyhubHome.badge')}
             </div>
-            <Button
-              variant="ghost"
-              onClick={() => navigate({ to: '/search', search: { q: '', sort: 'downloads', page: 0, starredOnly: false } })}
-            >
-              {t('home.viewAll')}
-            </Button>
-          </div>
-          {isLoadingPopular ? (
-            <SkeletonList count={6} />
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {popularSkills?.items.map((skill, idx) => (
-                <div key={skill.id} className={`animate-fade-up delay-${Math.min(idx + 1, 6)}`}>
-                  <SkillCard
-                    skill={skill}
-                    onClick={() => handleSkillClick(skill.namespace, skill.slug)}
-                  />
-                </div>
-              ))}
+            <h1 className="text-4xl font-bold tracking-tight text-foreground md:text-6xl">
+              {t('joyhubHome.title')}
+            </h1>
+            <p className="mx-auto mt-6 max-w-3xl text-lg leading-8 text-muted-foreground md:text-xl">
+              {t('joyhubHome.description')}
+            </p>
+            <div className="mx-auto mt-10 max-w-3xl text-left">
+              <SearchBar placeholder={t('joyhubHome.searchPlaceholder')} onSearch={handleSearch} />
             </div>
-          )}
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-2 text-sm text-muted-foreground">
+              <Search className="h-4 w-4" />
+              <span>{t('joyhubHome.searchHint')}</span>
+            </div>
+          </div>
         </div>
       </section>
 
-      <section ref={latestView.ref} className={`relative z-10 w-full py-20 md:py-24 px-6 scroll-fade-up${latestView.inView ? ' in-view' : ''}`} style={{ background: 'var(--bg-page, hsl(var(--background)))' }}>
-        <div className="max-w-6xl mx-auto space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-3xl font-bold tracking-tight mb-2" style={{ color: 'hsl(var(--foreground))' }}>
-                {t('home.latestTitle')}
-              </h2>
-              <p style={{ color: 'hsl(var(--text-secondary))' }}>{t('home.latestDescription')}</p>
-            </div>
-            <Button
-              variant="ghost"
-              onClick={() => navigate({ to: '/search', search: { q: '', sort: 'newest', page: 0, starredOnly: false } })}
-            >
-              {t('home.viewAll')}
-            </Button>
+      <section className="px-5 py-12 md:px-10 md:py-16">
+        <div className="mx-auto max-w-6xl">
+          <div className="mb-8 max-w-3xl">
+            <div className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">{t('joyhubHome.centersEyebrow')}</div>
+            <h2 className="mt-3 text-3xl font-bold tracking-tight md:text-4xl">{t('joyhubHome.centersTitle')}</h2>
+            <p className="mt-3 text-base leading-7 text-muted-foreground">{t('joyhubHome.centersDescription')}</p>
           </div>
-          {isLoadingLatest ? (
-            <SkeletonList count={6} />
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {latestSkills?.items.map((skill, idx) => (
-                <div key={skill.id} className={`animate-fade-up delay-${Math.min(idx + 1, 6)}`}>
-                  <SkillCard
-                    skill={skill}
-                    onClick={() => handleSkillClick(skill.namespace, skill.slug)}
-                  />
-                </div>
-              ))}
-            </div>
-          )}
+          <div className="grid gap-5 md:grid-cols-3">
+            {CENTER_ENTRIES.map((entry) => {
+              const Icon = entry.icon
+              return (
+                <Link
+                  key={entry.key}
+                  to={entry.to}
+                  className="group rounded-3xl border bg-white p-7 shadow-sm transition-all hover:-translate-y-1 hover:border-primary/30 hover:shadow-lg"
+                >
+                  <div className={`inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br ${entry.accentClassName}`}>
+                    <Icon className="h-6 w-6" />
+                  </div>
+                  <h3 className="mt-6 text-2xl font-semibold">{t(`joyhubHome.centers.${entry.key}.title`)}</h3>
+                  <p className="mt-3 min-h-[5rem] leading-7 text-muted-foreground">{t(`joyhubHome.centers.${entry.key}.description`)}</p>
+                  <span className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-primary">
+                    {t('joyhubHome.enterCenter')}
+                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                  </span>
+                </Link>
+              )
+            })}
+          </div>
         </div>
       </section>
-    </>
+
+      <section className="bg-slate-50/80 px-5 py-16 md:px-10 md:py-20">
+        <div className="mx-auto max-w-6xl">
+          <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-2xl">
+              <div className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">{t('joyhubHome.scenariosEyebrow')}</div>
+              <h2 className="mt-3 text-3xl font-bold tracking-tight md:text-4xl">{t('joyhubHome.scenariosTitle')}</h2>
+              <p className="mt-3 leading-7 text-muted-foreground">{t('joyhubHome.scenariosDescription')}</p>
+            </div>
+          </div>
+          <div className="mt-9 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+            {SCENARIOS.map((scenario) => {
+              const Icon = scenario.icon
+              return (
+                <button
+                  key={scenario.key}
+                  type="button"
+                  onClick={() => searchScenario(scenario.query)}
+                  className="group flex min-h-36 flex-col justify-between rounded-2xl border bg-white p-5 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md"
+                >
+                  <Icon className="h-6 w-6 text-primary" />
+                  <span className="mt-7 flex items-center justify-between gap-3 font-semibold">
+                    {t(`joyhubHome.scenarios.${scenario.key}`)}
+                    <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1" />
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      </section>
+
+      <section className="px-5 py-16 md:px-10 md:py-20">
+        <div className="mx-auto max-w-6xl rounded-3xl border bg-white p-8 md:p-12">
+          <div className="grid gap-10 lg:grid-cols-[0.85fr_1.5fr] lg:items-start">
+            <div>
+              <div className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">{t('joyhubHome.platformEyebrow')}</div>
+              <h2 className="mt-3 text-3xl font-bold tracking-tight">{t('joyhubHome.platformTitle')}</h2>
+              <p className="mt-4 leading-7 text-muted-foreground">{t('joyhubHome.platformDescription')}</p>
+            </div>
+            <div className="grid gap-5 sm:grid-cols-3">
+              {PLATFORM_FEATURES.map((feature) => {
+                const Icon = feature.icon
+                return (
+                  <div key={feature.key} className="rounded-2xl bg-secondary/45 p-5">
+                    <Icon className="h-6 w-6 text-primary" />
+                    <h3 className="mt-4 font-semibold">{t(`joyhubHome.platform.${feature.key}.title`)}</h3>
+                    <p className="mt-2 text-sm leading-6 text-muted-foreground">{t(`joyhubHome.platform.${feature.key}.description`)}</p>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
   )
 }

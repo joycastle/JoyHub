@@ -4,6 +4,7 @@ WORKDIR /app
 
 # Cache dependencies
 COPY pom.xml .
+COPY skillhub-catalog/pom.xml skillhub-catalog/
 COPY skillhub-domain/pom.xml skillhub-domain/
 COPY skillhub-auth/pom.xml skillhub-auth/
 COPY skillhub-search/pom.xml skillhub-search/

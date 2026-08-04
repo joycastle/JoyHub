@@ -11,9 +11,9 @@ import com.iflytek.skillhub.dto.AdminLabelUpdateRequest;
 import com.iflytek.skillhub.dto.LabelDefinitionResponse;
 import com.iflytek.skillhub.dto.LabelSortOrderUpdateRequest;
 import com.iflytek.skillhub.dto.LabelTranslationResponse;
+import com.iflytek.skillhub.observability.RequestIdAccessor;
 import java.util.List;
 import java.util.Set;
-import org.slf4j.MDC;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -27,17 +27,20 @@ public class LabelAdminAppService {
     private final AuditLogService auditLogService;
     private final RbacService rbacService;
     private final LabelSearchSyncService labelSearchSyncService;
+    private final RequestIdAccessor requestIdAccessor;
 
     public LabelAdminAppService(LabelDefinitionService labelDefinitionService,
                                 SkillLabelService skillLabelService,
                                 AuditLogService auditLogService,
                                 RbacService rbacService,
-                                LabelSearchSyncService labelSearchSyncService) {
+                                LabelSearchSyncService labelSearchSyncService,
+                                RequestIdAccessor requestIdAccessor) {
         this.labelDefinitionService = labelDefinitionService;
         this.skillLabelService = skillLabelService;
         this.auditLogService = auditLogService;
         this.rbacService = rbacService;
         this.labelSearchSyncService = labelSearchSyncService;
+        this.requestIdAccessor = requestIdAccessor;
     }
 
     public List<LabelDefinitionResponse> listAll() {
@@ -153,7 +156,7 @@ public class LabelAdminAppService {
                 action,
                 "LABEL",
                 targetId,
-                MDC.get("requestId"),
+                requestIdAccessor.current(),
                 auditContext != null ? auditContext.clientIp() : null,
                 auditContext != null ? auditContext.userAgent() : null,
                 detailJson

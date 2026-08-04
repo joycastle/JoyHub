@@ -53,10 +53,11 @@ describe('HomePage', () => {
     expect(typeof HomePage).toBe('function')
   })
 
-  it('renders the hero section with brand name', () => {
+  it('renders the dedicated skill center header', () => {
     const html = renderToStaticMarkup(<HomePage />)
 
-    expect(html).toContain('brand.name')
-    expect(html).toContain('brand.tagline')
+    expect(html).toContain('skillCenter.title')
+    expect(html).toContain('skillCenter.description')
+    expect(html).toContain('skillCenter.publish')
   })
 })

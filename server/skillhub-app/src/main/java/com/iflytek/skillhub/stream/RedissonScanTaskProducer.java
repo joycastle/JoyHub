@@ -2,6 +2,7 @@ package com.iflytek.skillhub.stream;
 
 import com.iflytek.skillhub.domain.security.ScanTask;
 import com.iflytek.skillhub.domain.security.ScanTaskProducer;
+import com.iflytek.skillhub.observability.MessageObservationSupport;
 import org.redisson.api.RStream;
 import org.redisson.api.RedissonClient;
 import org.redisson.api.StreamMessageId;
@@ -19,10 +20,16 @@ public class RedissonScanTaskProducer implements ScanTaskProducer {
 
     private final RedissonClient redissonClient;
     private final String streamKey;
+    private final MessageObservationSupport messageObservationSupport;
 
-    public RedissonScanTaskProducer(RedissonClient redissonClient, String streamKey) {
+    public RedissonScanTaskProducer(
+            RedissonClient redissonClient,
+            String streamKey,
+            MessageObservationSupport messageObservationSupport
+    ) {
         this.redissonClient = redissonClient;
         this.streamKey = streamKey;
+        this.messageObservationSupport = messageObservationSupport;
     }
 
     @Override
@@ -43,7 +50,14 @@ public class RedissonScanTaskProducer implements ScanTaskProducer {
         }
 
         RStream<String, String> stream = redissonClient.getStream(streamKey, StringCodec.INSTANCE);
-        StreamMessageId messageId = stream.add(StreamAddArgs.entries(fields));
+        // Starting the producer Observation injects trusted propagation fields before XADD.
+        StreamMessageId messageId = messageObservationSupport.observePublish(
+                RedisStreamMessageCarrier.MESSAGING_SYSTEM,
+                streamKey,
+                fields,
+                RedisStreamMessageCarrier.ADAPTER,
+                () -> stream.add(StreamAddArgs.entries(fields))
+        );
         log.info("Published scan task: taskId={}, versionId={}, bundleKey={}, hasSkillPath={}, recordId={}",
                 task.taskId(), task.versionId(), task.bundleKey(), task.skillPath() != null && !task.skillPath().isBlank(), messageId);
     }

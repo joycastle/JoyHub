@@ -14,6 +14,15 @@
 [![Java](https://img.shields.io/badge/java-21-ED8B00?logo=openjdk&logoColor=white)](https://openjdk.org/projects/jdk/21/)
 [![React](https://img.shields.io/badge/react-19-61DAFB?logo=react&logoColor=black)](https://react.dev)
 
+[![GitHub Stars](https://img.shields.io/github/stars/iflytek/skillhub?style=social)](https://github.com/iflytek/skillhub/stargazers)
+[![GitHub Watchers](https://img.shields.io/github/watchers/iflytek/skillhub?style=social)](https://github.com/iflytek/skillhub/watchers)
+
+</div>
+
+<div align="center">
+
+<a href="https://trendshift.io/repositories/24384?utm_source=repository-badge&amp;utm_medium=badge&amp;utm_campaign=badge-repository-24384" target="_blank" rel="noopener noreferrer"><img src="https://trendshift.io/api/badge/repositories/24384" alt="iflytek%2Fskillhub | Trendshift" width="250" height="55"/></a>&nbsp;&nbsp;<a href="https://aaif.io/" target="_blank" rel="noopener noreferrer"><img src="https://cdn.sanity.io/images/4o10fa7h/production/16dd7d8270b673d376cadca831ab3d5ea003bb89-838x203.svg" alt="AAIF Associate Member" height="55"/></a>
+
 </div>
 
 ---
@@ -23,6 +32,19 @@
 </div>
 
 SkillHub 是一个自托管平台，为团队提供私有的、受治理的智能体技能共享空间。发布技能包，推送到命名空间，让其他人通过搜索发现或通过 CLI 安装。专为防火墙后的本地部署而构建，提供与公共注册中心相同的精致体验。
+
+> ⭐ 如果 SkillHub 适合你的团队，欢迎 **Star** 本仓库帮助更多团队发现它；点 **Watch → Custom → Releases** 可在新版本发布时收到通知。
+
+## 分享优秀 Skill
+
+优秀的 Skill 在分享中产生更大价值。如果你有一个在真实工作或生活场景中反复打磨、确实好用的
+Skill，欢迎分享给 SkillHub 社区，与大家一起丰富开放、实用的 Skill 生态。无论是日常生活、
+办公协作、学习研究、旅行活动、内容创作、数据分析还是软件开发，都可以成为有价值的分享。
+
+经过验证的社区贡献还有机会进入精选 Skill 集合，让每个新部署的 SkillHub 开箱即用。不必完成
+全部适配后才能参与：你可以先[创建 issue](https://github.com/iflytek/skillhub/issues/new/choose)，
+说明 Skill 的来源和它解决的问题；也可以按照[Skill 分享指南](./builtin-skills/README.md)
+直接提交 PR。
 
 ## 文档
 
@@ -230,8 +252,10 @@ curl -fsSL https://imageless.oss-cn-beijing.aliyuncs.com/runtime.sh | sh -s -- u
 # 应用 Kubernetes 清单
 kubectl apply -f deploy/k8s/
 
-# 或使用 Helm（即将推出）
-helm install skillhub ./deploy/helm
+# 或使用 Helm Chart
+helm dependency build ./charts/skillhub
+helm upgrade --install skillhub ./charts/skillhub -n skillhub --create-namespace \
+  -f values-production.yaml
 ```
 
 ### 环境变量
@@ -321,7 +345,7 @@ SkillHub 采用清晰的分层架构：
 ### 基础设施
 - **容器化**：Docker & Docker Compose
 - **监控**：Prometheus + Grafana
-- **部署**：Kubernetes 清单
+- **部署**：Kubernetes 清单与 Helm Chart
 - **CI/CD**：GitHub Actions
 
 ## 路线图
@@ -334,7 +358,7 @@ SkillHub 采用清晰的分层架构：
 - [x] API 令牌管理
 - [x] 账户合并
 - [x] 国际化支持
-- [ ] Helm Chart 部署
+- [x] Helm Chart 部署
 - [ ] 高级搜索过滤器
 - [ ] 技能依赖管理
 - [ ] Webhook 集成
@@ -377,6 +401,19 @@ namespace `my-space` 和 skill slug `my-skill`。
 
 📖 **[完整 OpenClaw 集成指南 →](./docs/openclaw-integration.md)**
 
+### [Hermes Agent](https://github.com/NousResearch/hermes-agent)
+
+[Hermes Agent](https://github.com/NousResearch/hermes-agent) 使用标准 `SKILL.md` 格式，并会递归发现 `$HERMES_HOME/skills/` 中的技能。通过 SkillHub CLI 的 `--dir` 参数即可把完整技能包安装到 Hermes，无需新增 registry 适配器；安装后可使用 `hermes skills list` 验证。
+
+📖 **[完整 Hermes Agent 集成指南 →](./docs/hermes-integration.md)**
+
+### [HarnessClaw Engine](https://github.com/harnessclaw/harnessclaw-engine)
+
+[HarnessClaw Engine](https://github.com/harnessclaw/harnessclaw-engine) 是基于 Go 的 LLM 编程助手引擎，通过 WebSocket 协议对外提供能力。它从 `SKILL.md` 文件加载技能，支持 YAML frontmatter 与参数替换，并按配置顺序扫描各目录下的 `skill-name/SKILL.md`（默认 `~/.harnessclaw/workspace/skills/`，靠前的目录在重名时优先）。通过 SkillHub CLI 的 `--dir` 参数即可把技能包直接安装到该目录，无需新增 registry 适配器：
+
+```bash
+npx clawhub --dir ~/.harnessclaw/workspace/skills install my-skill
+```
 ### [AstronClaw](https://agent.xfyun.cn/astron-claw)
 
 [AstronClaw](https://agent.xfyun.cn/astron-claw) 是基于 OpenClaw 核心能力打造的云端 AI 助手，提供全天候在线服务，随时随地通过企业微信、钉钉、飞书等渠道提供服务。它内置了丰富的技能系统，您可以将其连接到自托管的 SkillHub 注册中心，支持技能市场一键安装、仓库搜索、对话自动安装，甚至管理和分发组织内部的自定义私有技能。

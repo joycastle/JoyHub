@@ -9,6 +9,7 @@ import com.iflytek.skillhub.dto.PageResponse;
 import com.iflytek.skillhub.dto.ProfileReviewMutationResponse;
 import com.iflytek.skillhub.dto.ProfileReviewRejectRequest;
 import com.iflytek.skillhub.dto.ProfileReviewSummaryResponse;
+import com.iflytek.skillhub.observability.RequestIdAccessor;
 import com.iflytek.skillhub.service.AdminProfileReviewAppService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -30,13 +31,16 @@ public class AdminProfileReviewController extends BaseApiController {
 
     private final AdminProfileReviewAppService appService;
     private final ProfileReviewService reviewService;
+    private final RequestIdAccessor requestIdAccessor;
 
     public AdminProfileReviewController(ApiResponseFactory responseFactory,
                                         AdminProfileReviewAppService appService,
-                                        ProfileReviewService reviewService) {
+                                        ProfileReviewService reviewService,
+                                        RequestIdAccessor requestIdAccessor) {
         super(responseFactory);
         this.appService = appService;
         this.reviewService = reviewService;
+        this.requestIdAccessor = requestIdAccessor;
     }
 
     /** List profile change requests filtered by status (default: PENDING). */
@@ -60,7 +64,7 @@ public class AdminProfileReviewController extends BaseApiController {
         var result = reviewService.approve(
                 id,
                 principal.userId(),
-                httpRequest.getHeader("X-Request-Id"),
+                requestIdAccessor.current(),
                 resolveClientIp(httpRequest),
                 httpRequest.getHeader("User-Agent"));
         return ok("response.success.updated",
@@ -79,7 +83,7 @@ public class AdminProfileReviewController extends BaseApiController {
                 id,
                 principal.userId(),
                 request.comment(),
-                httpRequest.getHeader("X-Request-Id"),
+                requestIdAccessor.current(),
                 resolveClientIp(httpRequest),
                 httpRequest.getHeader("User-Agent"));
         return ok("response.success.updated",

@@ -144,7 +144,8 @@ class SkillLifecycleControllerTest {
         given(namespaceRepository.findBySlug("global")).willReturn(java.util.Optional.of(namespace));
         given(skillSlugResolutionService.resolve(1L, "demo-skill", "usr_1", SkillSlugResolutionService.Preference.CURRENT_USER))
                 .willReturn(skill);
-        given(skillVersionRepository.findBySkillIdAndVersion(1L, "1.0.0")).willReturn(java.util.Optional.of(version));
+        given(skillVersionRepository.findBySkillIdForUpdate(1L))
+                .willReturn(java.util.List.of(version));
 
         mockMvc.perform(delete("/api/web/skills/global/demo-skill/versions/1.0.0")
                         .requestAttr("userId", "usr_1")

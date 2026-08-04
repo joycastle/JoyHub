@@ -38,8 +38,8 @@ skillhub:
     enabled: false
   profile:
     moderation:
-      machine-review: false
-      human-review: false
+      machine-review: ${SKILLHUB_PROFILE_MACHINE_REVIEW_ENABLED:false}
+      human-review: ${SKILLHUB_PROFILE_HUMAN_REVIEW_ENABLED:false}
   ratelimit:
     download:
       anonymous-cookie-secret: ${SKILLHUB_DOWNLOAD_ANON_COOKIE_SECRET:local-dev-download-secret-32-bytes}
@@ -60,6 +60,15 @@ skillhub:
   bootstrap:
     admin:
       enabled: ${BOOTSTRAP_ADMIN_ENABLED:true}
+
+joyhub:
+  catalog:
+    seed:
+      bingo-frenzy:
+        enabled: true
+        owner-id: local-admin
+        primary-namespace-slug: gestalt
+        visibility-department-external-id: od-e7946166f17b6708b5bc0313ed5c474c
 
 logging:
   level:

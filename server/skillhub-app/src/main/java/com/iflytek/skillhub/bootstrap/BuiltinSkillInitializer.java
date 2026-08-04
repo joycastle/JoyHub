@@ -209,7 +209,21 @@ public class BuiltinSkillInitializer {
             return SyncOutcome.FAILED;
         }
 
-        SkillPackageArchiveExtractor.ExtractionResult extractionResult = extractor.extract(packageBytes.get());
+        byte[] downloadedBytes = packageBytes.get();
+        String actualSha256 = sha256(downloadedBytes);
+        if (!item.sha256().equals(actualSha256)) {
+            log.warn(
+                    "Skipping built-in skill slug={} version={} because package checksum mismatch: "
+                            + "expectedSha256={}, actualSha256={}",
+                    item.slug(),
+                    item.version(),
+                    item.sha256(),
+                    actualSha256
+            );
+            return SyncOutcome.FAILED;
+        }
+
+        SkillPackageArchiveExtractor.ExtractionResult extractionResult = extractor.extract(downloadedBytes);
         List<PackageEntry> entries = extractionResult.entries();
         SkillMetadata metadata = parseSkillMetadata(entries);
         String packageSlug = SlugValidator.slugify(metadata.name());

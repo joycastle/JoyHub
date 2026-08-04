@@ -141,6 +141,71 @@
       }
     }
   },
+  "joyhubHome": {
+    "badge": "Your Company's Unified AI Platform",
+    "title": "Find the capability. Start the work.",
+    "description": "Discover and use internal Agents, Skills, plugins, MCP servers, online tools, and services from one place, each with a clear entry point and documentation.",
+    "searchPlaceholder": "Search Agents, Skills, tools, or a task you want to complete",
+    "searchHint": "Search by name, scenario, department, or capability type",
+    "centersEyebrow": "Capability Centers",
+    "centersTitle": "Three entry points, one consistent experience",
+    "centersDescription": "Browse by capability format, or search the home page for the problem you want to solve.",
+    "enterCenter": "Open center",
+    "centers": {
+      "agents": {
+        "title": "Agent Center",
+        "description": "Discover internal AI Agents, bots, and automation assistants ready to use."
+      },
+      "skills": {
+        "title": "Skill Center",
+        "description": "Find reusable Skill packages, scripts, templates, and reference material."
+      },
+      "tools": {
+        "title": "Tool Center",
+        "description": "Use online tools, plugins, MCP servers, internal services, and resource packs."
+      }
+    },
+    "scenariosEyebrow": "Browse by scenario",
+    "scenariosTitle": "Start with what you want to accomplish",
+    "scenariosDescription": "You do not need to know the capability type first. Pick a work scenario to find related Agents, Skills, and tools.",
+    "scenarios": {
+      "content": "Content creation",
+      "data": "Data analysis",
+      "project": "Project management",
+      "development": "Developer productivity",
+      "art": "Art asset processing"
+    },
+    "platformEyebrow": "One platform model",
+    "platformTitle": "Capabilities that stay useful and maintained",
+    "platformDescription": "JoyHub keeps entry points, documentation, ownership, and visibility in one place to reduce duplication and stale information.",
+    "platform": {
+      "visibility": {
+        "title": "Department visibility",
+        "description": "Employees see company-wide content and content shared with their department."
+      },
+      "documentation": {
+        "title": "One companion document",
+        "description": "Each resource has one primary document for usage, setup, and maintenance."
+      },
+      "publishing": {
+        "title": "Open publishing",
+        "description": "Every employee can contribute, update, and retire content they maintain."
+      }
+    }
+  },
+  "skillCenter": {
+    "title": "Skill Center",
+    "description": "Discover, install, and reuse mature internal Skill packages, scripts, templates, and references.",
+    "visibility": "Only published Skills visible company-wide or to your department are shown here.",
+    "publish": "Publish Skill",
+    "searchPlaceholder": "Search Skills, scenarios, or capabilities",
+    "sortLabel": "Sort",
+    "newest": "Newest",
+    "popular": "Most downloaded",
+    "resultCount": "{{count}} items",
+    "loadFailed": "Skills could not be loaded. Please try again later.",
+    "empty": "No matching Skills"
+  },
   "home": {
     "subtitle": "Skill Registry",
     "description": "Efficient skill management, distribution, and collaboration platform for developers",
@@ -564,7 +629,23 @@
     "commentPlaceholder": "Review comment (optional)",
     "approve": "Approve",
     "reject": "Reject",
-    "empty": "No promotion requests"
+    "empty": "No promotion requests",
+    "historyTableLabel": "Promotion history",
+    "colSkill": "Skill",
+    "colVersion": "Version",
+    "colSubmitter": "Submitter",
+    "colReviewer": "Reviewer",
+    "colReviewedAt": "Reviewed At",
+    "colReviewComment": "Review Comment",
+    "sortReviewedTimeAsc": "Sort by reviewed time ascending",
+    "sortReviewedTimeDesc": "Sort by reviewed time descending",
+    "emptyValue": "-",
+    "versionTag": "v{{version}}",
+    "submitterTag": "Submitter {{user}}",
+    "fileCountTag": "{{count}} files",
+    "packageSizeTag": "{{size}}",
+    "downloadCountTag": "{{value}} downloads",
+    "starCountTag": "{{value}} stars"
   },
   "adminUsers": {
     "title": "User Management",
@@ -753,6 +834,8 @@
     "successTitle": "Password changed successfully",
     "successDescription": "Please sign in again with your new password.",
     "defaultError": "Failed to change password",
+    "unavailableTitle": "Password changes are unavailable for this account.",
+    "unavailableDescription": "This account signs in through an external identity provider or has no local password credential.",
     "submitting": "Submitting...",
     "submit": "Update Password"
   },

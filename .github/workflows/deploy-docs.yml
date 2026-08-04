@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - 'docs/skillhub/**'
+      - 'weekly/**'
+      - '.github/workflows/deploy-docs.yml'
   workflow_dispatch:
 
 permissions:
@@ -36,6 +38,13 @@ jobs:
         run: cd docs/skillhub && npm ci
       - name: Build with VitePress
         run: cd docs/skillhub && npm run build
+      - name: Build and validate weekly reports
+        run: |
+          python3 weekly/scripts/build_site.py \
+            --source weekly/site \
+            --output docs/skillhub/.vitepress/dist/weekly
+          python3 weekly/scripts/validate_site.py \
+            docs/skillhub/.vitepress/dist/weekly
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:

@@ -34,6 +34,12 @@ public class Namespace {
     @Column(name = "created_by")
     private String createdBy;
 
+    @Column(name = "external_provider", length = 32)
+    private String externalProvider;
+
+    @Column(name = "external_id", length = 128)
+    private String externalId;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -72,6 +78,21 @@ public class Namespace {
     public String getAvatarUrl() { return avatarUrl; }
     public void setAvatarUrl(String avatarUrl) { this.avatarUrl = avatarUrl; }
     public String getCreatedBy() { return createdBy; }
+    public String getExternalProvider() { return externalProvider; }
+    public String getExternalId() { return externalId; }
+    public void bindExternalIdentity(String provider, String externalId) {
+        if (provider == null || provider.isBlank() || externalId == null || externalId.isBlank()) {
+            throw new IllegalArgumentException("External namespace identity must be complete");
+        }
+        if (this.externalProvider != null || this.externalId != null) {
+            if (!provider.equals(this.externalProvider) || !externalId.equals(this.externalId)) {
+                throw new IllegalStateException("External namespace identity cannot be changed");
+            }
+            return;
+        }
+        this.externalProvider = provider;
+        this.externalId = externalId;
+    }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
 }

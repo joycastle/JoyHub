@@ -63,6 +63,8 @@ cp secret.yaml.example secret.yaml
 | oauth2-github-client-id | GitHub OAuth ID | 否 |
 | oauth2-github-client-secret | GitHub OAuth 密钥 | 否 |
 | skill-scanner-llm-api-key | LLM API 密钥 | 否 |
+| skill-scanner-llm-base-url | 本地/自定义 LLM 服务地址 | 否 |
+| skill-scanner-llm-model | Scanner 使用的 LLM 模型名 | 否 |
 
 ### 3. 选择部署方式
 
@@ -211,6 +213,12 @@ skillhub-storage-s3-secret-key: your-secret-key
 - name: SKILLHUB_STORAGE_S3_REGION
   value: cn-shanghai
 ```
+
+### PostgreSQL 数据目录兼容性
+
+`with-infra` 会在启动时检查 PostgreSQL PVC 根目录：如果已存在 `PG_VERSION`，继续使用根目录中的旧集群；否则在 `pgdata/` 子目录初始化新集群，避免新 ext4 卷中的 `lost+found` 阻止 `initdb`。升级现有部署不需要移动数据库文件。
+
+回滚到不包含该检测逻辑的旧清单时，如果集群位于 `pgdata/`，必须保留当前启动命令，或显式设置 `PGDATA=/var/lib/postgresql/data/pgdata`。不要把正在运行的数据库目录手动移动到 PVC 根目录。
 
 ### 镜像说明
 

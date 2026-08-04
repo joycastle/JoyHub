@@ -1,5 +1,8 @@
 package com.iflytek.skillhub.config;
 
+import com.iflytek.skillhub.catalog.domain.CatalogResourcePolicy;
+import com.iflytek.skillhub.catalog.domain.CatalogResourceRepository;
+import com.iflytek.skillhub.catalog.domain.CatalogResourceService;
 import com.iflytek.skillhub.domain.skill.VisibilityChecker;
 import com.iflytek.skillhub.domain.skill.metadata.SkillMetadataParser;
 import com.iflytek.skillhub.domain.skill.validation.SkillPackageValidator;
@@ -40,5 +43,17 @@ public class DomainBeanConfig {
     @Bean
     public VisibilityChecker visibilityChecker() {
         return new VisibilityChecker();
+    }
+
+    @Bean
+    public CatalogResourcePolicy catalogResourcePolicy() {
+        return new CatalogResourcePolicy();
+    }
+
+    @Bean
+    public CatalogResourceService catalogResourceService(CatalogResourceRepository repository,
+                                                         CatalogResourcePolicy policy,
+                                                         Clock clock) {
+        return new CatalogResourceService(repository, policy, clock);
     }
 }

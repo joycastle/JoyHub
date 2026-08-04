@@ -22,19 +22,29 @@ export function createFakeRegistry(handlers: Record<string, FakeHandler>) {
 /**
  * Controls how a specific endpoint behaves when a failure is injected:
  *   'auth'         => 401 { code: 401, message: 'unauthorized' }
- *   'forbidden'    => 403 { code: 403, message: 'forbidden' }
+ *   'forbidden'    => 403 with a standard SkillHub error envelope
+ *   'forbidden_unstructured' => 403 with a non-JSON response body
  *   'not_found'    => 404 { code: 404, message: 'not found' }
  *   'server_error' => 500 { code: 500, message: 'internal error' }
  *   'network'      => handler throws, causing fetch() to reject with a TypeError
  */
-export type FailureMode = 'auth' | 'forbidden' | 'not_found' | 'server_error' | 'network'
+export type FailureMode = 'auth' | 'forbidden' | 'forbidden_unstructured' | 'not_found' | 'server_error' | 'network'
 
 function failureResponse(mode: FailureMode): Response {
   switch (mode) {
     case 'auth':
       return Response.json({ code: 401, message: 'unauthorized' }, { status: 401 })
     case 'forbidden':
-      return Response.json({ code: 403, message: 'forbidden' }, { status: 403 })
+      return Response.json({
+        code: 403,
+        msg: 'API token is missing required scope: skill:publish',
+        requestId: 'req-test-forbidden'
+      }, { status: 403 })
+    case 'forbidden_unstructured':
+      return new Response('<html>sensitive proxy denial</html>', {
+        status: 403,
+        headers: { 'Content-Type': 'text/html' }
+      })
     case 'not_found':
       return Response.json({ code: 404, message: 'not found' }, { status: 404 })
     case 'server_error':
