@@ -233,6 +233,8 @@ joyhub:
       bingo-frenzy:
         enabled: ${JOYHUB_CATALOG_SEED_BINGO_FRENZY_ENABLED:false}
         owner-id: ${JOYHUB_CATALOG_SEED_BINGO_FRENZY_OWNER_ID:local-admin}
+        primary-namespace-slug: ${JOYHUB_CATALOG_SEED_BINGO_FRENZY_PRIMARY_NAMESPACE_SLUG:gestalt}
+        visibility-department-external-id: ${JOYHUB_CATALOG_SEED_BINGO_FRENZY_VISIBILITY_DEPARTMENT_EXTERNAL_ID:od-e7946166f17b6708b5bc0313ed5c474c}
 
 management:
   health:

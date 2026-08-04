@@ -32,35 +32,46 @@ public class BingoFrenzyCatalogInitializer implements ApplicationRunner {
     private final NamespaceRepository namespaceRepository;
     private final Clock clock;
     private final String ownerId;
+    private final String primaryNamespaceSlug;
+    private final String visibilityDepartmentExternalId;
 
     public BingoFrenzyCatalogInitializer(CatalogResourceRepository repository,
                                          NamespaceRepository namespaceRepository,
                                          Clock clock,
-                                         @Value("${joyhub.catalog.seed.bingo-frenzy.owner-id:local-admin}") String ownerId) {
+                                         @Value("${joyhub.catalog.seed.bingo-frenzy.owner-id:local-admin}") String ownerId,
+                                         @Value("${joyhub.catalog.seed.bingo-frenzy.primary-namespace-slug:gestalt}") String primaryNamespaceSlug,
+                                         @Value("${joyhub.catalog.seed.bingo-frenzy.visibility-department-external-id:}") String visibilityDepartmentExternalId) {
         this.repository = repository;
         this.namespaceRepository = namespaceRepository;
         this.clock = clock;
         this.ownerId = ownerId;
+        this.primaryNamespaceSlug = primaryNamespaceSlug;
+        this.visibilityDepartmentExternalId = visibilityDepartmentExternalId;
     }
 
     @Override
     @Transactional
     public void run(ApplicationArguments args) {
-        Long departmentId = namespaceRepository.findBySlug("jc-arsenal")
+        Long primaryNamespaceId = namespaceRepository.findBySlug(primaryNamespaceSlug)
                 .map(namespace -> namespace.getId())
                 .orElse(null);
+        Long visibilityNamespaceId = visibilityDepartmentExternalId.isBlank()
+                ? primaryNamespaceId
+                : namespaceRepository.findByExternalProviderAndExternalId("feishu", visibilityDepartmentExternalId)
+                        .map(namespace -> namespace.getId())
+                        .orElse(primaryNamespaceId);
         int imported = 0;
         for (ToolSeed seed : seeds()) {
-            if (upsert(seed, departmentId)) {
+            if (upsert(seed, primaryNamespaceId, visibilityNamespaceId)) {
                 imported++;
             }
         }
         log.info("JoyHub Catalog seed ready: {} Bingo Frenzy tools", imported);
     }
 
-    private boolean upsert(ToolSeed seed, Long departmentId) {
+    private boolean upsert(ToolSeed seed, Long primaryNamespaceId, Long visibilityNamespaceId) {
         String sourceKey = SOURCE_PREFIX + seed.slug();
-        CatalogResourceDraft draft = draft(seed, departmentId);
+        CatalogResourceDraft draft = draft(seed, primaryNamespaceId, visibilityNamespaceId);
         CatalogResource resource = repository.findBySourceKey(sourceKey).orElse(null);
         if (resource == null) {
             if (repository.findBySlug(seed.slug()).isPresent()) {
@@ -77,7 +88,7 @@ public class BingoFrenzyCatalogInitializer implements ApplicationRunner {
         return true;
     }
 
-    private CatalogResourceDraft draft(ToolSeed seed, Long departmentId) {
+    private CatalogResourceDraft draft(ToolSeed seed, Long primaryNamespaceId, Long visibilityNamespaceId) {
         String documentation = """
                 # %s
 
@@ -87,7 +98,7 @@ public class BingoFrenzyCatalogInitializer implements ApplicationRunner {
 
                 1. 确认当前设备已连接公司内网或 VPN。
                 2. 点击页面上的“打开工具”。
-                3. 如页面无法访问，请联系 JC 弹药库维护团队检查服务状态和访问权限。
+                3. 如页面无法访问，请联系格式塔工作室 Bingo 项目维护团队检查服务状态和访问权限。
 
                 ## 访问地址
 
@@ -108,10 +119,10 @@ public class BingoFrenzyCatalogInitializer implements ApplicationRunner {
                 seed.url(),
                 documentation,
                 "1.0",
-                departmentId,
+                primaryNamespaceId,
                 CatalogMaintenanceStatus.ACTIVE,
-                CatalogVisibilityScope.COMPANY,
-                Set.of(),
+                visibilityNamespaceId == null ? CatalogVisibilityScope.COMPANY : CatalogVisibilityScope.DEPARTMENTS,
+                visibilityNamespaceId == null ? Set.of() : Set.of(visibilityNamespaceId),
                 seed.scenarios(),
                 seed.tags(),
                 Set.of(),

@@ -67,6 +67,8 @@ joyhub:
       bingo-frenzy:
         enabled: true
         owner-id: local-admin
+        primary-namespace-slug: gestalt
+        visibility-department-external-id: od-e7946166f17b6708b5bc0313ed5c474c
 
 logging:
   level:
