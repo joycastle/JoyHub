@@ -1,5 +1,6 @@
 package com.iflytek.skillhub.auth.oauth;
 
+import com.iflytek.skillhub.auth.organization.FeishuDirectoryClient;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -26,6 +27,11 @@ import org.springframework.web.client.RestClientException;
 public class FeishuOAuth2UserService extends DefaultOAuth2UserService {
 
     private final RestClient restClient = RestClient.create();
+    private final FeishuDirectoryClient directoryClient;
+
+    public FeishuOAuth2UserService(FeishuDirectoryClient directoryClient) {
+        this.directoryClient = directoryClient;
+    }
 
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
@@ -75,6 +81,14 @@ public class FeishuOAuth2UserService extends DefaultOAuth2UserService {
 
         Map<String, Object> attributes = new LinkedHashMap<>(userData);
         attributes.put("data", userData);
+        directoryClient.loadDepartments(openId)
+                .ifPresent(departments -> {
+                    attributes.put(FeishuDirectoryClient.ATTR_SYNC_COMPLETE, true);
+                    attributes.put(
+                            FeishuDirectoryClient.ATTR_DEPARTMENTS,
+                            FeishuDirectoryClient.toAttributeValue(departments)
+                    );
+                });
 
         Set<GrantedAuthority> authorities = new LinkedHashSet<>();
         userRequest.getAccessToken().getScopes().forEach(scope ->

@@ -61,6 +61,13 @@ skillhub:
     admin:
       enabled: ${BOOTSTRAP_ADMIN_ENABLED:true}
 
+joyhub:
+  catalog:
+    seed:
+      bingo-frenzy:
+        enabled: true
+        owner-id: local-admin
+
 logging:
   level:
     com.iflytek.skillhub: INFO

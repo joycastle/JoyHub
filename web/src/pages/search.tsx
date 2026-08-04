@@ -6,6 +6,8 @@ import type { SkillSummary } from '@/api/types'
 import { useAuth } from '@/features/auth/use-auth'
 import { SearchBar } from '@/features/search/search-bar'
 import { SkillCard } from '@/features/skill/skill-card'
+import { CatalogResourceCard } from '@/entities/catalog-resource/catalog-resource-card'
+import { useCatalogResources } from '@/features/catalog/use-catalog-queries'
 import { SkeletonList } from '@/shared/components/skeleton-loader'
 import { EmptyState } from '@/shared/components/empty-state'
 import { Pagination } from '@/shared/components/pagination'
@@ -125,6 +127,11 @@ export function SearchPage() {
     page,
     size: PAGE_SIZE,
     starredOnly,
+  })
+  const { data: catalogResults, isLoading: isLoadingCatalog } = useCatalogResources({
+    q,
+    size: PAGE_SIZE,
+    enabled: isAuthenticated && !starredOnly,
   })
   const { data: labels } = useVisibleLabels()
   const {
@@ -304,6 +311,27 @@ export function SearchPage() {
       </div>
 
       {/* Results */}
+      {!starredOnly && isAuthenticated && (isLoadingCatalog || (catalogResults?.items.length ?? 0) > 0) ? (
+        <section className="space-y-4">
+          <div>
+            <h2 className="text-2xl font-semibold">Agent 与工具</h2>
+            <p className="mt-1 text-sm text-muted-foreground">统一搜索公司已发布的 AI 能力入口。</p>
+          </div>
+          {isLoadingCatalog ? <SkeletonList count={3} /> : (
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
+              {catalogResults?.items.map((resource) => (
+                <CatalogResourceCard
+                  key={resource.id}
+                  resource={resource}
+                  onClick={() => navigate({ to: '/catalog/$slug', params: { slug: resource.slug } })}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+      ) : null}
+
+      {!starredOnly && isAuthenticated ? <div className="border-t pt-8"><h2 className="text-2xl font-semibold">Skills</h2></div> : null}
       {isPageLoading ? (
         <SkeletonList count={PAGE_SIZE} />
       ) : displayItems.length > 0 ? (

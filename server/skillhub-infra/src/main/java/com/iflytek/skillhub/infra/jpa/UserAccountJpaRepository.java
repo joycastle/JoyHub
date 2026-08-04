@@ -18,6 +18,8 @@ import org.springframework.stereotype.Repository;
 public interface UserAccountJpaRepository
         extends JpaRepository<UserAccount, String>, JpaSpecificationExecutor<UserAccount>, UserAccountRepository {
 
+    Page<UserAccount> findByIdStartingWithAndStatus(String idPrefix, UserStatus status, Pageable pageable);
+
     @Override
     @Query("""
         SELECT u

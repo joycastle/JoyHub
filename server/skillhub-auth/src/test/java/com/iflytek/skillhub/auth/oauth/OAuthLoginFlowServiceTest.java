@@ -1,6 +1,7 @@
 package com.iflytek.skillhub.auth.oauth;
 
 import com.iflytek.skillhub.auth.identity.IdentityBindingService;
+import com.iflytek.skillhub.auth.organization.FeishuDepartmentMembershipSyncService;
 import com.iflytek.skillhub.auth.policy.AccessPolicy;
 import jakarta.servlet.http.HttpSession;
 import java.util.List;
@@ -22,7 +23,8 @@ class OAuthLoginFlowServiceTest {
                 List.of(),
                 mock(AccessPolicy.class),
                 mock(IdentityBindingService.class),
-                mock(FeishuOAuth2UserService.class)
+                mock(FeishuOAuth2UserService.class),
+                mock(FeishuDepartmentMembershipSyncService.class)
         );
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.setParameter("returnTo", "/dashboard/publish");
@@ -41,7 +43,8 @@ class OAuthLoginFlowServiceTest {
                 List.of(),
                 mock(AccessPolicy.class),
                 mock(IdentityBindingService.class),
-                mock(FeishuOAuth2UserService.class)
+                mock(FeishuOAuth2UserService.class),
+                mock(FeishuDepartmentMembershipSyncService.class)
         );
 
         String redirect = service.resolveFailureRedirect(
@@ -58,7 +61,8 @@ class OAuthLoginFlowServiceTest {
                 List.of(),
                 mock(AccessPolicy.class),
                 mock(IdentityBindingService.class),
-                mock(FeishuOAuth2UserService.class)
+                mock(FeishuOAuth2UserService.class),
+                mock(FeishuDepartmentMembershipSyncService.class)
         );
         MockHttpServletRequest request = new MockHttpServletRequest();
         HttpSession session = request.getSession(true);

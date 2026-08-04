@@ -19,5 +19,7 @@ public interface NamespaceJpaRepository
         extends JpaRepository<Namespace, Long>, NamespaceRepository {
     List<Namespace> findByIdIn(List<Long> ids);
     Optional<Namespace> findBySlug(String slug);
+    Optional<Namespace> findByExternalProviderAndExternalId(String externalProvider, String externalId);
+    List<Namespace> findByExternalProvider(String externalProvider);
     Page<Namespace> findByStatus(NamespaceStatus status, Pageable pageable);
 }

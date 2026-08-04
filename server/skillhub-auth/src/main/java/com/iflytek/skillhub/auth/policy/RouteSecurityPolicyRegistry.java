@@ -74,6 +74,8 @@ public class RouteSecurityPolicyRegistry {
             RouteAuthorizationPolicy.authenticated(HttpMethod.GET, "/api/web/namespaces/*"),
             RouteAuthorizationPolicy.authenticated(HttpMethod.GET, "/api/web/repositories"),
             RouteAuthorizationPolicy.authenticated(HttpMethod.GET, "/api/v1/repositories"),
+            RouteAuthorizationPolicy.authenticated(null, "/api/web/catalog/**"),
+            RouteAuthorizationPolicy.authenticated(null, "/api/v1/catalog/**"),
             RouteAuthorizationPolicy.authenticated(null, "/api/v1/admin/**"),
             RouteAuthorizationPolicy.authenticated(HttpMethod.GET, "/api/cli/v1/auth/whoami"),
             RouteAuthorizationPolicy.permitAll(HttpMethod.GET, "/api/cli/v1/skills/search"),

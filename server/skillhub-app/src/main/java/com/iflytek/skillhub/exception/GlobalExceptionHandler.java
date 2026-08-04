@@ -1,5 +1,6 @@
 package com.iflytek.skillhub.exception;
 
+import com.iflytek.skillhub.catalog.domain.CatalogDomainException;
 import com.iflytek.skillhub.auth.exception.AuthFlowException;
 import com.iflytek.skillhub.auth.rbac.PlatformPrincipal;
 import com.iflytek.skillhub.dto.ApiResponse;
@@ -56,6 +57,16 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(LocalizedDomainException.class)
     public ResponseEntity<ApiResponse<Void>> handleLocalizedDomainException(LocalizedDomainException ex, HttpServletRequest request) {
         return renderLocalizedError(ex, HttpStatus.valueOf(ex.statusCode()), request);
+    }
+
+    @ExceptionHandler(CatalogDomainException.class)
+    public ResponseEntity<ApiResponse<Void>> handleCatalogDomainException(
+            CatalogDomainException ex,
+            HttpServletRequest request) {
+        HttpStatus status = HttpStatus.valueOf(ex.status());
+        logHandledException(status, ex.code(), request, ex.arguments());
+        return ResponseEntity.status(status).body(
+                apiResponseFactory.error(status.value(), ex.code(), ex.arguments()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

@@ -45,10 +45,11 @@ export function Layout() {
     auth?: boolean
   }> = [
     { label: t('nav.landing'), to: '/', exact: true },
-    { label: t('nav.publish'), to: '/dashboard/publish', auth: true },
+    { label: 'Agent 中心', to: '/agents', auth: true },
+    { label: '工具中心', to: '/tools', auth: true },
+    { label: t('nav.home'), to: '/skills' },
     { label: t('nav.search'), to: '/search' },
-    { label: t('nav.dashboard'), to: '/dashboard', auth: true },
-    { label: t('nav.mySkills'), to: '/dashboard/skills', auth: true },
+    { label: '我的内容', to: '/dashboard/catalog', auth: true },
   ]
 
   const isActive = (to: string, exact?: boolean) => {

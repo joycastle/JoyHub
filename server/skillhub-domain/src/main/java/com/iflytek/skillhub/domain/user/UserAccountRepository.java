@@ -13,6 +13,7 @@ public interface UserAccountRepository {
     Optional<UserAccount> findById(String id);
     List<UserAccount> findByIdIn(List<String> ids);
     Optional<UserAccount> findByEmailIgnoreCase(String email);
+    Page<UserAccount> findByIdStartingWithAndStatus(String idPrefix, UserStatus status, Pageable pageable);
     Page<UserAccount> search(String keyword, UserStatus status, Pageable pageable);
     UserAccount save(UserAccount user);
 }

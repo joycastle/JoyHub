@@ -42,6 +42,11 @@ import type {
   LabelDefinition,
   LabelItem,
   BatchMemberResponse,
+  CatalogCenter,
+  CatalogResourceDetail,
+  CatalogResourceKind,
+  CatalogResourceRequest,
+  CatalogResourceSummary,
 } from './types'
 import { ApiError } from '@/shared/lib/api-error'
 import i18n from '@/i18n/config'
@@ -624,6 +629,92 @@ export const labelApi = {
 export const repositoryApi = {
   async list(): Promise<SkillRepository[]> {
     return fetchJson<SkillRepository[]>(`${WEB_API_PREFIX}/repositories`)
+  },
+}
+
+export const catalogApi = {
+  async list(params: {
+    q?: string
+    center?: CatalogCenter
+    kind?: CatalogResourceKind
+    scenario?: string
+    departmentId?: number
+    page?: number
+    size?: number
+  } = {}): Promise<PagedResponse<CatalogResourceSummary>> {
+    const query = new URLSearchParams()
+    if (params.q?.trim()) query.set('q', params.q.trim())
+    if (params.center) query.set('center', params.center)
+    if (params.kind) query.set('kind', params.kind)
+    if (params.scenario?.trim()) query.set('scenario', params.scenario.trim())
+    if (params.departmentId !== undefined) query.set('departmentId', String(params.departmentId))
+    query.set('page', String(params.page ?? 0))
+    query.set('size', String(params.size ?? 24))
+    return fetchJson<PagedResponse<CatalogResourceSummary>>(
+      `${WEB_API_PREFIX}/catalog/resources?${query.toString()}`,
+    )
+  },
+
+  async detail(slug: string): Promise<CatalogResourceDetail> {
+    return fetchJson<CatalogResourceDetail>(
+      `${WEB_API_PREFIX}/catalog/resources/${encodeURIComponent(slug)}`,
+    )
+  },
+
+  async mine(params: { page?: number; size?: number } = {}): Promise<PagedResponse<CatalogResourceSummary>> {
+    const query = new URLSearchParams({
+      page: String(params.page ?? 0),
+      size: String(params.size ?? 24),
+    })
+    return fetchJson<PagedResponse<CatalogResourceSummary>>(
+      `${WEB_API_PREFIX}/catalog/me/resources?${query.toString()}`,
+    )
+  },
+
+  async create(request: CatalogResourceRequest): Promise<CatalogResourceDetail> {
+    return fetchJson<CatalogResourceDetail>(`${WEB_API_PREFIX}/catalog/resources`, {
+      method: 'POST',
+      headers: await ensureCsrfHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify(request),
+    })
+  },
+
+  async update(slug: string, request: CatalogResourceRequest): Promise<CatalogResourceDetail> {
+    return fetchJson<CatalogResourceDetail>(
+      `${WEB_API_PREFIX}/catalog/resources/${encodeURIComponent(slug)}`,
+      {
+        method: 'PUT',
+        headers: await ensureCsrfHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify(request),
+      },
+    )
+  },
+
+  async publish(slug: string): Promise<CatalogResourceDetail> {
+    return fetchJson<CatalogResourceDetail>(
+      `${WEB_API_PREFIX}/catalog/resources/${encodeURIComponent(slug)}/publish`,
+      { method: 'POST', headers: await ensureCsrfHeaders() },
+    )
+  },
+
+  async offline(slug: string): Promise<CatalogResourceDetail> {
+    return fetchJson<CatalogResourceDetail>(
+      `${WEB_API_PREFIX}/catalog/resources/${encodeURIComponent(slug)}/offline`,
+      { method: 'POST', headers: await ensureCsrfHeaders() },
+    )
+  },
+
+  async uploadArtifact(slug: string, file: File): Promise<CatalogResourceDetail> {
+    const body = new FormData()
+    body.set('file', file)
+    return fetchJson<CatalogResourceDetail>(
+      `${WEB_API_PREFIX}/catalog/resources/${encodeURIComponent(slug)}/artifact`,
+      { method: 'POST', headers: await ensureCsrfHeaders(), body },
+    )
+  },
+
+  artifactUrl(slug: string): string {
+    return String(withBaseUrl(`${WEB_API_PREFIX}/catalog/resources/${encodeURIComponent(slug)}/artifact`))
   },
 }
 
