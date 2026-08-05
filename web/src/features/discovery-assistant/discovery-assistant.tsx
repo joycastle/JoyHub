@@ -19,6 +19,11 @@ type ConversationTurn = {
   question: string
   answer: string
   model?: string
+  steps: Array<{
+    objective: string
+    suggestions: DiscoverySuggestion[]
+  }>
+  suggestions: DiscoverySuggestion[]
 }
 
 function toDiscoverySuggestions(suggestions: Array<{
@@ -93,6 +98,11 @@ export function DiscoveryAssistant({ isAuthenticated }: { isAuthenticated: boole
         question,
         answer: assistant.data.answer,
         model: assistant.data.modelGenerated ? assistant.data.model : undefined,
+        steps: assistant.data.steps.map((step) => ({
+          objective: step.objective,
+          suggestions: toDiscoverySuggestions(step.suggestions),
+        })),
+        suggestions: toDiscoverySuggestions(assistant.data.suggestions),
       }].slice(-5))
     }
     setDraft('')
@@ -197,6 +207,38 @@ export function DiscoveryAssistant({ isAuthenticated }: { isAuthenticated: boole
                       </div>
                       <div className="mr-8 rounded-2xl rounded-bl-md border bg-card px-4 py-3">
                         <p className="text-sm leading-6 text-muted-foreground">{turn.answer}</p>
+                        {turn.steps.length > 0 ? (
+                          <details className="mt-4 rounded-xl border bg-muted/15" open>
+                            <summary className="cursor-pointer list-none px-3.5 py-2.5 text-xs font-semibold marker:content-none">
+                              {t('discoveryAssistant.planTitle')}
+                            </summary>
+                            <div className="space-y-4 border-t px-3.5 py-3">
+                              {turn.steps.map((step, stepIndex) => (
+                                <div key={`${stepIndex}-${step.objective}`}>
+                                  <p className="text-xs font-medium leading-5">
+                                    {stepIndex + 1}. {step.objective}
+                                  </p>
+                                  {step.suggestions.length > 0 ? (
+                                    <StepRecommendations suggestions={step.suggestions} onOpen={openSuggestion} />
+                                  ) : (
+                                    <p className="mt-2 text-xs leading-5 text-muted-foreground">
+                                      {t('discoveryAssistant.noStepMatch')}
+                                    </p>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </details>
+                        ) : turn.suggestions.length > 0 ? (
+                          <details className="mt-4 rounded-xl border bg-muted/15" open>
+                            <summary className="cursor-pointer list-none px-3.5 py-2.5 text-xs font-semibold marker:content-none">
+                              {t('discoveryAssistant.recommendationsTitle')}
+                            </summary>
+                            <div className="border-t px-3.5 py-3">
+                              <StepRecommendations suggestions={turn.suggestions} onOpen={openSuggestion} />
+                            </div>
+                          </details>
+                        ) : null}
                         {turn.model ? (
                           <p className="mt-2 text-right text-[10px] text-muted-foreground/60">
                             {t('discoveryAssistant.model', { model: turn.model })}

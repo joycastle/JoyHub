@@ -308,6 +308,7 @@
     "ask": "Ask",
     "thinking": "Searching the capabilities available to you...",
     "planTitle": "Task plan",
+    "recommendationsTitle": "Recommended capabilities",
     "planHint": "Each step shows a primary capability with alternatives available on demand.",
     "stepCount": "{{count}} steps",
     "permissionSafe": "Uses only content visible to you",
