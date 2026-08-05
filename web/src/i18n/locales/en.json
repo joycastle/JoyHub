@@ -199,12 +199,34 @@
     "visibility": "Only published Skills visible company-wide or to your department are shown here.",
     "publish": "Publish Skill",
     "searchPlaceholder": "Search Skills, scenarios, or capabilities",
+    "search": "Search",
     "sortLabel": "Sort",
     "newest": "Newest",
     "popular": "Most downloaded",
     "resultCount": "{{count}} items",
     "loadFailed": "Skills could not be loaded. Please try again later.",
-    "empty": "No matching Skills"
+    "empty": "No matching Skills",
+    "pagination": "Skill center pagination",
+    "previous": "Previous",
+    "next": "Next",
+    "pageInfo": "Page {{current}} of {{total}}",
+    "scenarios": {
+      "all": "All",
+      "content": "Content",
+      "data": "Data",
+      "development": "Development",
+      "project": "Projects",
+      "design": "Design"
+    }
+  },
+  "skillCard": {
+    "type": "Skill",
+    "whatItDoes": "What it does",
+    "noSummary": "No short description yet. Open the detail page for the full documentation.",
+    "downloads": "Downloads",
+    "stars": "Stars",
+    "rating": "Rating",
+    "viewDetails": "View details"
   },
   "home": {
     "subtitle": "Skill Registry",
