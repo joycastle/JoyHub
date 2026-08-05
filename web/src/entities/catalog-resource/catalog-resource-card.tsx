@@ -1,4 +1,4 @@
-import { ArrowUpRight, Building2 } from 'lucide-react'
+import { ArrowUpRight, Building2, MessageCircle } from 'lucide-react'
 import type { CatalogResourceSummary } from '@/api/types'
 import { Card, CardContent } from '@/shared/ui/card'
 import { catalogKindEmoji, catalogKindLabel } from './catalog-resource-kind'
@@ -6,9 +6,10 @@ import { catalogKindEmoji, catalogKindLabel } from './catalog-resource-kind'
 interface CatalogResourceCardProps {
   resource: CatalogResourceSummary
   onClick: () => void
+  onUse?: () => void
 }
 
-export function CatalogResourceCard({ resource, onClick }: CatalogResourceCardProps) {
+export function CatalogResourceCard({ resource, onClick, onUse }: CatalogResourceCardProps) {
   return (
     <Card
       role="button"
@@ -53,7 +54,7 @@ export function CatalogResourceCard({ resource, onClick }: CatalogResourceCardPr
             <Building2 className="h-3.5 w-3.5" />
             {resource.department?.name || '全公司'}
           </span>
-          <span>{resource.owner?.displayName || resource.owner?.id}</span>
+          {resource.kind === 'AGENT' && resource.accessUrl && onUse ? <button type="button" onClick={(event) => { event.stopPropagation(); onUse() }} className="inline-flex items-center gap-1.5 font-medium text-primary hover:underline"><MessageCircle className="h-3.5 w-3.5" />立即使用</button> : <span>{resource.owner?.displayName || resource.owner?.id}</span>}
         </div>
       </CardContent>
     </Card>

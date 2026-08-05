@@ -9,8 +9,8 @@ export function PublishResourcePage() {
     <div className={APP_SHELL_PAGE_CLASS_NAME}>
       <div>
         <div className="text-sm font-semibold text-primary">JoyHub 发布中心</div>
-        <h1 className="mt-2 text-4xl font-bold">发布 Agent 或工具</h1>
-        <p className="mt-2 text-muted-foreground">所有员工均可发布；发布者默认成为维护人。</p>
+        <h1 className="mt-2 text-4xl font-bold">{kind === 'AGENT' ? '发布飞书 Agent' : '发布 Agent 或工具'}</h1>
+        <p className="mt-2 text-muted-foreground">{kind === 'AGENT' ? '发布后，员工可从 Agent 中心直接打开飞书机器人使用。' : '所有员工均可发布；发布者默认成为维护人。'}</p>
       </div>
       <CatalogResourceForm
         initialKind={kind}

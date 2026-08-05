@@ -9,7 +9,7 @@ import jakarta.validation.constraints.Size;
 import java.util.Set;
 
 public record CatalogResourceRequest(
-        @NotBlank @Size(max = 96) String slug,
+        @Size(max = 96) String slug,
         @NotBlank @Size(max = 160) String name,
         @NotBlank @Size(max = 1200) String summary,
         @NotNull CatalogResourceKind kind,
@@ -17,6 +17,11 @@ public record CatalogResourceRequest(
         @Size(max = 1024) String accessUrl,
         String documentation,
         @Size(max = 64) String version,
+        String agentUsageBoundary,
+        String agentInputGuide,
+        String agentOutputGuide,
+        @Size(max = 256) String agentSupportContact,
+        Set<@Size(max = 1000) String> agentExamplePrompts,
         Long primaryDepartmentId,
         CatalogMaintenanceStatus maintenanceStatus,
         CatalogVisibilityScope visibilityScope,

@@ -13,7 +13,7 @@ STAGING_API_URL := http://localhost:8080
 STAGING_WEB_URL := http://localhost
 STAGING_SERVER_IMAGE := skillhub-server:staging
 DEV_PROCESS := bash scripts/dev-process.sh
-DEV_SERVER_PREPARE := true
+DEV_SERVER_PREPARE := . ../scripts/load-local-dev-environment.sh
 DEV_SERVER_CMD := ./scripts/run-dev-app.sh
 DEV_SERVER_SCANNER_ENV := SKILLHUB_SECURITY_SCANNER_ENABLED=true SKILLHUB_SECURITY_SCANNER_URL=$(DEV_SCANNER_URL) SKILLHUB_SECURITY_SCANNER_MODE=upload
 BACKEND_TEST_JAVA_OPTIONS ?= -XX:+EnableDynamicAgentLoading

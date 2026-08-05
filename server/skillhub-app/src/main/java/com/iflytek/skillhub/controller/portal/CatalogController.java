@@ -7,14 +7,17 @@ import com.iflytek.skillhub.controller.BaseApiController;
 import com.iflytek.skillhub.domain.namespace.NamespaceRole;
 import com.iflytek.skillhub.dto.ApiResponse;
 import com.iflytek.skillhub.dto.ApiResponseFactory;
+import com.iflytek.skillhub.dto.AgentDocumentationDraftRequest;
 import com.iflytek.skillhub.dto.CatalogResourceDetailResponse;
 import com.iflytek.skillhub.dto.CatalogResourceRequest;
 import com.iflytek.skillhub.dto.CatalogResourceSummaryResponse;
 import com.iflytek.skillhub.dto.CatalogTransferRequest;
 import com.iflytek.skillhub.dto.PageResponse;
 import com.iflytek.skillhub.service.CatalogArtifactAppService;
+import com.iflytek.skillhub.service.AgentDocumentationAiService;
 import com.iflytek.skillhub.service.CatalogResourceCommandAppService;
 import com.iflytek.skillhub.service.CatalogResourceQueryAppService;
+import com.iflytek.skillhub.service.CatalogDocumentExtractionService;
 import com.iflytek.skillhub.service.CatalogViewer;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -35,6 +38,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -48,15 +52,37 @@ public class CatalogController extends BaseApiController {
     private final CatalogResourceQueryAppService queryAppService;
     private final CatalogResourceCommandAppService commandAppService;
     private final CatalogArtifactAppService artifactAppService;
+    private final CatalogDocumentExtractionService documentExtractionService;
+    private final AgentDocumentationAiService agentDocumentationAiService;
 
     public CatalogController(CatalogResourceQueryAppService queryAppService,
                              CatalogResourceCommandAppService commandAppService,
-                             CatalogArtifactAppService artifactAppService,
+                             CatalogArtifactAppService artifactAppService, CatalogDocumentExtractionService documentExtractionService,
+                             AgentDocumentationAiService agentDocumentationAiService,
                              ApiResponseFactory responseFactory) {
         super(responseFactory);
         this.queryAppService = queryAppService;
         this.commandAppService = commandAppService;
         this.artifactAppService = artifactAppService;
+        this.documentExtractionService = documentExtractionService;
+        this.agentDocumentationAiService = agentDocumentationAiService;
+    }
+
+    @PostMapping(value = "/document-text", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ApiResponse<String> extractDocument(@RequestPart("file") MultipartFile file) {
+        return ok("response.success.read", documentExtractionService.extract(file));
+    }
+
+    @PostMapping("/agent-documentation-draft")
+    @Operation(summary = "Generate a reviewable Agent usage-guide draft")
+    public ApiResponse<String> generateAgentDocumentationDraft(
+            @Valid @RequestBody AgentDocumentationDraftRequest request,
+            @AuthenticationPrincipal PlatformPrincipal principal,
+            @RequestHeader(value = "Accept-Language", required = false) String language) {
+        if (principal == null) {
+            throw CatalogDomainException.forbidden("error.auth.required");
+        }
+        return ok("response.success.read", agentDocumentationAiService.draft(request, principal.userId(), language));
     }
 
     @GetMapping("/resources")

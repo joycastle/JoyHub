@@ -20,6 +20,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -49,7 +50,7 @@ public class CatalogResourceCommandAppService {
 
     @Transactional
     public CatalogResourceDetailResponse create(CatalogResourceRequest request, CatalogViewer viewer) {
-        CatalogResourceDraft draft = validateAndMap(request, null);
+        CatalogResourceDraft draft = validateAndMap(request, null, null);
         CatalogResource resource = resourceService.create(draft, viewer.userId(), request.publish());
         return assembler.detail(resource, viewer);
     }
@@ -60,7 +61,7 @@ public class CatalogResourceCommandAppService {
             CatalogResourceRequest request,
             CatalogViewer viewer) {
         CatalogResource existing = resourceService.requireBySlug(slug);
-        CatalogResourceDraft draft = validateAndMap(request, existing.getId());
+        CatalogResourceDraft draft = validateAndMap(request, existing.getId(), existing.getSlug());
         CatalogResource resource = resourceService.update(
                 slug,
                 draft,
@@ -110,7 +111,10 @@ public class CatalogResourceCommandAppService {
         ));
     }
 
-    private CatalogResourceDraft validateAndMap(CatalogResourceRequest request, Long currentResourceId) {
+    private CatalogResourceDraft validateAndMap(
+            CatalogResourceRequest request,
+            Long currentResourceId,
+            String existingSlug) {
         validateAccessUrl(request.accessUrl());
         Set<Long> visibleDepartmentIds = request.visibilityScope() == CatalogVisibilityScope.DEPARTMENTS
                 ? safeLongSet(request.visibleDepartmentIds()) : Set.of();
@@ -123,7 +127,9 @@ public class CatalogResourceCommandAppService {
         validateSkillLinks(safeLongSet(request.relatedSkillIds()));
 
         return new CatalogResourceDraft(
-                request.slug(),
+                existingSlug != null && (request.slug() == null || request.slug().isBlank())
+                        ? existingSlug
+                        : generatedSlugWhenNeeded(request),
                 request.name(),
                 request.summary(),
                 request.kind(),
@@ -131,6 +137,11 @@ public class CatalogResourceCommandAppService {
                 request.accessUrl(),
                 request.documentation(),
                 request.version(),
+                request.agentUsageBoundary(),
+                request.agentInputGuide(),
+                request.agentOutputGuide(),
+                request.agentSupportContact(),
+                safeStringSet(request.agentExamplePrompts()),
                 request.primaryDepartmentId(),
                 request.maintenanceStatus(),
                 request.visibilityScope(),
@@ -140,6 +151,14 @@ public class CatalogResourceCommandAppService {
                 safeLongSet(request.relatedResourceIds()),
                 safeLongSet(request.relatedSkillIds())
         );
+    }
+
+    private String generatedSlugWhenNeeded(CatalogResourceRequest request) {
+        if (request.kind() != com.iflytek.skillhub.catalog.domain.CatalogResourceKind.AGENT
+                || request.slug() != null && !request.slug().isBlank()) {
+            return request.slug();
+        }
+        return "agent-" + UUID.randomUUID().toString().replace("-", "").substring(0, 12);
     }
 
     private void validateDepartments(Set<Long> departmentIds) {

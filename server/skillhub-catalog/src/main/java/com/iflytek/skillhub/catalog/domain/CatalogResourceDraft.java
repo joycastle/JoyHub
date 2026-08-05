@@ -12,6 +12,11 @@ public record CatalogResourceDraft(
         String accessUrl,
         String documentation,
         String version,
+        String agentUsageBoundary,
+        String agentInputGuide,
+        String agentOutputGuide,
+        String agentSupportContact,
+        Set<String> agentExamplePrompts,
         Long primaryNamespaceId,
         CatalogMaintenanceStatus maintenanceStatus,
         CatalogVisibilityScope visibilityScope,
@@ -23,6 +28,7 @@ public record CatalogResourceDraft(
 ) {
     public CatalogResourceDraft {
         visibleNamespaceIds = immutable(visibleNamespaceIds);
+        agentExamplePrompts = immutable(agentExamplePrompts);
         scenarios = immutable(scenarios);
         tags = immutable(tags);
         relatedResourceIds = immutable(relatedResourceIds);

@@ -54,6 +54,18 @@ public class CatalogResource {
     @Column(length = 64)
     private String version;
 
+    @Column(name = "agent_usage_boundary", columnDefinition = "TEXT")
+    private String agentUsageBoundary;
+
+    @Column(name = "agent_input_guide", columnDefinition = "TEXT")
+    private String agentInputGuide;
+
+    @Column(name = "agent_output_guide", columnDefinition = "TEXT")
+    private String agentOutputGuide;
+
+    @Column(name = "agent_support_contact", length = 256)
+    private String agentSupportContact;
+
     @Column(name = "primary_namespace_id")
     private Long primaryNamespaceId;
 
@@ -103,6 +115,11 @@ public class CatalogResource {
     private Set<String> tags = new LinkedHashSet<>();
 
     @ElementCollection(fetch = FetchType.LAZY)
+    @CollectionTable(name = "catalog_resource_agent_example_prompt", joinColumns = @JoinColumn(name = "resource_id"))
+    @Column(name = "prompt", nullable = false, length = 1000)
+    private Set<String> agentExamplePrompts = new LinkedHashSet<>();
+
+    @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "catalog_resource_relation", joinColumns = @JoinColumn(name = "source_resource_id"))
     @Column(name = "target_resource_id", nullable = false)
     private Set<Long> relatedResourceIds = new LinkedHashSet<>();
@@ -139,6 +156,9 @@ public class CatalogResource {
     public void publish(Instant now) {
         if (documentation == null || documentation.isBlank()) {
             throw CatalogDomainException.badRequest("error.catalog.documentation.required");
+        }
+        if (kind == CatalogResourceKind.AGENT) {
+            requireAgentPublishFields();
         }
         this.status = CatalogResourceStatus.PUBLISHED;
         this.publishedAt = now;
@@ -192,6 +212,11 @@ public class CatalogResource {
         this.accessUrl = trimToLength(draft.accessUrl(), 1024, "error.catalog.accessUrl.tooLong");
         this.documentation = normalizeNullable(draft.documentation());
         this.version = trimToLength(draft.version(), 64, "error.catalog.version.tooLong");
+        this.agentUsageBoundary = normalizeNullable(draft.agentUsageBoundary());
+        this.agentInputGuide = normalizeNullable(draft.agentInputGuide());
+        this.agentOutputGuide = normalizeNullable(draft.agentOutputGuide());
+        this.agentSupportContact = trimToLength(draft.agentSupportContact(), 256, "error.catalog.agent.supportContact.tooLong");
+        this.agentExamplePrompts = normalizedStrings(draft.agentExamplePrompts(), 1000, "error.catalog.agent.examplePrompt.tooLong");
         this.primaryNamespaceId = draft.primaryNamespaceId();
         this.maintenanceStatus = draft.maintenanceStatus() != null
                 ? draft.maintenanceStatus() : CatalogMaintenanceStatus.ACTIVE;
@@ -205,6 +230,15 @@ public class CatalogResource {
         this.tags = normalizedStrings(draft.tags(), 64, "error.catalog.tag.tooLong");
         this.relatedResourceIds = normalizedLongs(draft.relatedResourceIds());
         this.relatedSkillIds = normalizedLongs(draft.relatedSkillIds());
+    }
+
+    private void requireAgentPublishFields() {
+        if (accessUrl == null) {
+            throw CatalogDomainException.badRequest("error.catalog.agent.accessUrl.required");
+        }
+        if (scenarios.isEmpty()) {
+            throw CatalogDomainException.badRequest("error.catalog.agent.scenario.required");
+        }
     }
 
     private static String normalizeRequired(String value, String code) {
@@ -292,6 +326,10 @@ public class CatalogResource {
     public String getAccessUrl() { return accessUrl; }
     public String getDocumentation() { return documentation; }
     public String getVersion() { return version; }
+    public String getAgentUsageBoundary() { return agentUsageBoundary; }
+    public String getAgentInputGuide() { return agentInputGuide; }
+    public String getAgentOutputGuide() { return agentOutputGuide; }
+    public String getAgentSupportContact() { return agentSupportContact; }
     public Long getPrimaryNamespaceId() { return primaryNamespaceId; }
     public String getOwnerId() { return ownerId; }
     public CatalogResourceStatus getStatus() { return status; }
@@ -305,6 +343,7 @@ public class CatalogResource {
     public Set<Long> getVisibleNamespaceIds() { return Set.copyOf(visibleNamespaceIds); }
     public Set<String> getScenarios() { return Set.copyOf(scenarios); }
     public Set<String> getTags() { return Set.copyOf(tags); }
+    public Set<String> getAgentExamplePrompts() { return Set.copyOf(agentExamplePrompts); }
     public Set<Long> getRelatedResourceIds() { return Set.copyOf(relatedResourceIds); }
     public Set<Long> getRelatedSkillIds() { return Set.copyOf(relatedSkillIds); }
     public Instant getCreatedAt() { return createdAt; }
