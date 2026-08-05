@@ -27,6 +27,7 @@ export function MyCatalogPage() {
                 <p className="mt-1 line-clamp-1 text-sm text-muted-foreground">{item.summary}</p>
               </div>
               <div className="flex gap-2">
+                <Link to="/dashboard/catalog/$slug/edit" params={{ slug: item.slug }}><Button size="sm" variant="outline">编辑</Button></Link>
                 {item.status !== 'PUBLISHED' ? <Button size="sm" onClick={() => publish.mutate(item.slug)}>发布</Button> : <Button size="sm" variant="outline" onClick={() => offline.mutate(item.slug)}>下架</Button>}
               </div>
             </CardContent>

@@ -90,6 +90,7 @@ const MySkillsPage = createLazyRouteComponent(() => import('@/pages/dashboard/my
 const PublishPage = createLazyRouteComponent(() => import('@/pages/dashboard/publish'), 'PublishPage')
 const MyCatalogPage = createLazyRouteComponent(() => import('@/pages/dashboard/catalog'), 'MyCatalogPage')
 const PublishResourcePage = createLazyRouteComponent(() => import('@/pages/dashboard/publish-resource'), 'PublishResourcePage')
+const EditCatalogResourcePage = createLazyRouteComponent(() => import('@/pages/dashboard/edit-catalog-resource'), 'EditCatalogResourcePage')
 const MyStarsPage = createLazyRouteComponent(() => import('@/pages/dashboard/stars'), 'MyStarsPage')
 const MySubscriptionsPage = createLazyRouteComponent(() => import('@/pages/dashboard/subscriptions'), 'MySubscriptionsPage')
 const NotificationsPage = createLazyRouteComponent(() => import('@/pages/notifications'), 'NotificationsPage')
@@ -322,6 +323,13 @@ const dashboardCatalogPublishRoute = createRoute({
   component: PublishResourcePage,
 })
 
+const dashboardCatalogEditRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: 'dashboard/catalog/$slug/edit',
+  beforeLoad: requireAuth,
+  component: EditCatalogResourcePage,
+})
+
 const dashboardStarsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: 'dashboard/stars',
@@ -446,6 +454,7 @@ const routeTree = rootRoute.addChildren([
   dashboardPublishRoute,
   dashboardCatalogRoute,
   dashboardCatalogPublishRoute,
+  dashboardCatalogEditRoute,
   dashboardStarsRoute,
   dashboardSubscriptionsRoute,
   dashboardNotificationsRoute,

@@ -55,6 +55,21 @@ export function useCreateCatalogResource() {
   })
 }
 
+export function useUpdateCatalogResource() {
+  const client = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ slug, request, artifact }: { slug: string; request: CatalogResourceRequest; artifact?: File }) => {
+      const resource = await catalogApi.update(slug, request)
+      return artifact ? catalogApi.uploadArtifact(resource.slug, artifact) : resource
+    },
+    onSuccess: (resource) => {
+      client.setQueryData(catalogKeys.detail(resource.slug), resource)
+      void client.invalidateQueries({ queryKey: catalogKeys.lists() })
+      void client.invalidateQueries({ queryKey: catalogKeys.mine() })
+    },
+  })
+}
+
 export function useCatalogLifecycleAction(action: 'publish' | 'offline') {
   const client = useQueryClient()
   return useMutation({
