@@ -219,15 +219,6 @@
       "design": "Design"
     }
   },
-  "skillCard": {
-    "type": "Skill",
-    "whatItDoes": "What it does",
-    "noSummary": "No short description yet. Open the detail page for the full documentation.",
-    "downloads": "Downloads",
-    "stars": "Stars",
-    "rating": "Rating",
-    "viewDetails": "View details"
-  },
   "home": {
     "subtitle": "Skill Registry",
     "description": "Efficient skill management, distribution, and collaboration platform for developers",
@@ -1458,7 +1449,14 @@
     "starredAction": "Click to unstar",
     "unstarTitle": "Remove from starred",
     "unstarDescription": "Are you sure you want to remove \"{{name}}\" from your starred skills?",
-    "unstarConfirm": "Remove"
+    "unstarConfirm": "Remove",
+    "type": "Skill",
+    "whatItDoes": "What it does",
+    "noSummary": "No short description yet. Open the detail page for the full documentation.",
+    "downloads": "Downloads",
+    "stars": "Stars",
+    "rating": "Rating",
+    "viewDetails": "View details"
   },
   "copyButton": {
     "copied": "Copied",
