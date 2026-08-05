@@ -308,6 +308,7 @@
     "ask": "询问",
     "thinking": "正在检索你可见的能力...",
     "planTitle": "任务方案",
+    "recommendationsTitle": "推荐能力",
     "planHint": "每一步给出首选能力，其他可用方案按需展开。",
     "stepCount": "{{count}} 个步骤",
     "permissionSafe": "仅基于你可见的内容",
