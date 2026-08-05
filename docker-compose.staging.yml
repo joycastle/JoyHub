@@ -46,12 +46,18 @@ services:
       SKILLHUB_SECURITY_SCANNER_ENABLED: "true"
       SKILLHUB_SECURITY_SCANNER_URL: http://skill-scanner:8000
       SKILLHUB_SECURITY_SCANNER_MODE: upload
+      JOYHUB_DEPLOYMENT_RUNNER_BASE_URL: http://deployment-runner:8091
+      JOYHUB_DEPLOYMENT_RUNNER_TOKEN: ${JOYHUB_RUNNER_TOKEN:-local-deployment-token}
+      JOYHUB_DEPLOYMENT_PUBLIC_ORIGIN: http://localhost:8090
+      JOYHUB_DEPLOYMENT_PATH_PREFIX: /apps
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
       skill-scanner:
+        condition: service_healthy
+      deployment-runner:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8080/actuator/health"]

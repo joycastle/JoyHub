@@ -56,6 +56,43 @@ services:
       timeout: 5s
       retries: 5
 
+  static-host:
+    profiles: ["deployment"]
+    image: ${NGINX_IMAGE:-nginx:1.27-alpine}
+    ports:
+      - "127.0.0.1:8090:80"
+    volumes:
+      - deployment_data:/srv/static:ro
+      - ./deploy/static-host/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  deployment-runner:
+    profiles: ["deployment"]
+    build: ./runner
+    ports:
+      - "127.0.0.1:8091:8091"
+    environment:
+      JOYHUB_RUNNER_TOKEN: ${JOYHUB_RUNNER_TOKEN:-local-deployment-token}
+      JOYHUB_RUNNER_DATA_PATH: /data
+      JOYHUB_STATIC_VERIFICATION_ORIGIN: http://static-host
+      JOYHUB_STATIC_PATH_PREFIX: /apps
+    volumes:
+      - deployment_data:/data
+    depends_on:
+      static-host:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8091/actuator/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 15s
+
 volumes:
   postgres_data:
   minio_data:
+  deployment_data:

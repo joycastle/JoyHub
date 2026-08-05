@@ -73,6 +73,9 @@ jobs:
       - name: Run backend unit tests
         run: make test-backend
 
+      - name: Run deployment Runner tests
+        run: make test-runner
+
   docs-build:
     name: Docs Build
     if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
