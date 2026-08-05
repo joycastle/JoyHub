@@ -1448,6 +1448,72 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/web/catalog/document-text": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["extractDocument"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/catalog/document-text": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["extractDocument_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/web/catalog/agent-documentation-draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Generate a reviewable Agent usage-guide draft */
+        post: operations["generateAgentDocumentationDraft"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/catalog/agent-documentation-draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Generate a reviewable Agent usage-guide draft */
+        post: operations["generateAgentDocumentationDraft_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/tokens": {
         parameters: {
             query?: never;
@@ -1538,6 +1604,91 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["authorizeDevice"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/deployable-applications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Enable static deployment for an existing Catalog resource */
+        post: operations["create_3"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/deployable-applications/{id}/rollback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Atomically roll back to a retained release */
+        post: operations["rollback"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/deployable-applications/{id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Restore a retained release at the stable application URL */
+        post: operations["restore"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/deployable-applications/{id}/releases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Deploy the current immutable Catalog ZIP as a new release */
+        post: operations["deploy"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/deployable-applications/{id}/offline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Take a deployed application offline without deleting releases */
+        post: operations["offline_2"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3226,6 +3377,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/deployment-jobs/{jobId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a deployment operation result */
+        get: operations["job"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/deployable-applications/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get a deployable application with releases and operations */
+        get: operations["detail_2"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/providers": {
         parameters: {
             query?: never;
@@ -3425,7 +3610,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["detail_2"];
+        get: operations["detail_3"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3772,7 +3957,7 @@ export interface components {
             updatedAt?: string;
         };
         CatalogResourceRequest: {
-            slug: string;
+            slug?: string;
             name: string;
             summary: string;
             /** @enum {string} */
@@ -3781,6 +3966,11 @@ export interface components {
             accessUrl?: string;
             documentation?: string;
             version?: string;
+            agentUsageBoundary?: string;
+            agentInputGuide?: string;
+            agentOutputGuide?: string;
+            agentSupportContact?: string;
+            agentExamplePrompts?: string[];
             /** Format: int64 */
             primaryDepartmentId?: number;
             /** @enum {string} */
@@ -3832,6 +4022,11 @@ export interface components {
             accessUrl?: string;
             documentation?: string;
             version?: string;
+            agentUsageBoundary?: string;
+            agentInputGuide?: string;
+            agentOutputGuide?: string;
+            agentSupportContact?: string;
+            agentExamplePrompts?: string[];
             department?: components["schemas"]["CatalogDepartmentResponse"];
             owner?: components["schemas"]["CatalogOwnerResponse"];
             status?: string;
@@ -4270,6 +4465,21 @@ export interface components {
         CatalogTransferRequest: {
             newOwnerId: string;
         };
+        ApiResponseString: {
+            /** Format: int32 */
+            code?: number;
+            msg?: string;
+            data?: string;
+            /** Format: date-time */
+            timestamp?: string;
+            requestId?: string;
+        };
+        AgentDocumentationDraftRequest: {
+            name: string;
+            summary: string;
+            scenarios?: string[];
+            existingDocumentation?: string;
+        };
         TokenCreateRequest: {
             name: string;
             scopes?: string[];
@@ -4308,6 +4518,82 @@ export interface components {
         };
         AuthorizeRequest: {
             userCode?: string;
+        };
+        CreateDeployableApplicationRequest: {
+            /** Format: int64 */
+            catalogResourceId: number;
+            /** @enum {string} */
+            deploymentMode: "STATIC";
+        };
+        ApiResponseDeployableApplicationResponse: {
+            /** Format: int32 */
+            code?: number;
+            msg?: string;
+            data?: components["schemas"]["DeployableApplicationResponse"];
+            /** Format: date-time */
+            timestamp?: string;
+            requestId?: string;
+        };
+        DeployableApplicationResponse: {
+            /** Format: int64 */
+            id?: number;
+            /** Format: int64 */
+            catalogResourceId?: number;
+            catalogSlug?: string;
+            /** @enum {string} */
+            deploymentMode?: "STATIC";
+            /** @enum {string} */
+            status?: "ACTIVE" | "OFFLINE";
+            stableUrl?: string;
+            /** Format: int64 */
+            currentReleaseId?: number;
+            releases?: components["schemas"]["DeploymentReleaseResponse"][];
+            jobs?: components["schemas"]["DeploymentJobResponse"][];
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+        };
+        DeploymentJobResponse: {
+            /** Format: int64 */
+            id?: number;
+            /** Format: int64 */
+            applicationId?: number;
+            /** Format: int64 */
+            releaseId?: number;
+            /** @enum {string} */
+            operation?: "DEPLOY" | "ROLLBACK" | "OFFLINE" | "RESTORE";
+            /** @enum {string} */
+            status?: "RUNNING" | "SUCCEEDED" | "FAILED";
+            resultCode?: string;
+            resultSummary?: string;
+            createdBy?: string;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            finishedAt?: string;
+        };
+        DeploymentReleaseResponse: {
+            /** Format: int64 */
+            id?: number;
+            version?: string;
+            /** @enum {string} */
+            status?: "DEPLOYING" | "ACTIVE" | "INACTIVE" | "FAILED";
+            artifactSha256?: string;
+            failureCode?: string;
+            failureSummary?: string;
+            createdBy?: string;
+            /** Format: date-time */
+            deployedAt?: string;
+            /** Format: date-time */
+            createdAt?: string;
+        };
+        DeploymentTargetRequest: {
+            /** Format: int64 */
+            targetReleaseId: number;
+        };
+        CreateDeploymentReleaseRequest: {
+            version: string;
         };
         TokenRequest: {
             deviceCode?: string;
@@ -4503,6 +4789,8 @@ export interface components {
             slug?: string;
             displayName?: string;
             summary?: string;
+            localizedDisplayName?: string;
+            localizedSummary?: string;
             visibility?: string;
             status?: string;
             /** Format: int64 */
@@ -5277,6 +5565,15 @@ export interface components {
         ClawHubResolveResponse: {
             match?: components["schemas"]["VersionInfo"];
             latestVersion?: components["schemas"]["VersionInfo"];
+        };
+        ApiResponseDeploymentJobResponse: {
+            /** Format: int32 */
+            code?: number;
+            msg?: string;
+            data?: components["schemas"]["DeploymentJobResponse"];
+            /** Format: date-time */
+            timestamp?: string;
+            requestId?: string;
         };
         ApiResponseListAuthProviderResponse: {
             /** Format: int32 */
@@ -8630,6 +8927,112 @@ export interface operations {
             };
         };
     };
+    extractDocument: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseString"];
+                };
+            };
+        };
+    };
+    extractDocument_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseString"];
+                };
+            };
+        };
+    };
+    generateAgentDocumentationDraft: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Accept-Language"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AgentDocumentationDraftRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseString"];
+                };
+            };
+        };
+    };
+    generateAgentDocumentationDraft_1: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Accept-Language"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AgentDocumentationDraftRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseString"];
+                };
+            };
+        };
+    };
     list_2: {
         parameters: {
             query?: {
@@ -8841,6 +9244,130 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ApiResponseMessageResponse"];
+                };
+            };
+        };
+    };
+    create_3: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDeployableApplicationRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseDeployableApplicationResponse"];
+                };
+            };
+        };
+    };
+    rollback: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeploymentTargetRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseDeployableApplicationResponse"];
+                };
+            };
+        };
+    };
+    restore: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeploymentTargetRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseDeployableApplicationResponse"];
+                };
+            };
+        };
+    };
+    deploy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDeploymentReleaseRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseDeployableApplicationResponse"];
+                };
+            };
+        };
+    };
+    offline_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseDeployableApplicationResponse"];
                 };
             };
         };
@@ -11458,6 +11985,50 @@ export interface operations {
             };
         };
     };
+    job: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                jobId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseDeploymentJobResponse"];
+                };
+            };
+        };
+    };
+    detail_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseDeployableApplicationResponse"];
+                };
+            };
+        };
+    };
     providers: {
         parameters: {
             query?: {
@@ -11742,7 +12313,7 @@ export interface operations {
             };
         };
     };
-    detail_2: {
+    detail_3: {
         parameters: {
             query?: {
                 version?: string;
