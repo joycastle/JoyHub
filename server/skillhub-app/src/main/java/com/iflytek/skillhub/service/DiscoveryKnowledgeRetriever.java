@@ -27,6 +27,12 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class DiscoveryKnowledgeRetriever {
     private static final int RESULT_LIMIT = 6;
+    /**
+     * Search must return a wider candidate window than the number shown in the
+     * answer. The portal search intentionally applies recency as a tie-breaker;
+     * AI discovery performs its own semantic/lexical rerank after retrieval.
+     */
+    private static final int SKILL_CANDIDATE_LIMIT = 40;
     private static final double MIN_SEMANTIC_SCORE = 0.60D;
     private static final double RRF_K = 60D;
     private static final Set<String> QUERY_STOP_WORDS = Set.of(
@@ -135,7 +141,7 @@ public class DiscoveryKnowledgeRetriever {
                                                               String userId,
                                                               Map<Long, NamespaceRole> namespaceRoles) {
         SkillSearchAppService.SearchResponse response = skillSearchAppService.search(
-                question, null, "relevance", 0, RESULT_LIMIT, userId, namespaceRoles);
+                question, null, "relevance", 0, SKILL_CANDIDATE_LIMIT, userId, namespaceRoles);
         List<Long> ids = response.items().stream().map(SkillSummaryResponse::id).toList();
         Map<Long, SkillSearchDocumentEntity> documents = new HashMap<>();
         skillSearchDocumentRepository.findBySkillIdIn(ids)
