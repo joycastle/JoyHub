@@ -199,12 +199,34 @@
     "visibility": "这里仅展示全公司可见，以及你所在部门可见的已发布技能。",
     "publish": "发布 Skill",
     "searchPlaceholder": "搜索 Skill、场景或能力",
+    "search": "搜索",
     "sortLabel": "排序",
     "newest": "最新发布",
     "popular": "热门下载",
     "resultCount": "共 {{count}} 项",
     "loadFailed": "技能加载失败，请稍后重试。",
-    "empty": "暂无匹配的 Skill"
+    "empty": "暂无匹配的 Skill",
+    "pagination": "技能中心分页",
+    "previous": "上一页",
+    "next": "下一页",
+    "pageInfo": "第 {{current}} / {{total}} 页",
+    "scenarios": {
+      "all": "全部",
+      "content": "内容生产",
+      "data": "数据分析",
+      "development": "研发提效",
+      "project": "项目管理",
+      "design": "设计与美术"
+    }
+  },
+  "skillCard": {
+    "type": "Skill",
+    "whatItDoes": "能做什么",
+    "noSummary": "暂无简要说明，打开详情查看完整文档。",
+    "downloads": "下载次数",
+    "stars": "收藏数",
+    "rating": "评分",
+    "viewDetails": "查看详情"
   },
   "home": {
     "subtitle": "技能注册中心",

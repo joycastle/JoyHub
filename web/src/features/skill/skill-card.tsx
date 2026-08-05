@@ -1,4 +1,6 @@
 import type { SkillSummary } from '@/api/types'
+import { useTranslation } from 'react-i18next'
+import { ArrowRight, Bookmark, Download, Star } from 'lucide-react'
 import { useAuth } from '@/features/auth/use-auth'
 import { useStar } from '@/features/social/use-star'
 import { Card } from '@/shared/ui/card'
@@ -7,7 +9,6 @@ import { useSkillRepositories } from '@/shared/hooks/use-skill-repositories'
 import { resolveRepositoryDisplayName } from '@/shared/lib/repository-display'
 import { getHeadlineVersion } from '@/shared/lib/skill-lifecycle'
 import { formatCompactCount } from '@/shared/lib/number-format'
-import { Bookmark } from 'lucide-react'
 
 interface SkillCardProps {
   skill: SkillSummary
@@ -15,10 +16,9 @@ interface SkillCardProps {
   highlightStarred?: boolean
 }
 
-/**
- * Reusable card for displaying one skill in lists such as landing, namespace, search, and stars.
- */
+/** Reusable, readable Skill summary card used across discovery pages. */
 export function SkillCard({ skill, onClick, highlightStarred = true }: SkillCardProps) {
+  const { t } = useTranslation()
   const { isAuthenticated } = useAuth()
   const { data: repositories } = useSkillRepositories()
   const { data: starStatus } = useStar(skill.id, highlightStarred && isAuthenticated)
@@ -28,14 +28,11 @@ export function SkillCard({ skill, onClick, highlightStarred = true }: SkillCard
 
   return (
     <Card
-      className="h-full p-5 cursor-pointer group relative overflow-hidden bg-white border shadow-sm transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70 focus-visible:ring-offset-2"
+      className="group relative h-full cursor-pointer overflow-hidden border bg-white p-5 shadow-sm transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70 focus-visible:ring-offset-2"
       style={{ borderColor: 'hsl(var(--border-card))' }}
       onClick={onClick}
       onKeyDown={(event) => {
-        if (!isInteractive) {
-          return
-        }
-
+        if (!isInteractive) return
         if (event.key === 'Enter' || event.key === ' ') {
           event.preventDefault()
           onClick()
@@ -45,52 +42,49 @@ export function SkillCard({ skill, onClick, highlightStarred = true }: SkillCard
       tabIndex={isInteractive ? 0 : undefined}
     >
       <div className="flex h-full flex-col">
-        <div className="flex items-start justify-between mb-3">
-          <div className="space-y-2">
-            <h3 className="font-semibold text-lg group-hover:text-primary transition-colors" style={{ color: 'hsl(var(--foreground))' }}>
-              {skill.displayName}
-            </h3>
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-md bg-violet-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-violet-700 dark:bg-violet-950/40 dark:text-violet-300">
+                {t('skillCard.type')}
+              </span>
+              <h3 className="truncate text-lg font-semibold transition-colors group-hover:text-primary" style={{ color: 'hsl(var(--foreground))' }}>
+                {skill.displayName}
+              </h3>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <NamespaceBadge
-              type="TEAM"
-              name={resolveRepositoryDisplayName(skill.namespace, repositories)}
-            />
-          </div>
+          <NamespaceBadge type="TEAM" name={resolveRepositoryDisplayName(skill.namespace, repositories)} />
         </div>
 
-        {skill.summary && (
-          <p className="text-sm text-muted-foreground mb-4 line-clamp-2 leading-relaxed">
-            {skill.summary}
+        <div className="mb-5">
+          <p className="text-xs font-semibold text-muted-foreground">{t('skillCard.whatItDoes')}</p>
+          <p className="mt-1 line-clamp-3 text-sm leading-6 text-foreground/80">
+            {skill.summary || t('skillCard.noSummary')}
           </p>
-        )}
+        </div>
 
-        <div className="mt-auto flex items-center gap-4 text-xs text-muted-foreground">
-          {headlineVersion && (
-            <span className="px-2.5 py-1 rounded-full bg-secondary/60 font-mono">
-              v{headlineVersion.version}
-            </span>
-          )}
-          <span className="flex items-center gap-1">
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10" />
-            </svg>
+        <div className="mt-auto flex items-center gap-3 text-xs text-muted-foreground">
+          {headlineVersion ? (
+            <span className="rounded-full bg-secondary/60 px-2.5 py-1 font-mono">v{headlineVersion.version}</span>
+          ) : null}
+          <span className="flex items-center gap-1" title={t('skillCard.downloads')}>
+            <Download className="h-3.5 w-3.5" aria-hidden="true" />
             {formatCompactCount(skill.downloadCount)}
           </span>
-          <span
-            className={`flex items-center gap-1 ${showStarredHighlight ? 'font-semibold text-primary' : ''}`}
-          >
-            <Bookmark className={`w-3.5 h-3.5 ${showStarredHighlight ? 'fill-current' : ''}`} />
+          <span className={`flex items-center gap-1 ${showStarredHighlight ? 'font-semibold text-primary' : ''}`} title={t('skillCard.stars')}>
+            <Bookmark className={`h-3.5 w-3.5 ${showStarredHighlight ? 'fill-current' : ''}`} aria-hidden="true" />
             {skill.starCount}
           </span>
-          {skill.ratingAvg !== undefined && skill.ratingCount > 0 && (
-            <span className="flex items-center gap-1">
-              <svg className="w-3.5 h-3.5 text-primary" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-              </svg>
+          {skill.ratingAvg !== undefined && skill.ratingCount > 0 ? (
+            <span className="flex items-center gap-1" title={t('skillCard.rating')}>
+              <Star className="h-3.5 w-3.5 fill-current text-primary" aria-hidden="true" />
               {skill.ratingAvg.toFixed(1)}
             </span>
-          )}
+          ) : null}
+          <span className="ml-auto inline-flex items-center gap-1 font-medium text-primary">
+            {t('skillCard.viewDetails')}
+            <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+          </span>
         </div>
       </div>
     </Card>
