@@ -238,6 +238,7 @@ joyhub:
     base-url: ${JOYHUB_AI_BASE_URL:https://codex.cheergame.net}
     api-key: ${JOYHUB_AI_API_KEY:}
     model: ${JOYHUB_AI_MODEL:gpt-5.6-terra}
+    translation-model: ${JOYHUB_AI_TRANSLATION_MODEL:Luna}
     fallback-model: ${JOYHUB_AI_FALLBACK_MODEL:}
     reasoning-effort: ${JOYHUB_AI_REASONING_EFFORT:medium}
     max-output-tokens: ${JOYHUB_AI_MAX_OUTPUT_TOKENS:0}

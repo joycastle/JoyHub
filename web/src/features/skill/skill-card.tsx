@@ -48,9 +48,14 @@ export function SkillCard({ skill, onClick, highlightStarred = true }: SkillCard
               <span className="rounded-md bg-violet-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-violet-700 dark:bg-violet-950/40 dark:text-violet-300">
                 {t('skillCard.type')}
               </span>
-              <h3 className="truncate text-lg font-semibold transition-colors group-hover:text-primary" style={{ color: 'hsl(var(--foreground))' }}>
-                {skill.displayName}
-              </h3>
+              <div className="min-w-0">
+                <h3 className="truncate text-lg font-semibold transition-colors group-hover:text-primary" style={{ color: 'hsl(var(--foreground))' }}>
+                  {skill.localizedDisplayName || skill.displayName}
+                </h3>
+                {skill.localizedDisplayName && skill.localizedDisplayName !== skill.displayName ? (
+                  <p className="truncate text-xs text-muted-foreground">{skill.displayName}</p>
+                ) : null}
+              </div>
             </div>
           </div>
           <NamespaceBadge type="TEAM" name={resolveRepositoryDisplayName(skill.namespace, repositories)} />
@@ -59,7 +64,7 @@ export function SkillCard({ skill, onClick, highlightStarred = true }: SkillCard
         <div className="mb-5">
           <p className="text-xs font-semibold text-muted-foreground">{t('skillCard.whatItDoes')}</p>
           <p className="mt-1 line-clamp-3 text-sm leading-6 text-foreground/80">
-            {skill.summary || t('skillCard.noSummary')}
+            {skill.localizedSummary || skill.summary || t('skillCard.noSummary')}
           </p>
         </div>
 

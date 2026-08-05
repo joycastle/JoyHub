@@ -25,6 +25,15 @@ public class Skill {
     @Column(columnDefinition = "TEXT")
     private String summary;
 
+    @Column(name = "localized_display_name", length = 200)
+    private String localizedDisplayName;
+
+    @Column(name = "localized_summary", columnDefinition = "TEXT")
+    private String localizedSummary;
+
+    @Column(name = "localization_source_hash", length = 64)
+    private String localizationSourceHash;
+
     @Column(name = "owner_id", nullable = false)
     private String ownerId;
 
@@ -121,6 +130,18 @@ public class Skill {
         return summary;
     }
 
+    public String getLocalizedDisplayName() {
+        return localizedDisplayName;
+    }
+
+    public String getLocalizedSummary() {
+        return localizedSummary;
+    }
+
+    public String getLocalizationSourceHash() {
+        return localizationSourceHash;
+    }
+
     public String getOwnerId() {
         return ownerId;
     }
@@ -196,6 +217,18 @@ public class Skill {
 
     public void setSummary(String summary) {
         this.summary = summary;
+    }
+
+    public void setLocalizedDisplayName(String localizedDisplayName) {
+        this.localizedDisplayName = localizedDisplayName;
+    }
+
+    public void setLocalizedSummary(String localizedSummary) {
+        this.localizedSummary = localizedSummary;
+    }
+
+    public void setLocalizationSourceHash(String localizationSourceHash) {
+        this.localizationSourceHash = localizationSourceHash;
     }
 
     public void setSourceSkillId(Long sourceSkillId) {

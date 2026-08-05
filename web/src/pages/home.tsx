@@ -13,15 +13,6 @@ import { APP_SHELL_PAGE_CLASS_NAME } from '@/app/page-shell-style'
 type SkillSort = 'newest' | 'downloads'
 const SKILL_PAGE_SIZE = 12
 
-const SKILL_SCENARIOS = [
-  { key: 'all', query: '' },
-  { key: 'content', query: '内容生产' },
-  { key: 'data', query: '数据分析' },
-  { key: 'development', query: '研发提效' },
-  { key: 'project', query: '项目管理' },
-  { key: 'design', query: '设计与美术' },
-] as const
-
 /** Skill discovery center. The product landing page is intentionally kept separate. */
 export function HomePage() {
   const { t } = useTranslation()
@@ -39,12 +30,6 @@ export function HomePage() {
   const pageCount = data ? Math.max(Math.ceil(data.total / data.size), 1) : 1
 
   const handleSearch = (value: string) => {
-    setQueryInput(value)
-    setQuery(normalizeSearchQuery(value))
-    setPage(0)
-  }
-
-  const chooseScenario = (value: string) => {
     setQueryInput(value)
     setQuery(normalizeSearchQuery(value))
     setPage(0)
@@ -85,19 +70,6 @@ export function HomePage() {
           <Button type="submit" disabled={isFetching && !isLoading}>{t('skillCenter.search')}</Button>
         </form>
       </section>
-
-      <div className="flex flex-wrap items-center gap-2">
-        {SKILL_SCENARIOS.map((scenario) => (
-          <Button
-            key={scenario.key}
-            variant={query === scenario.query ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => chooseScenario(scenario.query)}
-          >
-            {t(`skillCenter.scenarios.${scenario.key}`)}
-          </Button>
-        ))}
-      </div>
 
       <div className="flex flex-wrap items-center gap-2">
         <span className="mr-1 text-sm font-medium text-muted-foreground">{t('skillCenter.sortLabel')}</span>
