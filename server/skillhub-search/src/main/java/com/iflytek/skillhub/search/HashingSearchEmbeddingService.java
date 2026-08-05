@@ -4,13 +4,11 @@ import java.util.Arrays;
 import java.util.Locale;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import org.springframework.stereotype.Service;
 
 /**
  * Lightweight embedding service that hashes lexical tokens into a fixed-size vector for approximate
  * semantic ranking.
  */
-@Service
 public class HashingSearchEmbeddingService implements SearchEmbeddingService {
     private static final Pattern TOKEN_SPLITTER = Pattern.compile("[^\\p{L}\\p{N}_]+");
     private static final int DIMENSIONS = 64;

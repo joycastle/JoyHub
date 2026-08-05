@@ -27,9 +27,9 @@ spring:
 skillhub:
   auth:
     api-tokens:
-      enabled: false
+      enabled: ${SKILLHUB_API_TOKENS_ENABLED:false}
     mock:
-      enabled: true
+      enabled: false
     web-base-url: ${SKILLHUB_WEB_BASE_URL:http://localhost:3000}
   publish:
     auto-publish: true

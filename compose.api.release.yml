@@ -1,0 +1,13 @@
+# JoyHub production overlay. Web UI + API; Hermes uses /api/agent/ via edge nginx.
+# Usage:
+#   docker compose -p joyhub --env-file .env.release \
+#     -f compose.release.yml -f compose.light.release.yml -f compose.api.release.yml up -d
+
+services:
+  web:
+    ports: !override
+      - "127.0.0.1:${WEB_PORT:-18080}:80"
+
+  server:
+    ports: !override
+      - "127.0.0.1:${API_PORT:-18081}:8080"

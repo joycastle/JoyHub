@@ -1,7 +1,7 @@
 import { startTransition, useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
-import { Loader2 } from 'lucide-react'
+import { Bot, Boxes, Loader2, Puzzle, Sparkles, Wrench } from 'lucide-react'
 import type { SkillSummary } from '@/api/types'
 import { useAuth } from '@/features/auth/use-auth'
 import { SearchBar } from '@/features/search/search-bar'
@@ -19,6 +19,22 @@ import { Button } from '@/shared/ui/button'
 import { APP_SHELL_PAGE_CLASS_NAME } from '@/app/page-shell-style'
 
 const PAGE_SIZE = 12
+type SearchResourceType = 'ALL' | 'AGENT' | 'TOOL' | 'SKILL'
+
+const RESOURCE_TYPES: Array<{ type: SearchResourceType; labelKey: string; icon: typeof Boxes }> = [
+  { type: 'ALL', labelKey: 'search.types.all', icon: Boxes },
+  { type: 'AGENT', labelKey: 'search.types.agent', icon: Bot },
+  { type: 'TOOL', labelKey: 'search.types.tool', icon: Wrench },
+  { type: 'SKILL', labelKey: 'search.types.skill', icon: Puzzle },
+]
+
+const SCENARIO_QUERIES = [
+  { labelKey: 'search.scenarios.writing', query: '文档 内容 总结' },
+  { labelKey: 'search.scenarios.data', query: '数据 分析 报表' },
+  { labelKey: 'search.scenarios.development', query: '研发 代码 测试' },
+  { labelKey: 'search.scenarios.project', query: '项目 管理 协作' },
+  { labelKey: 'search.scenarios.design', query: '设计 美术 素材' },
+] as const
 
 function blurActiveElement() {
   if (typeof document === 'undefined' || typeof HTMLElement === 'undefined') {
@@ -98,6 +114,9 @@ export function SearchPage() {
   const sort = searchParams.sort || 'newest'
   const page = searchParams.page ?? 0
   const starredOnly = searchParams.starredOnly ?? false
+  const resourceType = searchParams.type ?? 'ALL'
+  const showSkills = resourceType === 'ALL' || resourceType === 'SKILL' || starredOnly
+  const showCatalog = isAuthenticated && !starredOnly && resourceType !== 'SKILL'
   const [queryInput, setQueryInput] = useState(formatNamespaceSearchInput(namespace, q))
   const previousPageRef = useRef(page)
 
@@ -127,11 +146,13 @@ export function SearchPage() {
     page,
     size: PAGE_SIZE,
     starredOnly,
-  })
+  }, showSkills)
   const { data: catalogResults, isLoading: isLoadingCatalog } = useCatalogResources({
     q,
-    size: PAGE_SIZE,
-    enabled: isAuthenticated && !starredOnly,
+    center: resourceType === 'AGENT' ? 'AGENT' : resourceType === 'TOOL' ? 'TOOL' : undefined,
+    page: resourceType === 'AGENT' || resourceType === 'TOOL' ? page : 0,
+    size: resourceType === 'ALL' ? 6 : PAGE_SIZE,
+    enabled: showCatalog,
   })
   const { data: labels } = useVisibleLabels()
   const {
@@ -149,44 +170,44 @@ export function SearchPage() {
 
     if (!parsedInput.query && !parsedInput.namespace) {
       startTransition(() => {
-        navigate({ to: '/search', search: { q: '', namespace: '', label: selectedLabel, sort, page: 0, starredOnly }, replace: page === 0 })
+        navigate({ to: '/search', search: { q: '', namespace: '', label: selectedLabel, sort, page: 0, starredOnly, type: resourceType }, replace: page === 0 })
       })
       return
     }
 
     const timeoutId = window.setTimeout(() => {
       startTransition(() => {
-        navigate({ to: '/search', search: { q: parsedInput.query, namespace: parsedInput.namespace, label: selectedLabel, sort, page: 0, starredOnly }, replace: true })
+        navigate({ to: '/search', search: { q: parsedInput.query, namespace: parsedInput.namespace, label: selectedLabel, sort, page: 0, starredOnly, type: resourceType }, replace: true })
       })
     }, 250)
 
     return () => window.clearTimeout(timeoutId)
-  }, [navigate, namespace, page, q, queryInput, selectedLabel, sort, starredOnly])
+  }, [navigate, namespace, page, q, queryInput, resourceType, selectedLabel, sort, starredOnly])
 
   const handleSearch = (query: string) => {
     const parsedInput = parseNamespaceSearchInput(query)
     setQueryInput(query)
     startTransition(() => {
-      navigate({ to: '/search', search: { q: parsedInput.query, namespace: parsedInput.namespace, label: selectedLabel, sort, page: 0, starredOnly }, replace: true })
+      navigate({ to: '/search', search: { q: parsedInput.query, namespace: parsedInput.namespace, label: selectedLabel, sort, page: 0, starredOnly, type: resourceType }, replace: true })
     })
   }
 
   const handleSortChange = (newSort: string) => {
-    navigate({ to: '/search', search: { q, namespace, label: selectedLabel, sort: newSort, page: 0, starredOnly } })
+    navigate({ to: '/search', search: { q, namespace, label: selectedLabel, sort: newSort, page: 0, starredOnly, type: resourceType } })
   }
 
   const handlePageChange = (newPage: number) => {
     blurActiveElement()
-    navigate({ to: '/search', search: { q, namespace, label: selectedLabel, sort, page: newPage, starredOnly } })
+    navigate({ to: '/search', search: { q, namespace, label: selectedLabel, sort, page: newPage, starredOnly, type: resourceType } })
   }
 
   const handleLabelToggle = (label: string) => {
     const nextLabel = selectedLabel === label ? '' : label
-    navigate({ to: '/search', search: { q, namespace, label: nextLabel, sort, page: 0, starredOnly } })
+    navigate({ to: '/search', search: { q, namespace, label: nextLabel, sort, page: 0, starredOnly, type: resourceType } })
   }
 
   const handleNamespaceClear = () => {
-    navigate({ to: '/search', search: { q, namespace: '', label: selectedLabel, sort, page: 0, starredOnly } })
+    navigate({ to: '/search', search: { q, namespace: '', label: selectedLabel, sort, page: 0, starredOnly, type: resourceType } })
   }
 
   const handleStarredToggle = () => {
@@ -200,7 +221,16 @@ export function SearchPage() {
       return
     }
 
-    navigate({ to: '/search', search: { q, namespace, label: selectedLabel, sort, page: 0, starredOnly: !starredOnly } })
+    navigate({ to: '/search', search: { q, namespace, label: selectedLabel, sort, page: 0, starredOnly: !starredOnly, type: 'SKILL' } })
+  }
+
+  const handleResourceTypeChange = (type: SearchResourceType) => {
+    navigate({ to: '/search', search: { q, namespace, label: selectedLabel, sort, page: 0, starredOnly: type === 'SKILL' ? starredOnly : false, type } })
+  }
+
+  const handleScenarioSearch = (query: string) => {
+    setQueryInput(query)
+    navigate({ to: '/search', search: { q: query, namespace: '', label: '', sort: 'relevance', page: 0, starredOnly: false, type: resourceType } })
   }
 
   const handleSkillClick = (namespace: string, slug: string) => {
@@ -213,26 +243,59 @@ export function SearchPage() {
   const starredPageItems = starredOnly
     ? filteredStarredSkills.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
     : []
-  const totalPages = starredOnly
+  const skillTotalPages = starredOnly
     ? Math.ceil(filteredStarredSkills.length / PAGE_SIZE)
     : data
       ? Math.ceil(data.total / data.size)
       : 0
   const displayItems = starredOnly ? starredPageItems : (data?.items ?? [])
-  const isPageLoading = starredOnly ? isLoadingStarred : isLoading
+  const catalogTotalPages = catalogResults ? Math.ceil(catalogResults.total / catalogResults.size) : 0
+  const totalPages = resourceType === 'AGENT' || resourceType === 'TOOL' ? catalogTotalPages : skillTotalPages
+  const isPageLoading = showSkills && (starredOnly ? isLoadingStarred : isLoading)
   const isUpdatingResults = starredOnly ? isFetchingStarred && !isLoadingStarred : isFetching && !isLoading
-  const resultCount = starredOnly ? filteredStarredSkills.length : (data?.total ?? 0)
+  const skillResultCount = showSkills ? (starredOnly ? filteredStarredSkills.length : (data?.total ?? 0)) : 0
+  const catalogResultCount = showCatalog ? (catalogResults?.total ?? 0) : 0
+  const resultCount = resourceType === 'ALL' ? skillResultCount + catalogResultCount : resourceType === 'SKILL' ? skillResultCount : catalogResultCount
+  const hasCatalogResults = showCatalog && (catalogResults?.items.length ?? 0) > 0
+  const hasSkillResults = showSkills && displayItems.length > 0
+  const hasAnyResults = hasCatalogResults || hasSkillResults
 
   return (
     <div className={APP_SHELL_PAGE_CLASS_NAME}>
-      {/* Search Bar */}
-      <div className="max-w-3xl mx-auto">
+      <section className="rounded-3xl border border-primary/15 bg-gradient-to-br from-primary/10 via-background to-violet-100/50 px-6 py-9 md:px-10">
+        <div className="mx-auto max-w-3xl text-center">
+          <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+            <Sparkles className="h-3.5 w-3.5" /> JoyHub 2.0
+          </div>
+          <h1 className="text-3xl font-bold tracking-tight md:text-4xl">{t('search.title')}</h1>
+          <p className="mt-2 text-muted-foreground">{t('search.subtitle')}</p>
+        </div>
+        <div className="mx-auto mt-7 max-w-3xl">
         <SearchBar
           value={queryInput}
+          placeholder={t('search.placeholder')}
           isSearching={isUpdatingResults}
           onChange={setQueryInput}
           onSearch={handleSearch}
         />
+        </div>
+        <div className="mx-auto mt-5 flex max-w-3xl flex-wrap items-center justify-center gap-2">
+          <span className="text-xs font-medium text-muted-foreground">{t('search.scenarios.label')}</span>
+          {SCENARIO_QUERIES.map((scenario) => (
+            <Button key={scenario.labelKey} type="button" variant="ghost" size="sm" onClick={() => handleScenarioSearch(scenario.query)}>
+              {t(scenario.labelKey)}
+            </Button>
+          ))}
+        </div>
+      </section>
+
+      <div className="flex flex-wrap gap-2 rounded-2xl border bg-card p-2">
+        {RESOURCE_TYPES.map(({ type, labelKey, icon: Icon }) => (
+          <Button key={type} type="button" variant={resourceType === type ? 'default' : 'ghost'} onClick={() => handleResourceTypeChange(type)}>
+            <Icon className="mr-2 h-4 w-4" />
+            {t(labelKey)}
+          </Button>
+        ))}
       </div>
 
       {/* Sort And Filters */}
@@ -311,11 +374,11 @@ export function SearchPage() {
       </div>
 
       {/* Results */}
-      {!starredOnly && isAuthenticated && (isLoadingCatalog || (catalogResults?.items.length ?? 0) > 0) ? (
+      {showCatalog && (isLoadingCatalog || hasCatalogResults) ? (
         <section className="space-y-4">
           <div>
-            <h2 className="text-2xl font-semibold">Agent 与工具</h2>
-            <p className="mt-1 text-sm text-muted-foreground">统一搜索公司已发布的 AI 能力入口。</p>
+            <h2 className="text-2xl font-semibold">{t('search.catalogSection')}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">{t('search.catalogSectionDescription')}</p>
           </div>
           {isLoadingCatalog ? <SkeletonList count={3} /> : (
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
@@ -331,10 +394,14 @@ export function SearchPage() {
         </section>
       ) : null}
 
-      {!starredOnly && isAuthenticated ? <div className="border-t pt-8"><h2 className="text-2xl font-semibold">Skills</h2></div> : null}
-      {isPageLoading ? (
+      {!isAuthenticated && resourceType !== 'SKILL' ? (
+        <div className="rounded-2xl border border-dashed bg-secondary/20 p-5 text-center text-sm text-muted-foreground">{t('search.loginForInternal')}</div>
+      ) : null}
+
+      {showSkills && !starredOnly && (resourceType === 'ALL' && isAuthenticated) ? <div className="border-t pt-8"><h2 className="text-2xl font-semibold">{t('search.skillSection')}</h2></div> : null}
+      {showSkills && isPageLoading ? (
         <SkeletonList count={PAGE_SIZE} />
-      ) : displayItems.length > 0 ? (
+      ) : hasSkillResults ? (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {displayItems.map((skill, idx) => (
@@ -347,7 +414,7 @@ export function SearchPage() {
               </div>
             ))}
           </div>
-          {totalPages > 1 && (
+          {totalPages > 1 && resourceType !== 'AGENT' && resourceType !== 'TOOL' && (
             <Pagination
               page={page}
               totalPages={totalPages}
@@ -355,7 +422,7 @@ export function SearchPage() {
             />
           )}
         </>
-      ) : (
+      ) : showSkills && !hasCatalogResults ? (
         <EmptyState
           title={starredOnly ? t('search.noStarredResults') : t('search.noResults')}
           description={
@@ -364,7 +431,13 @@ export function SearchPage() {
               : (q ? t('search.noResultsFor', { q }) : undefined)
           }
         />
-      )}
+      ) : null}
+      {(resourceType === 'AGENT' || resourceType === 'TOOL') && totalPages > 1 ? (
+        <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
+      ) : null}
+      {!isPageLoading && !isLoadingCatalog && !hasAnyResults && !showSkills ? (
+        <EmptyState title={t('search.noResults')} description={q ? t('search.noResultsFor', { q }) : undefined} />
+      ) : null}
     </div>
   )
 }

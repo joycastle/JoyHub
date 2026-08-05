@@ -65,7 +65,7 @@ async function waitForCards(page: Page) {
   }
 
   await page.waitForLoadState('networkidle')
-  await expect(page.getByRole('textbox', { name: 'Search skills...' })).toBeVisible({ timeout: 8_000 })
+  await expect(page.getByRole('textbox', { name: 'Search Agent, tools and Skills...' })).toBeVisible({ timeout: 8_000 })
 
   if (await cards.count() > 0) {
     return cards
@@ -82,7 +82,7 @@ async function waitForCards(page: Page) {
 
     reloaded = true
     await page.reload({ waitUntil: 'networkidle' })
-    await expect(page.getByRole('textbox', { name: 'Search skills...' })).toBeVisible({ timeout: 8_000 })
+    await expect(page.getByRole('textbox', { name: 'Search Agent, tools and Skills...' })).toBeVisible({ timeout: 8_000 })
     await waitForMatchingResponse()
     await waitForCardCount()
   }
@@ -254,7 +254,7 @@ test.describe('Search Card Sort Interaction (Real API)', () => {
   // TC_SEARCH_INTERACT_026 P0 - re-search replaces cards
   test('TC_SEARCH_INTERACT_026: re-searching with new keyword replaces card list', async ({ page }) => {
     await page.goto(SEARCH_URL(''))
-    const searchInput = page.getByPlaceholder('Search skills...')
+    const searchInput = page.getByPlaceholder('Search Agent, tools and Skills...')
     await searchInput.fill(basicSeed!.keyword)
     await searchInput.press('Enter')
     await page.waitForLoadState('networkidle')
@@ -265,7 +265,7 @@ test.describe('Search Card Sort Interaction (Real API)', () => {
   // TC_SEARCH_INTERACT_027 P0 - re-search resets page to 0
   test('TC_SEARCH_INTERACT_027: re-searching resets page number to 0', async ({ page }) => {
     await page.goto(SEARCH_URL(basicSeed!.keyword, 'relevance', 1))
-    const searchInput = page.getByPlaceholder('Search skills...')
+    const searchInput = page.getByPlaceholder('Search Agent, tools and Skills...')
     await searchInput.fill(basicSeed!.keyword)
     await searchInput.press('Enter')
     await expect(page).toHaveURL(/page=0/)

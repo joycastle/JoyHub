@@ -40,6 +40,16 @@ check "Prometheus metrics requires auth" "$BASE_URL/actuator/prometheus" "401"
 check "Namespaces API requires auth" "$BASE_URL/api/v1/namespaces" "401"
 check "Auth required" "$BASE_URL/api/v1/auth/me" "401"
 
+# Local-account endpoints are optional compatibility APIs. JoyHub production uses Feishu
+# OAuth, so a normal deployment smoke test must not fail merely because those legacy routes
+# are intentionally absent. Set this flag only in an environment that explicitly exposes them.
+if [[ "${SMOKE_LEGACY_LOCAL_AUTH_ENABLED:-false}" != "true" ]]; then
+  echo "SKIP: Legacy local-account and admin-session flows are disabled"
+  echo
+  echo "Results: $PASS passed, $FAIL failed"
+  exit 0
+fi
+
 curl -s -c "$COOKIE_JAR" "$BASE_URL/api/v1/auth/me" >/dev/null
 CSRF_TOKEN="$(awk '$6 == "XSRF-TOKEN" { print $7 }' "$COOKIE_JAR" | tail -n 1)"
 

@@ -82,7 +82,6 @@ public class PostgresFullTextQueryService implements SearchQueryService {
         String tsQuery = buildPrefixTsQuery(normalizedKeyword);
         boolean hasKeyword = normalizedKeyword != null;
         boolean hasTsQuery = tsQuery != null;
-        boolean useRelevanceOrdering = "relevance".equals(query.sortBy()) && hasKeyword;
         boolean useShortPrefixTitleSearch = hasTsQuery && isShortAsciiPrefixSearch(normalizedKeyword);
         boolean useSemanticRerank = semanticEnabled
                 && hasKeyword
@@ -93,6 +92,8 @@ public class PostgresFullTextQueryService implements SearchQueryService {
         if (useSemanticRerank && requestedOffset + query.size() > maxCandidates) {
             useSemanticRerank = false;
         }
+        boolean useLexicalFilter = hasKeyword && !useSemanticRerank;
+        boolean useRelevanceOrdering = "relevance".equals(query.sortBy()) && useLexicalFilter;
         int sqlLimit = query.size();
         int sqlOffset = requestedOffset;
         if (useSemanticRerank) {
@@ -148,7 +149,7 @@ public class PostgresFullTextQueryService implements SearchQueryService {
         }
 
         // Full-text search
-        if (hasKeyword) {
+        if (useLexicalFilter) {
             sql.append("AND (");
             if (hasTsQuery) {
                 if (useShortPrefixTitleSearch) {
@@ -204,7 +205,7 @@ public class PostgresFullTextQueryService implements SearchQueryService {
             nativeQuery.setParameter("labelSlugs", query.labelSlugs());
         }
 
-        if (hasKeyword) {
+        if (useLexicalFilter) {
             if (hasTsQuery) {
                 nativeQuery.setParameter("tsQuery", tsQuery);
             }
@@ -248,7 +249,7 @@ public class PostgresFullTextQueryService implements SearchQueryService {
             countQuery.setParameter("labelSlugs", query.labelSlugs());
         }
 
-        if (hasKeyword) {
+        if (useLexicalFilter) {
             if (hasTsQuery) {
                 countQuery.setParameter("tsQuery", tsQuery);
             }
