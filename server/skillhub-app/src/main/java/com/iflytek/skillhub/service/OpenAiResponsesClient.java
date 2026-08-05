@@ -134,9 +134,20 @@ public class OpenAiResponsesClient implements DiscoveryAiClient {
             input.put("summary", summary);
             String model = properties.getTranslationModel() == null || properties.getTranslationModel().isBlank()
                     ? properties.getModel() : properties.getTranslationModel();
-            ParsedResponse response = request(model, LOCALIZATION_INSTRUCTIONS,
-                    objectMapper.writeValueAsString(input), safetyIdentifier);
-            return parseLocalization(objectMapper, response.text());
+            String serializedInput = objectMapper.writeValueAsString(input);
+            try {
+                ParsedResponse response = request(model, LOCALIZATION_INSTRUCTIONS, serializedInput, safetyIdentifier);
+                return parseLocalization(objectMapper, response.text());
+            } catch (RuntimeException primaryFailure) {
+                if (model.equals(properties.getModel())) {
+                    throw primaryFailure;
+                }
+                log.warn("Skill localization model unavailable [model={}]; falling back to [model={}]",
+                        model, properties.getModel());
+                ParsedResponse fallback = request(properties.getModel(), LOCALIZATION_INSTRUCTIONS,
+                        serializedInput, safetyIdentifier);
+                return parseLocalization(objectMapper, fallback.text());
+            }
         } catch (JsonProcessingException exception) {
             throw new IllegalStateException("Could not serialize translation request", exception);
         }
