@@ -219,15 +219,6 @@
       "design": "设计与美术"
     }
   },
-  "skillCard": {
-    "type": "Skill",
-    "whatItDoes": "能做什么",
-    "noSummary": "暂无简要说明，打开详情查看完整文档。",
-    "downloads": "下载次数",
-    "stars": "收藏数",
-    "rating": "评分",
-    "viewDetails": "查看详情"
-  },
   "home": {
     "subtitle": "技能注册中心",
     "description": "为开发者提供高效的技能管理、分发和协作平台",
@@ -1459,7 +1450,14 @@
     "starredAction": "点击取消收藏",
     "unstarTitle": "取消收藏",
     "unstarDescription": "确定要取消收藏技能“{{name}}”吗？",
-    "unstarConfirm": "取消收藏"
+    "unstarConfirm": "取消收藏",
+    "type": "Skill",
+    "whatItDoes": "能做什么",
+    "noSummary": "暂无简要说明，打开详情查看完整文档。",
+    "downloads": "下载次数",
+    "stars": "收藏数",
+    "rating": "评分",
+    "viewDetails": "查看详情"
   },
   "copyButton": {
     "copied": "已复制",
