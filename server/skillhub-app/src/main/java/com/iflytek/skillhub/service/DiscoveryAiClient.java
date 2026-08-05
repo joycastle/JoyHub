@@ -10,6 +10,12 @@ public interface DiscoveryAiClient {
     AiAnswer answer(String question, String language, List<DiscoveryPlanStepResponse> steps,
                     List<DiscoveryConversationTurn> history, String safetyIdentifier);
 
+    LocalizedSkillMetadata localizeSkillMetadata(String name, String summary, String language,
+                                                 String safetyIdentifier);
+
+    record LocalizedSkillMetadata(String displayName, String summary) {
+    }
+
     record AiAnswer(String text, String model, boolean fallbackUsed, List<StepSelection> selections) {
     }
 

@@ -163,7 +163,9 @@ public class PostgresSearchRebuildService implements SearchRebuildService {
     private SearchIndexPayload buildSearchPayload(Skill skill) {
         List<String> searchParts = new ArrayList<>();
         addPart(searchParts, skill.getSlug());
+        addPart(searchParts, skill.getLocalizedDisplayName());
         addPart(searchParts, skill.getSummary());
+        addPart(searchParts, skill.getLocalizedSummary());
 
         Set<String> keywords = new TreeSet<>();
         Optional<SkillVersion> latestVersion = resolveLatestVersion(skill);

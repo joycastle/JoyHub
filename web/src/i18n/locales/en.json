@@ -198,7 +198,7 @@
     "description": "Discover, install, and reuse mature internal Skill packages, scripts, templates, and references.",
     "visibility": "Only published Skills visible company-wide or to your department are shown here.",
     "publish": "Publish Skill",
-    "searchPlaceholder": "Search Skills, scenarios, or capabilities",
+    "searchPlaceholder": "Search Skill names or capabilities",
     "search": "Search",
     "sortLabel": "Sort",
     "newest": "Newest",
@@ -209,15 +209,7 @@
     "pagination": "Skill center pagination",
     "previous": "Previous",
     "next": "Next",
-    "pageInfo": "Page {{current}} of {{total}}",
-    "scenarios": {
-      "all": "All",
-      "content": "Content",
-      "data": "Data",
-      "development": "Development",
-      "project": "Projects",
-      "design": "Design"
-    }
+    "pageInfo": "Page {{current}} of {{total}}"
   },
   "home": {
     "subtitle": "Skill Registry",

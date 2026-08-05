@@ -198,7 +198,7 @@
     "description": "发现、安装和复用公司内部成熟的 Skill 包、脚本、模板与参考资料。",
     "visibility": "这里仅展示全公司可见，以及你所在部门可见的已发布技能。",
     "publish": "发布 Skill",
-    "searchPlaceholder": "搜索 Skill、场景或能力",
+    "searchPlaceholder": "搜索 Skill 名称或能力",
     "search": "搜索",
     "sortLabel": "排序",
     "newest": "最新发布",
@@ -209,15 +209,7 @@
     "pagination": "技能中心分页",
     "previous": "上一页",
     "next": "下一页",
-    "pageInfo": "第 {{current}} / {{total}} 页",
-    "scenarios": {
-      "all": "全部",
-      "content": "内容生产",
-      "data": "数据分析",
-      "development": "研发提效",
-      "project": "项目管理",
-      "design": "设计与美术"
-    }
+    "pageInfo": "第 {{current}} / {{total}} 页"
   },
   "home": {
     "subtitle": "技能注册中心",

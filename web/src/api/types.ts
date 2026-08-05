@@ -260,6 +260,8 @@ export interface SkillSummary {
   slug: string
   displayName: string
   summary?: string
+  localizedDisplayName?: string
+  localizedSummary?: string
   visibility?: string
   status?: string
   downloadCount: number
@@ -274,6 +276,7 @@ export interface SkillSummary {
   ownerPreviewVersion?: SkillLifecycleVersion
   resolutionMode?: string
 }
+
 
 export type LabelItem = Omit<components['schemas']['SkillLabelDto'], 'slug' | 'type' | 'displayName'> & {
   slug: string

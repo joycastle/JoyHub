@@ -10,6 +10,7 @@ public class DiscoveryAiProperties {
     private String baseUrl = "https://codex.cheergame.net";
     private String apiKey = "";
     private String model = "gpt-5.6-terra";
+    private String translationModel = "Luna";
     private String fallbackModel = "";
     private String reasoningEffort = "medium";
     private int maxOutputTokens;
@@ -48,6 +49,14 @@ public class DiscoveryAiProperties {
 
     public void setModel(String model) {
         this.model = model;
+    }
+
+    public String getTranslationModel() {
+        return translationModel;
+    }
+
+    public void setTranslationModel(String translationModel) {
+        this.translationModel = translationModel;
     }
 
     public String getFallbackModel() {
