@@ -1,6 +1,7 @@
 package com.iflytek.skillhub.observability.tracing;
 
 import com.iflytek.skillhub.auth.oauth.FeishuOAuth2UserService;
+import com.iflytek.skillhub.auth.organization.FeishuDirectoryClient;
 import com.iflytek.skillhub.config.SkillScannerConfig;
 import com.iflytek.skillhub.config.SkillScannerProperties;
 import com.iflytek.skillhub.infra.http.HttpClient;
@@ -160,6 +161,7 @@ class HttpTracePropagationTest {
             SkillHubTracingConfiguration.class,
             SkillScannerConfig.class,
             SkillScannerProperties.class,
+            FeishuDirectoryClient.class,
             FeishuOAuth2UserService.class
     })
     static class TestApplication {

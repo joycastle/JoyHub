@@ -8,6 +8,7 @@ const buttonRecords: Array<{ label: string; variant?: string | null; onClick?: (
 const paginationProps: Array<{ onPageChange: (page: number) => void }> = []
 const searchBarProps: Array<{ value?: string; onSearch?: (query: string) => void }> = []
 const searchSkillParams: Array<Record<string, unknown>> = []
+const catalogSearchParams: Array<Record<string, unknown>> = []
 
 vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => navigateMock,
@@ -44,6 +45,20 @@ vi.mock('@/features/search/search-bar', () => ({
 
 vi.mock('@/features/skill/skill-card', () => ({
   SkillCard: () => <div>skill-card</div>,
+}))
+
+vi.mock('@/entities/catalog-resource/catalog-resource-card', () => ({
+  CatalogResourceCard: () => <div>catalog-card</div>,
+}))
+
+vi.mock('@/features/catalog/use-catalog-queries', () => ({
+  useCatalogResources: (params: Record<string, unknown>) => {
+    catalogSearchParams.push(params)
+    return {
+      data: { items: [], total: 0, page: 0, size: 12 },
+      isLoading: false,
+    }
+  },
 }))
 
 vi.mock('@/shared/components/skeleton-loader', () => ({
@@ -130,6 +145,7 @@ describe('SearchPage', () => {
     paginationProps.length = 0
     searchBarProps.length = 0
     searchSkillParams.length = 0
+    catalogSearchParams.length = 0
     useSearchMock.mockReturnValue({
       q: 'agent',
       namespace: 'team-ai',
@@ -137,6 +153,7 @@ describe('SearchPage', () => {
       sort: 'downloads',
       page: 1,
       starredOnly: false,
+      type: 'ALL',
     })
     useSearchSkillsMock.mockReturnValue({
       data: {
@@ -178,6 +195,7 @@ describe('SearchPage', () => {
         sort: 'downloads',
         page: 0,
         starredOnly: false,
+        type: 'ALL',
       },
     })
   })
@@ -196,6 +214,7 @@ describe('SearchPage', () => {
         sort: 'newest',
         page: 0,
         starredOnly: false,
+        type: 'ALL',
       },
     })
   })
@@ -215,6 +234,7 @@ describe('SearchPage', () => {
         sort: 'downloads',
         page: 2,
         starredOnly: false,
+        type: 'ALL',
       },
     })
     expect(navigateMock).toHaveBeenNthCalledWith(2, {
@@ -226,6 +246,7 @@ describe('SearchPage', () => {
         sort: 'downloads',
         page: 0,
         starredOnly: true,
+        type: 'SKILL',
       },
     })
   })
@@ -257,8 +278,29 @@ describe('SearchPage', () => {
         sort: 'downloads',
         page: 0,
         starredOnly: false,
+        type: 'ALL',
       },
       replace: true,
+    })
+  })
+
+  it('limits catalog discovery to agents when the Agent tab is active', () => {
+    useSearchMock.mockReturnValue({
+      q: 'assistant',
+      sort: 'relevance',
+      page: 0,
+      starredOnly: false,
+      type: 'AGENT',
+    })
+
+    renderToStaticMarkup(<SearchPage />)
+
+    expect(catalogSearchParams[0]).toMatchObject({
+      q: 'assistant',
+      center: 'AGENT',
+      page: 0,
+      size: 12,
+      enabled: true,
     })
   })
 

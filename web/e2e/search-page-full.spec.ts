@@ -61,7 +61,7 @@ test.describe('Search Input (Real API)', () => {
   // TC_SEARCH_INPUT_004 P0 - Enter key triggers search
   test('TC_SEARCH_INPUT_004: pressing Enter in search box triggers search', async ({ page }) => {
     await page.goto(searchUrl(''))
-    const searchInput = page.getByPlaceholder('Search skills...')
+    const searchInput = page.getByPlaceholder('Search Agent, tools and Skills...')
     await searchInput.fill(basicSeed!.keyword)
     await searchInput.press('Enter')
     await expect(page).toHaveURL(new RegExp(`q=${basicSeed!.keyword}`))
@@ -92,7 +92,7 @@ test.describe('Search Input (Real API)', () => {
   // TC_SEARCH_INPUT_011 P1 - leading/trailing spaces trimmed
   test('TC_SEARCH_INPUT_011: trims leading and trailing spaces from search query', async ({ page }) => {
     await page.goto(searchUrl(''))
-    const searchInput = page.getByPlaceholder('Search skills...')
+    const searchInput = page.getByPlaceholder('Search Agent, tools and Skills...')
     await searchInput.fill(`  ${basicSeed!.keyword}  `)
     await searchInput.press('Enter')
     await expect(page).toHaveURL(new RegExp(`q=${basicSeed!.keyword}`))
@@ -186,7 +186,7 @@ test.describe('Search Skill Count Display (Real API)', () => {
   // TC_SEARCH_COUNT_007 P0 - count updates after search
   test('TC_SEARCH_COUNT_007: skill count updates after performing a search', async ({ page }) => {
     await page.goto(searchUrl(''))
-    const searchInput = page.getByPlaceholder('Search skills...')
+    const searchInput = page.getByPlaceholder('Search Agent, tools and Skills...')
     await searchInput.fill(basicSeed!.keyword)
     await searchInput.press('Enter')
     await expect(page.getByText(/\d+\s+skills found/i)).toBeVisible({ timeout: 10_000 })
@@ -310,7 +310,7 @@ test.describe('Search Security (Real API)', () => {
     page.on('dialog', () => { alerted = true })
 
     await page.goto(searchUrl(''))
-    const searchInput = page.getByPlaceholder('Search skills...')
+    const searchInput = page.getByPlaceholder('Search Agent, tools and Skills...')
     await searchInput.fill("<script>alert('xss')</script>")
     await searchInput.press('Enter')
 

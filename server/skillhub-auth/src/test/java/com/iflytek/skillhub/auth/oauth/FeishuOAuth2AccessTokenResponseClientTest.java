@@ -1,5 +1,6 @@
 package com.iflytek.skillhub.auth.oauth;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import org.junit.jupiter.api.Test;
@@ -12,6 +13,33 @@ import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequ
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationResponse;
 
 class FeishuOAuth2AccessTokenResponseClientTest {
+
+    @Test
+    void resolveRedirectUri_prefersTheUriUsedByTheAuthorizationRequest() {
+        assertThat(FeishuOAuth2AccessTokenResponseClient.resolveRedirectUri(
+                "http://localhost:3000/login/oauth2/code/feishu",
+                "http://localhost:8080/login/oauth2/code/feishu",
+                "${SKILLHUB_WEB_BASE_URL}/login/oauth2/code/{registrationId}"
+        )).isEqualTo("http://localhost:3000/login/oauth2/code/feishu");
+    }
+
+    @Test
+    void resolveRedirectUri_fallsBackToAuthorizationResponseUri() {
+        assertThat(FeishuOAuth2AccessTokenResponseClient.resolveRedirectUri(
+                null,
+                "https://joyhub.example.com/login/oauth2/code/feishu",
+                "https://fallback.example.com/login/oauth2/code/feishu"
+        )).isEqualTo("https://joyhub.example.com/login/oauth2/code/feishu");
+    }
+
+    @Test
+    void resolveRedirectUri_fallsBackToRegistrationWhenExchangeUrisAreUnavailable() {
+        assertThat(FeishuOAuth2AccessTokenResponseClient.resolveRedirectUri(
+                " ",
+                null,
+                "https://joyhub.example.com/login/oauth2/code/feishu"
+        )).isEqualTo("https://joyhub.example.com/login/oauth2/code/feishu");
+    }
 
     @Test
     void getTokenResponse_rejectsNonFeishuRegistration() {

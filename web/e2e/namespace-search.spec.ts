@@ -45,7 +45,7 @@ test.describe('Namespace Search (Real API)', () => {
       await builder.waitForSearchResults('roadmap', [namespaceSkill.slug, otherSkill.slug])
 
       await page.goto('/search')
-      await page.getByPlaceholder('Search skills...').fill(`@${namespace.slug} roadmap`)
+      await page.getByPlaceholder('Search Agent, tools and Skills...').fill(`@${namespace.slug} roadmap`)
 
       const filteredSearch = waitForSkillSearch(page, { namespace: namespace.slug, q: 'roadmap' })
       await page.getByRole('button', { name: 'Search', exact: true }).click()
@@ -89,7 +89,7 @@ test.describe('Namespace Search (Real API)', () => {
       await builder.waitForSearchResult('boundary', skill.slug)
 
       await page.goto('/search')
-      await page.getByPlaceholder('Search skills...').fill(`@${namespace.slug} boundary`)
+      await page.getByPlaceholder('Search Agent, tools and Skills...').fill(`@${namespace.slug} boundary`)
 
       const filteredSearch = waitForSkillSearch(page, { namespace: namespace.slug, q: 'boundary' })
       await page.getByRole('button', { name: 'Search', exact: true }).click()

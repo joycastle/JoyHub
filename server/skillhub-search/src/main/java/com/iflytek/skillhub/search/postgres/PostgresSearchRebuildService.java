@@ -10,6 +10,8 @@ import com.iflytek.skillhub.domain.label.LabelTranslation;
 import com.iflytek.skillhub.domain.label.LabelTranslationRepository;
 import com.iflytek.skillhub.domain.label.SkillLabelRepository;
 import com.iflytek.skillhub.domain.skill.Skill;
+import com.iflytek.skillhub.domain.skill.SkillFile;
+import com.iflytek.skillhub.domain.skill.SkillFileRepository;
 import com.iflytek.skillhub.domain.skill.SkillRepository;
 import com.iflytek.skillhub.domain.skill.SkillStatus;
 import com.iflytek.skillhub.domain.skill.SkillVersion;
@@ -18,6 +20,10 @@ import com.iflytek.skillhub.search.SearchIndexService;
 import com.iflytek.skillhub.search.SearchRebuildService;
 import com.iflytek.skillhub.search.SearchTextTokenizer;
 import com.iflytek.skillhub.search.SkillSearchDocument;
+import com.iflytek.skillhub.storage.ObjectStorageService;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -40,10 +46,16 @@ public class PostgresSearchRebuildService implements SearchRebuildService {
     private static final Set<String> RESERVED_FRONTMATTER_FIELDS = Set.of("name", "description", "version");
     private static final Set<String> KEYWORD_FIELD_NAMES = Set.of("keywords", "keyword", "tags", "tag");
     private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() {};
+    private static final int MAX_INDEXED_FILE_BYTES = 256 * 1024;
+    private static final int MAX_INDEXED_DOCUMENT_BYTES = 1024 * 1024;
+    private static final Set<String> SEARCHABLE_EXTENSIONS = Set.of(
+            ".md", ".txt", ".json", ".yaml", ".yml", ".csv", ".tsv", ".xml", ".html");
 
     private final SkillRepository skillRepository;
     private final NamespaceRepository namespaceRepository;
     private final SkillVersionRepository skillVersionRepository;
+    private final SkillFileRepository skillFileRepository;
+    private final ObjectStorageService objectStorageService;
     private final LabelDefinitionRepository labelDefinitionRepository;
     private final LabelTranslationRepository labelTranslationRepository;
     private final SkillLabelRepository skillLabelRepository;
@@ -64,6 +76,31 @@ public class PostgresSearchRebuildService implements SearchRebuildService {
                 null,
                 null,
                 null,
+                null,
+                null,
+                searchIndexService,
+                searchTextTokenizer
+        );
+    }
+
+    public PostgresSearchRebuildService(
+            SkillRepository skillRepository,
+            NamespaceRepository namespaceRepository,
+            SkillVersionRepository skillVersionRepository,
+            LabelDefinitionRepository labelDefinitionRepository,
+            LabelTranslationRepository labelTranslationRepository,
+            SkillLabelRepository skillLabelRepository,
+            SearchIndexService searchIndexService,
+            SearchTextTokenizer searchTextTokenizer) {
+        this(
+                skillRepository,
+                namespaceRepository,
+                skillVersionRepository,
+                null,
+                null,
+                labelDefinitionRepository,
+                labelTranslationRepository,
+                skillLabelRepository,
                 searchIndexService,
                 searchTextTokenizer
         );
@@ -74,6 +111,8 @@ public class PostgresSearchRebuildService implements SearchRebuildService {
             SkillRepository skillRepository,
             NamespaceRepository namespaceRepository,
             SkillVersionRepository skillVersionRepository,
+            SkillFileRepository skillFileRepository,
+            ObjectStorageService objectStorageService,
             LabelDefinitionRepository labelDefinitionRepository,
             LabelTranslationRepository labelTranslationRepository,
             SkillLabelRepository skillLabelRepository,
@@ -82,6 +121,8 @@ public class PostgresSearchRebuildService implements SearchRebuildService {
         this.skillRepository = skillRepository;
         this.namespaceRepository = namespaceRepository;
         this.skillVersionRepository = skillVersionRepository;
+        this.skillFileRepository = skillFileRepository;
+        this.objectStorageService = objectStorageService;
         this.labelDefinitionRepository = labelDefinitionRepository;
         this.labelTranslationRepository = labelTranslationRepository;
         this.skillLabelRepository = skillLabelRepository;
@@ -125,17 +166,51 @@ public class PostgresSearchRebuildService implements SearchRebuildService {
         addPart(searchParts, skill.getSummary());
 
         Set<String> keywords = new TreeSet<>();
-        resolveLatestVersion(skill)
+        Optional<SkillVersion> latestVersion = resolveLatestVersion(skill);
+        latestVersion
                 .map(this::extractParsedMetadata)
                 .map(metadata -> metadata.get("frontmatter"))
                 .map(this::asMap)
                 .ifPresent(frontmatter -> appendFrontmatter(frontmatter, keywords, searchParts));
+        latestVersion.ifPresent(version -> appendDocumentContents(version, searchParts));
         appendLabelKeywords(skill.getId(), keywords);
 
         return new SearchIndexPayload(
                 searchTextTokenizer.enrichForIndex(String.join(" ", keywords)),
                 searchTextTokenizer.enrichForIndex(String.join(" ", searchParts).trim())
         );
+    }
+
+    private void appendDocumentContents(SkillVersion version, List<String> searchParts) {
+        if (skillFileRepository == null || objectStorageService == null) {
+            return;
+        }
+        int indexedBytes = 0;
+        List<SkillFile> files = skillFileRepository.findByVersionId(version.getId()).stream()
+                .filter(this::isSearchableTextFile)
+                .sorted(java.util.Comparator.comparing(SkillFile::getFilePath))
+                .toList();
+        for (SkillFile file : files) {
+            if (indexedBytes >= MAX_INDEXED_DOCUMENT_BYTES) {
+                break;
+            }
+            int limit = Math.min(MAX_INDEXED_FILE_BYTES, MAX_INDEXED_DOCUMENT_BYTES - indexedBytes);
+            try (InputStream input = objectStorageService.getObject(file.getStorageKey())) {
+                byte[] content = input.readNBytes(limit + 1);
+                int accepted = Math.min(content.length, limit);
+                addPart(searchParts, file.getFilePath());
+                addPart(searchParts, new String(content, 0, accepted, StandardCharsets.UTF_8));
+                indexedBytes += accepted;
+            } catch (IOException | RuntimeException ignored) {
+                // A missing auxiliary document must not make the canonical search rebuild fail.
+            }
+        }
+    }
+
+    private boolean isSearchableTextFile(SkillFile file) {
+        String path = file.getFilePath().toLowerCase(Locale.ROOT);
+        return file.getFileSize() <= MAX_INDEXED_FILE_BYTES
+                && SEARCHABLE_EXTENSIONS.stream().anyMatch(path::endsWith);
     }
 
     private Optional<SkillVersion> resolveLatestVersion(Skill skill) {

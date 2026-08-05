@@ -50,6 +50,8 @@ import type {
   CatalogResourceKind,
   CatalogResourceRequest,
   CatalogResourceSummary,
+  DiscoveryAssistRequest,
+  DiscoveryAssistResponse,
 } from './types'
 import { ApiError } from '@/shared/lib/api-error'
 import i18n from '@/i18n/config'
@@ -718,6 +720,17 @@ export const catalogApi = {
 
   artifactUrl(slug: string): string {
     return String(withBaseUrl(`${WEB_API_PREFIX}/catalog/resources/${encodeURIComponent(slug)}/artifact`))
+  },
+}
+
+export const discoveryApi = {
+  async assist(request: DiscoveryAssistRequest): Promise<DiscoveryAssistResponse> {
+    return fetchJson<DiscoveryAssistResponse>(`${WEB_API_PREFIX}/discovery/assist`, {
+      method: 'POST',
+      headers: await ensureCsrfHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify(request),
+      timeoutMs: 100_000,
+    })
   },
 }
 

@@ -1,10 +1,15 @@
 package com.iflytek.skillhub.auth.oauth;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
-import org.springframework.core.ParameterizedTypeReference;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.ClientHttpResponse;
 import org.springframework.security.oauth2.client.endpoint.OAuth2AccessTokenResponseClient;
 import org.springframework.security.oauth2.client.endpoint.OAuth2AuthorizationCodeGrantRequest;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
@@ -25,6 +30,9 @@ import org.springframework.web.client.RestClientException;
 public class FeishuOAuth2AccessTokenResponseClient
         implements OAuth2AccessTokenResponseClient<OAuth2AuthorizationCodeGrantRequest> {
 
+    private static final Logger log = LoggerFactory.getLogger(FeishuOAuth2AccessTokenResponseClient.class);
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
     private final RestClient restClient = RestClient.create();
 
     @Override
@@ -36,7 +44,9 @@ public class FeishuOAuth2AccessTokenResponseClient
             );
         }
 
-        var authorizationResponse = authorizationGrantRequest.getAuthorizationExchange().getAuthorizationResponse();
+        var authorizationExchange = authorizationGrantRequest.getAuthorizationExchange();
+        var authorizationRequest = authorizationExchange.getAuthorizationRequest();
+        var authorizationResponse = authorizationExchange.getAuthorizationResponse();
         String code = authorizationResponse.getCode();
         if (!StringUtils.hasText(code)) {
             throw new OAuth2AuthorizationException(
@@ -49,7 +59,13 @@ public class FeishuOAuth2AccessTokenResponseClient
         requestBody.put("client_id", registration.getClientId());
         requestBody.put("client_secret", registration.getClientSecret());
         requestBody.put("code", code);
-        requestBody.put("redirect_uri", authorizationResponse.getRedirectUri());
+        String redirectUri = resolveRedirectUri(
+                authorizationRequest.getRedirectUri(),
+                authorizationResponse.getRedirectUri(),
+                registration.getRedirectUri()
+        );
+        requestBody.put("redirect_uri", redirectUri);
+        log.debug("Exchanging Feishu auth code with redirect_uri={}", redirectUri);
 
         Map<String, Object> responseBody;
         try {
@@ -57,8 +73,17 @@ public class FeishuOAuth2AccessTokenResponseClient
                     .uri(registration.getProviderDetails().getTokenUri())
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(requestBody)
-                    .retrieve()
-                    .body(new ParameterizedTypeReference<>() {
+                    .exchange((request, response) -> {
+                        try {
+                            return readResponseBody(response);
+                        } catch (OAuth2AuthorizationException ex) {
+                            throw ex;
+                        } catch (IOException ex) {
+                            throw new OAuth2AuthorizationException(
+                                    new OAuth2Error("invalid_token_response", "Failed to parse Feishu token response", null),
+                                    ex
+                            );
+                        }
                     });
         } catch (RestClientException ex) {
             throw new OAuth2AuthorizationException(
@@ -75,7 +100,8 @@ public class FeishuOAuth2AccessTokenResponseClient
 
         int apiCode = toInt(responseBody.get("code"), 0);
         if (apiCode != 0) {
-            String message = String.valueOf(responseBody.getOrDefault("msg", "Feishu token exchange failed"));
+            String message = formatFeishuError(responseBody);
+            log.warn("Feishu token exchange failed: {}", message);
             throw new OAuth2AuthorizationException(
                     new OAuth2Error("invalid_token_response", message, null)
             );
@@ -112,6 +138,54 @@ public class FeishuOAuth2AccessTokenResponseClient
         }
 
         return builder.build();
+    }
+
+    static String resolveRedirectUri(String authorizationRequestRedirectUri,
+                                     String authorizationResponseRedirectUri,
+                                     String registrationRedirectUri) {
+        // OAuth providers require the token request to repeat the exact redirect URI sent during
+        // authorization. The ClientRegistration value may still contain placeholders such as
+        // {registrationId}, so the stored authorization request is the authoritative source.
+        if (StringUtils.hasText(authorizationRequestRedirectUri)) {
+            return authorizationRequestRedirectUri;
+        }
+        if (StringUtils.hasText(authorizationResponseRedirectUri)) {
+            return authorizationResponseRedirectUri;
+        }
+        return registrationRedirectUri;
+    }
+
+    private static Map<String, Object> readResponseBody(ClientHttpResponse response) throws IOException {
+        try (response) {
+            Map<String, Object> body = OBJECT_MAPPER.readValue(response.getBody(), new TypeReference<>() {
+            });
+            if (response.getStatusCode().isError()) {
+                String message = formatFeishuError(body != null ? body : Map.of());
+                log.warn("Feishu token endpoint returned {}: {}", response.getStatusCode(), message);
+                throw new OAuth2AuthorizationException(
+                        new OAuth2Error("invalid_token_response", message, null)
+                );
+            }
+            return body;
+        }
+    }
+
+    private static String formatFeishuError(Map<String, Object> responseBody) {
+        Object description = responseBody.get("error_description");
+        if (description == null) {
+            description = responseBody.get("msg");
+        }
+        Object code = responseBody.get("code");
+        if (code == null) {
+            code = responseBody.get("error");
+        }
+        if (description != null && code != null) {
+            return code + ": " + description;
+        }
+        if (description != null) {
+            return description.toString();
+        }
+        return String.valueOf(responseBody);
     }
 
     private static int toInt(Object value, int defaultValue) {

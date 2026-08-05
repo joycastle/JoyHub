@@ -217,6 +217,43 @@ export type CatalogResourceDetail = Omit<
 
 export type CatalogResourceRequest = components['schemas']['CatalogResourceRequest']
 
+export type DiscoveryAssistRequest = components['schemas']['DiscoveryAssistRequest']
+
+export type DiscoverySuggestionResponse = Omit<
+  components['schemas']['DiscoverySuggestionResponse'],
+  'type' | 'id' | 'title' | 'description' | 'kind' | 'slug'
+> & {
+  type: 'catalog' | 'skill'
+  id: number
+  title: string
+  description: string
+  kind: string
+  slug: string
+  namespace?: string
+  accessUrl?: string
+  usage?: string
+  evidence?: string
+  source?: string
+}
+
+export interface DiscoveryPlanStepResponse {
+  objective: string
+  suggestions: DiscoverySuggestionResponse[]
+}
+
+export type DiscoveryAssistResponse = Omit<
+  components['schemas']['DiscoveryAssistResponse'],
+  'conversationId' | 'answer' | 'suggestions' | 'steps' | 'modelGenerated' | 'fallbackUsed'
+> & {
+  conversationId: string
+  answer: string
+  suggestions: DiscoverySuggestionResponse[]
+  steps: DiscoveryPlanStepResponse[]
+  modelGenerated: boolean
+  fallbackUsed: boolean
+  model?: string
+}
+
 // Skill types
 export interface SkillSummary {
   id: number

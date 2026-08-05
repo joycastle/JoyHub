@@ -56,7 +56,7 @@ spring:
             client-secret: ${OAUTH2_FEISHU_CLIENT_SECRET:placeholder}
             scope:
               - ${OAUTH2_FEISHU_SCOPE:contact:user.base:readonly}
-            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+            redirect-uri: "${SKILLHUB_WEB_BASE_URL:http://localhost:3000}/login/oauth2/code/{registrationId}"
             client-name: 飞书
             authorization-grant-type: authorization_code
         provider:
@@ -142,7 +142,7 @@ skillhub:
     rebuild-on-startup: false
     semantic:
       enabled: true
-      weight: 0.35
+      weight: 0.75
       candidate-multiplier: 8
       max-candidates: 120
   ratelimit:
@@ -233,6 +233,18 @@ skillhub:
       email: ${BOOTSTRAP_ADMIN_EMAIL:admin@skillhub.local}
 
 joyhub:
+  ai:
+    enabled: ${JOYHUB_AI_ENABLED:false}
+    base-url: ${JOYHUB_AI_BASE_URL:https://codex.cheergame.net}
+    api-key: ${JOYHUB_AI_API_KEY:}
+    model: ${JOYHUB_AI_MODEL:gpt-5.6-terra}
+    fallback-model: ${JOYHUB_AI_FALLBACK_MODEL:}
+    reasoning-effort: ${JOYHUB_AI_REASONING_EFFORT:medium}
+    max-output-tokens: ${JOYHUB_AI_MAX_OUTPUT_TOKENS:0}
+    connect-timeout-ms: ${JOYHUB_AI_CONNECT_TIMEOUT_MS:5000}
+    read-timeout-ms: ${JOYHUB_AI_READ_TIMEOUT_MS:90000}
+    conversation-ttl-minutes: ${JOYHUB_AI_CONVERSATION_TTL_MINUTES:30}
+    conversation-max-turns: ${JOYHUB_AI_CONVERSATION_MAX_TURNS:6}
   feishu:
     department-sync:
       enabled: ${JOYHUB_FEISHU_DEPARTMENT_SYNC_ENABLED:true}

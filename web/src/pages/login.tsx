@@ -18,13 +18,14 @@ export function LoginPage() {
   const returnTo = search.returnTo && search.returnTo.startsWith('/') ? search.returnTo : '/dashboard'
   const disabledMessage = search.reason === 'accountDisabled' ? t('apiError.auth.accountDisabled') : null
   const hasFeishuLogin = authMethods?.some((method) => method.methodType === 'OAUTH_REDIRECT' && method.provider === 'feishu')
+  const hasLoginMethod = authMethods === undefined || hasFeishuLogin
 
   return (
     <div className="flex min-h-[70vh] items-center justify-center">
       <div className="w-full max-w-md space-y-8 animate-fade-up">
         <div className="text-center space-y-3">
           <div className="inline-flex w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-primary/70 items-center justify-center shadow-glow mb-4">
-            <span className="text-primary-foreground font-bold text-2xl">S</span>
+            <span className="text-primary-foreground font-bold text-2xl">J</span>
           </div>
           <h1 className="text-4xl font-bold font-heading text-foreground">{t('login.title')}</h1>
           <p className="text-muted-foreground text-lg">
@@ -39,13 +40,11 @@ export function LoginPage() {
                 {disabledMessage}
               </div>
             ) : null}
-            <p className="text-sm text-muted-foreground">
-              {t('login.oauthHint')}
-            </p>
+            {hasFeishuLogin ? <p className="text-sm text-muted-foreground">{t('login.oauthHint')}</p> : null}
             <LoginButton returnTo={returnTo} />
-            {hasFeishuLogin === false ? (
+            {!hasLoginMethod ? (
               <p className="text-sm text-red-600">
-                Feishu login is not configured. Set the OAUTH2_FEISHU_* environment variables on the server.
+                {t('login.noMethodConfigured')}
               </p>
             ) : null}
           </div>

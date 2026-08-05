@@ -20,8 +20,12 @@ COPY . .
 RUN ./mvnw package -DskipTests -B
 
 # ---- Runtime Stage ----
-FROM eclipse-temurin:21-jre-alpine
-RUN addgroup -S app && adduser -S app -G app
+FROM eclipse-temurin:21-jre-jammy
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends libgomp1 wget && \
+    rm -rf /var/lib/apt/lists/* && \
+    groupadd --system app && \
+    useradd --system --gid app app
 WORKDIR /app
 
 COPY --from=build /app/skillhub-app/target/*.jar app.jar

@@ -9,6 +9,7 @@ import { getAppHeaderClassName } from './layout-header-style'
 import { getAppMainContentLayout, resolveAppMainContentPathname } from './layout-main-content'
 import { BrandMark } from '@/shared/components/brand-mark'
 import { Search } from 'lucide-react'
+import { DiscoveryAssistant } from '@/features/discovery-assistant/discovery-assistant'
 
 /**
  * Application shell shared by all routed pages.
@@ -219,6 +220,7 @@ export function Layout() {
           </div>
         </div>
       </footer>
+      {!isLoading ? <DiscoveryAssistant isAuthenticated={Boolean(user)} /> : null}
     </div>
   )
 }

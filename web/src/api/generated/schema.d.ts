@@ -1240,6 +1240,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/discovery/assist": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Ask the permission-aware JoyHub discovery assistant */
+        post: operations["assist"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/web/discovery/assist": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Ask the permission-aware JoyHub discovery assistant */
+        post: operations["assist_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/catalog/resources/{slug}/transfer": {
         parameters: {
             query?: never;
@@ -4192,6 +4226,47 @@ export interface components {
             createdAt?: string;
             readAt?: string;
         };
+        DiscoveryAssistRequest: {
+            question: string;
+            language?: string;
+            conversationId?: string;
+        };
+        ApiResponseDiscoveryAssistResponse: {
+            /** Format: int32 */
+            code?: number;
+            msg?: string;
+            data?: components["schemas"]["DiscoveryAssistResponse"];
+            /** Format: date-time */
+            timestamp?: string;
+            requestId?: string;
+        };
+        DiscoveryAssistResponse: {
+            conversationId?: string;
+            answer?: string;
+            suggestions?: components["schemas"]["DiscoverySuggestionResponse"][];
+            steps?: components["schemas"]["DiscoveryPlanStepResponse"][];
+            model?: string;
+            modelGenerated?: boolean;
+            fallbackUsed?: boolean;
+        };
+        DiscoveryPlanStepResponse: {
+            objective?: string;
+            suggestions?: components["schemas"]["DiscoverySuggestionResponse"][];
+        };
+        DiscoverySuggestionResponse: {
+            type?: string;
+            /** Format: int64 */
+            id?: number;
+            title?: string;
+            description?: string;
+            kind?: string;
+            slug?: string;
+            namespace?: string;
+            accessUrl?: string;
+            usage?: string;
+            evidence?: string;
+            source?: string;
+        };
         CatalogTransferRequest: {
             newOwnerId: string;
         };
@@ -4233,53 +4308,6 @@ export interface components {
         };
         AuthorizeRequest: {
             userCode?: string;
-        };
-        SessionBootstrapRequest: {
-            provider: string;
-        };
-        ApiResponseAuthMeResponse: {
-            /** Format: int32 */
-            code?: number;
-            msg?: string;
-            data?: components["schemas"]["AuthMeResponse"];
-            /** Format: date-time */
-            timestamp?: string;
-            requestId?: string;
-        };
-        AuthMeResponse: {
-            userId?: string;
-            displayName?: string;
-            email?: string;
-            avatarUrl?: string;
-            oauthProvider?: string;
-            canChangePassword?: boolean;
-            platformRoles?: string[];
-        };
-        LocalRegisterRequest: {
-            username: string;
-            password: string;
-            email: string;
-        };
-        PasswordResetRequestDto: {
-            email: string;
-        };
-        PasswordResetConfirmRequest: {
-            email: string;
-            code: string;
-            newPassword: string;
-        };
-        LocalLoginRequest: {
-            username: string;
-            password: string;
-        };
-        ChangePasswordRequest: {
-            currentPassword: string;
-            newPassword: string;
-        };
-        DirectLoginRequest: {
-            provider: string;
-            username: string;
-            password: string;
         };
         TokenRequest: {
             deviceCode?: string;
@@ -5295,6 +5323,7 @@ export interface components {
             email?: string;
             avatarUrl?: string;
             oauthProvider?: string;
+            canChangePassword?: boolean;
             platformRoles?: string[];
         };
         AdminUserSummaryResponse: {
@@ -8203,6 +8232,54 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ApiResponseGovernanceNotificationResponse"];
+                };
+            };
+        };
+    };
+    assist: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DiscoveryAssistRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseDiscoveryAssistResponse"];
+                };
+            };
+        };
+    };
+    assist_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DiscoveryAssistRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseDiscoveryAssistResponse"];
                 };
             };
         };
