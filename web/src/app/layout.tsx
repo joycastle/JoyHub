@@ -8,6 +8,7 @@ import { NotificationBell } from '@/features/notification/notification-bell'
 import { getAppHeaderClassName } from './layout-header-style'
 import { getAppMainContentLayout, resolveAppMainContentPathname } from './layout-main-content'
 import { BrandMark } from '@/shared/components/brand-mark'
+import { PlatformOnboarding } from '@/features/onboarding/platform-onboarding'
 import { Search } from 'lucide-react'
 import { DiscoveryAssistant } from '@/features/discovery-assistant/discovery-assistant'
 
@@ -107,6 +108,7 @@ export function Layout() {
           >
             <Search className="h-5 w-5" strokeWidth={1.8} />
           </Link>
+          <PlatformOnboarding userId={user?.userId} displayName={user?.displayName} />
           <LanguageSwitcher />
           {user && <NotificationBell />}
           {isLoading ? null : user ? (

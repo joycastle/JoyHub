@@ -1680,6 +1680,86 @@
       }
     }
   },
+  "onboarding": {
+    "replay": "View onboarding",
+    "planLabel": "JoyHub starter map",
+    "planTitle": "Get familiar in five steps",
+    "planDescription": "Choose one entry point to begin, then return here whenever you need a refresher.",
+    "loginGreeting": "Welcome back, {{name}}",
+    "member": "there",
+    "stepCounter": "Step {{current}} of {{total}}",
+    "skip": "Skip for now",
+    "recommendedAction": "Try this next",
+    "progressLabel": "Onboarding progress",
+    "previous": "Back",
+    "next": "Next",
+    "finish": "Start exploring",
+    "steps": {
+      "welcome": {
+        "shortTitle": "Meet JoyHub",
+        "title": "Welcome to JoyHub",
+        "description": "Your unified entry point for company AI capabilities: Agents, Skills, and tools that help solve real work.",
+        "nextTitle": "Next, explore each capability in context",
+        "nextDescription": "Start with Agents, then continue through Skills, tools, and goal-based search. Each step opens the feature it introduces.",
+        "action": "Start with Agents"
+      },
+      "agents": {
+        "shortTitle": "Use an Agent",
+        "title": "Let Agents help with your work",
+        "description": "The Agent Center brings together ready-to-use AI assistants, bots, and automated workflows.",
+        "howToUse": "Filter the Agent Center by name, scenario, or department. Open a detail page to see use cases, the access point, and its maintainer.",
+        "action": "Go to Agent Center"
+      },
+      "skills": {
+        "shortTitle": "Reuse Skills",
+        "title": "Reuse proven skills",
+        "description": "The Skill Center provides installable, reusable Skill packages, scripts, templates, and references.",
+        "howToUse": "Search the Skill Center, read the guidance, then copy an install command or follow the documentation. You can also share a proven workflow as a Skill.",
+        "action": "Go to Skill Center"
+      },
+      "tools": {
+        "shortTitle": "Open a tool",
+        "title": "Use tools and services in one place",
+        "description": "The Tool Center gathers plugins, MCPs, web tools, internal services, and resource packages.",
+        "howToUse": "Confirm the capability, access URL, and prerequisites in the Tool Center. Each resource links to a companion document so you do not need to search across chats and pages.",
+        "action": "Go to Tool Center"
+      },
+      "search": {
+        "shortTitle": "Search by goal",
+        "title": "Start with your goal",
+        "description": "Search for a task or scenario whether you are creating content, analyzing data, or improving engineering work.",
+        "howToUse": "Use the top search or a scenario on the home page. Review visibility and documentation first; when you want to contribute, submit and maintain content from My Content.",
+        "action": "Start searching"
+      }
+    }
+  },
+  "centerFeatureTour": {
+    "counter": "Feature tour {{current}} of {{total}}",
+    "skip": "Skip tour",
+    "returnToOnboarding": "Return to starter map",
+    "previous": "Back",
+    "next": "Next",
+    "finish": "Finish tour",
+    "centers": {
+      "AGENT": {
+        "search": { "title": "Search for an Agent by task", "description": "Use a work goal, business scenario, or capability keyword to find suitable assistants and automated workflows." },
+        "catalog": { "title": "Understand an Agent from its card", "description": "Cards introduce an Agent's purpose and capabilities. Its detail page confirms use cases, access, visibility, and maintainer." },
+        "publish": { "title": "Share a reusable Agent", "description": "Publish a dependable assistant or bot here for your company or selected departments." }
+      },
+      "SKILL": {
+        "search": { "title": "Search for a Skill by goal", "description": "Start with a work goal or technical keyword to find proven scripts, templates, references, and ways of working." },
+        "filters": { "title": "Change the sort order", "description": "Browse the newest or most-used Skills to find relevant content faster." },
+        "catalog": { "title": "Read Skill details, then reuse", "description": "Open a card to review the version, dependencies, and usage guide before adding it through the install command or integration documentation." },
+        "publish": { "title": "Share a proven practice", "description": "Publish a well-tested process, script, or template as a Skill for others to reuse." }
+      },
+      "TOOL": {
+        "search": { "title": "Search for a tool by scenario", "description": "Use task or capability keywords to find web tools, MCPs, plugins, internal services, and resource packages." },
+        "filters": { "title": "Filter by resource type", "description": "Focus on tools, MCPs, plugins, or services to reduce unrelated results." },
+        "catalog": { "title": "Confirm a tool is ready to use", "description": "Review the access point, setup requirements, permissions, and linked documentation before adopting a resource." },
+        "publish": { "title": "Publish a team tool or service", "description": "Register dependable tools, services, and resource packages here for centralized discovery and maintenance." }
+      }
+    }
+  },
   "notification": {
     "title": "Notifications",
     "empty": "No notifications",

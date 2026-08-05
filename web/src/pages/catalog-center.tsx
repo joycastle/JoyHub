@@ -1,24 +1,43 @@
-import { useState } from 'react'
-import { useNavigate } from '@tanstack/react-router'
+import { useEffect, useState } from 'react'
+import { useNavigate, useSearch } from '@tanstack/react-router'
 import { Plus, Search } from 'lucide-react'
 import type { CatalogCenter, CatalogResourceKind } from '@/api/types'
 import { CatalogResourceCard } from '@/entities/catalog-resource/catalog-resource-card'
 import { CATALOG_RESOURCE_KINDS, catalogKindLabel } from '@/entities/catalog-resource/catalog-resource-kind'
 import { useCatalogResources } from '@/features/catalog/use-catalog-queries'
+import { CenterFeatureTour, type CenterTourTarget } from '@/features/onboarding/center-feature-tour'
+import { resumePlatformOnboarding } from '@/features/onboarding/onboarding-events'
+import { cn } from '@/shared/lib/utils'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
 import { APP_SHELL_PAGE_CLASS_NAME } from '@/app/page-shell-style'
 
-function CatalogCenterPage({ center }: { center: CatalogCenter }) {
+function CatalogCenterPage({ center, showArrivalGuide }: { center: CatalogCenter; showArrivalGuide: boolean }) {
   const navigate = useNavigate()
   const [queryInput, setQueryInput] = useState('')
   const [query, setQuery] = useState('')
   const [kind, setKind] = useState<CatalogResourceKind | undefined>()
+  const [isArrivalGuideVisible, setIsArrivalGuideVisible] = useState(showArrivalGuide)
+  const [tourTarget, setTourTarget] = useState<CenterTourTarget | null>(null)
   const { data, isLoading, isError } = useCatalogResources({ center, q: query, kind, size: 48 })
   const isAgent = center === 'AGENT'
   const availableKinds = isAgent ? ['AGENT'] as CatalogResourceKind[] : CATALOG_RESOURCE_KINDS.filter((item) => item !== 'AGENT')
   const publishKind: CatalogResourceKind = isAgent ? 'AGENT' : (kind ?? 'ONLINE_TOOL')
   const publishLabel = isAgent ? '发布 Agent' : `发布${kind ? catalogKindLabel(kind) : '工具'}`
+  const resources = data?.items ?? []
+  const isCatalogHighlighted = tourTarget === 'catalog'
+
+  useEffect(() => {
+    setIsArrivalGuideVisible(showArrivalGuide)
+    if (!showArrivalGuide) {
+      setTourTarget(null)
+    }
+  }, [showArrivalGuide])
+
+  const dismissArrivalGuide = () => {
+    setTourTarget(null)
+    setIsArrivalGuideVisible(false)
+  }
 
   return (
     <div className={APP_SHELL_PAGE_CLASS_NAME}>
@@ -36,7 +55,8 @@ function CatalogCenterPage({ center }: { center: CatalogCenter }) {
           </div>
           <Button
             size="lg"
-            className="shrink-0"
+            className={cn('shrink-0', tourTarget === 'publish' && 'relative z-50 ring-4 ring-primary/50 ring-offset-4')}
+            data-onboarding-target="publish"
             onClick={() => navigate({ to: '/dashboard/catalog/new', search: { kind: publishKind } })}
           >
             <Plus className="mr-2 h-4 w-4" />
@@ -44,7 +64,8 @@ function CatalogCenterPage({ center }: { center: CatalogCenter }) {
           </Button>
         </div>
         <form
-          className="mt-8 flex max-w-2xl gap-3"
+          className={cn('mt-8 flex max-w-2xl gap-3 rounded-xl', tourTarget === 'search' && 'relative z-50 ring-4 ring-primary/50 ring-offset-4')}
+          data-onboarding-target="search"
           onSubmit={(event) => {
             event.preventDefault()
             setQuery(queryInput.trim())
@@ -64,7 +85,10 @@ function CatalogCenterPage({ center }: { center: CatalogCenter }) {
       </section>
 
       {!isAgent ? (
-        <div className="flex flex-wrap gap-2">
+        <div
+          className={cn('flex flex-wrap gap-2 rounded-xl', tourTarget === 'filters' && 'relative z-50 ring-4 ring-primary/50 ring-offset-4')}
+          data-onboarding-target="filters"
+        >
           <Button variant={kind === undefined ? 'default' : 'outline'} size="sm" onClick={() => setKind(undefined)}>全部</Button>
           {availableKinds.map((item) => (
             <Button key={item} variant={kind === item ? 'default' : 'outline'} size="sm" onClick={() => setKind(item)}>
@@ -76,26 +100,45 @@ function CatalogCenterPage({ center }: { center: CatalogCenter }) {
 
       {isLoading ? <div className="py-20 text-center text-muted-foreground">正在加载...</div> : null}
       {isError ? <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-5 text-destructive">加载失败，请稍后重试。</div> : null}
-      {!isLoading && !isError && data?.items.length === 0 ? (
-        <div className="rounded-2xl border border-dashed p-16 text-center text-muted-foreground">暂无匹配内容</div>
+      {!isLoading && !isError && resources.length === 0 ? (
+        <div className="flex justify-center">
+          <div className="w-full max-w-md rounded-2xl border border-dashed p-12 text-center text-muted-foreground">暂无匹配内容</div>
+        </div>
       ) : null}
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-        {data?.items.map((resource) => (
-          <CatalogResourceCard
+        {resources.map((resource, index) => (
+          <div
             key={resource.id}
-            resource={resource}
-            onClick={() => navigate({ to: '/catalog/$slug', params: { slug: resource.slug } })}
-          />
+            className={cn('h-full rounded-2xl', isCatalogHighlighted && index === 0 && 'relative z-50 ring-4 ring-primary/50 ring-offset-4')}
+            data-onboarding-target={isCatalogHighlighted && index === 0 ? 'catalog' : undefined}
+          >
+            <CatalogResourceCard
+              resource={resource}
+              onClick={() => navigate({ to: '/catalog/$slug', params: { slug: resource.slug } })}
+              onUse={resource.kind === 'AGENT' && resource.accessUrl ? () => window.open(resource.accessUrl, '_blank', 'noopener,noreferrer') : undefined}
+            />
+          </div>
         ))}
       </div>
+      {isArrivalGuideVisible ? (
+        <CenterFeatureTour
+          center={center}
+          hasCatalogItems={resources.length > 0}
+          onDismiss={dismissArrivalGuide}
+          onReturnToOnboarding={resumePlatformOnboarding}
+          onTargetChange={setTourTarget}
+        />
+      ) : null}
     </div>
   )
 }
 
 export function AgentsPage() {
-  return <CatalogCenterPage center="AGENT" />
+  const { onboarding } = useSearch({ from: '/agents' })
+  return <CatalogCenterPage center="AGENT" showArrivalGuide={Boolean(onboarding)} />
 }
 
 export function ToolsPage() {
-  return <CatalogCenterPage center="TOOL" />
+  const { onboarding } = useSearch({ from: '/tools' })
+  return <CatalogCenterPage center="TOOL" showArrivalGuide={Boolean(onboarding)} />
 }

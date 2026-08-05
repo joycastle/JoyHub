@@ -147,6 +147,9 @@ const landingRoute = createRoute({
 const skillsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: 'skills',
+  validateSearch: (search: Record<string, unknown>): { onboarding?: boolean } => ({
+    onboarding: search.onboarding === true || search.onboarding === 'true' ? true : undefined,
+  }),
   component: HomePage,
 })
 
@@ -154,6 +157,9 @@ const agentsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: 'agents',
   beforeLoad: requireAuth,
+  validateSearch: (search: Record<string, unknown>): { onboarding?: boolean } => ({
+    onboarding: search.onboarding === true || search.onboarding === 'true' ? true : undefined,
+  }),
   component: AgentsPage,
 })
 
@@ -161,6 +167,9 @@ const toolsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: 'tools',
   beforeLoad: requireAuth,
+  validateSearch: (search: Record<string, unknown>): { onboarding?: boolean } => ({
+    onboarding: search.onboarding === true || search.onboarding === 'true' ? true : undefined,
+  }),
   component: ToolsPage,
 })
 

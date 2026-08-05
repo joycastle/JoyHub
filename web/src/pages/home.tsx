@@ -1,13 +1,16 @@
-import { useState } from 'react'
-import { useNavigate } from '@tanstack/react-router'
+import { useEffect, useState } from 'react'
+import { useNavigate, useSearch } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { ChevronLeft, ChevronRight, Plus, Search } from 'lucide-react'
+import { CenterFeatureTour, type CenterTourTarget } from '@/features/onboarding/center-feature-tour'
+import { resumePlatformOnboarding } from '@/features/onboarding/onboarding-events'
 import { SkillCard } from '@/features/skill/skill-card'
 import { SkeletonList } from '@/shared/components/skeleton-loader'
 import { useSearchSkills } from '@/shared/hooks/use-skill-queries'
 import { normalizeSearchQuery } from '@/shared/lib/search-query'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
+import { cn } from '@/shared/lib/utils'
 import { APP_SHELL_PAGE_CLASS_NAME } from '@/app/page-shell-style'
 
 type SkillSort = 'newest' | 'downloads'
@@ -17,10 +20,13 @@ const SKILL_PAGE_SIZE = 12
 export function HomePage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const { onboarding } = useSearch({ from: '/skills' })
   const [queryInput, setQueryInput] = useState('')
   const [query, setQuery] = useState('')
   const [sort, setSort] = useState<SkillSort>('newest')
   const [page, setPage] = useState(0)
+  const [isArrivalGuideVisible, setIsArrivalGuideVisible] = useState(Boolean(onboarding))
+  const [tourTarget, setTourTarget] = useState<CenterTourTarget | null>(null)
   const { data, isLoading, isError, isFetching } = useSearchSkills({
     q: query,
     sort,
@@ -34,6 +40,20 @@ export function HomePage() {
     setQuery(normalizeSearchQuery(value))
     setPage(0)
   }
+  const skills = data?.items ?? []
+  const isCatalogHighlighted = tourTarget === 'catalog'
+
+  useEffect(() => {
+    setIsArrivalGuideVisible(Boolean(onboarding))
+    if (!onboarding) {
+      setTourTarget(null)
+    }
+  }, [onboarding])
+
+  const dismissArrivalGuide = () => {
+    setTourTarget(null)
+    setIsArrivalGuideVisible(false)
+  }
 
   return (
     <div className={APP_SHELL_PAGE_CLASS_NAME}>
@@ -45,33 +65,46 @@ export function HomePage() {
             <p className="text-lg leading-8 text-muted-foreground">{t('skillCenter.description')}</p>
             <p className="text-sm text-muted-foreground">{t('skillCenter.visibility')}</p>
           </div>
-          <Button size="lg" className="shrink-0" onClick={() => navigate({ to: '/dashboard/publish' })}>
+          <Button
+            size="lg"
+            className={cn('shrink-0', tourTarget === 'publish' && 'relative z-50 ring-4 ring-primary/50 ring-offset-4')}
+            data-onboarding-target="publish"
+            onClick={() => navigate({ to: '/dashboard/publish' })}
+          >
             <Plus className="mr-2 h-4 w-4" />
             {t('skillCenter.publish')}
           </Button>
         </div>
 
-        <form
-          className="mt-8 flex max-w-2xl gap-3"
-          onSubmit={(event) => {
-            event.preventDefault()
-            handleSearch(queryInput)
-          }}
+        <div
+          className={cn('mt-8 max-w-2xl rounded-xl', tourTarget === 'search' && 'relative z-50 ring-4 ring-primary/50 ring-offset-4')}
+          data-onboarding-target="search"
         >
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-            <Input
-              value={queryInput}
-              onChange={(event) => setQueryInput(event.target.value)}
-              className="bg-background pl-10"
-              placeholder={t('skillCenter.searchPlaceholder')}
-            />
-          </div>
-          <Button type="submit" disabled={isFetching && !isLoading}>{t('skillCenter.search')}</Button>
-        </form>
+          <form
+            className="flex gap-3"
+            onSubmit={(event) => {
+              event.preventDefault()
+              handleSearch(queryInput)
+            }}
+          >
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={queryInput}
+                onChange={(event) => setQueryInput(event.target.value)}
+                className="bg-background pl-10"
+                placeholder={t('skillCenter.searchPlaceholder')}
+              />
+            </div>
+            <Button type="submit" disabled={isFetching && !isLoading}>{t('skillCenter.search')}</Button>
+          </form>
+        </div>
       </section>
 
-      <div className="flex flex-wrap items-center gap-2">
+      <div
+        className={cn('flex flex-wrap items-center gap-2 rounded-xl', tourTarget === 'filters' && 'relative z-50 ring-4 ring-primary/50 ring-offset-4')}
+        data-onboarding-target="filters"
+      >
         <span className="mr-1 text-sm font-medium text-muted-foreground">{t('skillCenter.sortLabel')}</span>
         <Button variant={sort === 'newest' ? 'default' : 'outline'} size="sm" onClick={() => { setSort('newest'); setPage(0) }}>
           {t('skillCenter.newest')}
@@ -90,14 +123,20 @@ export function HomePage() {
           {t('skillCenter.loadFailed')}
         </div>
       ) : null}
-      {!isLoading && !isError && data?.items.length === 0 ? (
-        <div className="rounded-2xl border border-dashed p-16 text-center text-muted-foreground">
-          {t('skillCenter.empty')}
+      {!isLoading && !isError && skills.length === 0 ? (
+        <div className="flex justify-center">
+          <div className="w-full max-w-md rounded-2xl border border-dashed p-12 text-center text-muted-foreground">
+            {t('skillCenter.empty')}
+          </div>
         </div>
       ) : null}
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-        {data?.items.map((skill, index) => (
-          <div key={skill.id} className={`h-full animate-fade-up delay-${Math.min(index % 6 + 1, 6)}`}>
+        {skills.map((skill, index) => (
+          <div
+            key={skill.id}
+            className={cn(`h-full animate-fade-up delay-${Math.min(index % 6 + 1, 6)}`, isCatalogHighlighted && index === 0 && 'relative z-50 rounded-2xl ring-4 ring-primary/50 ring-offset-4')}
+            data-onboarding-target={isCatalogHighlighted && index === 0 ? 'catalog' : undefined}
+          >
             <SkillCard
               skill={skill}
               onClick={() => navigate({ to: `/space/${skill.namespace}/${encodeURIComponent(skill.slug)}` })}
@@ -105,7 +144,6 @@ export function HomePage() {
           </div>
         ))}
       </div>
-
       {!isLoading && !isError && data && pageCount > 1 ? (
         <nav className="flex items-center justify-center gap-3" aria-label={t('skillCenter.pagination')}>
           <Button
@@ -130,6 +168,15 @@ export function HomePage() {
             <ChevronRight className="ml-1 h-4 w-4" />
           </Button>
         </nav>
+      ) : null}
+      {isArrivalGuideVisible ? (
+        <CenterFeatureTour
+          center="SKILL"
+          hasCatalogItems={skills.length > 0}
+          onDismiss={dismissArrivalGuide}
+          onReturnToOnboarding={resumePlatformOnboarding}
+          onTargetChange={setTourTarget}
+        />
       ) : null}
     </div>
   )
