@@ -39,6 +39,9 @@ public class PostgresFullTextQueryService implements SearchQueryService {
     private static final int SHORT_PREFIX_LENGTH = 2;
     private static final String TITLE_VECTOR_SQL = "to_tsvector('simple', coalesce(title, ''))";
     private static final String TITLE_SQL = "LOWER(title)";
+    private static final Set<String> QUERY_STOP_WORDS = Set.of(
+            "我", "想", "要", "做", "帮", "帮我", "请", "需要", "一份", "一下", "有没有", "什么", "哪个", "哪些",
+            "i", "want", "need", "please", "help", "make", "find", "a", "an", "the", "for", "me");
 
     private final EntityManager entityManager;
     private final SkillSearchDocumentJpaRepository searchDocumentRepository;
@@ -92,8 +95,12 @@ public class PostgresFullTextQueryService implements SearchQueryService {
         if (useSemanticRerank && requestedOffset + query.size() > maxCandidates) {
             useSemanticRerank = false;
         }
-        boolean useLexicalFilter = hasKeyword && !useSemanticRerank;
-        boolean useRelevanceOrdering = "relevance".equals(query.sortBy()) && useLexicalFilter;
+        // Semantic ranking is a second-stage reranker. It must never turn a
+        // keyword search into an unbounded "show the whole catalogue" query:
+        // the lexical predicate also defines the result count and candidate
+        // set. The discovery assistant has its own hybrid retrieval path.
+        boolean useLexicalFilter = hasKeyword;
+        boolean useRelevanceOrdering = "relevance".equals(query.sortBy()) && hasKeyword;
         int sqlLimit = query.size();
         int sqlOffset = requestedOffset;
         if (useSemanticRerank) {
@@ -326,6 +333,7 @@ public class PostgresFullTextQueryService implements SearchQueryService {
 
         List<String> terms = searchTextTokenizer.tokenizeForQuery(keyword).stream()
                 .limit(MAX_QUERY_TERMS)
+                .filter(term -> !QUERY_STOP_WORDS.contains(term.toLowerCase(Locale.ROOT)))
                 .toList();
 
         if (terms.isEmpty()) {
@@ -340,9 +348,12 @@ public class PostgresFullTextQueryService implements SearchQueryService {
             return null;
         }
 
+        // Natural-language queries often contain filler words or only one of
+        // several useful concepts. OR recall followed by ranking is more
+        // forgiving than requiring every Jieba token to be present.
         return tsQueryTerms.stream()
                 .map(term -> usePrefixMatch(term) ? term + ":*" : term)
-                .reduce((left, right) -> left + " & " + right)
+                .reduce((left, right) -> left + " | " + right)
                 .orElse(null);
     }
 

@@ -39,8 +39,10 @@ class DiscoveryAssistantAppServiceTest {
                 .thenReturn(new DiscoveryConversationStore.Conversation(
                         "0f40ad3f-7ce2-4bbb-89ec-63080a7f0648", history));
         when(aiClient.plan(anyString(), anyString(), anyList(), anyString())).thenReturn(plan);
-        when(retriever.retrieve(plan.steps().get(0).queries(), principal(), Map.of())).thenReturn(List.of());
-        when(retriever.retrieve(plan.steps().get(1).queries(), principal(), Map.of())).thenReturn(List.of(reportSkill));
+        when(retriever.retrieve(plan.steps().get(0).queries(), principal(), Map.of(), "zh-CN"))
+                .thenReturn(List.of());
+        when(retriever.retrieve(plan.steps().get(1).queries(), principal(), Map.of(), "zh-CN"))
+                .thenReturn(List.of(reportSkill));
         when(aiClient.answer(anyString(), anyString(), anyList(), anyList(), anyString()))
                 .thenReturn(new DiscoveryAiClient.AiAnswer("分两步完成。", "gpt-test", false, List.of(
                         new DiscoveryAiClient.StepSelection(0, List.of()),

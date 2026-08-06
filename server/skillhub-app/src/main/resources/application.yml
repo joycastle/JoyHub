@@ -142,7 +142,9 @@ skillhub:
     rebuild-on-startup: false
     semantic:
       enabled: true
-      weight: 0.75
+      # Semantic similarity is a second-stage signal. Keep lexical rank strong
+      # enough to prevent generic embeddings from outranking exact matches.
+      weight: 0.60
       candidate-multiplier: 8
       max-candidates: 120
   ratelimit:

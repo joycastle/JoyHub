@@ -197,8 +197,8 @@ class PostgresFullTextQueryServiceTest {
                 20
         ));
 
-        verify(nativeQuery).setParameter("tsQuery", "self:* & improving:*");
-        verify(countQuery).setParameter("tsQuery", "self:* & improving:*");
+        verify(nativeQuery).setParameter("tsQuery", "self:* | improving:*");
+        verify(countQuery).setParameter("tsQuery", "self:* | improving:*");
     }
 
     @Test
@@ -225,8 +225,36 @@ class PostgresFullTextQueryServiceTest {
                 20
         ));
 
-        verify(nativeQuery).setParameter("tsQuery", "中文 & 技能 & 搜索");
-        verify(countQuery).setParameter("tsQuery", "中文 & 技能 & 搜索");
+        verify(nativeQuery).setParameter("tsQuery", "中文 | 技能 | 搜索");
+        verify(countQuery).setParameter("tsQuery", "中文 | 技能 | 搜索");
+    }
+
+    @Test
+    void naturalLanguageFillerWordsShouldNotBecomeSearchTerms() {
+        EntityManager entityManager = mock(EntityManager.class);
+        Query nativeQuery = mock(Query.class);
+        Query countQuery = mock(Query.class);
+        when(entityManager.createNativeQuery(anyString()))
+                .thenReturn(nativeQuery)
+                .thenReturn(countQuery);
+        when(nativeQuery.setParameter(anyString(), org.mockito.ArgumentMatchers.any())).thenReturn(nativeQuery);
+        when(countQuery.setParameter(anyString(), org.mockito.ArgumentMatchers.any())).thenReturn(countQuery);
+        when(nativeQuery.getResultList()).thenReturn(List.of());
+        when(countQuery.getSingleResult()).thenReturn(0L);
+
+        PostgresFullTextQueryService service = new PostgresFullTextQueryService(entityManager);
+
+        service.search(new SearchQuery(
+                "我想做一份报告",
+                null,
+                new SearchVisibilityScope(null, Set.of(), Set.of()),
+                "relevance",
+                0,
+                20
+        ));
+
+        verify(nativeQuery).setParameter("tsQuery", "报告");
+        verify(countQuery).setParameter("tsQuery", "报告");
     }
 
     @Test
@@ -645,6 +673,12 @@ class PostgresFullTextQueryServiceTest {
 
         verify(nativeQuery).setParameter("limit", 16);
         verify(nativeQuery).setParameter("offset", 0);
+        verify(nativeQuery).setParameter("tsQuery", "self:* | improvement:*");
+        verify(countQuery).setParameter("tsQuery", "self:* | improvement:*");
+        ArgumentCaptor<String> sqlCaptor = ArgumentCaptor.forClass(String.class);
+        verify(entityManager, org.mockito.Mockito.times(2)).createNativeQuery(sqlCaptor.capture());
+        assertThat(sqlCaptor.getAllValues().get(0)).contains("d.search_vector @@ to_tsquery('simple', :tsQuery)");
+        assertThat(sqlCaptor.getAllValues().get(1)).contains("d.search_vector @@ to_tsquery('simple', :tsQuery)");
         assertThat(result.skillIds()).containsExactly(1L, 2L);
     }
 

@@ -69,9 +69,14 @@ export function DiscoveryAssistant({ isAuthenticated }: { isAuthenticated: boole
   const [previousTurns, setPreviousTurns] = useState<ConversationTurn[]>([])
   const assistant = useDiscoveryAssistant()
   const enabled = open && question.trim().length > 0
-  const skillSearch = useSearchSkills({ q: question, sort: 'relevance', size: 4 }, enabled)
-  const catalogSearch = useCatalogResources({ q: question, size: 4, enabled: enabled && isAuthenticated })
-  const isLoading = enabled && (skillSearch.isLoading || (isAuthenticated && catalogSearch.isLoading))
+  // Authenticated users receive the permission-aware hybrid result from the
+  // assistant endpoint. The lightweight client-side search is only a genuine
+  // anonymous fallback; running both paths for every question duplicated
+  // requests and produced a different ranking while the model was thinking.
+  const localFallbackEnabled = enabled && !isAuthenticated
+  const skillSearch = useSearchSkills({ q: question, sort: 'relevance', size: 4 }, localFallbackEnabled)
+  const catalogSearch = useCatalogResources({ q: question, size: 4, enabled: localFallbackEnabled })
+  const isLoading = localFallbackEnabled && (skillSearch.isLoading || catalogSearch.isLoading)
   const recommendation = useMemo(() => buildDiscoveryRecommendation({
     question,
     catalog: catalogSearch.data?.items ?? [],
@@ -88,7 +93,7 @@ export function DiscoveryAssistant({ isAuthenticated }: { isAuthenticated: boole
   })) ?? [], [assistant.data?.steps])
   const shownSuggestions = assistant.data ? aiSuggestions : recommendation.suggestions
   const shownSummary = assistant.data?.answer ?? recommendation.summary
-  const isThinking = isLoading || assistant.isPending
+  const isThinking = isLoading || (enabled && isAuthenticated && assistant.isPending)
 
   const ask = (value: string) => {
     const next = value.trim()
@@ -352,11 +357,11 @@ function StepRecommendations({ suggestions, onOpen }: {
   onOpen: (suggestion: DiscoverySuggestion) => void
 }) {
   const { t } = useTranslation()
-  const [primary, ...alternatives] = suggestions
+  const [first, ...alternatives] = suggestions
 
   return (
     <div className="mt-3 space-y-2.5">
-      <SuggestionCard suggestion={primary} onOpen={onOpen} primary />
+      <SuggestionCard suggestion={first} onOpen={onOpen} />
       {alternatives.length > 0 ? (
         <details className="group/alternatives rounded-xl border bg-muted/15">
           <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3.5 py-2.5 text-xs font-medium text-muted-foreground marker:content-none hover:text-foreground">
@@ -374,10 +379,9 @@ function StepRecommendations({ suggestions, onOpen }: {
   )
 }
 
-function SuggestionCard({ suggestion, onOpen, primary = false }: {
+function SuggestionCard({ suggestion, onOpen }: {
   suggestion: DiscoverySuggestion
   onOpen: (suggestion: DiscoverySuggestion) => void
-  primary?: boolean
 }) {
   const { t } = useTranslation()
   const [copied, copy] = useCopyToClipboard()
@@ -396,15 +400,10 @@ function SuggestionCard({ suggestion, onOpen, primary = false }: {
   }
 
   return (
-    <article className={cn('rounded-2xl border bg-background p-4', primary && 'border-primary/25 shadow-sm')}>
+    <article className="rounded-2xl border bg-background p-4">
       <div className="flex min-w-0 items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            {primary ? (
-              <span className="inline-flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-[9px] font-semibold text-primary-foreground">
-                <Check className="h-2.5 w-2.5" /> {t('discoveryAssistant.primary')}
-              </span>
-            ) : null}
           <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-primary">
             {suggestion.type === 'skill' ? 'Skill' : suggestion.kind}
           </span>
@@ -413,7 +412,7 @@ function SuggestionCard({ suggestion, onOpen, primary = false }: {
           <p className="mt-2 text-[10px] font-medium text-muted-foreground">{t('discoveryAssistant.whatItDoes')}</p>
           <p className="mt-1 text-xs leading-5 text-foreground/80">{suggestion.description}</p>
         </div>
-        <Button type="button" variant={primary ? 'default' : 'outline'} size="sm" className="shrink-0 gap-1.5" onClick={() => onOpen(suggestion)}>
+        <Button type="button" variant="outline" size="sm" className="shrink-0 gap-1.5" onClick={() => onOpen(suggestion)}>
           {t('discoveryAssistant.viewDetails')}
           <ExternalLink className="h-3 w-3" />
         </Button>
