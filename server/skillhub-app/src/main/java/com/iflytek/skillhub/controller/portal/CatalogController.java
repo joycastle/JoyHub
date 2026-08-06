@@ -9,18 +9,22 @@ import com.iflytek.skillhub.dto.ApiResponse;
 import com.iflytek.skillhub.dto.ApiResponseFactory;
 import com.iflytek.skillhub.dto.AgentDocumentationDraftRequest;
 import com.iflytek.skillhub.dto.CatalogResourceDetailResponse;
+import com.iflytek.skillhub.dto.CatalogPublishRequest;
 import com.iflytek.skillhub.dto.CatalogResourceRequest;
 import com.iflytek.skillhub.dto.CatalogResourceSummaryResponse;
 import com.iflytek.skillhub.dto.CatalogTransferRequest;
 import com.iflytek.skillhub.dto.PageResponse;
+import com.iflytek.skillhub.service.AuditRequestContext;
 import com.iflytek.skillhub.service.CatalogArtifactAppService;
 import com.iflytek.skillhub.service.AgentDocumentationAiService;
+import com.iflytek.skillhub.service.CatalogDeploymentLifecycleAppService;
 import com.iflytek.skillhub.service.CatalogResourceCommandAppService;
 import com.iflytek.skillhub.service.CatalogResourceQueryAppService;
 import com.iflytek.skillhub.service.CatalogDocumentExtractionService;
 import com.iflytek.skillhub.service.CatalogViewer;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
@@ -51,18 +55,21 @@ import org.springframework.web.multipart.MultipartFile;
 public class CatalogController extends BaseApiController {
     private final CatalogResourceQueryAppService queryAppService;
     private final CatalogResourceCommandAppService commandAppService;
+    private final CatalogDeploymentLifecycleAppService deploymentLifecycleAppService;
     private final CatalogArtifactAppService artifactAppService;
     private final CatalogDocumentExtractionService documentExtractionService;
     private final AgentDocumentationAiService agentDocumentationAiService;
 
     public CatalogController(CatalogResourceQueryAppService queryAppService,
                              CatalogResourceCommandAppService commandAppService,
+                             CatalogDeploymentLifecycleAppService deploymentLifecycleAppService,
                              CatalogArtifactAppService artifactAppService, CatalogDocumentExtractionService documentExtractionService,
                              AgentDocumentationAiService agentDocumentationAiService,
                              ApiResponseFactory responseFactory) {
         super(responseFactory);
         this.queryAppService = queryAppService;
         this.commandAppService = commandAppService;
+        this.deploymentLifecycleAppService = deploymentLifecycleAppService;
         this.artifactAppService = artifactAppService;
         this.documentExtractionService = documentExtractionService;
         this.agentDocumentationAiService = agentDocumentationAiService;
@@ -125,7 +132,7 @@ public class CatalogController extends BaseApiController {
     }
 
     @PostMapping("/resources")
-    @Operation(summary = "Create a Catalog resource")
+    @Operation(summary = "Create a Catalog resource or resume the current user's draft with the same slug")
     public ApiResponse<CatalogResourceDetailResponse> create(
             @Valid @RequestBody CatalogResourceRequest request,
             @AuthenticationPrincipal PlatformPrincipal principal,
@@ -148,9 +155,15 @@ public class CatalogController extends BaseApiController {
     @Operation(summary = "Publish or republish a Catalog resource")
     public ApiResponse<CatalogResourceDetailResponse> publish(
             @PathVariable String slug,
+            @Valid @RequestBody(required = false) CatalogPublishRequest request,
             @AuthenticationPrincipal PlatformPrincipal principal,
-            @RequestAttribute(value = "userNsRoles", required = false) Map<Long, NamespaceRole> namespaceRoles) {
-        return ok("response.success.updated", commandAppService.publish(slug, viewer(principal, namespaceRoles)));
+            @RequestAttribute(value = "userNsRoles", required = false) Map<Long, NamespaceRole> namespaceRoles,
+            HttpServletRequest httpRequest) {
+        return ok("response.success.updated", deploymentLifecycleAppService.publish(
+                slug,
+                request != null ? request.version() : null,
+                viewer(principal, namespaceRoles),
+                AuditRequestContext.from(httpRequest)));
     }
 
     @PostMapping("/resources/{slug}/offline")
@@ -158,8 +171,10 @@ public class CatalogController extends BaseApiController {
     public ApiResponse<CatalogResourceDetailResponse> offline(
             @PathVariable String slug,
             @AuthenticationPrincipal PlatformPrincipal principal,
-            @RequestAttribute(value = "userNsRoles", required = false) Map<Long, NamespaceRole> namespaceRoles) {
-        return ok("response.success.updated", commandAppService.takeOffline(slug, viewer(principal, namespaceRoles)));
+            @RequestAttribute(value = "userNsRoles", required = false) Map<Long, NamespaceRole> namespaceRoles,
+            HttpServletRequest httpRequest) {
+        return ok("response.success.updated", deploymentLifecycleAppService.takeOffline(
+                slug, viewer(principal, namespaceRoles), AuditRequestContext.from(httpRequest)));
     }
 
     @PostMapping("/resources/{slug}/transfer")

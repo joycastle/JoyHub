@@ -43,6 +43,11 @@ jobs:
             dockerfile: ./scanner/Dockerfile
             image: ghcr.io/${{ github.repository_owner }}/skillhub-scanner
             mirror_image: skillhub-scanner
+          - name: deployment-runner
+            context: ./runner
+            dockerfile: ./runner/Dockerfile
+            image: ghcr.io/${{ github.repository_owner }}/joyhub-deployment-runner
+            mirror_image: joyhub-deployment-runner
 
     steps:
       - name: Check out repository

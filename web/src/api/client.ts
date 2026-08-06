@@ -695,10 +695,14 @@ export const catalogApi = {
     )
   },
 
-  async publish(slug: string): Promise<CatalogResourceDetail> {
+  async publish(slug: string, version?: string): Promise<CatalogResourceDetail> {
     return fetchJson<CatalogResourceDetail>(
       `${WEB_API_PREFIX}/catalog/resources/${encodeURIComponent(slug)}/publish`,
-      { method: 'POST', headers: await ensureCsrfHeaders() },
+      {
+        method: 'POST',
+        headers: await ensureCsrfHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ version }),
+      },
     )
   },
 

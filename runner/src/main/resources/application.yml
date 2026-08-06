@@ -1,0 +1,25 @@
+server:
+  port: ${RUNNER_PORT:8091}
+spring:
+  application:
+    name: joyhub-deployment-runner
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 51MB
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+joyhub:
+  runner:
+    token: ${JOYHUB_RUNNER_TOKEN:local-deployment-token}
+    data-path: ${JOYHUB_RUNNER_DATA_PATH:/data}
+    verification-origin: ${JOYHUB_STATIC_VERIFICATION_ORIGIN:http://static-host}
+    path-prefix: ${JOYHUB_STATIC_PATH_PREFIX:/apps}
+    max-zip-size: ${JOYHUB_STATIC_MAX_ZIP_SIZE:52428800}
+    max-expanded-size: ${JOYHUB_STATIC_MAX_EXPANDED_SIZE:209715200}
+    max-single-file-size: ${JOYHUB_STATIC_MAX_SINGLE_FILE_SIZE:20971520}
+    max-file-count: ${JOYHUB_STATIC_MAX_FILE_COUNT:2000}
+    max-compression-ratio: ${JOYHUB_STATIC_MAX_COMPRESSION_RATIO:100}

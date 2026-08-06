@@ -10,6 +10,37 @@ export const catalogKeys = {
   detail: (slug: string) => [...catalogKeys.all, 'detail', slug] as const,
 }
 
+interface SaveCatalogResourceInput {
+  request: CatalogResourceRequest
+  artifact?: File
+  publishVersion?: string
+}
+
+interface UpdateCatalogResourceInput extends SaveCatalogResourceInput {
+  slug: string
+}
+
+export async function createCatalogResource({
+  request,
+  artifact,
+  publishVersion,
+}: SaveCatalogResourceInput) {
+  const resource = await catalogApi.create(publishVersion ? { ...request, publish: false } : request)
+  const stored = artifact ? await catalogApi.uploadArtifact(resource.slug, artifact) : resource
+  return publishVersion ? catalogApi.publish(stored.slug, publishVersion) : stored
+}
+
+export async function updateCatalogResource({
+  slug,
+  request,
+  artifact,
+  publishVersion,
+}: UpdateCatalogResourceInput) {
+  const resource = await catalogApi.update(slug, request)
+  const stored = artifact ? await catalogApi.uploadArtifact(resource.slug, artifact) : resource
+  return publishVersion ? catalogApi.publish(stored.slug, publishVersion) : stored
+}
+
 export function useCatalogResources(params: {
   q?: string
   center?: CatalogCenter
@@ -43,10 +74,7 @@ export function useMyCatalogResources() {
 export function useCreateCatalogResource() {
   const client = useQueryClient()
   return useMutation({
-    mutationFn: async ({ request, artifact }: { request: CatalogResourceRequest; artifact?: File }) => {
-      const resource = await catalogApi.create(request)
-      return artifact ? catalogApi.uploadArtifact(resource.slug, artifact) : resource
-    },
+    mutationFn: createCatalogResource,
     onSuccess: (resource) => {
       client.setQueryData(catalogKeys.detail(resource.slug), resource)
       void client.invalidateQueries({ queryKey: catalogKeys.lists() })
@@ -58,10 +86,7 @@ export function useCreateCatalogResource() {
 export function useUpdateCatalogResource() {
   const client = useQueryClient()
   return useMutation({
-    mutationFn: async ({ slug, request, artifact }: { slug: string; request: CatalogResourceRequest; artifact?: File }) => {
-      const resource = await catalogApi.update(slug, request)
-      return artifact ? catalogApi.uploadArtifact(resource.slug, artifact) : resource
-    },
+    mutationFn: updateCatalogResource,
     onSuccess: (resource) => {
       client.setQueryData(catalogKeys.detail(resource.slug), resource)
       void client.invalidateQueries({ queryKey: catalogKeys.lists() })

@@ -1,5 +1,6 @@
 import { useRef, useState, type FormEvent } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
 import type { CatalogResourceDetail, CatalogResourceKind, CatalogResourceRequest, CatalogVisibilityScope } from '@/api/types'
 import { fetchJson, getCsrfHeaders, namespaceApi } from '@/api/client'
 import { CATALOG_RESOURCE_KINDS, catalogKindLabel } from '@/entities/catalog-resource/catalog-resource-kind'
@@ -18,15 +19,30 @@ interface CatalogResourceFormProps {
   resource?: CatalogResourceDetail
 }
 
+type OnlineToolHostingMode = 'MANAGED_STATIC' | 'EXTERNAL'
+
 const FIELD_CLASS = 'mt-2 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm'
 
 export function CatalogResourceForm({ onCreated, initialKind, resource }: CatalogResourceFormProps) {
+  const { t } = useTranslation()
   const createMutation = useCreateCatalogResource()
   const updateMutation = useUpdateCatalogResource()
   const { data: departments = [] } = useQuery({ queryKey: ['namespaces', 'mine'], queryFn: () => namespaceApi.listMine() })
   const [kind, setKind] = useState<CatalogResourceKind>(() => resource?.kind ?? initialKind ?? 'ONLINE_TOOL')
   const [visibility, setVisibility] = useState<CatalogVisibilityScope>(() => resource?.visibilityScope ?? 'COMPANY')
   const [artifact, setArtifact] = useState<File>()
+  const [hostingMode, setHostingMode] = useState<OnlineToolHostingMode>(() => {
+    if (!resource) {
+      return (initialKind ?? 'ONLINE_TOOL') === 'ONLINE_TOOL' ? 'MANAGED_STATIC' : 'EXTERNAL'
+    }
+    if (resource?.kind === 'ONLINE_TOOL') {
+      const hasStableManagedUrl = Boolean(resource.accessUrl?.includes(`/apps/${resource.slug}/`))
+      return resource.artifactAvailable && (!resource.accessUrl || hasStableManagedUrl)
+        ? 'MANAGED_STATIC'
+        : 'EXTERNAL'
+    }
+    return 'EXTERNAL'
+  })
   const [selectedDepartments, setSelectedDepartments] = useState<number[]>(() => resource?.visibleDepartments?.flatMap((item) => item.id === undefined ? [] : [item.id]) ?? [])
   const [documentation, setDocumentation] = useState(() => resource?.documentation ?? '')
   const [isExtractingDocument, setIsExtractingDocument] = useState(false)
@@ -40,6 +56,11 @@ export function CatalogResourceForm({ onCreated, initialKind, resource }: Catalo
   const [skillVisibility, setSkillVisibility] = useState('WAREHOUSE')
   const [localSkillError, setLocalSkillError] = useState('')
   const isAgent = kind === 'AGENT'
+  const isOnlineTool = kind === 'ONLINE_TOOL'
+  const isManagedStatic = isOnlineTool && hostingMode === 'MANAGED_STATIC'
+  const isExistingManagedStatic = resource?.kind === 'ONLINE_TOOL'
+    && resource.artifactAvailable
+    && (!resource.accessUrl || resource.accessUrl.includes(`/apps/${resource.slug}/`))
   const { data: skills } = useSearchSkills({ q: skillQuery || undefined, sort: 'newest', page: 0, size: 12 })
   const { data: repositories = [] } = useSkillRepositories()
   const publishSkillMutation = usePublishSkill()
@@ -54,6 +75,8 @@ export function CatalogResourceForm({ onCreated, initialKind, resource }: Catalo
     const split = (value: FormDataEntryValue | null) => String(value ?? '').split(',').map((item) => item.trim()).filter(Boolean)
     const primaryDepartmentValue = String(form.get('primaryDepartmentId') ?? '')
     const feishuAppId = String(form.get('feishuAppId') ?? '').trim()
+    const requestedVersion = String(form.get('version') ?? '').trim()
+    const publishRequested = !isEditing && form.get('publish') === 'on'
     setLocalSkillError('')
     let relatedSkillIds = selectedSkillIds
     if (isAgent && localSkillFile) {
@@ -78,9 +101,13 @@ export function CatalogResourceForm({ onCreated, initialKind, resource }: Catalo
         icon: String(form.get('icon') ?? '').trim() || undefined,
         accessUrl: isAgent
           ? `https://applink.feishu.cn/client/bot/open?appId=${encodeURIComponent(feishuAppId)}`
-          : String(form.get('accessUrl') ?? '').trim() || undefined,
+          : isManagedStatic
+            ? isExistingManagedStatic ? resource.accessUrl : undefined
+            : String(form.get('accessUrl') ?? '').trim() || undefined,
         documentation: documentation.trim(),
-        version: String(form.get('version') ?? '').trim() || undefined,
+        version: isManagedStatic && isEditing && resource?.status === 'PUBLISHED'
+          ? resource.version
+          : requestedVersion || undefined,
         agentUsageBoundary: undefined,
         agentInputGuide: undefined,
         agentOutputGuide: undefined,
@@ -94,11 +121,22 @@ export function CatalogResourceForm({ onCreated, initialKind, resource }: Catalo
         tags: split(form.get('tags')),
         relatedResourceIds: [],
         relatedSkillIds,
-        publish: !isEditing && form.get('publish') === 'on',
+        publish: publishRequested && !isManagedStatic,
       }
     const result = resource
-      ? await updateMutation.mutateAsync({ slug: resource.slug, request, artifact })
-      : await createMutation.mutateAsync({ request, artifact })
+      ? await updateMutation.mutateAsync({
+          slug: resource.slug,
+          request,
+          artifact,
+          publishVersion: isManagedStatic && artifact && resource.status === 'PUBLISHED'
+            ? requestedVersion
+            : undefined,
+        })
+      : await createMutation.mutateAsync({
+          request,
+          artifact,
+          publishVersion: isManagedStatic && publishRequested ? requestedVersion : undefined,
+        })
     onCreated(result.slug)
   }
 
@@ -157,6 +195,22 @@ export function CatalogResourceForm({ onCreated, initialKind, resource }: Catalo
             {CATALOG_RESOURCE_KINDS.map((item) => <option key={item} value={item}>{catalogKindLabel(item)}</option>)}
           </select>
         </div> : <div><Label>内容类型</Label><div className={`${FIELD_CLASS} text-muted-foreground`}>Agent</div></div>}
+        {isOnlineTool ? <div>
+          <Label htmlFor="hostingMode">{t('catalogPublish.hostingMode')}</Label>
+          <select
+            id="hostingMode"
+            value={hostingMode}
+            onChange={(event) => setHostingMode(event.target.value as OnlineToolHostingMode)}
+            disabled={isExistingManagedStatic}
+            className={FIELD_CLASS}
+          >
+            <option value="MANAGED_STATIC">{t('catalogPublish.managedStatic')}</option>
+            <option value="EXTERNAL">{t('catalogPublish.externalLink')}</option>
+          </select>
+          <p className="mt-2 text-xs text-muted-foreground">
+            {isManagedStatic ? t('catalogPublish.managedStaticHint') : t('catalogPublish.externalLinkHint')}
+          </p>
+        </div> : null}
         <div><Label htmlFor="icon">图标</Label><Input className="mt-2" id="icon" name="icon" placeholder="可填写 Emoji 或图片地址" defaultValue={resource?.icon ?? ''} /></div>
         <div className="md:col-span-2"><Label htmlFor="summary">简介 *</Label><Textarea className="mt-2" id="summary" name="summary" required maxLength={1200} rows={3} defaultValue={resource?.summary} /></div>
         <div>
@@ -166,14 +220,16 @@ export function CatalogResourceForm({ onCreated, initialKind, resource }: Catalo
             id={isAgent ? 'feishuAppId' : 'accessUrl'}
             name={isAgent ? 'feishuAppId' : 'accessUrl'}
             type={isAgent ? 'text' : 'url'}
-            required={isAgent}
+            required={isAgent || (isOnlineTool && !isManagedStatic)}
+            disabled={isManagedStatic}
             pattern={isAgent ? 'cli_[A-Za-z0-9]+' : undefined}
-            placeholder={isAgent ? 'cli_xxxxxxxxxxxxxxxx' : 'https://...'}
+            placeholder={isAgent ? 'cli_xxxxxxxxxxxxxxxx' : isManagedStatic ? t('catalogPublish.accessUrlGenerated') : 'https://...'}
             defaultValue={isAgent ? new URL(resource?.accessUrl ?? 'https://applink.feishu.cn').searchParams.get('appId') ?? '' : resource?.accessUrl ?? ''}
           />
           {isAgent ? <p className="mt-2 text-xs text-muted-foreground">在飞书开发者后台「凭证与基础信息」中获取。系统会自动生成“立即使用”的机器人会话链接。</p> : null}
+          {isManagedStatic ? <p className="mt-2 text-xs text-muted-foreground">{t('catalogPublish.accessUrlHint')}</p> : null}
         </div>
-        {!isAgent ? <div><Label htmlFor="version">版本</Label><Input className="mt-2" id="version" name="version" placeholder="1.0.0" defaultValue={resource?.version ?? ''} /></div> : <div><Label>当前发布方式</Label><div className={`${FIELD_CLASS} text-muted-foreground`}>飞书机器人</div></div>}
+        {!isAgent ? <div><Label htmlFor="version">版本{isManagedStatic ? ' *' : ''}</Label><Input className="mt-2" id="version" name="version" placeholder="1.0.0" required={isManagedStatic} readOnly={isManagedStatic && isEditing && !artifact} defaultValue={resource?.version ?? ''} />{isManagedStatic && isEditing && !artifact ? <p className="mt-2 text-xs text-muted-foreground">{t('catalogPublish.versionWithArtifactHint')}</p> : null}</div> : <div><Label>当前发布方式</Label><div className={`${FIELD_CLASS} text-muted-foreground`}>飞书机器人</div></div>}
         <div><Label htmlFor="scenarios">适用场景 {isAgent ? '*' : ''}</Label><Input className="mt-2" id="scenarios" name="scenarios" required={isAgent} placeholder="研发提效, 美术资产处理" defaultValue={resource?.scenarios?.join(', ') ?? ''} /></div>
         <div><Label htmlFor="tags">标签</Label><Input className="mt-2" id="tags" name="tags" placeholder="预览, 内部工具" defaultValue={resource?.tags?.join(', ') ?? ''} /></div>
       </section>
@@ -207,10 +263,11 @@ export function CatalogResourceForm({ onCreated, initialKind, resource }: Catalo
         <Textarea id="documentation" name="documentation" required rows={14} value={documentation} onChange={(event) => setDocumentation(event.target.value)} placeholder={'# 快速开始\n\n说明如何访问、安装或配置这项能力。'} />
         {isAgent ? <><div className="rounded-xl border border-dashed p-4"><Label htmlFor="documentationFile">上传并解析文档</Label><Input id="documentationFile" className="mt-2" type="file" accept=".docx,.md,.txt" disabled={isExtractingDocument} onChange={(event) => void extractDocument(event.target.files?.[0])} /><p className="mt-2 text-xs text-muted-foreground">支持 Word（.docx）、Markdown 和文本文件；解析后请检查并编辑内容。{isExtractingDocument ? ' 正在解析…' : ''}</p></div><div><Label htmlFor="agentExamplePrompts">示例提问 <span className="text-muted-foreground">（可选，每行一条）</span></Label><Textarea id="agentExamplePrompts" className="mt-2" rows={3} value={examplePrompts} onChange={(event) => setExamplePrompts(event.target.value)} placeholder={'请把下面的会议纪要整理成待办事项\n根据这段项目背景给我下一步建议'} /><p className="mt-1 text-xs text-muted-foreground">仅用于让用户快速开始对话；完整规则仍以使用说明为准。</p></div></> : null}
         {documentationGenerationError ? <p className="text-sm text-destructive">{documentationGenerationError}</p> : null}
-        {!isAgent ? <div>
-          <Label htmlFor="artifact">安装包（可选）</Label>
-          <Input id="artifact" className="mt-2" type="file" accept=".zip,application/zip" onChange={(event) => setArtifact(event.target.files?.[0])} />
-          <p className="mt-2 text-xs text-muted-foreground">插件、模板和资源包可上传 ZIP，最大 100MB。</p>
+        {!isAgent && (!isOnlineTool || isManagedStatic) ? <div>
+          <Label htmlFor="artifact">{isManagedStatic ? t('catalogPublish.staticArtifact') : '安装包（可选）'}</Label>
+          <Input id="artifact" className="mt-2" type="file" accept=".zip,application/zip" required={isManagedStatic && !resource?.artifactAvailable} onChange={(event) => setArtifact(event.target.files?.[0])} />
+          <p className="mt-2 text-xs text-muted-foreground">{isManagedStatic ? t('catalogPublish.staticArtifactHint') : '插件、模板和资源包可上传 ZIP，最大 100MB。'}</p>
+          {isManagedStatic && resource?.artifactFilename ? <p className="mt-2 text-xs text-muted-foreground">{t('catalogPublish.currentArtifact', { filename: resource.artifactFilename })}</p> : null}
         </div> : null}
       </section>
 
@@ -250,9 +307,9 @@ export function CatalogResourceForm({ onCreated, initialKind, resource }: Catalo
       </section>
 
       <div className="flex items-center justify-between rounded-2xl border bg-card p-5">
-        {isEditing ? <p className="text-sm text-muted-foreground">保存修改不会改变当前的发布状态。</p> : <label className="flex items-center gap-3 text-sm"><input name="publish" type="checkbox" defaultChecked /> 填写完成后直接发布</label>}
+        {isEditing ? <p className="text-sm text-muted-foreground">{isManagedStatic && artifact && resource?.status === 'PUBLISHED' ? t('catalogPublish.updateDeployHint') : '保存修改不会改变当前的发布状态。'}</p> : <label className="flex items-center gap-3 text-sm"><input name="publish" type="checkbox" defaultChecked /> {isManagedStatic ? t('catalogPublish.publishAndDeploy') : '填写完成后直接发布'}</label>}
         <Button type="submit" size="lg" disabled={createMutation.isPending || updateMutation.isPending || publishSkillMutation.isPending || (visibility === 'DEPARTMENTS' && selectedDepartments.length === 0)}>
-          {createMutation.isPending || updateMutation.isPending || publishSkillMutation.isPending ? '正在提交...' : isEditing ? '保存修改' : '保存资源'}
+          {createMutation.isPending || updateMutation.isPending || publishSkillMutation.isPending ? t('catalogPublish.deploying') : isEditing && isManagedStatic && artifact && resource?.status === 'PUBLISHED' ? t('catalogPublish.saveAndDeploy') : isEditing ? '保存修改' : isManagedStatic ? t('catalogPublish.saveResource') : '保存资源'}
         </Button>
       </div>
       {createMutation.isError || updateMutation.isError ? <p className="text-sm text-destructive">{createMutation.error?.message ?? updateMutation.error?.message}</p> : null}

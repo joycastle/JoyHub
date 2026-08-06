@@ -14,6 +14,24 @@
     "publish": "发布",
     "login": "登录"
   },
+  "catalogPublish": {
+    "hostingMode": "发布方式",
+    "managedStatic": "平台托管静态应用",
+    "externalLink": "外部链接",
+    "managedStaticHint": "上传构建后的静态 ZIP，JoyHub 会自动部署并生成稳定访问地址。",
+    "externalLinkHint": "保留现有站点，由 JoyHub 记录并展示外部访问地址。",
+    "accessUrlGenerated": "部署成功后自动生成",
+    "accessUrlHint": "无需手工填写；Release 激活后由 JoyHub 回写。",
+    "versionWithArtifactHint": "上传新的静态 ZIP 后才能发布新版本。",
+    "staticArtifact": "静态应用 ZIP *",
+    "staticArtifactHint": "ZIP 根目录必须包含 index.html；保存发布后会自动调用 Runner 部署。",
+    "currentArtifact": "当前产物：{{filename}}",
+    "updateDeployHint": "保存后将自动创建新 Release 并部署；失败不会影响当前线上版本。",
+    "publishAndDeploy": "填写完成后直接发布并上线",
+    "deploying": "正在提交并部署...",
+    "saveAndDeploy": "保存并发布新版本",
+    "saveResource": "保存并上线"
+  },
   "landing": {
     "hero": {
       "title": "发现与分享 AI 技能",

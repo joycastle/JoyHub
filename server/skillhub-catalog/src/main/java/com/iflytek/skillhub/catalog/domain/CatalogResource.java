@@ -171,6 +171,23 @@ public class CatalogResource {
         this.status = CatalogResourceStatus.OFFLINE;
     }
 
+    public void requireDeploymentPublishable() {
+        if (documentation == null || documentation.isBlank()) {
+            throw CatalogDomainException.badRequest("error.catalog.documentation.required");
+        }
+        if (artifactStorageKey == null || artifactStorageKey.isBlank()) {
+            throw CatalogDomainException.badRequest("error.catalog.artifact.required");
+        }
+    }
+
+    public void activateDeployment(String stableUrl, String deployedVersion, Instant now) {
+        requireDeploymentPublishable();
+        this.accessUrl = trimToLength(stableUrl, 1024, "error.catalog.accessUrl.tooLong");
+        this.version = trimToLength(deployedVersion, 64, "error.catalog.version.tooLong");
+        this.status = CatalogResourceStatus.PUBLISHED;
+        this.publishedAt = now;
+    }
+
     public void transferOwnership(String newOwnerId) {
         if (newOwnerId == null || newOwnerId.isBlank()) {
             throw CatalogDomainException.badRequest("error.catalog.owner.required");

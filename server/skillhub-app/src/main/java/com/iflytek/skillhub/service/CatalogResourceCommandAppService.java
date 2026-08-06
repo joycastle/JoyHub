@@ -5,6 +5,7 @@ import com.iflytek.skillhub.catalog.domain.CatalogResource;
 import com.iflytek.skillhub.catalog.domain.CatalogResourceDraft;
 import com.iflytek.skillhub.catalog.domain.CatalogResourceRepository;
 import com.iflytek.skillhub.catalog.domain.CatalogResourceService;
+import com.iflytek.skillhub.catalog.domain.CatalogResourceStatus;
 import com.iflytek.skillhub.catalog.domain.CatalogVisibilityScope;
 import com.iflytek.skillhub.domain.namespace.Namespace;
 import com.iflytek.skillhub.domain.namespace.NamespaceRepository;
@@ -51,6 +52,17 @@ public class CatalogResourceCommandAppService {
     @Transactional
     public CatalogResourceDetailResponse create(CatalogResourceRequest request, CatalogViewer viewer) {
         CatalogResourceDraft draft = validateAndMap(request, null, null);
+        CatalogResource existing = resourceRepository.findBySlug(draft.slug()).orElse(null);
+        if (existing != null
+                && existing.getStatus() == CatalogResourceStatus.DRAFT
+                && existing.getOwnerId().equals(viewer.userId())) {
+            CatalogResource resumed = resourceService.update(
+                    existing.getSlug(), draft, viewer.userId(), viewer.superAdmin());
+            if (request.publish()) {
+                resumed = resourceService.publish(existing.getSlug(), viewer.userId(), viewer.superAdmin());
+            }
+            return assembler.detail(resumed, viewer);
+        }
         CatalogResource resource = resourceService.create(draft, viewer.userId(), request.publish());
         return assembler.detail(resource, viewer);
     }

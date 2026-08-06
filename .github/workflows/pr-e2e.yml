@@ -10,6 +10,8 @@ on:
     paths:
       - 'web/**'
       - 'server/**'
+      - 'runner/**'
+      - 'deploy/static-host/**'
       - 'scripts/**'
       - 'docker-compose.yml'
       - 'docker-compose.staging.yml'
@@ -70,6 +72,15 @@ jobs:
 
       - name: Run frontend E2E tests
         run: make test-e2e-frontend
+
+      - name: Start deployment Runner and Static Host
+        run: make deployment-up
+
+      - name: Run static deployment E2E smoke
+        env:
+          DEPLOYMENT_RESTART_RUNNER: "true"
+          DEPLOYMENT_COMPOSE_PROJECT: skillhub
+        run: bash scripts/deployment-smoke-test.sh http://localhost:8080 http://localhost:8090 http://localhost:8091
 
       - name: Upload Playwright HTML report
         if: ${{ !cancelled() }}

@@ -315,7 +315,7 @@ class SkillPackageArchiveExtractorTest {
         Files.writeString(tempDir.resolve("SKILL.md"), "---\nname: weekly-report\nversion: 1.0.0\n---\n");
         Files.writeString(tempDir.resolve("README.md"), "# readme");
         Path tarPath = tempDir.resolve("package.tar");
-        assertEquals(0, new ProcessBuilder("tar", "-cf", tarPath.toString(), ".")
+        assertEquals(0, new ProcessBuilder("tar", "--exclude=package.tar", "-cf", tarPath.toString(), ".")
                 .directory(tempDir.toFile())
                 .redirectErrorStream(true)
                 .start()
@@ -337,7 +337,7 @@ class SkillPackageArchiveExtractorTest {
     void extractsTarGzFromMultipartStreamWithoutMarkSupport(@TempDir Path tempDir) throws Exception {
         Files.writeString(tempDir.resolve("SKILL.md"), "---\nname: weekly-report\nversion: 1.0.0\n---\n");
         Path tarGzPath = tempDir.resolve("package.tar.gz");
-        assertEquals(0, new ProcessBuilder("tar", "-czf", tarGzPath.toString(), ".")
+        assertEquals(0, new ProcessBuilder("tar", "--exclude=package.tar.gz", "-czf", tarGzPath.toString(), ".")
                 .directory(tempDir.toFile())
                 .redirectErrorStream(true)
                 .start()
@@ -407,7 +407,7 @@ class SkillPackageArchiveExtractorTest {
     void extractsTarGzCreatedFromCurrentDirectory(@TempDir Path tempDir) throws Exception {
         Files.writeString(tempDir.resolve("SKILL.md"), "---\nname: weekly-report\nversion: 1.0.0\n---\n");
         Path tarGzPath = tempDir.resolve("package.tar.gz");
-        assertEquals(0, new ProcessBuilder("tar", "-czf", tarGzPath.toString(), ".")
+        assertEquals(0, new ProcessBuilder("tar", "--exclude=package.tar.gz", "-czf", tarGzPath.toString(), ".")
                 .directory(tempDir.toFile())
                 .redirectErrorStream(true)
                 .start()

@@ -233,6 +233,13 @@ skillhub:
       email: ${BOOTSTRAP_ADMIN_EMAIL:admin@skillhub.local}
 
 joyhub:
+  deployment:
+    runner-base-url: ${JOYHUB_DEPLOYMENT_RUNNER_BASE_URL:http://localhost:8091}
+    runner-token: ${JOYHUB_DEPLOYMENT_RUNNER_TOKEN:local-deployment-token}
+    public-origin: ${JOYHUB_DEPLOYMENT_PUBLIC_ORIGIN:http://localhost:8090}
+    path-prefix: ${JOYHUB_DEPLOYMENT_PATH_PREFIX:/apps}
+    connect-timeout: ${JOYHUB_DEPLOYMENT_CONNECT_TIMEOUT:PT5S}
+    read-timeout: ${JOYHUB_DEPLOYMENT_READ_TIMEOUT:PT60S}
   ai:
     enabled: ${JOYHUB_AI_ENABLED:false}
     base-url: ${JOYHUB_AI_BASE_URL:https://codex.cheergame.net}

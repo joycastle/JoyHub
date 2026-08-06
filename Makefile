@@ -1,4 +1,4 @@
-.PHONY: build build-backend build-backend-app build-builtin-skills build-cli build-frontend build-web check clean cli-install db-reset dev dev-all dev-all-down dev-all-reset dev-down dev-logs dev-server dev-server-restart dev-status dev-web docs-build docs-dev docs-preview generate-api help lint-cli lint-web namespace-smoke parallel-down parallel-init parallel-sync parallel-up pr publish-cli publish-cli-major publish-cli-minor staging staging-down staging-logs test test-backend test-backend-app test-builtin-skills test-cli test-e2e-frontend test-e2e-smoke-frontend test-frontend test-redis-cluster test-web typecheck-cli typecheck-web validate-release-config web-deps web-install web-install-ci
+.PHONY: build build-backend build-backend-app build-builtin-skills build-cli build-frontend build-runner build-web check clean cli-install db-reset deployment-down deployment-smoke deployment-up dev dev-all dev-all-down dev-all-reset dev-down dev-logs dev-server dev-server-restart dev-status dev-web docs-build docs-dev docs-preview generate-api help lint-cli lint-web namespace-smoke parallel-down parallel-init parallel-sync parallel-up pr publish-cli publish-cli-major publish-cli-minor staging staging-down staging-logs test test-backend test-backend-app test-builtin-skills test-cli test-e2e-frontend test-e2e-smoke-frontend test-frontend test-redis-cluster test-runner test-web typecheck-cli typecheck-web validate-release-config web-deps web-install web-install-ci
 
 DEV_DIR := .dev
 DEV_SERVER_PID := $(DEV_DIR)/server.pid
@@ -15,7 +15,7 @@ STAGING_SERVER_IMAGE := skillhub-server:staging
 DEV_PROCESS := bash scripts/dev-process.sh
 DEV_SERVER_PREPARE := . ../scripts/load-local-dev-environment.sh
 DEV_SERVER_CMD := ./scripts/run-dev-app.sh
-DEV_SERVER_SCANNER_ENV := SKILLHUB_SECURITY_SCANNER_ENABLED=true SKILLHUB_SECURITY_SCANNER_URL=$(DEV_SCANNER_URL) SKILLHUB_SECURITY_SCANNER_MODE=upload
+DEV_SERVER_SCANNER_ENV := SKILLHUB_AUTH_MOCK_ENABLED=true SKILLHUB_SECURITY_SCANNER_ENABLED=true SKILLHUB_SECURITY_SCANNER_URL=$(DEV_SCANNER_URL) SKILLHUB_SECURITY_SCANNER_MODE=upload
 BACKEND_TEST_JAVA_OPTIONS ?= -XX:+EnableDynamicAgentLoading
 PARALLEL_BASE_REF ?= origin/main
 PARALLEL_WORKTREE_ROOT ?=
@@ -23,7 +23,7 @@ DEV_COMPOSE_PROJECT_NAME ?= skillhub
 STAGING_COMPOSE_PROJECT_NAME ?= skillhub-staging
 DEV_COMPOSE := docker compose -p $(DEV_COMPOSE_PROJECT_NAME)
 STAGING_BASE_COMPOSE := docker compose -p $(STAGING_COMPOSE_PROJECT_NAME)
-STAGING_COMPOSE := $(STAGING_BASE_COMPOSE) -f docker-compose.yml -f docker-compose.staging.yml
+STAGING_COMPOSE := $(STAGING_BASE_COMPOSE) -f docker-compose.yml -f docker-compose.staging.yml --profile deployment
 
 help: ## 显示帮助
 	@grep -E '^[a-zA-Z0-9_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | \
@@ -202,6 +202,25 @@ build-backend-app: ## 构建 skillhub-app 及其依赖模块
 test-backend-app: ## 运行 skillhub-app 及其依赖模块测试
 	cd server && JDK_JAVA_OPTIONS="$(BACKEND_TEST_JAVA_OPTIONS)" ./mvnw -pl skillhub-app -am test
 
+build-runner: ## 构建独立部署 Runner
+	mvn -f runner/pom.xml package -DskipTests
+
+test-runner: ## 运行独立部署 Runner 测试
+	mvn -f runner/pom.xml test
+
+deployment-up: ## 启动本地 Runner 与只读 Static Host
+	$(DEV_COMPOSE) --profile deployment up -d --wait static-host deployment-runner
+	@echo "Static Host: http://localhost:8090/apps/{slug}/"
+	@echo "Runner:      http://localhost:8091"
+
+deployment-down: ## 停止本地 Runner 与 Static Host（保留版本数据）
+	$(DEV_COMPOSE) --profile deployment stop deployment-runner static-host
+	$(DEV_COMPOSE) --profile deployment rm -f deployment-runner static-host
+
+deployment-smoke: ## 运行静态应用发布端到端 smoke
+	DEPLOYMENT_RESTART_RUNNER=true DEPLOYMENT_COMPOSE_PROJECT=$(DEV_COMPOSE_PROJECT_NAME) \
+		bash scripts/deployment-smoke-test.sh $(DEV_API_URL) http://localhost:8090 http://localhost:8091
+
 build: build-backend build-frontend ## 完整构建前后端
 
 build-builtin-skills: ## 校验并确定性打包官方内置 Skills
@@ -311,7 +330,7 @@ staging: ## 构建并启动 staging 环境，运行 smoke test（混合模式：
 	@echo "=== [3/5] Starting dependency services ==="
 	$(STAGING_BASE_COMPOSE) up -d --wait
 	@echo "=== [4/5] Starting staging services ==="
-	$(STAGING_COMPOSE) up -d --wait server web
+	$(STAGING_COMPOSE) up -d --wait static-host deployment-runner server web
 	@echo "=== [5/5] Running smoke tests ==="
 	@if BOOTSTRAP_ADMIN_USERNAME=admin BOOTSTRAP_ADMIN_PASSWORD='Admin@staging2026' \
 		bash scripts/smoke-test.sh $(STAGING_API_URL); then \
