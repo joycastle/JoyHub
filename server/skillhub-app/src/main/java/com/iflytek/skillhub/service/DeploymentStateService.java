@@ -69,15 +69,7 @@ public class DeploymentStateService {
     public DeployableApplication createApplication(Long catalogResourceId,
                                                    DeploymentMode mode,
                                                    CatalogViewer viewer) {
-        if (mode != DeploymentMode.STATIC) {
-            throw CatalogDomainException.badRequest("error.deployment.mode.unsupported");
-        }
-        CatalogResource catalog = requireCatalog(catalogResourceId);
-        catalogPolicy.requireManage(catalog, viewer.userId(), viewer.superAdmin());
-        if (catalog.getKind() != CatalogResourceKind.ONLINE_TOOL
-                && catalog.getKind() != CatalogResourceKind.AGENT) {
-            throw CatalogDomainException.badRequest("error.deployment.catalog.kind.unsupported");
-        }
+        CatalogResource catalog = requireDeployableCatalog(catalogResourceId, mode, viewer);
         applicationRepository.findByCatalogResourceId(catalogResourceId).ifPresent(existing -> {
             throw CatalogDomainException.conflict("error.deployment.application.exists");
         });
@@ -86,6 +78,19 @@ public class DeploymentStateService {
                 mode,
                 properties.stableUrl(catalog.getSlug())
         ));
+    }
+
+    @Transactional
+    public DeployableApplication ensureApplication(Long catalogResourceId,
+                                                   DeploymentMode mode,
+                                                   CatalogViewer viewer) {
+        CatalogResource catalog = requireDeployableCatalog(catalogResourceId, mode, viewer);
+        return applicationRepository.findByCatalogResourceId(catalogResourceId)
+                .orElseGet(() -> applicationRepository.save(new DeployableApplication(
+                        catalogResourceId,
+                        mode,
+                        properties.stableUrl(catalog.getSlug())
+                )));
     }
 
     @Transactional
@@ -245,6 +250,21 @@ public class DeploymentStateService {
     private CatalogResource requireManagedCatalog(DeployableApplication application, CatalogViewer viewer) {
         CatalogResource catalog = requireCatalog(application.getCatalogResourceId());
         catalogPolicy.requireManage(catalog, viewer.userId(), viewer.superAdmin());
+        return catalog;
+    }
+
+    private CatalogResource requireDeployableCatalog(Long catalogResourceId,
+                                                      DeploymentMode mode,
+                                                      CatalogViewer viewer) {
+        if (mode != DeploymentMode.STATIC) {
+            throw CatalogDomainException.badRequest("error.deployment.mode.unsupported");
+        }
+        CatalogResource catalog = requireCatalog(catalogResourceId);
+        catalogPolicy.requireManage(catalog, viewer.userId(), viewer.superAdmin());
+        if (catalog.getKind() != CatalogResourceKind.ONLINE_TOOL
+                && catalog.getKind() != CatalogResourceKind.AGENT) {
+            throw CatalogDomainException.badRequest("error.deployment.catalog.kind.unsupported");
+        }
         return catalog;
     }
 

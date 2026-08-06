@@ -14,6 +14,24 @@
     "publish": "Publish",
     "login": "Login"
   },
+  "catalogPublish": {
+    "hostingMode": "Publishing mode",
+    "managedStatic": "JoyHub-hosted static app",
+    "externalLink": "External link",
+    "managedStaticHint": "Upload a built static ZIP and JoyHub will deploy it to a stable access URL.",
+    "externalLinkHint": "Keep the existing site and let JoyHub display its external URL.",
+    "accessUrlGenerated": "Generated after deployment",
+    "accessUrlHint": "No manual URL is needed; JoyHub writes it after the release becomes active.",
+    "versionWithArtifactHint": "Upload a new static ZIP before publishing a new version.",
+    "staticArtifact": "Static application ZIP *",
+    "staticArtifactHint": "The ZIP root must contain index.html; JoyHub deploys it through the Runner after submission.",
+    "currentArtifact": "Current artifact: {{filename}}",
+    "updateDeployHint": "Saving creates and deploys a new release; a failure leaves the active release untouched.",
+    "publishAndDeploy": "Publish and deploy after saving",
+    "deploying": "Submitting and deploying...",
+    "saveAndDeploy": "Save and publish new version",
+    "saveResource": "Save and deploy"
+  },
   "landing": {
     "hero": {
       "title": "Discover & Share AI Skills",

@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -75,6 +76,21 @@ class DeploymentStateServiceTest {
                 1L, DeploymentMode.STATIC, new CatalogViewer("other-user", null, null)))
                 .isInstanceOfSatisfying(CatalogDomainException.class,
                         exception -> assertThat(exception.status()).isEqualTo(403));
+    }
+
+    @Test
+    void catalogPublishReusesExistingDeployableApplication() {
+        CatalogResource catalog = catalog("owner");
+        DeployableApplication existing = new DeployableApplication(
+                1L, DeploymentMode.STATIC, "http://localhost:8090/apps/demo-app/");
+        when(catalogRepository.findById(1L)).thenReturn(Optional.of(catalog));
+        when(applicationRepository.findByCatalogResourceId(1L)).thenReturn(Optional.of(existing));
+
+        DeployableApplication result = service.ensureApplication(
+                1L, DeploymentMode.STATIC, new CatalogViewer("owner", null, null));
+
+        assertThat(result).isSameAs(existing);
+        verify(applicationRepository, never()).save(any());
     }
 
     @Test

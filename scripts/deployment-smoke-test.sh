@@ -7,6 +7,7 @@ RUNNER_BASE="${3:-http://localhost:8091}"
 RUNNER_TOKEN="${JOYHUB_RUNNER_TOKEN:-local-deployment-token}"
 SMOKE_ID="$(date +%s)"
 SLUG="deploy-smoke-${SMOKE_ID}"
+AUTOMATED_SLUG="deploy-auto-smoke-${SMOKE_ID}"
 TMP_DIR="$(mktemp -d)"
 ADMIN_COOKIES="$TMP_DIR/admin.cookies"
 USER_COOKIES="$TMP_DIR/user.cookies"
@@ -73,14 +74,42 @@ CREATE_RESPONSE="$(post_json "/api/v1/catalog/resources" "{
 CATALOG_ID="$(printf '%s' "$CREATE_RESPONSE" | json_value data.id)"
 
 upload_artifact() {
-  local archive="$1"
-  curl --fail-with-body -sS -X POST "$API_BASE/api/v1/catalog/resources/$SLUG/artifact" \
+  local slug="$1"
+  local archive="$2"
+  curl --fail-with-body -sS -X POST "$API_BASE/api/v1/catalog/resources/$slug/artifact" \
     "${ADMIN_HEADERS[@]}" \
     -H "X-XSRF-TOKEN: $(csrf_token "$ADMIN_COOKIES")" \
     -F "file=@$archive;type=application/zip" >/dev/null
 }
 
-upload_artifact "$TMP_DIR/v1.zip"
+post_json "/api/v1/catalog/resources" "{
+  \"slug\":\"$AUTOMATED_SLUG\",
+  \"name\":\"Automated deployment smoke $SMOKE_ID\",
+  \"summary\":\"Catalog one-click deployment smoke resource\",
+  \"kind\":\"ONLINE_TOOL\",
+  \"documentation\":\"Created by deployment smoke test\",
+  \"maintenanceStatus\":\"ACTIVE\",
+  \"visibilityScope\":\"COMPANY\",
+  \"visibleDepartmentIds\":[],
+  \"scenarios\":[],
+  \"tags\":[],
+  \"relatedResourceIds\":[],
+  \"relatedSkillIds\":[],
+  \"publish\":false
+}" >/dev/null
+upload_artifact "$AUTOMATED_SLUG" "$TMP_DIR/v1.zip"
+post_json "/api/v1/catalog/resources/$AUTOMATED_SLUG/publish" '{"version":"v1"}' >/dev/null
+[[ "$(curl --fail-with-body -sS "$STATIC_BASE/apps/$AUTOMATED_SLUG/")" == "version-one" ]]
+
+upload_artifact "$AUTOMATED_SLUG" "$TMP_DIR/v2.zip"
+post_json "/api/v1/catalog/resources/$AUTOMATED_SLUG/publish" '{"version":"v2"}' >/dev/null
+[[ "$(curl --fail-with-body -sS "$STATIC_BASE/apps/$AUTOMATED_SLUG/")" == "version-two" ]]
+
+post_json "/api/v1/catalog/resources/$AUTOMATED_SLUG/offline" '{}' >/dev/null
+AUTOMATED_OFFLINE_STATUS="$(curl -sS -o /dev/null -w '%{http_code}' "$STATIC_BASE/apps/$AUTOMATED_SLUG/")"
+[[ "$AUTOMATED_OFFLINE_STATUS" == "404" ]]
+
+upload_artifact "$SLUG" "$TMP_DIR/v1.zip"
 APPLICATION_RESPONSE="$(post_json "/api/v1/deployable-applications" \
   "{\"catalogResourceId\":$CATALOG_ID,\"deploymentMode\":\"STATIC\"}")"
 APPLICATION_ID="$(printf '%s' "$APPLICATION_RESPONSE" | json_value data.id)"
@@ -91,7 +120,7 @@ for release in json.load(sys.stdin)["data"]["releases"]:
     if release["version"] == "v1": print(release["id"])')"
 [[ "$(curl --fail-with-body -sS "$STATIC_BASE/apps/$SLUG/")" == "version-one" ]]
 
-upload_artifact "$TMP_DIR/v2.zip"
+upload_artifact "$SLUG" "$TMP_DIR/v2.zip"
 V2_RESPONSE="$(post_json "/api/v1/deployable-applications/$APPLICATION_ID/releases" '{"version":"v2"}')"
 V2_RELEASE_ID="$(printf '%s' "$V2_RESPONSE" | python3 -c 'import json,sys
 for release in json.load(sys.stdin)["data"]["releases"]:
@@ -102,7 +131,7 @@ post_json "/api/v1/deployable-applications/$APPLICATION_ID/rollback" \
   "{\"targetReleaseId\":$V1_RELEASE_ID}" >/dev/null
 [[ "$(curl --fail-with-body -sS "$STATIC_BASE/apps/$SLUG/")" == "version-one" ]]
 
-upload_artifact "$TMP_DIR/bad.zip"
+upload_artifact "$SLUG" "$TMP_DIR/bad.zip"
 BAD_RESPONSE="$(post_json "/api/v1/deployable-applications/$APPLICATION_ID/releases" '{"version":"bad-v3"}')"
 CURRENT_AFTER_BAD="$(printf '%s' "$BAD_RESPONSE" | json_value data.currentReleaseId)"
 [[ "$CURRENT_AFTER_BAD" == "$V1_RELEASE_ID" ]]
@@ -139,4 +168,4 @@ STATE_RESPONSE="$(curl --fail-with-body -sS \
   -H "Authorization: Bearer $RUNNER_TOKEN" "$RUNNER_BASE/internal/v1/static/$SLUG/state")"
 [[ "$(printf '%s' "$STATE_RESPONSE" | json_value currentReleaseId)" == "$V2_RELEASE_ID" ]]
 
-echo "PASS: deployment smoke completed for $SLUG"
+echo "PASS: automated and administrative deployment smoke completed for $AUTOMATED_SLUG and $SLUG"

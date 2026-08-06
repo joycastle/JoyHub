@@ -4465,6 +4465,9 @@ export interface components {
         CatalogTransferRequest: {
             newOwnerId: string;
         };
+        CatalogPublishRequest: {
+            version?: string;
+        };
         ApiResponseString: {
             /** Format: int32 */
             code?: number;
@@ -8642,7 +8645,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["CatalogPublishRequest"];
+            };
+        };
         responses: {
             /** @description OK */
             200: {
@@ -8664,7 +8671,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["CatalogPublishRequest"];
+            };
+        };
         responses: {
             /** @description OK */
             200: {

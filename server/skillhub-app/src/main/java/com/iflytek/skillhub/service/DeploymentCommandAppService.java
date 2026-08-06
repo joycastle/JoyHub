@@ -54,6 +54,15 @@ public class DeploymentCommandAppService {
         return queryAppService.detail(applicationId, viewer);
     }
 
+    public DeployableApplicationResponse deployCatalogResource(Long catalogResourceId,
+                                                               String version,
+                                                               CatalogViewer viewer,
+                                                               AuditRequestContext auditContext) {
+        DeployableApplication application = stateService.ensureApplication(
+                catalogResourceId, DeploymentMode.STATIC, viewer);
+        return deploy(application.getId(), version, viewer, auditContext);
+    }
+
     public DeployableApplicationResponse rollback(Long applicationId,
                                                   Long releaseId,
                                                   CatalogViewer viewer,

@@ -49,14 +49,20 @@ make dev-server
 make deployment-down
 ```
 
-## API 调用顺序
+## 用户发布流程
 
-1. 创建带有文档的 `ONLINE_TOOL` 或 `AGENT` Catalog 资源。
-2. 通过 `POST /api/v1/catalog/resources/{slug}/artifact` 上传构建完成的 ZIP。
-3. 调用 `POST /api/v1/deployable-applications` 启用部署。
-4. 调用 `POST /api/v1/deployable-applications/{id}/releases` 发布当前产物，并由调用方指定不可变版本号。
-5. 通过 `GET /api/v1/deployable-applications/{id}` 查看应用和全部操作，或通过 `GET /api/v1/deployment-jobs/{jobId}` 查看单次操作结果。
-6. 使用 `/rollback`、`/offline` 和 `/restore` 完成回滚、下架和恢复。
+JoyHub 的 Catalog 发布按钮是普通维护者的统一入口。平台托管静态应用时，前端先保存草稿并上传 ZIP，随后调用 `POST /api/v1/catalog/resources/{slug}/publish`；Server 会自动创建（或复用）可部署应用、生成不可变 Release、调用 Runner 并在成功后发布 Catalog。调用方不需要手动串联部署 API。
+
+1. 在在线工具表单中选择“平台托管静态应用”，填写版本并上传包含根目录 `index.html` 的 ZIP。
+2. 点击“发布并自动部署”。首次发布按“创建草稿 → 上传产物 → 发布部署”执行。
+3. 已发布应用上传新 ZIP 并填写新版本后，保存操作会自动发布新 Release；失败时保留旧版本在线。
+4. 在 Catalog 执行下架时，Server 自动调用 Runner 移除发布链接并同步 Catalog 状态。
+
+外部链接工具不创建部署实体，仍按普通 Catalog 流程发布。`访问入口` 由维护者填写；平台托管模式的稳定 URL 则由 Server 在部署成功后自动生成。
+
+## 运维 API
+
+`/api/v1/deployable-applications/**` 是回滚、恢复、问题定位等运维能力。管理员可以通过 `GET /api/v1/deployable-applications/{id}` 查看 Release 和操作记录，通过 `/rollback`、`/offline`、`/restore` 执行显式运维动作；它们不是普通发布表单的必经步骤。
 
 所有面向用户的写接口都沿用 JoyHub 既有的 Session 与 CSRF 校验规则。
 
@@ -103,7 +109,7 @@ make test-runner
 make test-backend-app
 ```
 
-在本地服务和部署执行面运行期间，复现 v1/v2 发布、回滚、坏包隔离、下架、恢复、非维护者拒绝、Runner Token 拒绝和 Runner 重启恢复：
+在本地服务和部署执行面运行期间，复现 Catalog 一键发布/更新/下架，以及底层 v1/v2 发布、回滚、坏包隔离、恢复、非维护者拒绝、Runner Token 拒绝和 Runner 重启恢复：
 
 ```bash
 make deployment-smoke
