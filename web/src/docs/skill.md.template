@@ -1,13 +1,13 @@
 ---
 name: skillhub-registry
-description: Use this when you need to search, inspect, install, or publish agent skills against a SkillHub registry. SkillHub is a skill registry with a ClawHub-compatible API layer, so prefer the `clawhub` CLI for registry operations instead of making raw HTTP calls.
+description: Use this when you need to search, inspect, install, or publish agent skills against a SkillHub registry. Prefer the official SkillHub CLI; ClawHub compatibility is available for OpenClaw clients.
 ---
 
 # SkillHub Registry
 
 Use this skill when you need to work with a SkillHub registry: search skills, inspect metadata, install a package, or publish a new version.
 
-> Important: Prefer the `clawhub` CLI for registry workflows. SkillHub exposes a ClawHub-compatible API surface and a discovery endpoint at `/.well-known/clawhub.json`, so the CLI is the safest path for auth, resolution, and download behavior. Only fall back to raw HTTP when debugging the server itself.
+> Important: Prefer the official `skillhub` CLI for registry workflows. SkillHub exposes a native CLI and API for auth, resolution, and download behavior. The ClawHub-compatible API and `/.well-known/clawhub.json` remain available for OpenClaw clients.
 
 ## What SkillHub Is
 
@@ -16,8 +16,8 @@ SkillHub is an enterprise-oriented skill registry. It stores versioned skill pac
 Key facts:
 
 - Internal coordinates use `@{namespace}/{skill_slug}`.
-- If using the clawhub CLI, the compatible format is `{namespace}--{skill_slug}`.
-- ClawHub-compatible clients use a `{namespace}--{skill_slug}` slug instead.
+- The official CLI accepts `@namespace/skill_slug`, `namespace/skill_slug`, and the compatible `namespace--skill_slug` form.
+- ClawHub-compatible clients use a `{namespace}--{skill_slug}` slug.
 - `latest` always means the latest published version, never draft or pending review.
 - Public skills in `@global` can be downloaded anonymously.
 - If no namespace is specified, it defaults to `@global`.
@@ -26,23 +26,23 @@ Key facts:
 
 ## Configure The CLI
 
-Point `clawhub` at the SkillHub base URL:
+Point `skillhub` at the SkillHub base URL:
 
 ```bash
-export CLAWHUB_REGISTRY=${SKILLHUB_PUBLIC_BASE_URL}
+export SKILLHUB_REGISTRY=${SKILLHUB_PUBLIC_BASE_URL}
 ```
 
 Alternatively, use the `--registry` parameter every time, for example:
 
 ```bash
-npx clawhub install my-skill --registry ${SKILLHUB_PUBLIC_BASE_URL}
+npx @astron-team/skillhub@latest install my-skill --registry ${SKILLHUB_PUBLIC_BASE_URL}
 ```
 
 
 If you need authenticated access, provide an API token:
 
 ```bash
-clawhub login --token sk_your_api_token_here
+skillhub login --token sk_your_api_token_here
 ```
 
 Optional local check:
@@ -59,9 +59,9 @@ Expected response:
 
 ## Coordinate Rules - IMPORTANT
 
-SkillHub has two naming forms:
+SkillHub supports these naming forms:
 
-| SkillHub coordinate | Canonical slug for `clawhub` |
+| SkillHub coordinate | Canonical slug for ClawHub-compatible clients |
 |---|---|
 | `@global/my-skill` | `my-skill` |
 | `@team-name/my-skill` | `team-name--my-skill` |
@@ -75,9 +75,9 @@ Rules:
 Examples:
 
 ```bash
-npx clawhub install my-skill
-npx clawhub install my-skill@1.2.0
-npx clawhub install team-name--my-skill
+npx @astron-team/skillhub@latest install my-skill
+npx @astron-team/skillhub@latest install my-skill --version 1.2.0
+npx @astron-team/skillhub@latest install team-name/my-skill
 ```
 
 ## Common Workflows
@@ -85,28 +85,28 @@ npx clawhub install team-name--my-skill
 ### Search
 
 ```bash
-npx clawhub search email
+npx @astron-team/skillhub@latest search email
 ```
 
 Use an empty query when you want a broad listing:
 
 ```bash
-npx clawhub search ""
+npx @astron-team/skillhub@latest search ""
 ```
 
-### Inspect A Skill
+### Find A Skill
 
 ```bash
-npx clawhub info my-skill
-npx clawhub info team-name--my-skill
+skillhub search my-skill
+skillhub search team-name/my-skill
 ```
 
 ### Install
 
 ```bash
-npx clawhub install my-skill
-npx clawhub install my-skill@1.2.0
-npx clawhub install team-name--my-skill
+skillhub install my-skill
+skillhub install my-skill --version 1.2.0
+skillhub install team-name/my-skill
 ```
 
 ### Publish
@@ -114,7 +114,7 @@ npx clawhub install team-name--my-skill
 Prepare a skill package directory, then publish it:
 
 ```bash
-npx clawhub publish ./my-skill
+skillhub publish ./my-skill
 ```
 
 Publishing requires authentication and sufficient permissions in the target namespace.

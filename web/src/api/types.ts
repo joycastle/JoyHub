@@ -23,7 +23,7 @@ export interface AuthMethod {
   actionUrl: string
 }
 
-export type ApiToken = Omit<components['schemas']['TokenSummaryResponse'], 'id' | 'name' | 'tokenPrefix' | 'createdAt'> & {
+export interface ApiToken {
   id: number
   name: string
   tokenPrefix: string
@@ -32,13 +32,13 @@ export type ApiToken = Omit<components['schemas']['TokenSummaryResponse'], 'id' 
   lastUsedAt?: string
 }
 
-export type CreateTokenRequest = Omit<components['schemas']['TokenCreateRequest'], 'name'> & {
+export interface CreateTokenRequest {
   name: string
   scopes?: string[]
   expiresAt?: string
 }
 
-export type CreateTokenResponse = Omit<components['schemas']['TokenCreateResponse'], 'token' | 'id' | 'name' | 'tokenPrefix' | 'createdAt'> & {
+export interface CreateTokenResponse {
   token: string
   id: number
   name: string
@@ -288,6 +288,26 @@ export interface SkillSummary {
   publishedVersion?: SkillLifecycleVersion
   ownerPreviewVersion?: SkillLifecycleVersion
   resolutionMode?: string
+}
+
+export interface ResourceSummary {
+  resourceId: string
+  sourceType: 'SKILL' | 'CATALOG' | string
+  sourceId: number
+  kind: string
+  slug: string
+  name: string
+  summary?: string
+  namespace?: string
+  status: string
+  version?: string
+  versionStatus?: string
+  visibility?: string
+  downloadCount: number
+  starCount: number
+  ratingCount: number
+  canManage: boolean
+  updatedAt: string
 }
 
 

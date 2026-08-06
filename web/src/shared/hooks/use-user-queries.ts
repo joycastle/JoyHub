@@ -1,6 +1,6 @@
 import { useQuery, keepPreviousData } from '@tanstack/react-query'
-import type { SkillSummary, PagedResponse } from '@/api/types'
-import { meApi } from '@/api/client'
+import type { SkillSummary, PagedResponse, ResourceSummary } from '@/api/types'
+import { meApi, resourcesApi } from '@/api/client'
 
 async function getMySkills(params: { page?: number; size?: number; filter?: string; q?: string; namespace?: string } = {}): Promise<PagedResponse<SkillSummary>> {
   return meApi.getSkills(params)
@@ -27,6 +27,13 @@ export function useMySkills(params: { page?: number; size?: number; filter?: str
     queryKey: ['skills', 'my', params],
     queryFn: () => getMySkills(params),
     placeholderData: keepPreviousData,
+  })
+}
+
+export function useMyResources(params: { page?: number; size?: number; kind?: string; q?: string } = {}) {
+  return useQuery({
+    queryKey: ['resources', 'mine', params],
+    queryFn: (): Promise<PagedResponse<ResourceSummary>> => resourcesApi.mine(params),
   })
 }
 

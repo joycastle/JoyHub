@@ -6,7 +6,8 @@ export const catalogKeys = {
   all: ['catalog'] as const,
   lists: () => [...catalogKeys.all, 'list'] as const,
   list: (params: object) => [...catalogKeys.lists(), params] as const,
-  mine: () => [...catalogKeys.all, 'mine'] as const,
+  mineRoot: () => [...catalogKeys.all, 'mine'] as const,
+  mine: (params: object = {}) => [...catalogKeys.mineRoot(), params] as const,
   detail: (slug: string) => [...catalogKeys.all, 'detail', slug] as const,
 }
 
@@ -67,8 +68,8 @@ export function useCatalogResource(slug: string) {
   })
 }
 
-export function useMyCatalogResources() {
-  return useQuery({ queryKey: catalogKeys.mine(), queryFn: () => catalogApi.mine() })
+export function useMyCatalogResources(params: { page?: number; size?: number } = {}) {
+  return useQuery({ queryKey: catalogKeys.mine(params), queryFn: () => catalogApi.mine(params) })
 }
 
 export function useCreateCatalogResource() {
@@ -78,7 +79,7 @@ export function useCreateCatalogResource() {
     onSuccess: (resource) => {
       client.setQueryData(catalogKeys.detail(resource.slug), resource)
       void client.invalidateQueries({ queryKey: catalogKeys.lists() })
-      void client.invalidateQueries({ queryKey: catalogKeys.mine() })
+      void client.invalidateQueries({ queryKey: catalogKeys.mineRoot() })
     },
   })
 }
@@ -90,7 +91,7 @@ export function useUpdateCatalogResource() {
     onSuccess: (resource) => {
       client.setQueryData(catalogKeys.detail(resource.slug), resource)
       void client.invalidateQueries({ queryKey: catalogKeys.lists() })
-      void client.invalidateQueries({ queryKey: catalogKeys.mine() })
+      void client.invalidateQueries({ queryKey: catalogKeys.mineRoot() })
     },
   })
 }
@@ -102,7 +103,7 @@ export function useCatalogLifecycleAction(action: 'publish' | 'offline') {
     onSuccess: (resource) => {
       client.setQueryData(catalogKeys.detail(resource.slug), resource)
       void client.invalidateQueries({ queryKey: catalogKeys.lists() })
-      void client.invalidateQueries({ queryKey: catalogKeys.mine() })
+      void client.invalidateQueries({ queryKey: catalogKeys.mineRoot() })
     },
   })
 }

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type MouseEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useParams, useNavigate, useRouterState, useSearch } from '@tanstack/react-router'
 import { useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, ChevronDown, ChevronUp, Folder, Globe, Lock, RefreshCw, Terminal, User } from 'lucide-react'
+import { ArrowLeft, ChevronDown, ChevronUp, Folder, Globe, Lock, MoreHorizontal, RefreshCw, Terminal, User } from 'lucide-react'
 import { MarkdownRenderer } from '@/features/skill/markdown-renderer'
 import { resolvePackageRelativeLink } from '@/features/skill/package-relative-link'
 import { FileTree } from '@/features/skill/file-tree'
@@ -45,6 +45,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/shared/ui/input'
 import { toast } from '@/shared/lib/toast'
 import { cn } from '@/shared/lib/utils'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/shared/ui/dropdown-menu'
 import {
   useSkillDetail,
   useSkillVersions,
@@ -503,7 +504,7 @@ export function SkillDetailPage() {
         t('skillDetail.withdrawReviewSuccessDescription', { version: withdrawVersionTarget }),
       )
       setWithdrawVersionTarget(null)
-      navigate({ to: '/dashboard/skills' })
+      navigate({ to: '/dashboard/resources' })
     } catch (error) {
       toast.error(t('skillDetail.withdrawReviewErrorTitle'), error instanceof Error ? error.message : '')
       throw error
@@ -675,7 +676,35 @@ export function SkillDetailPage() {
               </span>
             )}
           </div>
-          <h1 className="text-balance text-4xl font-bold font-heading text-foreground">{skill.displayName}</h1>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <h1 className="text-balance text-4xl font-bold font-heading text-foreground">{skill.displayName}</h1>
+            {skill.canManageLifecycle ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" aria-label={t('skillDetail.moreActions')}>
+                    <MoreHorizontal className="mr-2 h-4 w-4" /> {t('skillDetail.moreActions')}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {skill.status !== 'ARCHIVED' ? (
+                    <DropdownMenuItem onSelect={() => navigate({ to: '/dashboard/publish', search: { namespace, visibility: skill.visibility } })}>
+                      {t('skillDetail.publishNewVersion')}
+                    </DropdownMenuItem>
+                  ) : null}
+                  <DropdownMenuItem onSelect={() => {
+                    if (skill.status === 'ARCHIVED') setUnarchiveConfirmOpen(true)
+                    else if (publishedVersion) setArchiveConfirmOpen(true)
+                  }}>
+                    {skill.status === 'ARCHIVED' ? t('skillDetail.unarchiveSkill') : t('skillDetail.archiveSkill')}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onSelect={() => navigate({ to: '/dashboard/resources' })}>
+                    {t('skillDetail.backToMyContent')}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : null}
+          </div>
           {skill.ownerDisplayName && (
             <div className="flex min-w-0">
               <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-border/60 bg-background/85 px-3 py-1.5 text-sm text-muted-foreground shadow-sm backdrop-blur-sm">

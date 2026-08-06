@@ -86,9 +86,8 @@ const NamespacePage = createLazyRouteComponent(() => import('@/pages/namespace')
 const SkillDetailPage = createLazyRouteComponent(() => import('@/pages/skill-detail'), 'SkillDetailPage')
 const SkillVersionComparePage = createLazyRouteComponent(() => import('@/pages/skill-version-compare'), 'SkillVersionComparePage')
 const DashboardPage = createLazyRouteComponent(() => import('@/pages/dashboard'), 'DashboardPage')
-const MySkillsPage = createLazyRouteComponent(() => import('@/pages/dashboard/my-skills'), 'MySkillsPage')
+const ResourcesPage = createLazyRouteComponent(() => import('@/pages/dashboard/resources'), 'ResourcesPage')
 const PublishPage = createLazyRouteComponent(() => import('@/pages/dashboard/publish'), 'PublishPage')
-const MyCatalogPage = createLazyRouteComponent(() => import('@/pages/dashboard/catalog'), 'MyCatalogPage')
 const PublishResourcePage = createLazyRouteComponent(() => import('@/pages/dashboard/publish-resource'), 'PublishResourcePage')
 const EditCatalogResourcePage = createLazyRouteComponent(() => import('@/pages/dashboard/edit-catalog-resource'), 'EditCatalogResourcePage')
 const MyStarsPage = createLazyRouteComponent(() => import('@/pages/dashboard/stars'), 'MyStarsPage')
@@ -280,6 +279,13 @@ const dashboardRoute = createRoute({
   component: DashboardPage,
 })
 
+const dashboardResourcesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: 'dashboard/resources',
+  beforeLoad: requireAuth,
+  component: ResourcesPage,
+})
+
 const dashboardSkillsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: 'dashboard/skills',
@@ -290,7 +296,8 @@ const dashboardSkillsRoute = createRoute({
     namespace: typeof search.namespace === 'string' && search.namespace ? search.namespace : undefined,
     filter: typeof search.filter === 'string' && search.filter ? search.filter : undefined,
   }),
-  component: MySkillsPage,
+  // Keep the old URL as a compatibility alias while the resource workspace becomes canonical.
+  component: ResourcesPage,
 })
 
 const dashboardPublishRoute = createRoute({
@@ -308,7 +315,8 @@ const dashboardCatalogRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: 'dashboard/catalog',
   beforeLoad: requireAuth,
-  component: MyCatalogPage,
+  // Keep the old URL as a compatibility alias while the resource workspace becomes canonical.
+  component: ResourcesPage,
 })
 
 const dashboardCatalogPublishRoute = createRoute({
@@ -450,6 +458,7 @@ const routeTree = rootRoute.addChildren([
   skillDetailRoute,
   skillVersionCompareRoute,
   dashboardRoute,
+  dashboardResourcesRoute,
   dashboardSkillsRoute,
   dashboardPublishRoute,
   dashboardCatalogRoute,

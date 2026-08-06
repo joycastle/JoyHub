@@ -130,7 +130,7 @@ export function PublishPage() {
         t('publish.publishedTitle'),
         t('publish.publishedDescription', { skill: skillLabel })
       )
-      navigate({ to: '/dashboard/skills' })
+      navigate({ to: '/dashboard/resources' })
     } catch (error) {
       handlePublishError(error)
     }
@@ -172,7 +172,7 @@ export function PublishPage() {
             failed: result.failed,
           })
         )
-        navigate({ to: '/dashboard/skills' })
+        navigate({ to: '/dashboard/resources' })
         return
       }
 

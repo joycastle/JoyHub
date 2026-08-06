@@ -32,6 +32,19 @@
     "saveAndDeploy": "保存并发布新版本",
     "saveResource": "保存并上线"
   },
+  "catalogDetail": {
+    "moreActions": "更多操作",
+    "edit": "编辑内容",
+    "updateVersion": "更新版本",
+    "publish": "发布内容",
+    "offline": "下架内容",
+    "backToMyContent": "返回我的内容",
+    "publishSuccessTitle": "内容已发布",
+    "offlineSuccessTitle": "内容已下架",
+    "publishErrorTitle": "发布失败",
+    "offlineErrorTitle": "下架失败",
+    "lifecycleSuccessDescription": "{{name}} 当前状态：{{status}}"
+  },
   "landing": {
     "hero": {
       "title": "发现与分享 AI 技能",
@@ -139,22 +152,22 @@
       },
       "human": {
         "description": "使用CLI工具安装Skills",
-        "command": "npx clawhub search <keyword>"
+        "command": "npx @astron-team/skillhub@latest search <keyword>"
       },
       "steps": {
         "configureEnv": {
           "title": "1. 配置环境变量",
-          "description": "设置 ClawHub CLI 连接到 SkillHub"
+          "description": "设置 SkillHub CLI 连接到当前注册表"
         },
         "installSkills": {
           "title": "2. 安装技能",
           "description": "搜索并安装你需要的技能",
-          "code": "# 搜索技能\nclawhub search <keyword>\n\n# 安装技能\nclawhub install <skill>"
+          "code": "# 搜索技能\nskillhub search <keyword>\n\n# 安装技能\nskillhub install <skill>"
         },
         "publishSkills": {
           "title": "3. 发布技能",
           "description": "分享你的技能给团队使用",
-          "code": "# 发布技能\nclawhub publish\n\n# 或使用网页界面\n# 点击\"发布技能\""
+          "code": "# 发布技能\nskillhub publish ./my-skill\n\n# 或使用网页界面\n# 点击\"发布技能\""
         }
       }
     }
@@ -253,17 +266,17 @@
       "steps": {
         "configureEnv": {
           "title": "1. 配置环境变量",
-          "description": "设置 ClawHub CLI 连接到 SkillHub"
+          "description": "设置 SkillHub CLI 连接到当前注册表"
         },
         "installSkills": {
           "title": "2. 安装技能",
           "description": "搜索并安装你需要的技能",
-          "code": "# 搜索技能\nclawhub search <keyword>\n\n# 安装技能\nclawhub install <skill>"
+          "code": "# 搜索技能\nskillhub search <keyword>\n\n# 安装技能\nskillhub install <skill>"
         },
         "publishSkills": {
           "title": "3. 发布技能",
           "description": "分享你的技能给团队使用",
-          "code": "# 发布技能\nclawhub publish\n\n# 或使用网页界面\n# 点击\"发布技能\""
+          "code": "# 发布技能\nskillhub publish ./my-skill\n\n# 或使用网页界面\n# 点击\"发布技能\""
         }
       }
     }
@@ -483,6 +496,7 @@
     "viewSubscriptions": "查看我的订阅",
     "mySkillsTitle": "我的技能",
     "openMySkills": "查看我的技能",
+    "openMyContent": "查看我的内容",
     "mySkillsPreviewDescription": "展示最近的 5 个技能，可进入详情或前往“我的技能”查看全部。",
     "mySkillsPreviewEmpty": "你还没有发布任何技能",
     "credentials": "访问凭证",
@@ -1038,6 +1052,9 @@
     "processing": "处理中...",
     "archiveSkill": "归档技能",
     "unarchiveSkill": "恢复技能",
+    "moreActions": "更多操作",
+    "publishNewVersion": "发布新版本",
+    "backToMyContent": "返回我的内容",
     "deleteSkill": "删除技能",
     "deleteSkillContinue": "继续删除",
     "deleteSkillFinal": "永久删除",
@@ -1473,6 +1490,48 @@
     "copied": "已复制",
     "copy": "复制"
   },
+  "resources": {
+    "title": "我的内容",
+    "subtitle": "统一管理你发布的 Skill、Agent、工具和其他能力资源。",
+    "publishSkill": "发布 Skill",
+    "publishResource": "发布工具/Agent",
+    "searchPlaceholder": "搜索名称、标识或描述",
+    "loading": "正在加载我的内容...",
+    "empty": "你还没有发布内容。",
+    "emptySearch": "没有找到匹配的内容。",
+    "noSummary": "暂无简介",
+    "open": "查看详情",
+    "edit": "编辑",
+    "updateVersion": "更新版本",
+    "publish": "发布",
+    "offline": "下架",
+    "archive": "归档",
+    "unarchive": "恢复",
+    "filters": {
+      "ALL": "全部",
+      "SKILL": "Skill",
+      "CATALOG": "工具/Agent"
+    },
+    "status": {
+      "active": "运行中",
+      "archived": "已归档",
+      "pendingReview": "审核中",
+      "published": "已发布",
+      "rejected": "已拒绝",
+      "draft": "草稿",
+      "offline": "已下架"
+    },
+    "archiveConfirmTitle": "确认归档 Skill",
+    "archiveConfirmDescription": "归档后普通用户将无法查看或下载“{{name}}”，确定继续吗？",
+    "unarchiveConfirmTitle": "确认恢复 Skill",
+    "unarchiveConfirmDescription": "恢复后“{{name}}”会重新可见，并允许继续发布版本。",
+    "archiveSuccessTitle": "已归档",
+    "archiveSuccessDescription": "“{{name}}”已归档。",
+    "archiveErrorTitle": "归档失败",
+    "unarchiveSuccessTitle": "已恢复",
+    "unarchiveSuccessDescription": "“{{name}}”已恢复。",
+    "unarchiveErrorTitle": "恢复失败"
+  },
   "pagination": {
     "prev": "上一页",
     "next": "下一页",
@@ -1484,6 +1543,7 @@
     "menu": {
       "dashboard": "控制台",
       "mySkills": "我的技能",
+      "myContent": "我的内容",
       "governance": "治理中心",
       "stars": "我的收藏",
       "subscriptions": "我的订阅",

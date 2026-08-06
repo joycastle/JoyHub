@@ -50,7 +50,7 @@ export function Layout() {
     { label: 'Agent 中心', to: '/agents' },
     { label: '工具中心', to: '/tools' },
     { label: t('nav.home'), to: '/skills' },
-    { label: '我的内容', to: '/dashboard/catalog' },
+    { label: '我的内容', to: '/dashboard/resources' },
   ]
 
   const isActive = (to: string, exact?: boolean) => {

@@ -52,6 +52,7 @@ import type {
   CatalogResourceSummary,
   DiscoveryAssistRequest,
   DiscoveryAssistResponse,
+  ResourceSummary,
 } from './types'
 import { ApiError } from '@/shared/lib/api-error'
 import i18n from '@/i18n/config'
@@ -134,10 +135,6 @@ async function ensureCsrfHeaders(headers?: HeadersInit): Promise<HeadersInit> {
     } as never)
   }
   return withCsrf(headers)
-}
-
-function isApiEnvelope<T>(value: unknown): value is ApiEnvelope<T> {
-  return typeof value === 'object' && value !== null && 'code' in value && 'msg' in value && 'data' in value
 }
 
 export function getCsrfHeaders(headers?: HeadersInit): HeadersInit {
@@ -230,6 +227,10 @@ export async function fetchJson<T>(input: RequestInfo | URL, init?: RequestWithT
     throw new ApiError('apiError.networkError', 0)
   } finally {
     cleanup()
+  }
+
+  if (response.status === 204) {
+    return undefined as T
   }
 
   let json: ApiEnvelope<T> | null = null
@@ -727,6 +728,18 @@ export const catalogApi = {
   },
 }
 
+export const resourcesApi = {
+  async mine(params: { page?: number; size?: number; kind?: string; q?: string } = {}): Promise<PagedResponse<ResourceSummary>> {
+    const query = new URLSearchParams({
+      page: String(params.page ?? 0),
+      size: String(params.size ?? 24),
+    })
+    if (params.kind) query.set('kind', params.kind)
+    if (params.q?.trim()) query.set('q', params.q.trim())
+    return fetchJson<PagedResponse<ResourceSummary>>(`${WEB_API_PREFIX}/resources/mine?${query.toString()}`)
+  },
+}
+
 export const discoveryApi = {
   async assist(request: DiscoveryAssistRequest): Promise<DiscoveryAssistResponse> {
     return fetchJson<DiscoveryAssistResponse>(`${WEB_API_PREFIX}/discovery/assist`, {
@@ -942,23 +955,10 @@ export const tokenApi = {
   },
 
   async deleteToken(tokenId: number): Promise<void> {
-    const { error, response } = await client.DELETE('/api/v1/tokens/{id}', {
-      params: {
-        path: {
-          id: tokenId,
-        },
-      },
-      headers: withCsrf(),
-    } as never)
-
-    if (response.status === 204) {
-      return
-    }
-
-    const envelope = (error && isApiEnvelope<void>(error) ? error : null) as { msg?: string } | null
-    if (!response.ok || error) {
-      throw new ApiError(envelope?.msg || `HTTP ${response.status}`, response.status, envelope?.msg, envelope?.msg)
-    }
+    await fetchJson<void>(`/api/v1/tokens/${tokenId}`, {
+      method: 'DELETE',
+      headers: await ensureCsrfHeaders(),
+    })
   },
 }
 
