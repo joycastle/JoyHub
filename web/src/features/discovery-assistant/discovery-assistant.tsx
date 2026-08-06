@@ -455,6 +455,16 @@ function SuggestionCard({ suggestion, onOpen, primary = false }: {
           </div>
         )}
       </div>
+      {suggestion.evidence ? (
+        <details className="mt-3 rounded-xl border border-dashed bg-muted/15 px-3 py-2">
+          <summary className="cursor-pointer list-none text-[10px] font-medium text-muted-foreground marker:content-none">
+            {t('discoveryAssistant.evidence', { source: suggestion.source ?? t('discoveryAssistant.document') })}
+          </summary>
+          <p className="mt-2 border-l-2 border-primary/20 pl-2 text-[11px] leading-5 text-muted-foreground">
+            {suggestion.evidence}
+          </p>
+        </details>
+      ) : null}
       <p className="mt-2 flex items-center gap-1.5 text-[10px] text-muted-foreground/75">
         <FileText className="h-3 w-3" />
         {t('discoveryAssistant.basedOn', { source: suggestion.source ?? t('discoveryAssistant.document') })}

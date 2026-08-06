@@ -27,6 +27,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class DiscoveryKnowledgeRetriever {
     private static final int RESULT_LIMIT = 6;
+    private static final int CHUNK_MAX_CHARS = 720;
+    private static final int CHUNK_OVERLAP_CHARS = 80;
     /**
      * Search must return a wider candidate window than the number shown in the
      * answer. The portal search intentionally applies recency as a tie-breaker;
@@ -46,7 +48,7 @@ public class DiscoveryKnowledgeRetriever {
     private final SkillSearchDocumentJpaRepository skillSearchDocumentRepository;
     private final SearchEmbeddingService embeddingService;
     private final SearchTextTokenizer tokenizer;
-    private final Map<String, String> catalogEmbeddingCache = new ConcurrentHashMap<>();
+    private final Map<String, List<IndexedChunk>> chunkCache = new ConcurrentHashMap<>();
 
     public DiscoveryKnowledgeRetriever(CatalogResourceRepository catalogRepository,
                                        CatalogResourcePolicy catalogPolicy,
@@ -111,12 +113,18 @@ public class DiscoveryKnowledgeRetriever {
         List<String> terms = meaningfulTerms(question);
         Map<Long, Double> semanticScores = new HashMap<>();
         Map<Long, Double> lexicalScores = new HashMap<>();
+        Map<Long, String> evidenceByResource = new HashMap<>();
         for (CatalogResource resource : visible) {
             String content = searchableContent(resource);
-            String cacheKey = resource.getId() + ":" + resource.getUpdatedAt();
-            String vector = catalogEmbeddingCache.computeIfAbsent(cacheKey, ignored -> embeddingService.embed(content));
-            semanticScores.put(resource.getId(), embeddingService.similarity(question, vector));
-            lexicalScores.put(resource.getId(), lexicalScore(terms, content));
+            ChunkMatch best = bestChunk(
+                    question,
+                    terms,
+                    resource.getId() + ":catalog:" + resource.getUpdatedAt(),
+                    content,
+                    resource.getSummary());
+            semanticScores.put(resource.getId(), best.semanticScore());
+            lexicalScores.put(resource.getId(), best.lexicalScore());
+            evidenceByResource.put(resource.getId(), best.text());
         }
 
         Map<Long, Integer> semanticRanks = ranks(visible, semanticScores);
@@ -132,8 +140,7 @@ public class DiscoveryKnowledgeRetriever {
                 .filter(match -> match.semanticScore() >= MIN_SEMANTIC_SCORE || match.lexicalScore() > 0D)
                 .sorted(Comparator.comparingDouble(RankedCatalog::score).reversed()
                         .thenComparing(match -> match.resource().getUpdatedAt(), Comparator.reverseOrder()))
-                .map(match -> catalogSuggestion(match.resource(), bestExcerpt(
-                        question, match.resource().getDocumentation(), match.resource().getSummary())))
+                .map(match -> catalogSuggestion(match.resource(), evidenceByResource.get(match.resource().getId())))
                 .toList();
     }
 
@@ -150,15 +157,18 @@ public class DiscoveryKnowledgeRetriever {
         return response.items().stream().map(skill -> {
             SkillSearchDocumentEntity document = documents.get(skill.id());
             String searchText = document == null ? "" : safe(document.getSearchText());
-            double lexicalScore = lexicalScore(terms, searchText);
-            double semanticScore = document == null || document.getSemanticVector() == null
-                    ? 0D : embeddingService.similarity(question, document.getSemanticVector());
-            String evidence = document == null ? null : bestExcerpt(
-                    question, searchText, skill.summary());
+            ChunkMatch best = document == null
+                    ? new ChunkMatch(skill.summary(), 0D, 0D)
+                    : bestChunk(
+                            question,
+                            terms,
+                            document.getSkillId() + ":skill:" + document.getUpdatedAt(),
+                            searchText,
+                            skill.summary());
             return new RankedSkill(new DiscoverySuggestionResponse(
                     "skill", skill.id(), skill.displayName(), skill.summary(), "SKILL",
-                    skill.slug(), skill.namespace(), null, null, evidence, "SKILL.md / 配套文档"),
-                    semanticScore, lexicalScore);
+                    skill.slug(), skill.namespace(), null, null, best.text(), "SKILL.md / 配套文档"),
+                    best.semanticScore(), best.lexicalScore());
         }).filter(match -> match.semanticScore() >= MIN_SEMANTIC_SCORE || match.lexicalScore() > 0D)
                 .sorted(Comparator.comparingDouble(DiscoveryKnowledgeRetriever::skillScore).reversed())
                 .map(RankedSkill::suggestion)
@@ -202,6 +212,83 @@ public class DiscoveryKnowledgeRetriever {
                 .filter(term -> term.length() > 1)
                 .filter(term -> !QUERY_STOP_WORDS.contains(term))
                 .toList();
+    }
+
+    /**
+     * Splits a resource document into small evidence units and scores the best unit for the query.
+     * The chunks are cached in-process so the lightweight implementation does not require a new
+     * vector database or a separate ingestion worker.
+     */
+    private ChunkMatch bestChunk(String question,
+                                 List<String> terms,
+                                 String cacheKey,
+                                 String content,
+                                 String fallback) {
+        List<IndexedChunk> chunks = chunkCache.computeIfAbsent(cacheKey,
+                ignored -> chunk(content).stream()
+                        .map(text -> new IndexedChunk(text, embeddingService.embed(text)))
+                        .toList());
+        if (chunks.isEmpty()) {
+            return new ChunkMatch(fallback, 0D, 0D);
+        }
+        return chunks.stream()
+                .map(chunk -> new ChunkMatch(
+                        chunk.text(),
+                        embeddingService.similarity(question, chunk.vector()),
+                        lexicalScore(terms, chunk.text())))
+                .max(Comparator.comparingDouble(this::chunkScore))
+                .orElse(new ChunkMatch(fallback, 0D, 0D));
+    }
+
+    private double chunkScore(ChunkMatch match) {
+        return match.semanticScore() + Math.min(match.lexicalScore(), 4D) * 0.2D;
+    }
+
+    static List<String> chunk(String content) {
+        if (content == null || content.isBlank()) {
+            return List.of();
+        }
+        List<String> paragraphs = new ArrayList<>();
+        for (String paragraph : content.split("(?m)(?=^#{1,6}\\s)|(?:\\R\\s*){2,}")) {
+            String normalized = paragraph.replaceAll("\\s+", " ").trim();
+            if (!normalized.isBlank()) {
+                paragraphs.add(normalized);
+            }
+        }
+        if (paragraphs.isEmpty()) {
+            paragraphs.add(content.replaceAll("\\s+", " ").trim());
+        }
+
+        List<String> chunks = new ArrayList<>();
+        StringBuilder current = new StringBuilder();
+        for (String paragraph : paragraphs) {
+            if (paragraph.length() <= CHUNK_MAX_CHARS) {
+                if (current.length() > 0 && current.length() + paragraph.length() + 1 > CHUNK_MAX_CHARS) {
+                    chunks.add(current.toString().trim());
+                    current.setLength(0);
+                }
+                if (current.length() > 0) {
+                    current.append(' ');
+                }
+                current.append(paragraph);
+                continue;
+            }
+            if (current.length() > 0) {
+                chunks.add(current.toString().trim());
+                current.setLength(0);
+            }
+            for (int start = 0; start < paragraph.length(); start += CHUNK_MAX_CHARS - CHUNK_OVERLAP_CHARS) {
+                int end = Math.min(paragraph.length(), start + CHUNK_MAX_CHARS);
+                chunks.add(paragraph.substring(start, end).trim());
+                if (end == paragraph.length()) {
+                    break;
+                }
+            }
+        }
+        if (current.length() > 0) {
+            chunks.add(current.toString().trim());
+        }
+        return chunks.stream().filter(chunk -> chunk.length() >= 12).toList();
     }
 
     private static double skillScore(RankedSkill match) {
@@ -250,5 +337,11 @@ public class DiscoveryKnowledgeRetriever {
 
     private record RankedSkill(DiscoverySuggestionResponse suggestion,
                                double semanticScore, double lexicalScore) {
+    }
+
+    private record IndexedChunk(String text, String vector) {
+    }
+
+    private record ChunkMatch(String text, double semanticScore, double lexicalScore) {
     }
 }

@@ -210,12 +210,25 @@ export type CatalogResourceDetail = Omit<
   visibleDepartments?: CatalogDepartment[]
   relatedResources?: CatalogResourceSummary[]
   relatedSkills?: CatalogRelatedSkill[]
+  agentUsageBoundary?: string
+  agentInputGuide?: string
+  agentOutputGuide?: string
+  agentSupportContact?: string
+  agentExamplePrompts?: string[]
   artifactFilename?: string
   artifactSize?: number
   canManage?: boolean
 }
 
-export type CatalogResourceRequest = components['schemas']['CatalogResourceRequest']
+// Keep the hand-written facade forward-compatible while the checked-in OpenAPI schema catches up
+// with the catalog agent profile fields introduced by the backend.
+export type CatalogResourceRequest = components['schemas']['CatalogResourceRequest'] & {
+  agentUsageBoundary?: string
+  agentInputGuide?: string
+  agentOutputGuide?: string
+  agentSupportContact?: string
+  agentExamplePrompts?: string[]
+}
 
 export type DiscoveryAssistRequest = components['schemas']['DiscoveryAssistRequest']
 
