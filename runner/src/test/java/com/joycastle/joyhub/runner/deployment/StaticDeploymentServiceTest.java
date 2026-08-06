@@ -15,6 +15,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.util.HexFormat;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import org.apache.commons.compress.archivers.zip.UnixStat;
 import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
@@ -111,6 +113,30 @@ class StaticDeploymentServiceTest {
                 .isEqualTo("IMMUTABLE_RELEASE_CONFLICT");
     }
 
+    @Test
+    void deploysProjectArchiveAfterRemovingDevelopmentMetadataAndUnwrappingRootDirectory() throws Exception {
+        Map<String, String> entries = new LinkedHashMap<>();
+        entries.put("board-preview/index.html", "preview");
+        entries.put("board-preview/app.js", "console.log('ok');");
+        entries.put("board-preview/assets/frame.png", "image");
+        entries.put("board-preview/README.md", "development notes");
+        entries.put("board-preview/release-notes.md", "more development notes");
+        entries.put("board-preview/.git/config", "[core]");
+        entries.put("__MACOSX/board-preview/._index.html", "metadata");
+        byte[] archive = zip(entries);
+
+        assertThat(service.deploy(deployRequest(1L, 11L, archive), archive).success()).isTrue();
+
+        Path release = tempDir.resolve("releases/demo-app/11");
+        assertThat(Files.readString(release.resolve("index.html"))).isEqualTo("preview");
+        assertThat(Files.readString(release.resolve("assets/frame.png"))).isEqualTo("image");
+        assertThat(release.resolve("board-preview")).doesNotExist();
+        assertThat(release.resolve("README.md")).doesNotExist();
+        assertThat(release.resolve("release-notes.md")).doesNotExist();
+        assertThat(release.resolve(".git/config")).doesNotExist();
+        assertThat(release.resolve("__MACOSX")).doesNotExist();
+    }
+
     private void assertRejected(byte[] zip, String code) {
         assertThatThrownBy(() -> service.deploy(deployRequest(99L, 99L, zip), zip))
                 .isInstanceOfSatisfying(RunnerException.class,
@@ -135,12 +161,18 @@ class StaticDeploymentServiceTest {
     }
 
     private byte[] zip(String name, String content) throws IOException {
+        return zip(Map.of(name, content));
+    }
+
+    private byte[] zip(Map<String, String> entries) throws IOException {
         try (ByteArrayOutputStream bytes = new ByteArrayOutputStream();
              ZipArchiveOutputStream zip = new ZipArchiveOutputStream(bytes)) {
-            ZipArchiveEntry entry = new ZipArchiveEntry(name);
-            zip.putArchiveEntry(entry);
-            zip.write(content.getBytes(StandardCharsets.UTF_8));
-            zip.closeArchiveEntry();
+            for (Map.Entry<String, String> source : entries.entrySet()) {
+                ZipArchiveEntry entry = new ZipArchiveEntry(source.getKey());
+                zip.putArchiveEntry(entry);
+                zip.write(source.getValue().getBytes(StandardCharsets.UTF_8));
+                zip.closeArchiveEntry();
+            }
             zip.finish();
             return bytes.toByteArray();
         }

@@ -19,10 +19,12 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.HexFormat;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
@@ -43,6 +45,9 @@ public class StaticDeploymentService {
             "png", "jpg", "jpeg", "gif", "webp", "ico", "woff", "woff2", "ttf", "otf",
             "wasm", "webmanifest", "pdf", "mp3", "mp4", "webm"
     );
+    private static final Set<String> IGNORED_DIRECTORY_NAMES = Set.of("__MACOSX", ".git", ".hg", ".svn");
+    private static final Set<String> IGNORED_FILE_NAMES = Set.of(
+            ".DS_Store", "Thumbs.db", "README", "README.md", "LICENSE", "LICENSE.md");
 
     private final RunnerProperties properties;
     private final StaticDeploymentVerifier verifier;
@@ -173,14 +178,19 @@ public class StaticDeploymentService {
     }
 
     private void extract(byte[] zipBytes, Path candidate) throws IOException {
-        preScan(zipBytes, candidate);
+        ArchiveLayout layout = preScan(zipBytes, candidate);
         long totalBytes = 0;
         int fileCount = 0;
         try (ZipArchiveInputStream input = new ZipArchiveInputStream(new ByteArrayInputStream(zipBytes))) {
             ZipArchiveEntry entry;
             while ((entry = input.getNextZipEntry()) != null) {
-                validateEntry(entry, candidate);
-                Path destination = candidate.resolve(entry.getName()).normalize();
+                validateEntryPath(entry.getName(), candidate);
+                String normalizedName = layout.normalizedEntryName(entry.getName());
+                if (normalizedName == null || normalizedName.isEmpty()) {
+                    continue;
+                }
+                validateEntry(entry, normalizedName, candidate);
+                Path destination = candidate.resolve(normalizedName).normalize();
                 if (entry.isDirectory()) {
                     Files.createDirectories(destination);
                     continue;
@@ -215,7 +225,8 @@ public class StaticDeploymentService {
         }
     }
 
-    private void preScan(byte[] zipBytes, Path candidate) throws IOException {
+    private ArchiveLayout preScan(byte[] zipBytes, Path candidate) throws IOException {
+        ArchiveLayout layout = detectLayout(zipBytes, candidate);
         int fileCount = 0;
         long declaredExpandedSize = 0;
         Set<Path> destinations = new HashSet<>();
@@ -224,11 +235,16 @@ public class StaticDeploymentService {
             Enumeration<ZipArchiveEntry> entries = zip.getEntriesInPhysicalOrder();
             while (entries.hasMoreElements()) {
                 ZipArchiveEntry entry = entries.nextElement();
-                validateEntry(entry, candidate);
+                validateEntryPath(entry.getName(), candidate);
+                String normalizedName = layout.normalizedEntryName(entry.getName());
+                if (normalizedName == null || normalizedName.isEmpty()) {
+                    continue;
+                }
+                validateEntry(entry, normalizedName, candidate);
                 if (!zip.canReadEntryData(entry)) {
                     throw new RunnerException("ZIP_ENTRY_UNREADABLE", "Static ZIP contains an unsupported or encrypted entry");
                 }
-                Path destination = candidate.resolve(entry.getName()).normalize();
+                Path destination = candidate.resolve(normalizedName).normalize();
                 if (!destinations.add(destination)) {
                     throw new RunnerException("ZIP_DUPLICATE_ENTRY", "Static ZIP contains duplicate paths");
                 }
@@ -244,27 +260,58 @@ public class StaticDeploymentService {
                 }
             }
         }
+        return layout;
     }
 
-    private void validateEntry(ZipArchiveEntry entry, Path candidate) {
-        String name = entry.getName();
-        if (name == null || name.isBlank() || name.indexOf('\0') >= 0 || name.contains("\\")
-                || name.startsWith("/") || name.matches("^[A-Za-z]:.*")) {
-            throw new RunnerException("ZIP_ENTRY_INVALID", "Static ZIP contains an invalid path");
+    private ArchiveLayout detectLayout(byte[] zipBytes, Path candidate) throws IOException {
+        List<String> publishableFiles = new ArrayList<>();
+        try (SeekableInMemoryByteChannel channel = new SeekableInMemoryByteChannel(zipBytes);
+             ZipFile zip = new ZipFile(channel)) {
+            Enumeration<ZipArchiveEntry> entries = zip.getEntriesInPhysicalOrder();
+            while (entries.hasMoreElements()) {
+                ZipArchiveEntry entry = entries.nextElement();
+                validateEntryPath(entry.getName(), candidate);
+                if (!isIgnoredEntry(entry.getName()) && !entry.isDirectory()) {
+                    publishableFiles.add(entry.getName());
+                }
+            }
         }
-        Path destination = candidate.resolve(name).normalize();
-        if (!destination.startsWith(candidate)) {
-            throw new RunnerException("ZIP_PATH_TRAVERSAL", "Static ZIP contains a path traversal entry");
+        return new ArchiveLayout(commonTopLevelDirectory(publishableFiles));
+    }
+
+    private String commonTopLevelDirectory(List<String> names) {
+        String commonDirectory = null;
+        for (String name : names) {
+            int separator = name.indexOf('/');
+            if (separator <= 0) {
+                return "";
+            }
+            String directory = name.substring(0, separator + 1);
+            if (commonDirectory == null) {
+                commonDirectory = directory;
+            } else if (!commonDirectory.equals(directory)) {
+                return "";
+            }
         }
-        int externalMode = (int) ((entry.getExternalAttributes() >> 16) & 0xffff);
-        int unixMode = entry.getUnixMode() != 0 ? entry.getUnixMode() : externalMode;
-        int type = unixMode & UnixStat.FILE_TYPE_FLAG;
-        if (entry.isUnixSymlink() || type == UnixStat.LINK_FLAG) {
-            throw new RunnerException("ZIP_SYMLINK_REJECTED", "Static ZIP cannot contain symbolic links");
+        return commonDirectory != null ? commonDirectory : "";
+    }
+
+    private static boolean isIgnoredEntry(String name) {
+        String[] segments = name.split("/");
+        for (String segment : segments) {
+            if (IGNORED_DIRECTORY_NAMES.contains(segment)) {
+                return true;
+            }
         }
-        if (type != 0 && type != UnixStat.FILE_FLAG && type != UnixStat.DIR_FLAG) {
-            throw new RunnerException("ZIP_SPECIAL_FILE_REJECTED", "Static ZIP cannot contain special files");
-        }
+        String filename = Path.of(name).getFileName().toString();
+        return filename.startsWith("._")
+                || filename.toLowerCase(Locale.ROOT).endsWith(".md")
+                || IGNORED_FILE_NAMES.contains(filename);
+    }
+
+    private void validateEntry(ZipArchiveEntry entry, String name, Path candidate) {
+        validateEntryPath(name, candidate);
+        validateEntryType(entry);
         if (!entry.isDirectory()) {
             validateExtension(name);
             if (entry.getSize() > properties.getMaxSingleFileSize()) {
@@ -275,6 +322,30 @@ public class StaticDeploymentService {
                     && entry.getSize() / compressedSize > properties.getMaxCompressionRatio()) {
                 throw new RunnerException("ZIP_COMPRESSION_RATIO_EXCEEDED", "Static ZIP contains a suspicious compression ratio");
             }
+        }
+    }
+
+    private void validateEntryPath(String name, Path candidate) {
+        if (name == null || name.isBlank() || name.indexOf('\0') >= 0 || name.contains("\\")
+                || name.startsWith("/") || name.matches("^[A-Za-z]:.*")
+                || name.equals(".") || name.startsWith("./") || name.contains("/./")) {
+            throw new RunnerException("ZIP_ENTRY_INVALID", "Static ZIP contains an invalid path");
+        }
+        Path destination = candidate.resolve(name).normalize();
+        if (!destination.startsWith(candidate)) {
+            throw new RunnerException("ZIP_PATH_TRAVERSAL", "Static ZIP contains a path traversal entry");
+        }
+    }
+
+    private void validateEntryType(ZipArchiveEntry entry) {
+        int externalMode = (int) ((entry.getExternalAttributes() >> 16) & 0xffff);
+        int unixMode = entry.getUnixMode() != 0 ? entry.getUnixMode() : externalMode;
+        int type = unixMode & UnixStat.FILE_TYPE_FLAG;
+        if (entry.isUnixSymlink() || type == UnixStat.LINK_FLAG) {
+            throw new RunnerException("ZIP_SYMLINK_REJECTED", "Static ZIP cannot contain symbolic links");
+        }
+        if (type != 0 && type != UnixStat.FILE_FLAG && type != UnixStat.DIR_FLAG) {
+            throw new RunnerException("ZIP_SPECIAL_FILE_REJECTED", "Static ZIP cannot contain special files");
         }
     }
 
@@ -416,6 +487,19 @@ public class StaticDeploymentService {
             });
         } catch (IOException ignored) {
             // Cleanup failure must not hide the deployment failure that triggered it.
+        }
+    }
+
+    private record ArchiveLayout(String rootDirectory) {
+        private String normalizedEntryName(String originalName) {
+            if (isIgnoredEntry(originalName)) {
+                return null;
+            }
+            if (rootDirectory.isEmpty()) {
+                return originalName;
+            }
+            return originalName.startsWith(rootDirectory)
+                    ? originalName.substring(rootDirectory.length()) : null;
         }
     }
 }

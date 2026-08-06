@@ -132,7 +132,7 @@ public class CatalogController extends BaseApiController {
     }
 
     @PostMapping("/resources")
-    @Operation(summary = "Create a Catalog resource")
+    @Operation(summary = "Create a Catalog resource or resume the current user's draft with the same slug")
     public ApiResponse<CatalogResourceDetailResponse> create(
             @Valid @RequestBody CatalogResourceRequest request,
             @AuthenticationPrincipal PlatformPrincipal principal,

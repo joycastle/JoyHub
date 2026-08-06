@@ -103,7 +103,8 @@ public class DeploymentStateService {
         requireNoRunningJob(applicationId);
 
         String version = normalizeVersion(requestedVersion);
-        if (releaseRepository.existsByApplicationIdAndVersion(applicationId, version)) {
+        if (releaseRepository.existsByApplicationIdAndVersionAndStatusNot(
+                applicationId, version, DeploymentReleaseStatus.FAILED)) {
             throw CatalogDomainException.conflict("error.deployment.release.version.exists", version);
         }
 

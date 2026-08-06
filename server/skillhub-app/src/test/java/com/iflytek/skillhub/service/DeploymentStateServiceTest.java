@@ -30,6 +30,7 @@ import com.iflytek.skillhub.catalog.domain.CatalogVisibilityScope;
 import com.iflytek.skillhub.config.DeploymentRunnerProperties;
 import com.iflytek.skillhub.domain.audit.AuditLogService;
 import com.iflytek.skillhub.storage.ObjectStorageService;
+import java.io.ByteArrayInputStream;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -128,6 +129,38 @@ class DeploymentStateServiceTest {
         assertThat(catalog.getVersion()).isEqualTo("v2");
         verify(auditLogService).record(
                 any(), any(), any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void failedReleaseDoesNotBlockRetryWithSameVersionAfterArtifactReplacement() {
+        CatalogResource catalog = catalog("owner");
+        catalog.attachArtifact("catalog/1/repaired.zip", "repaired.zip", "application/zip", 128);
+        DeployableApplication application = new DeployableApplication(
+                1L, DeploymentMode.STATIC, "http://localhost:8090/apps/demo-app/");
+        ReflectionTestUtils.setField(application, "id", 2L);
+        DeploymentRelease retry = release(2L, "v1", "owner");
+        ReflectionTestUtils.setField(retry, "id", 12L);
+        DeploymentJob job = new DeploymentJob(2L, 12L, DeploymentOperation.DEPLOY, "owner");
+        ReflectionTestUtils.setField(job, "id", 22L);
+
+        when(applicationRepository.findLockedById(2L)).thenReturn(Optional.of(application));
+        when(catalogRepository.findById(1L)).thenReturn(Optional.of(catalog));
+        when(jobRepository.existsByApplicationIdAndStatus(2L, DeploymentJobStatus.RUNNING)).thenReturn(false);
+        when(releaseRepository.existsByApplicationIdAndVersionAndStatusNot(
+                2L, "v1", DeploymentReleaseStatus.FAILED)).thenReturn(false);
+        when(storageService.getObject("catalog/1/repaired.zip"))
+                .thenReturn(new ByteArrayInputStream(new byte[] {1, 2, 3}));
+        when(releaseRepository.save(any())).thenReturn(retry);
+        when(jobRepository.save(any())).thenReturn(job);
+
+        DeploymentStateService.PendingDeployment pending = service.beginDeploy(
+                2L, "v1", new CatalogViewer("owner", null, null));
+
+        assertThat(pending.releaseId()).isEqualTo(12L);
+        assertThat(pending.jobId()).isEqualTo(22L);
+        verify(releaseRepository).existsByApplicationIdAndVersionAndStatusNot(
+                2L, "v1", DeploymentReleaseStatus.FAILED);
+        verify(releaseRepository, never()).existsByApplicationIdAndVersion(2L, "v1");
     }
 
     private CatalogResource catalog(String ownerId) {

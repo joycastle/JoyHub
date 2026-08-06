@@ -7,5 +7,7 @@ public interface DeploymentReleaseRepository {
     Optional<DeploymentRelease> findById(Long id);
     List<DeploymentRelease> findByApplicationId(Long applicationId);
     boolean existsByApplicationIdAndVersion(Long applicationId, String version);
+    boolean existsByApplicationIdAndVersionAndStatusNot(
+            Long applicationId, String version, DeploymentReleaseStatus status);
     DeploymentRelease save(DeploymentRelease release);
 }
