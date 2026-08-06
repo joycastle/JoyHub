@@ -10,6 +10,8 @@ import com.iflytek.skillhub.domain.label.SkillLabelRepository;
 import com.iflytek.skillhub.domain.namespace.Namespace;
 import com.iflytek.skillhub.domain.namespace.NamespaceRepository;
 import com.iflytek.skillhub.domain.skill.Skill;
+import com.iflytek.skillhub.domain.skill.SkillFile;
+import com.iflytek.skillhub.domain.skill.SkillFileRepository;
 import com.iflytek.skillhub.domain.skill.SkillRepository;
 import com.iflytek.skillhub.domain.skill.SkillVersion;
 import com.iflytek.skillhub.domain.skill.SkillVersionRepository;
@@ -17,9 +19,11 @@ import com.iflytek.skillhub.domain.skill.SkillVisibility;
 import com.iflytek.skillhub.search.SearchIndexService;
 import com.iflytek.skillhub.search.SearchTextTokenizer;
 import com.iflytek.skillhub.search.SkillSearchDocument;
+import com.iflytek.skillhub.storage.ObjectStorageService;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
+import java.io.ByteArrayInputStream;
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Optional;
@@ -263,6 +267,71 @@ class PostgresSearchRebuildServiceTest {
         assertThat(document.searchText()).contains("中文");
         assertThat(document.searchText()).contains("描述");
         assertThat(document.searchText()).contains("搜索");
+    }
+
+    @Test
+    void rebuildBySkill_shouldIndexOnlyTheRootSkillDocument() {
+        SkillRepository skillRepository = mock(SkillRepository.class);
+        NamespaceRepository namespaceRepository = mock(NamespaceRepository.class);
+        SkillVersionRepository skillVersionRepository = mock(SkillVersionRepository.class);
+        SkillFileRepository skillFileRepository = mock(SkillFileRepository.class);
+        ObjectStorageService objectStorageService = mock(ObjectStorageService.class);
+        SearchIndexService searchIndexService = mock(SearchIndexService.class);
+
+        Skill skill = new Skill(7L, "smart-agent", "owner-1", SkillVisibility.PUBLIC);
+        skill.setDisplayName("Smart Agent");
+        skill.setSummary("Builds workflows");
+        skill.setLatestVersionId(104L);
+
+        Namespace namespace = new Namespace("team-ai", "Team AI", "owner-1");
+        SkillVersion version = new SkillVersion(1L, "1.7.0", "owner-1");
+        setField(version, "id", 104L);
+        version.setParsedMetadataJson("{\"frontmatter\": {\"name\": \"Smart Agent\"}}");
+
+        when(skillRepository.findById(1L)).thenReturn(Optional.of(skill));
+        when(namespaceRepository.findById(7L)).thenReturn(Optional.of(namespace));
+        when(skillVersionRepository.findById(104L)).thenReturn(Optional.of(version));
+        when(skillFileRepository.findByVersionId(104L)).thenReturn(List.of(
+                new SkillFile(104L, "./SKILL.md", 20L, "text/markdown", "hash-1", "skill-doc"),
+                new SkillFile(104L, "README.md", 20L, "text/markdown", "hash-2", "readme"),
+                new SkillFile(104L, "config.yaml", 20L, "text/yaml", "hash-3", "config"),
+                new SkillFile(104L, "scripts/helper.py", 20L, "text/x-python", "hash-4", "helper")
+        ));
+        when(objectStorageService.getObject("skill-doc"))
+                .thenReturn(new ByteArrayInputStream("安装命令和使用说明".getBytes()));
+        when(objectStorageService.getObject("readme"))
+                .thenReturn(new ByteArrayInputStream("不应该进入检索".getBytes()));
+        when(objectStorageService.getObject("config"))
+                .thenReturn(new ByteArrayInputStream("不应该进入检索".getBytes()));
+        when(objectStorageService.getObject("helper"))
+                .thenReturn(new ByteArrayInputStream("不应该进入检索".getBytes()));
+
+        LabelDefinitionRepository labelDefinitionRepository = mock(LabelDefinitionRepository.class);
+        LabelTranslationRepository labelTranslationRepository = mock(LabelTranslationRepository.class);
+        SkillLabelRepository skillLabelRepository = mock(SkillLabelRepository.class);
+        when(skillLabelRepository.findBySkillId(1L)).thenReturn(List.of());
+        when(labelDefinitionRepository.findByIdIn(org.mockito.ArgumentMatchers.anyList())).thenReturn(List.of());
+        when(labelTranslationRepository.findByLabelIdIn(org.mockito.ArgumentMatchers.anyList())).thenReturn(List.of());
+
+        PostgresSearchRebuildService service = new PostgresSearchRebuildService(
+                skillRepository,
+                namespaceRepository,
+                skillVersionRepository,
+                skillFileRepository,
+                objectStorageService,
+                labelDefinitionRepository,
+                labelTranslationRepository,
+                skillLabelRepository,
+                searchIndexService,
+                new SearchTextTokenizer()
+        );
+
+        service.rebuildBySkill(1L);
+
+        ArgumentCaptor<SkillSearchDocument> captor = ArgumentCaptor.forClass(SkillSearchDocument.class);
+        verify(searchIndexService).index(captor.capture());
+        assertThat(captor.getValue().searchText()).contains("安装命令和使用说明");
+        assertThat(captor.getValue().searchText()).doesNotContain("不应该进入检索");
     }
 
     @Test

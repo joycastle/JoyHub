@@ -48,8 +48,7 @@ public class PostgresSearchRebuildService implements SearchRebuildService {
     private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() {};
     private static final int MAX_INDEXED_FILE_BYTES = 256 * 1024;
     private static final int MAX_INDEXED_DOCUMENT_BYTES = 1024 * 1024;
-    private static final Set<String> SEARCHABLE_EXTENSIONS = Set.of(
-            ".md", ".txt", ".json", ".yaml", ".yml", ".csv", ".tsv", ".xml", ".html");
+    private static final String PRIMARY_SKILL_DOCUMENT = "skill.md";
 
     private final SkillRepository skillRepository;
     private final NamespaceRepository namespaceRepository;
@@ -210,9 +209,12 @@ public class PostgresSearchRebuildService implements SearchRebuildService {
     }
 
     private boolean isSearchableTextFile(SkillFile file) {
-        String path = file.getFilePath().toLowerCase(Locale.ROOT);
+        String path = file.getFilePath().replace('\\', '/').trim();
+        while (path.startsWith("./")) {
+            path = path.substring(2);
+        }
         return file.getFileSize() <= MAX_INDEXED_FILE_BYTES
-                && SEARCHABLE_EXTENSIONS.stream().anyMatch(path::endsWith);
+                && PRIMARY_SKILL_DOCUMENT.equals(path.toLowerCase(Locale.ROOT));
     }
 
     private Optional<SkillVersion> resolveLatestVersion(Skill skill) {
