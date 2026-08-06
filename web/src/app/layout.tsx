@@ -9,7 +9,7 @@ import { getAppHeaderClassName } from './layout-header-style'
 import { getAppMainContentLayout, resolveAppMainContentPathname } from './layout-main-content'
 import { BrandMark } from '@/shared/components/brand-mark'
 import { PlatformOnboarding } from '@/features/onboarding/platform-onboarding'
-import { Search } from 'lucide-react'
+import { Bell, Compass, LogIn, Search } from 'lucide-react'
 import { DiscoveryAssistant } from '@/features/discovery-assistant/discovery-assistant'
 
 /**
@@ -45,19 +45,20 @@ export function Layout() {
     label: string
     to: string
     exact?: boolean
-    auth?: boolean
   }> = [
     { label: t('nav.landing'), to: '/', exact: true },
-    { label: 'Agent 中心', to: '/agents', auth: true },
-    { label: '工具中心', to: '/tools', auth: true },
+    { label: 'Agent 中心', to: '/agents' },
+    { label: '工具中心', to: '/tools' },
     { label: t('nav.home'), to: '/skills' },
-    { label: '我的内容', to: '/dashboard/catalog', auth: true },
+    { label: '我的内容', to: '/dashboard/catalog' },
   ]
 
   const isActive = (to: string, exact?: boolean) => {
     if (exact) return pathname === to
     return pathname === to
   }
+
+  const loginSearch = { returnTo: '' }
 
   return (
     <div className="min-h-screen flex flex-col relative overflow-x-clip" style={{ background: 'var(--bg-page, hsl(var(--background)))' }}>
@@ -79,7 +80,6 @@ export function Layout() {
 
         <nav className="hidden md:flex items-center gap-8 text-[15px] font-normal" style={{ color: 'hsl(var(--text-secondary))' }}>
           {navItems.map((item) => {
-            if (item.auth && !user) return null
             const active = isActive(item.to, item.exact)
 
             return (
@@ -108,18 +108,45 @@ export function Layout() {
           >
             <Search className="h-5 w-5" strokeWidth={1.8} />
           </Link>
-          <PlatformOnboarding userId={user?.userId} displayName={user?.displayName} />
+          {user ? (
+            <PlatformOnboarding userId={user.userId} displayName={user.displayName} />
+          ) : (
+            <Link
+              to="/login"
+              search={loginSearch}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-secondary hover:text-foreground"
+              aria-label="查看平台导览"
+              title="查看平台导览"
+            >
+              <Compass className="h-5 w-5" strokeWidth={1.8} />
+            </Link>
+          )}
           <LanguageSwitcher />
-          {user && <NotificationBell />}
+          {user ? (
+            <NotificationBell />
+          ) : (
+            <Link
+              to="/login"
+              search={loginSearch}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-secondary hover:text-foreground"
+              aria-label="查看通知"
+              title="查看通知"
+            >
+              <Bell className="h-5 w-5" strokeWidth={1.8} />
+            </Link>
+          )}
           {isLoading ? null : user ? (
             <UserMenu user={user} />
           ) : (
             <Link
               to="/login"
-              search={{ returnTo: '' }}
-              className="hover:opacity-80 transition-opacity"
+              search={loginSearch}
+              className="inline-flex items-center gap-2 rounded-full px-1 py-1 transition-colors hover:bg-secondary hover:text-foreground"
             >
-              {t('nav.login')}
+              <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-brand-gradient text-white">
+                <LogIn className="h-4 w-4" strokeWidth={2} />
+              </span>
+              <span>{t('nav.login')}</span>
             </Link>
           )}
         </div>
