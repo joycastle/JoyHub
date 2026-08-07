@@ -15,7 +15,9 @@ export function LoginPage() {
   const isChinese = i18n.resolvedLanguage?.split('-')[0] === 'zh'
   const { data: authMethods } = useAuthMethods(search.returnTo)
 
-  const returnTo = search.returnTo && search.returnTo.startsWith('/') ? search.returnTo : '/dashboard'
+  // The old fallback sent a fresh OAuth login to the legacy account dashboard. Keep the
+  // rebuilt JoyHub home as the canonical post-login destination when no route was requested.
+  const returnTo = search.returnTo && search.returnTo.startsWith('/') ? search.returnTo : '/'
   const disabledMessage = search.reason === 'accountDisabled' ? t('apiError.auth.accountDisabled') : null
   const hasFeishuLogin = authMethods?.some((method) => method.methodType === 'OAUTH_REDIRECT' && method.provider === 'feishu')
   const hasLoginMethod = authMethods === undefined || hasFeishuLogin

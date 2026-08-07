@@ -17,9 +17,11 @@ import { DiscoveryAssistant } from '@/features/discovery-assistant/discovery-ass
  */
 export function Layout() {
   const { t } = useTranslation()
-  const { pathname, resolvedPathname } = useRouterState({
+  const { pathname, searchStr, hash, resolvedPathname } = useRouterState({
     select: (s) => ({
       pathname: s.location.pathname,
+      searchStr: s.location.searchStr,
+      hash: s.location.hash,
       resolvedPathname: s.resolvedLocation?.pathname,
     }),
   })
@@ -58,7 +60,13 @@ export function Layout() {
     return pathname === to
   }
 
-  const loginSearch = { returnTo: '' }
+  // Keep the page the visitor was looking at when they start OAuth. This is especially
+  // important for the public search and JoyHub home pages: after Feishu redirects back,
+  // they should see the rebuilt page instead of falling through to the legacy dashboard.
+  const loginReturnTo = pathname === '/login' || pathname === '/register'
+    ? '/'
+    : `${pathname}${searchStr ?? ''}${hash ?? ''}`
+  const loginSearch = { returnTo: loginReturnTo || '/' }
 
   return (
     <div className="min-h-screen flex flex-col relative overflow-x-clip" style={{ background: 'var(--bg-page, hsl(var(--background)))' }}>

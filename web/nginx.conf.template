@@ -22,7 +22,18 @@ server {
     }
 
     location / {
+        # HTML is the SPA entry point. It must be revalidated after every deployment so a
+        # cached index cannot point at chunks from a previous image (which also made OAuth
+        # callbacks appear to return to the old frontend).
+        add_header Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0" always;
+        add_header Pragma "no-cache" always;
         try_files $uri $uri/ /index.html;
+    }
+
+    location = /index.html {
+        add_header Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0" always;
+        add_header Pragma "no-cache" always;
+        try_files $uri =404;
     }
 
     location /api/ {
