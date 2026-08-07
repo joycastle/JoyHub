@@ -9,6 +9,7 @@ import com.iflytek.skillhub.dto.ApiResponse;
 import com.iflytek.skillhub.dto.ApiResponseFactory;
 import com.iflytek.skillhub.dto.AgentDocumentationDraftRequest;
 import com.iflytek.skillhub.dto.CatalogResourceDetailResponse;
+import com.iflytek.skillhub.dto.ArchiveDocumentationDraftResponse;
 import com.iflytek.skillhub.dto.CatalogPublishRequest;
 import com.iflytek.skillhub.dto.CatalogResourceRequest;
 import com.iflytek.skillhub.dto.CatalogResourceSummaryResponse;
@@ -17,6 +18,7 @@ import com.iflytek.skillhub.dto.PageResponse;
 import com.iflytek.skillhub.service.AuditRequestContext;
 import com.iflytek.skillhub.service.CatalogArtifactAppService;
 import com.iflytek.skillhub.service.AgentDocumentationAiService;
+import com.iflytek.skillhub.service.ArchiveDocumentationAiService;
 import com.iflytek.skillhub.service.CatalogDeploymentLifecycleAppService;
 import com.iflytek.skillhub.service.CatalogResourceCommandAppService;
 import com.iflytek.skillhub.service.CatalogResourceQueryAppService;
@@ -59,12 +61,14 @@ public class CatalogController extends BaseApiController {
     private final CatalogArtifactAppService artifactAppService;
     private final CatalogDocumentExtractionService documentExtractionService;
     private final AgentDocumentationAiService agentDocumentationAiService;
+    private final ArchiveDocumentationAiService archiveDocumentationAiService;
 
     public CatalogController(CatalogResourceQueryAppService queryAppService,
                              CatalogResourceCommandAppService commandAppService,
                              CatalogDeploymentLifecycleAppService deploymentLifecycleAppService,
                              CatalogArtifactAppService artifactAppService, CatalogDocumentExtractionService documentExtractionService,
                              AgentDocumentationAiService agentDocumentationAiService,
+                             ArchiveDocumentationAiService archiveDocumentationAiService,
                              ApiResponseFactory responseFactory) {
         super(responseFactory);
         this.queryAppService = queryAppService;
@@ -73,6 +77,7 @@ public class CatalogController extends BaseApiController {
         this.artifactAppService = artifactAppService;
         this.documentExtractionService = documentExtractionService;
         this.agentDocumentationAiService = agentDocumentationAiService;
+        this.archiveDocumentationAiService = archiveDocumentationAiService;
     }
 
     @PostMapping(value = "/document-text", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -90,6 +95,19 @@ public class CatalogController extends BaseApiController {
             throw CatalogDomainException.forbidden("error.auth.required");
         }
         return ok("response.success.read", agentDocumentationAiService.draft(request, principal.userId(), language));
+    }
+
+    @PostMapping(value = "/tool-documentation-draft", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Generate a reviewable Tool usage-guide draft from an uploaded ZIP")
+    public ApiResponse<ArchiveDocumentationDraftResponse> generateToolDocumentationDraft(
+            @RequestPart("file") MultipartFile file,
+            @AuthenticationPrincipal PlatformPrincipal principal,
+            @RequestHeader(value = "Accept-Language", required = false) String language) {
+        if (principal == null) {
+            throw CatalogDomainException.forbidden("error.auth.required");
+        }
+        return ok("response.success.read", archiveDocumentationAiService.draft(
+                file, principal.userId(), language));
     }
 
     @GetMapping("/resources")

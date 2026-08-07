@@ -1516,6 +1516,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/web/catalog/tool-documentation-draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Generate a reviewable Tool usage-guide draft from an uploaded ZIP */
+        post: operations["generateToolDocumentationDraft"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/catalog/tool-documentation-draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Generate a reviewable Tool usage-guide draft from an uploaded ZIP */
+        post: operations["generateToolDocumentationDraft_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/catalog/resources/{slug}/transfer": {
         parameters: {
             query?: never;
@@ -4828,6 +4862,19 @@ export interface components {
             usage?: string;
             evidence?: string;
             source?: string;
+        };
+        ApiResponseArchiveDocumentationDraftResponse: {
+            /** Format: int32 */
+            code?: number;
+            msg?: string;
+            data?: components["schemas"]["ArchiveDocumentationDraftResponse"];
+            /** Format: date-time */
+            timestamp?: string;
+            requestId?: string;
+        };
+        ArchiveDocumentationDraftResponse: {
+            summary?: string;
+            documentation?: string;
         };
         CatalogTransferRequest: {
             newOwnerId: string;
@@ -9403,6 +9450,64 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ApiResponseDiscoveryAssistResponse"];
+                };
+            };
+        };
+    };
+    generateToolDocumentationDraft: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Accept-Language"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseArchiveDocumentationDraftResponse"];
+                };
+            };
+        };
+    };
+    generateToolDocumentationDraft_1: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Accept-Language"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseArchiveDocumentationDraftResponse"];
                 };
             };
         };
