@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type MouseEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useParams, useNavigate, useRouterState, useSearch } from '@tanstack/react-router'
 import { useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, ChevronDown, ChevronUp, Folder, Globe, Lock, MoreHorizontal, RefreshCw, Terminal, User } from 'lucide-react'
+import { ArrowLeft, ChevronDown, ChevronUp, Folder, Globe, Lock, MoreHorizontal, RefreshCw, Terminal } from 'lucide-react'
 import { MarkdownRenderer } from '@/features/skill/markdown-renderer'
 import { resolvePackageRelativeLink } from '@/features/skill/package-relative-link'
 import { FileTree } from '@/features/skill/file-tree'
@@ -35,6 +35,7 @@ import { formatLocalDateTime } from '@/shared/lib/date-time'
 import { resolveDocumentationFilePath } from '@/shared/lib/skill-documentation'
 import { getHeadlineVersion, getPublishedVersion } from '@/shared/lib/skill-lifecycle'
 import { NamespaceBadge } from '@/shared/components/namespace-badge'
+import { ResourceDetailHeader, ResourceDetailLayout } from '@/entities/resource/resource-detail-shell'
 import { useSkillRepositories } from '@/shared/hooks/use-skill-repositories'
 import { resolveRepositoryDisplayName } from '@/shared/lib/repository-display'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/shared/ui/tabs'
@@ -633,111 +634,98 @@ export function SkillDetailPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto flex flex-col lg:flex-row gap-8 animate-fade-up">
+    <ResourceDetailLayout>
       {/* Main Content */}
       <div className="flex-1 min-w-0 space-y-8">
-        <div className="space-y-3">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-2 px-0 text-muted-foreground hover:text-foreground"
-            onClick={handleBack}
-          >
-            <ArrowLeft className="h-4 w-4" />
-            {t('skillDetail.back')}
-          </Button>
-          <div className="flex items-center gap-3 mb-1">
-            <NamespaceBadge
-              type="GLOBAL"
-              name={resolveRepositoryDisplayName(namespace, repositories)}
-            />
-            {skill.status && (
-              <span className={cn(
-                'badge-soft',
-                skill.status === 'ACTIVE' && 'badge-soft-green',
-                skill.status === 'ARCHIVED' && 'bg-secondary text-muted-foreground',
-                skill.status === 'HIDDEN' && 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
-                !['ACTIVE', 'ARCHIVED', 'HIDDEN'].includes(skill.status) && 'badge-soft-blue',
-              )}>
-                {resolveSkillStatusLabel(skill.status)}
-              </span>
-            )}
-            {skill.visibility && (
-              <span className={cn(
-                'badge-soft inline-flex items-center gap-1',
-                skill.visibility === 'PUBLIC' && 'badge-soft-green',
-                skill.visibility === 'PRIVATE' && 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
-                skill.visibility === 'NAMESPACE_ONLY' && 'badge-soft-blue',
-              )}>
-                {(skill.visibility === 'PUBLIC' || skill.visibility === 'NAMESPACE_ONLY') && <Globe className="h-3 w-3" />}
-                {skill.visibility === 'PRIVATE' && <Lock className="h-3 w-3" />}
-                {(skill.visibility === 'PUBLIC' || skill.visibility === 'NAMESPACE_ONLY') && t('publish.visibilityOptions.warehouse')}
-                {skill.visibility === 'PRIVATE' && t('publish.visibilityOptions.private')}
-              </span>
-            )}
-          </div>
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <h1 className="text-balance text-4xl font-bold font-heading text-foreground">{skill.displayName}</h1>
-            {skill.canManageLifecycle ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" aria-label={t('skillDetail.moreActions')}>
-                    <MoreHorizontal className="mr-2 h-4 w-4" /> {t('skillDetail.moreActions')}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  {skill.status !== 'ARCHIVED' ? (
-                    <DropdownMenuItem onSelect={() => navigate({ to: '/dashboard/publish', search: { namespace, visibility: skill.visibility } })}>
-                      {t('skillDetail.publishNewVersion')}
-                    </DropdownMenuItem>
-                  ) : null}
-                  <DropdownMenuItem onSelect={() => {
-                    if (skill.status === 'ARCHIVED') setUnarchiveConfirmOpen(true)
-                    else if (publishedVersion) setArchiveConfirmOpen(true)
-                  }}>
-                    {skill.status === 'ARCHIVED' ? t('skillDetail.unarchiveSkill') : t('skillDetail.archiveSkill')}
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onSelect={() => navigate({ to: '/dashboard/resources' })}>
-                    {t('skillDetail.backToMyContent')}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : null}
-          </div>
-          {skill.ownerDisplayName && (
-            <div className="flex min-w-0">
-              <div className="inline-flex max-w-full items-center gap-2 rounded-full border border-border/60 bg-background/85 px-3 py-1.5 text-sm text-muted-foreground shadow-sm backdrop-blur-sm">
-                <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[11px] font-semibold uppercase tracking-[0.08em] text-primary">
-                  <User className="h-3.5 w-3.5" aria-hidden="true" />
+        <ResourceDetailHeader
+          backAction={(
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-2 px-0 text-muted-foreground hover:text-foreground"
+              onClick={handleBack}
+            >
+              <ArrowLeft className="h-4 w-4" />
+              {t('skillDetail.back')}
+            </Button>
+          )}
+          badges={(
+            <>
+              <NamespaceBadge
+                type="GLOBAL"
+                name={resolveRepositoryDisplayName(namespace, repositories)}
+              />
+              {skill.status && (
+                <span className={cn(
+                  'badge-soft',
+                  skill.status === 'ACTIVE' && 'badge-soft-green',
+                  skill.status === 'ARCHIVED' && 'bg-secondary text-muted-foreground',
+                  skill.status === 'HIDDEN' && 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
+                  !['ACTIVE', 'ARCHIVED', 'HIDDEN'].includes(skill.status) && 'badge-soft-blue',
+                )}>
+                  {resolveSkillStatusLabel(skill.status)}
                 </span>
-                <span className="min-w-0 truncate">{t('skillDetail.authorLabel', { name: skill.ownerDisplayName })}</span>
-              </div>
-            </div>
+              )}
+              {skill.visibility && (
+                <span className={cn(
+                  'badge-soft inline-flex items-center gap-1',
+                  skill.visibility === 'PUBLIC' && 'badge-soft-green',
+                  skill.visibility === 'PRIVATE' && 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
+                  skill.visibility === 'NAMESPACE_ONLY' && 'badge-soft-blue',
+                )}>
+                  {(skill.visibility === 'PUBLIC' || skill.visibility === 'NAMESPACE_ONLY') && <Globe className="h-3 w-3" />}
+                  {skill.visibility === 'PRIVATE' && <Lock className="h-3 w-3" />}
+                  {(skill.visibility === 'PUBLIC' || skill.visibility === 'NAMESPACE_ONLY') && t('publish.visibilityOptions.warehouse')}
+                  {skill.visibility === 'PRIVATE' && t('publish.visibilityOptions.private')}
+                </span>
+              )}
+            </>
           )}
-          {skill.summary && (
-            <p className="text-lg text-muted-foreground leading-relaxed">{skill.summary}</p>
-          )}
-          {(skill.labels?.length ?? 0) > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {skill.labels!.map((label) => (
-                <Link
-                  key={label.slug}
-                  to="/search"
-                  search={getSkillLabelSearch(label.slug)}
-                  className={cn(
-                    'inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70 focus-visible:ring-offset-2',
-                    label.type === 'PRIVILEGED'
-                      ? 'border-amber-500/40 bg-amber-100 text-amber-900 hover:bg-amber-200/80'
-                      : 'border-slate-300 bg-slate-100 text-slate-800 hover:bg-slate-200/80',
-                  )}
-                >
-                  {label.displayName}
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
+          title={skill.displayName}
+          owner={skill.ownerDisplayName ? t('skillDetail.authorLabel', { name: skill.ownerDisplayName }) : undefined}
+          summary={skill.summary}
+          actions={skill.canManageLifecycle ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" aria-label={t('skillDetail.moreActions')}>
+                  <MoreHorizontal className="mr-2 h-4 w-4" /> {t('skillDetail.moreActions')}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {skill.status !== 'ARCHIVED' ? (
+                  <DropdownMenuItem onSelect={() => navigate({ to: '/dashboard/publish', search: { namespace, visibility: skill.visibility } })}>
+                    {t('skillDetail.publishNewVersion')}
+                  </DropdownMenuItem>
+                ) : null}
+                <DropdownMenuItem onSelect={() => {
+                  if (skill.status === 'ARCHIVED') setUnarchiveConfirmOpen(true)
+                  else if (publishedVersion) setArchiveConfirmOpen(true)
+                }}>
+                  {skill.status === 'ARCHIVED' ? t('skillDetail.unarchiveSkill') : t('skillDetail.archiveSkill')}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={() => navigate({ to: '/dashboard/resources' })}>
+                  {t('skillDetail.backToMyContent')}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : null}
+          tags={(skill.labels?.length ?? 0) > 0 ? skill.labels!.map((label) => (
+            <Link
+              key={label.slug}
+              to="/search"
+              search={getSkillLabelSearch(label.slug)}
+              className={cn(
+                'inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70 focus-visible:ring-offset-2',
+                label.type === 'PRIVILEGED'
+                  ? 'border-amber-500/40 bg-amber-100 text-amber-900 hover:bg-amber-200/80'
+                  : 'border-slate-300 bg-slate-100 text-slate-800 hover:bg-slate-200/80',
+              )}
+            >
+              {label.displayName}
+            </Link>
+          )) : undefined}
+        />
 
         <Tabs defaultValue="readme">
           <TabsList>
@@ -1369,6 +1357,6 @@ export function SkillDetailPage() {
         onDownload={handleDownloadFile}
         onLinkClick={handlePreviewLinkClick}
       />
-    </div>
+    </ResourceDetailLayout>
   )
 }
