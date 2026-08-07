@@ -312,6 +312,15 @@ export interface ResourceSummary {
   favorited: boolean
 }
 
+export interface ResourceStats {
+  resourceId: string
+  viewCount: number
+  useCount: number
+  downloadCount: number
+  favoriteCount: number
+  favorited: boolean
+}
+
 
 export type LabelItem = Omit<components['schemas']['SkillLabelDto'], 'slug' | 'type' | 'displayName'> & {
   slug: string

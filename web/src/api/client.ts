@@ -53,6 +53,7 @@ import type {
   DiscoveryAssistRequest,
   DiscoveryAssistResponse,
   ResourceSummary,
+  ResourceStats,
 } from './types'
 import { ApiError } from '@/shared/lib/api-error'
 import i18n from '@/i18n/config'
@@ -784,6 +785,24 @@ export const resourcesApi = {
 
   async favoriteState(resourceId: string): Promise<boolean> {
     return fetchJson(`${WEB_API_PREFIX}/resources/${encodeURIComponent(resourceId)}/favorite`)
+  },
+
+  async stats(resourceId: string): Promise<ResourceStats> {
+    return fetchJson<ResourceStats>(`${WEB_API_PREFIX}/resources/${encodeURIComponent(resourceId)}/stats`)
+  },
+
+  async recordView(resourceId: string): Promise<void> {
+    await fetchJson(`${WEB_API_PREFIX}/resources/${encodeURIComponent(resourceId)}/stats/view`, {
+      method: 'POST',
+      headers: await ensureCsrfHeaders(),
+    })
+  },
+
+  async recordUse(resourceId: string): Promise<void> {
+    await fetchJson(`${WEB_API_PREFIX}/resources/${encodeURIComponent(resourceId)}/stats/use`, {
+      method: 'POST',
+      headers: await ensureCsrfHeaders(),
+    })
   },
 
   downloadUrl(resourceId: string): string {

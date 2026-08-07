@@ -7,6 +7,7 @@ import com.iflytek.skillhub.dto.ApiResponseFactory;
 import com.iflytek.skillhub.dto.PageResponse;
 import com.iflytek.skillhub.dto.ResourceActionResponse;
 import com.iflytek.skillhub.dto.ResourceSummaryResponse;
+import com.iflytek.skillhub.dto.ResourceStatsResponse;
 import com.iflytek.skillhub.domain.namespace.NamespaceRole;
 import com.iflytek.skillhub.service.AuditRequestContext;
 import com.iflytek.skillhub.exception.UnauthorizedException;
@@ -14,6 +15,7 @@ import com.iflytek.skillhub.service.ResourceAppService;
 import com.iflytek.skillhub.service.ResourceDownloadAppService;
 import com.iflytek.skillhub.service.ResourceFavoriteAppService;
 import com.iflytek.skillhub.service.ResourceLifecycleAppService;
+import com.iflytek.skillhub.service.ResourceStatsAppService;
 import jakarta.servlet.http.HttpServletRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -45,17 +47,20 @@ public class ResourceController extends BaseApiController {
     private final ResourceLifecycleAppService resourceLifecycleAppService;
     private final ResourceFavoriteAppService resourceFavoriteAppService;
     private final ResourceDownloadAppService resourceDownloadAppService;
+    private final ResourceStatsAppService resourceStatsAppService;
 
     public ResourceController(ResourceAppService resourceAppService,
                               ResourceLifecycleAppService resourceLifecycleAppService,
                               ResourceFavoriteAppService resourceFavoriteAppService,
                               ResourceDownloadAppService resourceDownloadAppService,
+                              ResourceStatsAppService resourceStatsAppService,
                               ApiResponseFactory responseFactory) {
         super(responseFactory);
         this.resourceAppService = resourceAppService;
         this.resourceLifecycleAppService = resourceLifecycleAppService;
         this.resourceFavoriteAppService = resourceFavoriteAppService;
         this.resourceDownloadAppService = resourceDownloadAppService;
+        this.resourceStatsAppService = resourceStatsAppService;
     }
 
     @GetMapping("/mine")
@@ -146,6 +151,29 @@ public class ResourceController extends BaseApiController {
                                                @AuthenticationPrincipal PlatformPrincipal principal) {
         String userId = requireUser(principal);
         return ok("response.success.read", resourceFavoriteAppService.isFavorited(resourceId, userId));
+    }
+
+    @GetMapping("/{resourceId}/stats")
+    @Operation(summary = "Read unified resource usage statistics")
+    public ApiResponse<ResourceStatsResponse> stats(
+            @PathVariable String resourceId,
+            @AuthenticationPrincipal PlatformPrincipal principal) {
+        return ok("response.success.read", resourceStatsAppService.get(
+                resourceId, principal != null ? principal.userId() : null));
+    }
+
+    @PostMapping("/{resourceId}/stats/view")
+    @Operation(summary = "Record a resource detail view")
+    public ApiResponse<Void> recordView(@PathVariable String resourceId) {
+        resourceStatsAppService.recordView(resourceId);
+        return ok("response.success.updated", null);
+    }
+
+    @PostMapping("/{resourceId}/stats/use")
+    @Operation(summary = "Record a resource use action")
+    public ApiResponse<Void> recordUse(@PathVariable String resourceId) {
+        resourceStatsAppService.recordUse(resourceId);
+        return ok("response.success.updated", null);
     }
 
     @GetMapping("/{resourceId}/download")

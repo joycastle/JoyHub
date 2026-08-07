@@ -21,17 +21,20 @@ public class ResourceDownloadAppService {
     private final CatalogResourceRepository catalogRepository;
     private final SkillDownloadService skillDownloadService;
     private final CatalogArtifactAppService catalogArtifactAppService;
+    private final ResourceStatsAppService resourceStatsAppService;
 
     public ResourceDownloadAppService(SkillRepository skillRepository,
                                       NamespaceRepository namespaceRepository,
                                       CatalogResourceRepository catalogRepository,
                                       SkillDownloadService skillDownloadService,
-                                      CatalogArtifactAppService catalogArtifactAppService) {
+                                      CatalogArtifactAppService catalogArtifactAppService,
+                                      ResourceStatsAppService resourceStatsAppService) {
         this.skillRepository = skillRepository;
         this.namespaceRepository = namespaceRepository;
         this.catalogRepository = catalogRepository;
         this.skillDownloadService = skillDownloadService;
         this.catalogArtifactAppService = catalogArtifactAppService;
+        this.resourceStatsAppService = resourceStatsAppService;
     }
 
     public ResourceDownload download(String resourceId,
@@ -61,6 +64,7 @@ public class ResourceDownloadAppService {
                     new CatalogViewer(userId,
                             namespaceRoles != null ? namespaceRoles : Map.of(),
                             platformRoles != null ? platformRoles : Set.of()));
+            resourceStatsAppService.recordDownload(reference.value());
             return new ResourceDownload(result.stream(), result.filename(), result.contentType(), result.size());
         }
         throw new com.iflytek.skillhub.exception.BadRequestException(

@@ -64,6 +64,12 @@ public class RouteSecurityPolicyRegistry {
             RouteAuthorizationPolicy.permitAll(HttpMethod.GET, "/api/web/skills/*/*/tags/*/files"),
             RouteAuthorizationPolicy.permitAll(HttpMethod.GET, "/api/web/skills/*/*/tags/*/file"),
             RouteAuthorizationPolicy.permitAll(HttpMethod.GET, "/api/web/labels"),
+            RouteAuthorizationPolicy.permitAll(HttpMethod.GET, "/api/v1/resources/*/stats"),
+            RouteAuthorizationPolicy.permitAll(HttpMethod.GET, "/api/web/resources/*/stats"),
+            RouteAuthorizationPolicy.permitAll(HttpMethod.POST, "/api/v1/resources/*/stats/view"),
+            RouteAuthorizationPolicy.permitAll(HttpMethod.POST, "/api/v1/resources/*/stats/use"),
+            RouteAuthorizationPolicy.permitAll(HttpMethod.POST, "/api/web/resources/*/stats/view"),
+            RouteAuthorizationPolicy.permitAll(HttpMethod.POST, "/api/web/resources/*/stats/use"),
             RouteAuthorizationPolicy.roles(HttpMethod.DELETE, "/api/v1/skills/id/*", "SUPER_ADMIN"),
             RouteAuthorizationPolicy.roles(HttpMethod.DELETE, "/api/v1/skills/*/*", "SUPER_ADMIN"),
             RouteAuthorizationPolicy.authenticated(HttpMethod.DELETE, "/api/web/skills/id/*"),
@@ -100,6 +106,12 @@ public class RouteSecurityPolicyRegistry {
             ApiTokenPolicy.allow(HttpMethod.GET, "/api/v1/skills/**"),
             ApiTokenPolicy.allow(HttpMethod.GET, "/api/web/skills"),
             ApiTokenPolicy.allow(HttpMethod.GET, "/api/web/skills/**"),
+            ApiTokenPolicy.allow(HttpMethod.GET, "/api/v1/resources/*/stats"),
+            ApiTokenPolicy.allow(HttpMethod.GET, "/api/web/resources/*/stats"),
+            ApiTokenPolicy.allow(HttpMethod.POST, "/api/v1/resources/*/stats/view"),
+            ApiTokenPolicy.allow(HttpMethod.POST, "/api/v1/resources/*/stats/use"),
+            ApiTokenPolicy.allow(HttpMethod.POST, "/api/web/resources/*/stats/view"),
+            ApiTokenPolicy.allow(HttpMethod.POST, "/api/web/resources/*/stats/use"),
             ApiTokenPolicy.allow(HttpMethod.GET, "/api/v1/namespaces"),
             ApiTokenPolicy.allow(HttpMethod.GET, "/api/v1/namespaces/*"),
             ApiTokenPolicy.allow(HttpMethod.GET, "/api/web/namespaces"),
@@ -168,7 +180,8 @@ public class RouteSecurityPolicyRegistry {
             return false;
         }
         return "/api/v1/auth/device/code".equals(path)
-                || "/api/v1/auth/device/token".equals(path);
+                || "/api/v1/auth/device/token".equals(path)
+                || isResourceStatsMutation(path);
     }
 
     public boolean shouldProjectRequestContext(String path) {
@@ -177,6 +190,11 @@ public class RouteSecurityPolicyRegistry {
 
     private boolean isApiPath(String path) {
         return shouldProjectRequestContext(path);
+    }
+
+    private boolean isResourceStatsMutation(String path) {
+        return path != null && (path.matches("/api/v1/resources/[^/]+/stats/(view|use)")
+                || path.matches("/api/web/resources/[^/]+/stats/(view|use)"));
     }
 
     public record ApiTokenAuthorizationDecision(boolean allowed, String requiredScope, String message) {

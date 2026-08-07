@@ -37,6 +37,7 @@ import { getHeadlineVersion, getPublishedVersion } from '@/shared/lib/skill-life
 import { NamespaceBadge } from '@/shared/components/namespace-badge'
 import { ResourceDetailHeader, ResourceDetailLayout } from '@/entities/resource/resource-detail-shell'
 import { useSkillRepositories } from '@/shared/hooks/use-skill-repositories'
+import { useRecordResourceUse, useResourceStats } from '@/shared/hooks/use-resource-queries'
 import { resolveRepositoryDisplayName } from '@/shared/lib/repository-display'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/shared/ui/tabs'
 import { Button } from '@/shared/ui/button'
@@ -169,6 +170,8 @@ export function SkillDetailPage() {
   const canHardDeleteSkill = Boolean(skill && user && hasRole('SUPER_ADMIN'))
   const canManageLabels = Boolean(skill && user && (skill.canManageLifecycle || hasRole('SUPER_ADMIN')))
   const isVersionDownloadable = selectedVersionEntry?.status === 'PUBLISHED' && (selectedVersionEntry?.downloadAvailable ?? false)
+  const resourceStats = useResourceStats(skill ? `skill:${skill.id}` : '', skillReady)
+  const recordResourceUse = useRecordResourceUse()
 
   useEffect(() => {
     // Recompute collapse rules whenever rendered documentation height changes so the page can keep
@@ -938,7 +941,28 @@ export function SkillDetailPage() {
 
           <div className="flex items-center justify-between">
             <div className="text-sm text-muted-foreground">{t('skillDetail.downloads')}</div>
-            <div className="font-semibold text-foreground">{formatCompactCount(skill.downloadCount)}</div>
+            <div className="font-semibold text-foreground">{formatCompactCount(resourceStats.data?.downloadCount ?? skill.downloadCount)}</div>
+          </div>
+
+          <div className="h-px bg-border/40" />
+
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-muted-foreground">访问次数</div>
+            <div className="font-semibold text-foreground">{formatCompactCount(resourceStats.data?.viewCount ?? 0)}</div>
+          </div>
+
+          <div className="h-px bg-border/40" />
+
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-muted-foreground">使用次数</div>
+            <div className="font-semibold text-foreground">{formatCompactCount(resourceStats.data?.useCount ?? 0)}</div>
+          </div>
+
+          <div className="h-px bg-border/40" />
+
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-muted-foreground">收藏数</div>
+            <div className="font-semibold text-foreground">{formatCompactCount(resourceStats.data?.favoriteCount ?? skill.starCount)}</div>
           </div>
 
           <div className="h-px bg-border/40" />
@@ -967,7 +991,11 @@ export function SkillDetailPage() {
               <>
                 {!isFetchingSkill ? (
                   <>
-                    <StarButton skillId={skill.id} starCount={skill.starCount} onRequireLogin={requireLogin} />
+                    <StarButton
+                      skillId={skill.id}
+                      starCount={resourceStats.data?.favoriteCount ?? skill.starCount}
+                      onRequireLogin={requireLogin}
+                    />
                     <div className="h-px bg-border/40" />
                     <SubscribeButton skillId={skill.id} subscriptionCount={(skill as { subscriptionCount?: number }).subscriptionCount ?? 0} onRequireLogin={requireLogin} />
                     <RatingInput skillId={skill.id} onRequireLogin={requireLogin} />
@@ -994,6 +1022,7 @@ export function SkillDetailPage() {
               namespace={namespace}
               slug={slug}
               version={publishedVersion.version}
+              onUse={() => recordResourceUse.mutate(`skill:${skill.id}`)}
             />
           </Card>
         )}

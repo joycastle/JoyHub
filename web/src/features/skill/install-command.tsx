@@ -9,6 +9,7 @@ interface InstallCommandProps {
   namespace: string
   slug: string
   version?: string
+  onUse?: () => void
 }
 
 export function buildInstallTarget(namespace: string, slug: string): string {
@@ -41,18 +42,20 @@ export function buildClawhubInstallCommand(namespace: string, slug: string, base
 
 interface CommandBlockProps {
   command: string
+  onUse?: () => void
 }
 
 const installMethodTabTriggerClass =
   "relative border-b-0 px-1 py-2 text-xs after:absolute after:bottom-[-1px] after:left-1/2 after:h-0.5 after:w-6 after:-translate-x-1/2 after:rounded-full after:bg-transparent after:content-[''] data-[state=active]:after:bg-primary"
 
-function CommandBlock({ command }: CommandBlockProps) {
+function CommandBlock({ command, onUse }: CommandBlockProps) {
   const { t } = useTranslation()
   const [copied, copy] = useCopyToClipboard()
 
   const handleCopy = async () => {
     try {
       await copy(command)
+      onUse?.()
     } catch (err) {
       console.error('Failed to copy:', err)
     }
@@ -80,7 +83,7 @@ function CommandBlock({ command }: CommandBlockProps) {
   )
 }
 
-export function InstallCommand({ namespace, slug }: InstallCommandProps) {
+export function InstallCommand({ namespace, slug, onUse }: InstallCommandProps) {
   const { t } = useTranslation()
   const baseUrl = useMemo(() => getBaseUrl(), [])
   const skillhubCommand = useMemo(() => buildInstallCommand(namespace, slug, baseUrl), [baseUrl, namespace, slug])
@@ -97,10 +100,10 @@ export function InstallCommand({ namespace, slug }: InstallCommandProps) {
         </TabsTrigger>
       </TabsList>
       <TabsContent value="skillhub">
-        <CommandBlock command={skillhubCommand} />
+        <CommandBlock command={skillhubCommand} onUse={onUse} />
       </TabsContent>
       <TabsContent value="clawhub">
-        <CommandBlock command={clawhubCommand} />
+        <CommandBlock command={clawhubCommand} onUse={onUse} />
       </TabsContent>
     </Tabs>
   )

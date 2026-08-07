@@ -12,7 +12,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/shared/ui/tabs'
 import { cn } from '@/shared/lib/utils'
 import { toast } from '@/shared/lib/toast'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/shared/ui/dropdown-menu'
-import { useResourceFavorite, useResourceLifecycleAction, useToggleResourceFavorite } from '@/shared/hooks/use-resource-queries'
+import { useRecordResourceUse, useResourceLifecycleAction, useResourceStats, useToggleResourceFavorite } from '@/shared/hooks/use-resource-queries'
+import { formatCompactCount } from '@/shared/lib/number-format'
+import { useAuth } from '@/features/auth/use-auth'
 
 function copyPrompt(prompt: string) {
   void navigator.clipboard.writeText(prompt).then(
@@ -41,9 +43,11 @@ export function CatalogResourcePage() {
   const { slug } = useParams({ from: '/catalog/$slug' })
   const navigate = useNavigate()
   const { data: resource, isLoading, isError } = useCatalogResource(slug)
+  const { user } = useAuth()
   const resourceId = resource ? `catalog:${resource.id}` : ''
-  const favorite = useResourceFavorite(resourceId)
+  const stats = useResourceStats(resourceId)
   const toggleFavorite = useToggleResourceFavorite()
+  const recordUse = useRecordResourceUse()
   const publish = useResourceLifecycleAction('publish')
   const offline = useResourceLifecycleAction('offline')
   const archive = useResourceLifecycleAction('archive')
@@ -56,6 +60,26 @@ export function CatalogResourcePage() {
   const isPublished = resource.status === 'PUBLISHED'
   const isArchived = resource.status === 'ARCHIVED'
   const canUpdateStaticVersion = resource.kind === 'ONLINE_TOOL' && resource.artifactAvailable
+  const isFavorited = stats.data?.favorited ?? false
+
+  const handleFavorite = async () => {
+    if (!user) {
+      navigate({ to: '/login', search: { returnTo: `/catalog/${encodeURIComponent(slug)}` } })
+      return
+    }
+    try {
+      const nextState = await toggleFavorite.mutateAsync({ resourceId, favorited: isFavorited })
+      toast.success(nextState ? '已收藏' : '已取消收藏', nextState ? '已加入你的资源收藏。' : '已从资源收藏中移除。')
+    } catch (error) {
+      toast.error('收藏失败', error instanceof Error ? error.message : '请稍后重试。')
+    }
+  }
+
+  const handleUse = () => {
+    recordUse.mutate(resourceId, {
+      onError: (error) => toast.error('使用次数统计失败', error instanceof Error ? error.message : '请稍后重试。'),
+    })
+  }
 
   const handleLifecycle = async () => {
     try {
@@ -151,13 +175,17 @@ export function CatalogResourcePage() {
           { label: '归属部门', value: <span className="inline-flex items-center gap-1.5"><Building2 className="h-3.5 w-3.5" />{resource.department?.name || '全公司'}</span> },
           { label: '维护者', value: <span className="inline-flex items-center gap-1.5"><UserRound className="h-3.5 w-3.5" />{resource.owner?.displayName || resource.owner?.id || '—'}</span> },
           { label: '可见范围', value: resource.visibilityScope === 'COMPANY' ? '全公司' : '指定部门' },
+          { label: '访问次数', value: formatCompactCount(stats.data?.viewCount ?? 0) },
+          { label: '使用次数', value: formatCompactCount(stats.data?.useCount ?? 0) },
+          { label: '下载次数', value: formatCompactCount(stats.data?.downloadCount ?? 0) },
+          { label: '收藏数', value: formatCompactCount(stats.data?.favoriteCount ?? 0) },
         ]}
       />
 
       <Card className="space-y-3 p-5">
         <div className="text-sm font-semibold font-heading text-foreground">使用与分发</div>
         {resource.accessUrl ? (
-          <a href={resource.accessUrl} target="_blank" rel="noreferrer" className={cn(buttonVariants({ size: 'lg' }), 'w-full gap-2')}>
+          <a href={resource.accessUrl} target="_blank" rel="noreferrer" onClick={handleUse} className={cn(buttonVariants({ size: 'lg' }), 'w-full gap-2')}>
             {isAgent ? '在飞书中使用' : '立即使用'} {isAgent ? <MessageCircle className="h-4 w-4" /> : <ExternalLink className="h-4 w-4" />}
           </a>
         ) : null}
@@ -170,11 +198,13 @@ export function CatalogResourcePage() {
           variant="outline"
           size="lg"
           className="w-full"
-          onClick={() => toggleFavorite.mutate({ resourceId, favorited: favorite.data ?? false })}
-          aria-label={favorite.data ? '取消收藏' : '收藏'}
+          onClick={() => void handleFavorite()}
+          disabled={toggleFavorite.isPending}
+          aria-pressed={isFavorited}
+          aria-label={isFavorited ? '取消收藏' : '收藏'}
         >
-          {favorite.data ? <HeartOff className="mr-2 h-4 w-4" /> : <Heart className="mr-2 h-4 w-4" />}
-          {favorite.data ? '取消收藏' : '收藏'}
+          {isFavorited ? <HeartOff className="mr-2 h-4 w-4" /> : <Heart className="mr-2 h-4 w-4" />}
+          {isFavorited ? '取消收藏' : '收藏'}
         </Button>
       </Card>
 

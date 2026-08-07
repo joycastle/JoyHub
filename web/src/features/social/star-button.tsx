@@ -3,6 +3,7 @@ import { Button } from '@/shared/ui/button'
 import { useStar, useToggleStar } from './use-star'
 import { Bookmark } from 'lucide-react'
 import { useAuth } from '@/features/auth/use-auth'
+import { toast } from '@/shared/lib/toast'
 
 interface StarButtonProps {
   skillId: number
@@ -27,7 +28,11 @@ export function StarButton({ skillId, starCount, onRequireLogin }: StarButtonPro
       return
     }
     if (starStatus) {
-      toggleMutation.mutate(starStatus.starred)
+      const nextStarred = !starStatus.starred
+      toggleMutation.mutate(starStatus.starred, {
+        onSuccess: () => toast.success(nextStarred ? t('starButton.starred') : t('starButton.star')),
+        onError: () => toast.error(t('apiError.unknown')),
+      })
     }
   }
 
@@ -42,6 +47,7 @@ export function StarButton({ skillId, starCount, onRequireLogin }: StarButtonPro
       className="justify-between"
       onClick={handleToggle}
       disabled={toggleMutation.isPending}
+      aria-pressed={starStatus.starred}
     >
       <Bookmark className={`w-4 h-4 mr-2 ${starStatus.starred ? 'fill-current' : ''}`} />
       {starStatus.starred ? t('starButton.starred') : t('starButton.star')} ({starCount})
