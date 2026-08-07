@@ -57,6 +57,22 @@ public class CatalogResourceService {
     }
 
     @Transactional
+    public CatalogResource archive(String slug, String actorId, boolean superAdmin) {
+        CatalogResource resource = requireBySlug(slug);
+        policy.requireManage(resource, actorId, superAdmin);
+        resource.archive();
+        return repository.save(resource);
+    }
+
+    @Transactional
+    public CatalogResource unarchive(String slug, String actorId, boolean superAdmin) {
+        CatalogResource resource = requireBySlug(slug);
+        policy.requireManage(resource, actorId, superAdmin);
+        resource.unarchive();
+        return repository.save(resource);
+    }
+
+    @Transactional
     public CatalogResource transfer(String slug, String newOwnerId, String actorId, boolean superAdmin) {
         CatalogResource resource = requireBySlug(slug);
         policy.requireManage(resource, actorId, superAdmin);

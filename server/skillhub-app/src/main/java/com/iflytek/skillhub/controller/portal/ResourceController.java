@@ -5,27 +5,57 @@ import com.iflytek.skillhub.controller.BaseApiController;
 import com.iflytek.skillhub.dto.ApiResponse;
 import com.iflytek.skillhub.dto.ApiResponseFactory;
 import com.iflytek.skillhub.dto.PageResponse;
+import com.iflytek.skillhub.dto.ResourceActionResponse;
 import com.iflytek.skillhub.dto.ResourceSummaryResponse;
+import com.iflytek.skillhub.domain.namespace.NamespaceRole;
+import com.iflytek.skillhub.service.AuditRequestContext;
 import com.iflytek.skillhub.exception.UnauthorizedException;
 import com.iflytek.skillhub.service.ResourceAppService;
+import com.iflytek.skillhub.service.ResourceDownloadAppService;
+import com.iflytek.skillhub.service.ResourceFavoriteAppService;
+import com.iflytek.skillhub.service.ResourceLifecycleAppService;
+import jakarta.servlet.http.HttpServletRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.nio.charset.StandardCharsets;
+import java.util.Map;
+import java.util.Set;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /** Unified resource workspace endpoint for Skills and static Catalog resources. */
 @RestController
 @RequestMapping({"/api/web/resources", "/api/v1/resources"})
-@Tag(name = "Resources")
+    @Tag(name = "Resources")
 public class ResourceController extends BaseApiController {
     private final ResourceAppService resourceAppService;
+    private final ResourceLifecycleAppService resourceLifecycleAppService;
+    private final ResourceFavoriteAppService resourceFavoriteAppService;
+    private final ResourceDownloadAppService resourceDownloadAppService;
 
-    public ResourceController(ResourceAppService resourceAppService, ApiResponseFactory responseFactory) {
+    public ResourceController(ResourceAppService resourceAppService,
+                              ResourceLifecycleAppService resourceLifecycleAppService,
+                              ResourceFavoriteAppService resourceFavoriteAppService,
+                              ResourceDownloadAppService resourceDownloadAppService,
+                              ApiResponseFactory responseFactory) {
         super(responseFactory);
         this.resourceAppService = resourceAppService;
+        this.resourceLifecycleAppService = resourceLifecycleAppService;
+        this.resourceFavoriteAppService = resourceFavoriteAppService;
+        this.resourceDownloadAppService = resourceDownloadAppService;
     }
 
     @GetMapping("/mine")
@@ -41,5 +71,118 @@ public class ResourceController extends BaseApiController {
         }
         return ok("response.success.read", resourceAppService.listMine(
                 principal.userId(), page, size, kind, q));
+    }
+
+    @PostMapping("/{resourceId}/archive")
+    @Operation(summary = "Archive an owned resource")
+    public ApiResponse<ResourceActionResponse> archive(
+            @PathVariable String resourceId,
+            @AuthenticationPrincipal PlatformPrincipal principal,
+            @RequestAttribute(value = "userNsRoles", required = false) Map<Long, NamespaceRole> namespaceRoles,
+            HttpServletRequest request) {
+        return ok("response.success.updated", resourceLifecycleAppService.archive(
+                resourceId, requireUser(principal), namespaceRoles, platformRoles(principal),
+                AuditRequestContext.from(request)));
+    }
+
+    @PostMapping("/{resourceId}/unarchive")
+    @Operation(summary = "Restore an owned resource from archive")
+    public ApiResponse<ResourceActionResponse> unarchive(
+            @PathVariable String resourceId,
+            @AuthenticationPrincipal PlatformPrincipal principal,
+            @RequestAttribute(value = "userNsRoles", required = false) Map<Long, NamespaceRole> namespaceRoles,
+            HttpServletRequest request) {
+        return ok("response.success.updated", resourceLifecycleAppService.unarchive(
+                resourceId, requireUser(principal), namespaceRoles, platformRoles(principal),
+                AuditRequestContext.from(request)));
+    }
+
+    @PostMapping("/{resourceId}/publish")
+    @Operation(summary = "Publish a resource through the common lifecycle")
+    public ApiResponse<ResourceActionResponse> publish(
+            @PathVariable String resourceId,
+            @RequestParam(required = false) String version,
+            @AuthenticationPrincipal PlatformPrincipal principal,
+            @RequestAttribute(value = "userNsRoles", required = false) Map<Long, NamespaceRole> namespaceRoles,
+            HttpServletRequest request) {
+        return ok("response.success.updated", resourceLifecycleAppService.publish(
+                resourceId, version, requireUser(principal), namespaceRoles, platformRoles(principal),
+                AuditRequestContext.from(request)));
+    }
+
+    @PostMapping("/{resourceId}/offline")
+    @Operation(summary = "Take a resource offline through the common lifecycle")
+    public ApiResponse<ResourceActionResponse> offline(
+            @PathVariable String resourceId,
+            @AuthenticationPrincipal PlatformPrincipal principal,
+            @RequestAttribute(value = "userNsRoles", required = false) Map<Long, NamespaceRole> namespaceRoles,
+            HttpServletRequest request) {
+        return ok("response.success.updated", resourceLifecycleAppService.offline(
+                resourceId, requireUser(principal), namespaceRoles, platformRoles(principal),
+                AuditRequestContext.from(request)));
+    }
+
+    @PutMapping("/{resourceId}/favorite")
+    @Operation(summary = "Favorite a resource")
+    public ApiResponse<Boolean> favorite(@PathVariable String resourceId,
+                                         @AuthenticationPrincipal PlatformPrincipal principal) {
+        String userId = requireUser(principal);
+        resourceFavoriteAppService.favorite(resourceId, userId);
+        return ok("response.success.updated", true);
+    }
+
+    @DeleteMapping("/{resourceId}/favorite")
+    @Operation(summary = "Remove a resource favorite")
+    public ApiResponse<Boolean> unfavorite(@PathVariable String resourceId,
+                                           @AuthenticationPrincipal PlatformPrincipal principal) {
+        String userId = requireUser(principal);
+        resourceFavoriteAppService.unfavorite(resourceId, userId);
+        return ok("response.success.updated", false);
+    }
+
+    @GetMapping("/{resourceId}/favorite")
+    @Operation(summary = "Read the current user's resource favorite state")
+    public ApiResponse<Boolean> favoriteState(@PathVariable String resourceId,
+                                               @AuthenticationPrincipal PlatformPrincipal principal) {
+        String userId = requireUser(principal);
+        return ok("response.success.read", resourceFavoriteAppService.isFavorited(resourceId, userId));
+    }
+
+    @GetMapping("/{resourceId}/download")
+    @Operation(summary = "Download the current published resource artifact")
+    public ResponseEntity<InputStreamResource> download(
+            @PathVariable String resourceId,
+            @AuthenticationPrincipal PlatformPrincipal principal,
+            @RequestAttribute(value = "userNsRoles", required = false) Map<Long, NamespaceRole> namespaceRoles) {
+        ResourceDownloadAppService.ResourceDownload download = resourceDownloadAppService.download(
+                resourceId,
+                principal != null ? principal.userId() : null,
+                namespaceRoles,
+                platformRoles(principal));
+        MediaType contentType;
+        try {
+            contentType = download.contentType() != null
+                    ? MediaType.parseMediaType(download.contentType())
+                    : MediaType.APPLICATION_OCTET_STREAM;
+        } catch (IllegalArgumentException exception) {
+            contentType = MediaType.APPLICATION_OCTET_STREAM;
+        }
+        return ResponseEntity.ok()
+                .contentType(contentType)
+                .contentLength(download.size())
+                .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment()
+                        .filename(download.filename(), StandardCharsets.UTF_8).build().toString())
+                .body(new InputStreamResource(download.stream()));
+    }
+
+    private String requireUser(PlatformPrincipal principal) {
+        if (principal == null || principal.userId() == null || principal.userId().isBlank()) {
+            throw new UnauthorizedException("error.auth.required");
+        }
+        return principal.userId();
+    }
+
+    private Set<String> platformRoles(PlatformPrincipal principal) {
+        return principal != null && principal.platformRoles() != null ? principal.platformRoles() : Set.of();
     }
 }

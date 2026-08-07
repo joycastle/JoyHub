@@ -1,6 +1,7 @@
 package com.iflytek.skillhub.dto;
 
 import java.time.Instant;
+import java.util.Set;
 
 /**
  * Unified owner-facing resource card shared by Skill Registry and the static Catalog.
@@ -23,6 +24,8 @@ public record ResourceSummaryResponse(
         Integer starCount,
         Integer ratingCount,
         boolean canManage,
-        Instant updatedAt
+        Instant updatedAt,
+        Set<String> actions,
+        boolean favorited
 ) {
 }

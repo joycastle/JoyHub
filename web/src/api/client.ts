@@ -738,6 +738,57 @@ export const resourcesApi = {
     if (params.q?.trim()) query.set('q', params.q.trim())
     return fetchJson<PagedResponse<ResourceSummary>>(`${WEB_API_PREFIX}/resources/mine?${query.toString()}`)
   },
+
+  async archive(resourceId: string): Promise<{ resourceId: string; action: string; status: string }> {
+    return fetchJson(`${WEB_API_PREFIX}/resources/${encodeURIComponent(resourceId)}/archive`, {
+      method: 'POST',
+      headers: await ensureCsrfHeaders(),
+    })
+  },
+
+  async unarchive(resourceId: string): Promise<{ resourceId: string; action: string; status: string }> {
+    return fetchJson(`${WEB_API_PREFIX}/resources/${encodeURIComponent(resourceId)}/unarchive`, {
+      method: 'POST',
+      headers: await ensureCsrfHeaders(),
+    })
+  },
+
+  async publish(resourceId: string, version?: string): Promise<{ resourceId: string; action: string; status: string }> {
+    const query = version ? `?version=${encodeURIComponent(version)}` : ''
+    return fetchJson(`${WEB_API_PREFIX}/resources/${encodeURIComponent(resourceId)}/publish${query}`, {
+      method: 'POST',
+      headers: await ensureCsrfHeaders(),
+    })
+  },
+
+  async offline(resourceId: string): Promise<{ resourceId: string; action: string; status: string }> {
+    return fetchJson(`${WEB_API_PREFIX}/resources/${encodeURIComponent(resourceId)}/offline`, {
+      method: 'POST',
+      headers: await ensureCsrfHeaders(),
+    })
+  },
+
+  async favorite(resourceId: string): Promise<boolean> {
+    return fetchJson(`${WEB_API_PREFIX}/resources/${encodeURIComponent(resourceId)}/favorite`, {
+      method: 'PUT',
+      headers: await ensureCsrfHeaders(),
+    })
+  },
+
+  async unfavorite(resourceId: string): Promise<boolean> {
+    return fetchJson(`${WEB_API_PREFIX}/resources/${encodeURIComponent(resourceId)}/favorite`, {
+      method: 'DELETE',
+      headers: await ensureCsrfHeaders(),
+    })
+  },
+
+  async favoriteState(resourceId: string): Promise<boolean> {
+    return fetchJson(`${WEB_API_PREFIX}/resources/${encodeURIComponent(resourceId)}/favorite`)
+  },
+
+  downloadUrl(resourceId: string): string {
+    return String(withBaseUrl(`${WEB_API_PREFIX}/resources/${encodeURIComponent(resourceId)}/download`))
+  },
 }
 
 export const discoveryApi = {

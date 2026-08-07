@@ -11,6 +11,9 @@ import com.iflytek.skillhub.dto.ResourceSummaryResponse;
 import com.iflytek.skillhub.exception.UnauthorizedException;
 import com.iflytek.skillhub.observability.RequestIdAccessor;
 import com.iflytek.skillhub.service.ResourceAppService;
+import com.iflytek.skillhub.service.ResourceDownloadAppService;
+import com.iflytek.skillhub.service.ResourceFavoriteAppService;
+import com.iflytek.skillhub.service.ResourceLifecycleAppService;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -30,6 +33,15 @@ class ResourceControllerTest {
     @Mock
     private ResourceAppService resourceAppService;
 
+    @Mock
+    private ResourceLifecycleAppService resourceLifecycleAppService;
+
+    @Mock
+    private ResourceFavoriteAppService resourceFavoriteAppService;
+
+    @Mock
+    private ResourceDownloadAppService resourceDownloadAppService;
+
     private ResourceController controller;
 
     @BeforeEach
@@ -38,6 +50,9 @@ class ResourceControllerTest {
         messageSource.addMessage("response.success.read", Locale.getDefault(), "ok");
         controller = new ResourceController(
                 resourceAppService,
+                resourceLifecycleAppService,
+                resourceFavoriteAppService,
+                resourceDownloadAppService,
                 new ApiResponseFactory(
                         messageSource,
                         Clock.fixed(Instant.parse("2026-08-06T00:00:00Z"), ZoneOffset.UTC),
@@ -49,7 +64,7 @@ class ResourceControllerTest {
         ResourceSummaryResponse resource = new ResourceSummaryResponse(
                 "skill:7", "SKILL", 7L, "SKILL", "demo-skill", "Demo Skill", "summary",
                 "team-ai", "ACTIVE", "1.0.0", "PUBLISHED", "PUBLIC", 1L, 2, 3, true,
-                Instant.parse("2026-08-06T00:00:00Z"));
+                Instant.parse("2026-08-06T00:00:00Z"), Set.of("UPDATE_VERSION"), false);
         PageResponse<ResourceSummaryResponse> page = new PageResponse<>(List.of(resource), 1, 2, 10);
         PlatformPrincipal principal = new PlatformPrincipal("owner", "Owner", "owner@example.com", null, "local", Set.of("USER"));
         given(resourceAppService.listMine("owner", 2, 10, "SKILL", "demo"))

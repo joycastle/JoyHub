@@ -103,6 +103,22 @@ public class CatalogResourceCommandAppService {
     }
 
     @Transactional
+    public CatalogResourceDetailResponse archive(String slug, CatalogViewer viewer) {
+        return assembler.detail(resourceService.archive(
+                slug,
+                viewer.userId(),
+                viewer.superAdmin()), viewer);
+    }
+
+    @Transactional
+    public CatalogResourceDetailResponse unarchive(String slug, CatalogViewer viewer) {
+        return assembler.detail(resourceService.unarchive(
+                slug,
+                viewer.userId(),
+                viewer.superAdmin()), viewer);
+    }
+
+    @Transactional
     public CatalogResourceDetailResponse transfer(
             String slug,
             String newOwnerId,

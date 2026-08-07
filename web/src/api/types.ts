@@ -173,7 +173,7 @@ export type CatalogResourceKind =
   | 'RESOURCE_PACK'
 
 export type CatalogCenter = 'AGENT' | 'TOOL'
-export type CatalogResourceStatus = 'DRAFT' | 'PUBLISHED' | 'OFFLINE'
+export type CatalogResourceStatus = 'DRAFT' | 'PUBLISHED' | 'OFFLINE' | 'ARCHIVED'
 export type CatalogMaintenanceStatus = 'ACTIVE' | 'MAINTENANCE' | 'DEPRECATED'
 export type CatalogVisibilityScope = 'COMPANY' | 'DEPARTMENTS'
 
@@ -308,6 +308,8 @@ export interface ResourceSummary {
   ratingCount: number
   canManage: boolean
   updatedAt: string
+  actions: string[]
+  favorited: boolean
 }
 
 

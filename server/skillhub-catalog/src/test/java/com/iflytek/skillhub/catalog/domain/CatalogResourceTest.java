@@ -44,6 +44,19 @@ class CatalogResourceTest {
                 .hasMessageContaining("error.catalog.slug.immutable");
     }
 
+    @Test
+    void archiveAndRestoreKeepTheResourceOfflineUntilRepublished() {
+        CatalogResource resource = new CatalogResource(draft(
+                "archivable", "# 文档", CatalogVisibilityScope.COMPANY, Set.of()), "owner");
+        resource.publish(Instant.now());
+
+        resource.archive();
+        assertThat(resource.getStatus()).isEqualTo(CatalogResourceStatus.ARCHIVED);
+
+        resource.unarchive();
+        assertThat(resource.getStatus()).isEqualTo(CatalogResourceStatus.OFFLINE);
+    }
+
     private CatalogResourceDraft draft(String slug,
                                        String documentation,
                                        CatalogVisibilityScope visibility,

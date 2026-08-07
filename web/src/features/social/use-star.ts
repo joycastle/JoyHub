@@ -12,7 +12,7 @@ interface StarStatus {
  */
 async function getStarStatus(skillId: number): Promise<StarStatus> {
   try {
-    const starred = await fetchJson<boolean>(`${WEB_API_PREFIX}/skills/${skillId}/star`)
+    const starred = await fetchJson<boolean>(`${WEB_API_PREFIX}/resources/skill:${skillId}/favorite`)
     return { starred }
   } catch (error) {
     if (error instanceof ApiError && error.status === 401) {
@@ -24,12 +24,12 @@ async function getStarStatus(skillId: number): Promise<StarStatus> {
 
 async function toggleStar(skillId: number, starred: boolean): Promise<void> {
   if (starred) {
-    await fetchJson<void>(`${WEB_API_PREFIX}/skills/${skillId}/star`, {
+    await fetchJson<void>(`${WEB_API_PREFIX}/resources/skill:${skillId}/favorite`, {
       method: 'DELETE',
       headers: getCsrfHeaders(),
     })
   } else {
-    await fetchJson<void>(`${WEB_API_PREFIX}/skills/${skillId}/star`, {
+    await fetchJson<void>(`${WEB_API_PREFIX}/resources/skill:${skillId}/favorite`, {
       method: 'PUT',
       headers: getCsrfHeaders(),
     })

@@ -171,6 +171,22 @@ public class CatalogResource {
         this.status = CatalogResourceStatus.OFFLINE;
     }
 
+    public void archive() {
+        if (status == CatalogResourceStatus.ARCHIVED) {
+            return;
+        }
+        this.status = CatalogResourceStatus.ARCHIVED;
+    }
+
+    public void unarchive() {
+        if (status != CatalogResourceStatus.ARCHIVED) {
+            return;
+        }
+        // An archived resource must be explicitly published again. Keeping it offline
+        // avoids making an owner-visible governance action accidentally public.
+        this.status = CatalogResourceStatus.OFFLINE;
+    }
+
     public void requireDeploymentPublishable() {
         if (documentation == null || documentation.isBlank()) {
             throw CatalogDomainException.badRequest("error.catalog.documentation.required");

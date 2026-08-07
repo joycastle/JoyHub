@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react'
 import { Link, useLocation, useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
+import { Download, Heart, HeartOff } from 'lucide-react'
 import type { ResourceSummary } from '@/api/types'
 import { catalogKindLabel } from '@/entities/catalog-resource/catalog-resource-kind'
-import { useCatalogLifecycleAction } from '@/features/catalog/use-catalog-queries'
-import { useArchiveSkill, useUnarchiveSkill } from '@/shared/hooks/use-skill-queries'
+import { resourcesApi } from '@/api/client'
+import { useResourceLifecycleAction, useToggleResourceFavorite } from '@/shared/hooks/use-resource-queries'
 import { useMyResources } from '@/shared/hooks/use-user-queries'
 import { buildReturnTo } from '@/shared/lib/auth-route'
 import { toast } from '@/shared/lib/toast'
@@ -55,10 +56,11 @@ export function ResourcesPage() {
   const [unarchiveTarget, setUnarchiveTarget] = useState<UnifiedResource | null>(null)
 
   const { data: resourcePage, isLoading } = useMyResources({ page: 0, size: 100 })
-  const archiveSkill = useArchiveSkill()
-  const unarchiveSkill = useUnarchiveSkill()
-  const catalogLifecycle = useCatalogLifecycleAction('publish')
-  const catalogOffline = useCatalogLifecycleAction('offline')
+  const archiveResource = useResourceLifecycleAction('archive')
+  const unarchiveResource = useResourceLifecycleAction('unarchive')
+  const publishResource = useResourceLifecycleAction('publish')
+  const offlineResource = useResourceLifecycleAction('offline')
+  const toggleFavorite = useToggleResourceFavorite()
 
   const resources = useMemo(() => {
     const combined: UnifiedResource[] = (resourcePage?.items ?? []).map((resource) => ({
@@ -96,9 +98,9 @@ export function ResourcesPage() {
   }
 
   const handleArchive = async () => {
-    if (!archiveTarget || archiveTarget.source !== 'SKILL' || !archiveTarget.namespace) return
+    if (!archiveTarget) return
     try {
-      await archiveSkill.mutateAsync({ namespace: archiveTarget.namespace, slug: archiveTarget.slug })
+      await archiveResource.mutateAsync({ resourceId: archiveTarget.resourceId })
       toast.success(t('resources.archiveSuccessTitle'), t('resources.archiveSuccessDescription', { name: archiveTarget.name }))
       setArchiveTarget(null)
     } catch (error) {
@@ -107,9 +109,9 @@ export function ResourcesPage() {
   }
 
   const handleUnarchive = async () => {
-    if (!unarchiveTarget || unarchiveTarget.source !== 'SKILL' || !unarchiveTarget.namespace) return
+    if (!unarchiveTarget) return
     try {
-      await unarchiveSkill.mutateAsync({ namespace: unarchiveTarget.namespace, slug: unarchiveTarget.slug })
+      await unarchiveResource.mutateAsync({ resourceId: unarchiveTarget.resourceId })
       toast.success(t('resources.unarchiveSuccessTitle'), t('resources.unarchiveSuccessDescription', { name: unarchiveTarget.name }))
       setUnarchiveTarget(null)
     } catch (error) {
@@ -119,11 +121,21 @@ export function ResourcesPage() {
 
   const handleCatalogLifecycle = (resource: UnifiedResource) => {
     if (resource.source === 'SKILL') return
-    if (resource.status === 'PUBLISHED') {
-      catalogOffline.mutate(resource.slug)
+    if (resource.status === 'ARCHIVED') {
+      unarchiveResource.mutate({ resourceId: resource.resourceId })
+    } else if (resource.status === 'PUBLISHED') {
+      offlineResource.mutate({ resourceId: resource.resourceId })
     } else {
-      catalogLifecycle.mutate(resource.slug)
+      publishResource.mutate({ resourceId: resource.resourceId })
     }
+  }
+
+  const handleArchiveResource = (resource: UnifiedResource) => {
+    setArchiveTarget(resource)
+  }
+
+  const handleFavorite = (resource: UnifiedResource) => {
+    toggleFavorite.mutate({ resourceId: resource.resourceId, favorited: resource.favorited })
   }
 
   const emptyAction = filter === 'SKILL'
@@ -173,6 +185,7 @@ export function ResourcesPage() {
         {resources.map((resource) => {
           const isArchivedSkill = resource.source === 'SKILL' && resource.status === 'ARCHIVED'
           const hasPublishedSkill = resource.source === 'SKILL' && resource.versionStatus === 'PUBLISHED'
+          const canDownload = resource.actions.includes('DOWNLOAD')
           return (
             <Card key={resource.resourceId} className="cursor-pointer transition-colors hover:border-primary/50" onClick={() => openResource(resource)}>
               <CardContent className="flex flex-col justify-between gap-4 p-5 md:flex-row md:items-center">
@@ -200,11 +213,23 @@ export function ResourcesPage() {
                       <Link to="/dashboard/catalog/$slug/edit" params={{ slug: resource.slug }}>
                         <Button size="sm" variant="outline">{t('resources.edit')}</Button>
                       </Link>
-                      <Button size="sm" variant={resource.status === 'PUBLISHED' ? 'outline' : 'default'} onClick={() => handleCatalogLifecycle(resource)}>
-                        {resource.status === 'PUBLISHED' ? t('resources.offline') : t('resources.publish')}
-                      </Button>
+                      {resource.status === 'ARCHIVED' ? (
+                        <Button size="sm" variant="outline" onClick={() => setUnarchiveTarget(resource)}>{t('resources.unarchive')}</Button>
+                      ) : (
+                        <>
+                          <Button size="sm" variant={resource.status === 'PUBLISHED' ? 'outline' : 'default'} onClick={() => handleCatalogLifecycle(resource)}>
+                            {resource.status === 'PUBLISHED' ? t('resources.offline') : t('resources.publish')}
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => handleArchiveResource(resource)}>{t('resources.archive')}</Button>
+                        </>
+                      )}
                     </>
                   )}
+                  {canDownload ? <Button size="sm" variant="ghost" onClick={() => { window.location.href = resourcesApi.downloadUrl(resource.resourceId) }}><Download className="mr-1.5 h-4 w-4" />{t('resources.download')}</Button> : null}
+                  <Button size="sm" variant="ghost" onClick={() => handleFavorite(resource)} aria-label={resource.favorited ? t('resources.removeFavorite') : t('resources.favorite')}>
+                    {resource.favorited ? <HeartOff className="mr-1.5 h-4 w-4" /> : <Heart className="mr-1.5 h-4 w-4" />}
+                    {resource.favorited ? t('resources.removeFavorite') : t('resources.favorite')}
+                  </Button>
                   <Button size="sm" variant="ghost" onClick={() => openResource(resource)}>{t('resources.open')}</Button>
                 </div>
               </CardContent>

@@ -38,6 +38,9 @@ class ResourceAppServiceTest {
     private CatalogResourceProjectionAssembler catalogProjectionAssembler;
 
     @Mock
+    private ResourceFavoriteAppService favoriteAppService;
+
+    @Mock
     private Skill skill;
 
     @Mock
@@ -51,7 +54,8 @@ class ResourceAppServiceTest {
                 skillRepository,
                 catalogResourceRepository,
                 mySkillQueryRepository,
-                catalogProjectionAssembler);
+                catalogProjectionAssembler,
+                favoriteAppService);
     }
 
     @Test
@@ -72,6 +76,7 @@ class ResourceAppServiceTest {
                 .willReturn(List.of(skillSummary));
         given(catalogResourceRepository.findByOwnerId("owner")).willReturn(List.of(catalogResource));
         given(catalogProjectionAssembler.summaries(List.of(catalogResource))).willReturn(List.of(catalogSummary));
+        given(favoriteAppService.isFavorited("skill:7", "owner")).willReturn(false);
 
         var result = service.listMine("owner", 0, 10, null, null);
 
@@ -89,7 +94,6 @@ class ResourceAppServiceTest {
         given(catalogResource.getName()).willReturn("Static Tool");
         given(catalogResource.getSlug()).willReturn("static-tool");
         given(catalogResource.getSummary()).willReturn("Tool text");
-
         var result = service.listMine("owner", 0, 10, "online_tool", "missing");
 
         assertThat(result.total()).isEqualTo(0);

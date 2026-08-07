@@ -1,15 +1,16 @@
 import { Link, useNavigate, useParams } from '@tanstack/react-router'
-import { ArrowLeft, Building2, Copy, Download, ExternalLink, MessageCircle, MoreHorizontal, Pencil, Power, UserRound } from 'lucide-react'
+import { ArrowLeft, Building2, Copy, Download, ExternalLink, Heart, HeartOff, MessageCircle, MoreHorizontal, Pencil, Power, UserRound } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { catalogApi } from '@/api/client'
+import { resourcesApi } from '@/api/client'
 import { catalogKindEmoji, catalogKindLabel } from '@/entities/catalog-resource/catalog-resource-kind'
-import { useCatalogLifecycleAction, useCatalogResource } from '@/features/catalog/use-catalog-queries'
+import { useCatalogResource } from '@/features/catalog/use-catalog-queries'
 import { MarkdownRenderer } from '@/features/skill/markdown-renderer'
 import { Button, buttonVariants } from '@/shared/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/ui/card'
 import { cn } from '@/shared/lib/utils'
 import { toast } from '@/shared/lib/toast'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/shared/ui/dropdown-menu'
+import { useResourceFavorite, useResourceLifecycleAction, useToggleResourceFavorite } from '@/shared/hooks/use-resource-queries'
 
 function copyPrompt(prompt: string) {
   void navigator.clipboard.writeText(prompt).then(
@@ -23,26 +24,49 @@ export function CatalogResourcePage() {
   const { slug } = useParams({ from: '/catalog/$slug' })
   const navigate = useNavigate()
   const { data: resource, isLoading, isError } = useCatalogResource(slug)
-  const publish = useCatalogLifecycleAction('publish')
-  const offline = useCatalogLifecycleAction('offline')
+  const resourceId = resource ? `catalog:${resource.id}` : ''
+  const favorite = useResourceFavorite(resourceId)
+  const toggleFavorite = useToggleResourceFavorite()
+  const publish = useResourceLifecycleAction('publish')
+  const offline = useResourceLifecycleAction('offline')
+  const archive = useResourceLifecycleAction('archive')
+  const unarchive = useResourceLifecycleAction('unarchive')
 
   if (isLoading) return <div className="py-24 text-center text-muted-foreground">正在加载...</div>
   if (isError || !resource) return <div className="py-24 text-center text-destructive">内容不存在或无权访问。</div>
   const isAgent = resource.kind === 'AGENT'
   const isPublished = resource.status === 'PUBLISHED'
+  const isArchived = resource.status === 'ARCHIVED'
   const canUpdateStaticVersion = resource.kind === 'ONLINE_TOOL' && resource.artifactAvailable
 
   const handleLifecycle = async () => {
     try {
       const updated = isPublished
-        ? await offline.mutateAsync(slug)
-        : await publish.mutateAsync(slug)
+        ? await offline.mutateAsync({ resourceId })
+        : await publish.mutateAsync({ resourceId })
       toast.success(
         isPublished ? t('catalogDetail.offlineSuccessTitle') : t('catalogDetail.publishSuccessTitle'),
-        t('catalogDetail.lifecycleSuccessDescription', { name: updated.name, status: updated.status }),
+        t('catalogDetail.lifecycleSuccessDescription', { name: resource.name, status: updated.status }),
       )
     } catch (error) {
       toast.error(isPublished ? t('catalogDetail.offlineErrorTitle') : t('catalogDetail.publishErrorTitle'), error instanceof Error ? error.message : '')
+    }
+  }
+
+  const handleArchive = async () => {
+    try {
+      const updated = isArchived
+        ? await unarchive.mutateAsync({ resourceId })
+        : await archive.mutateAsync({ resourceId })
+      toast.success(
+        isArchived ? t('catalogDetail.unarchiveSuccessTitle') : t('catalogDetail.archiveSuccessTitle'),
+        t('catalogDetail.lifecycleSuccessDescription', { name: resource.name, status: updated.status }),
+      )
+    } catch (error) {
+      toast.error(
+        isArchived ? t('catalogDetail.unarchiveErrorTitle') : t('catalogDetail.archiveErrorTitle'),
+        error instanceof Error ? error.message : '',
+      )
     }
   }
 
@@ -71,10 +95,19 @@ export function CatalogResourcePage() {
               </a>
             ) : null}
             {resource.artifactAvailable ? (
-              <a href={catalogApi.artifactUrl(resource.slug)} className={cn(buttonVariants({ variant: 'outline', size: 'lg' }), 'gap-2')}>
+              <a href={resourcesApi.downloadUrl(resourceId)} className={cn(buttonVariants({ variant: 'outline', size: 'lg' }), 'gap-2')}>
                 下载 {resource.artifactFilename || '安装包'} <Download className="h-4 w-4" />
               </a>
             ) : null}
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={() => toggleFavorite.mutate({ resourceId, favorited: favorite.data ?? false })}
+              aria-label={favorite.data ? '取消收藏' : '收藏'}
+            >
+              {favorite.data ? <HeartOff className="mr-2 h-4 w-4" /> : <Heart className="mr-2 h-4 w-4" />}
+              {favorite.data ? '取消收藏' : '收藏'}
+            </Button>
             {resource.canManage ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -86,8 +119,11 @@ export function CatalogResourcePage() {
                   <DropdownMenuItem onSelect={() => navigate({ to: '/dashboard/catalog/$slug/edit', params: { slug } })}>
                     <Pencil className="mr-2 h-4 w-4" /> {canUpdateStaticVersion ? t('catalogDetail.updateVersion') : t('catalogDetail.edit')}
                   </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={() => void handleLifecycle()}>
+                  {!isArchived ? <DropdownMenuItem onSelect={() => void handleLifecycle()}>
                     <Power className="mr-2 h-4 w-4" /> {isPublished ? t('catalogDetail.offline') : t('catalogDetail.publish')}
+                  </DropdownMenuItem> : null}
+                  <DropdownMenuItem onSelect={() => void handleArchive()}>
+                    <Power className="mr-2 h-4 w-4" /> {isArchived ? t('catalogDetail.unarchive') : t('catalogDetail.archive')}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onSelect={() => navigate({ to: '/dashboard/resources' })}>

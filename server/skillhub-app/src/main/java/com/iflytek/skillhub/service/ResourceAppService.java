@@ -14,8 +14,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 /**
  * The single owner-facing resource read model. Skill and Catalog remain type-specific sources,
@@ -30,15 +32,18 @@ public class ResourceAppService {
     private final CatalogResourceRepository catalogResourceRepository;
     private final MySkillQueryRepository mySkillQueryRepository;
     private final CatalogResourceProjectionAssembler catalogProjectionAssembler;
+    private final ResourceFavoriteAppService favoriteAppService;
 
     public ResourceAppService(SkillRepository skillRepository,
                               CatalogResourceRepository catalogResourceRepository,
                               MySkillQueryRepository mySkillQueryRepository,
-                              CatalogResourceProjectionAssembler catalogProjectionAssembler) {
+                              CatalogResourceProjectionAssembler catalogProjectionAssembler,
+                              ResourceFavoriteAppService favoriteAppService) {
         this.skillRepository = skillRepository;
         this.catalogResourceRepository = catalogResourceRepository;
         this.mySkillQueryRepository = mySkillQueryRepository;
         this.catalogProjectionAssembler = catalogProjectionAssembler;
+        this.favoriteAppService = favoriteAppService;
     }
 
     @Transactional(readOnly = true)
@@ -57,14 +62,14 @@ public class ResourceAppService {
             List<Skill> skills = skillRepository.findByOwnerId(userId).stream()
                     .filter(skill -> matches(skill, normalizedKeyword))
                     .toList();
-            resources.addAll(toSkillResources(skills, userId));
+        resources.addAll(toSkillResources(skills, userId));
         }
         if (normalizedKind == null || !SOURCE_SKILL.equals(normalizedKind)) {
             List<CatalogResource> catalogResources = catalogResourceRepository.findByOwnerId(userId).stream()
                     .filter(resource -> normalizedKind == null || normalizedKind.equals(resource.getKind().name()))
                     .filter(resource -> matches(resource, normalizedKeyword))
                     .toList();
-            resources.addAll(toCatalogResources(catalogResources));
+            resources.addAll(toCatalogResources(catalogResources, userId));
         }
 
         resources.sort(Comparator.comparing(ResourceSummaryResponse::updatedAt,
@@ -79,10 +84,10 @@ public class ResourceAppService {
             return List.of();
         }
         List<SkillSummaryResponse> summaries = mySkillQueryRepository.getSkillSummaries(skills, userId);
-        return summaries.stream().map(this::toSkillResource).toList();
+        return summaries.stream().map(summary -> toSkillResource(summary, userId)).toList();
     }
 
-    private List<ResourceSummaryResponse> toCatalogResources(List<CatalogResource> resources) {
+    private List<ResourceSummaryResponse> toCatalogResources(List<CatalogResource> resources, String userId) {
         if (resources.isEmpty()) {
             return List.of();
         }
@@ -101,14 +106,16 @@ public class ResourceAppService {
                         null,
                         summary.visibilityScope(),
                         0L,
-                        0,
+                        favoriteAppService.count(SOURCE_CATALOG, summary.id()),
                         0,
                         true,
-                        summary.updatedAt()))
+                        summary.updatedAt(),
+                        catalogActions(summary.status(), summary.artifactAvailable()),
+                        favoriteAppService.isFavorited(resourceId(SOURCE_CATALOG, summary.id()), userId)))
                 .toList();
     }
 
-    private ResourceSummaryResponse toSkillResource(SkillSummaryResponse summary) {
+    private ResourceSummaryResponse toSkillResource(SkillSummaryResponse summary, String userId) {
         SkillLifecycleVersionResponse version = summary.headlineVersion();
         return new ResourceSummaryResponse(
                 resourceId(SOURCE_SKILL, summary.id()),
@@ -127,7 +134,40 @@ public class ResourceAppService {
                 summary.starCount(),
                 summary.ratingCount(),
                 true,
-                summary.updatedAt());
+                summary.updatedAt(),
+                skillActions(summary.status(), summary.publishedVersion() != null),
+                favoriteAppService.isFavorited(resourceId(SOURCE_SKILL, summary.id()), userId));
+    }
+
+    private Set<String> skillActions(String status, boolean downloadable) {
+        Set<String> actions = new LinkedHashSet<>();
+        actions.add("UPDATE_VERSION");
+        actions.add("ARCHIVED".equals(status) ? "UNARCHIVE" : "ARCHIVE");
+        if (downloadable) {
+            actions.add("DOWNLOAD");
+        }
+        actions.add("FAVORITE");
+        return actions;
+    }
+
+    private Set<String> catalogActions(String status, boolean artifactAvailable) {
+        Set<String> actions = new LinkedHashSet<>();
+        actions.add("UPDATE");
+        if ("ARCHIVED".equals(status)) {
+            actions.add("UNARCHIVE");
+        } else {
+            actions.add("ARCHIVE");
+        }
+        if ("PUBLISHED".equals(status)) {
+            actions.add("OFFLINE");
+        } else if (!"ARCHIVED".equals(status)) {
+            actions.add("PUBLISH");
+        }
+        if (artifactAvailable) {
+            actions.add("DOWNLOAD");
+        }
+        actions.add("FAVORITE");
+        return actions;
     }
 
     private boolean matches(Skill skill, String keyword) {
