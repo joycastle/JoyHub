@@ -197,6 +197,13 @@ vi.mock('@/shared/hooks/use-skill-queries', () => ({
   useSkillFiles: (...args: unknown[]) => useSkillFilesMock(...args),
   useSkillReadme: (...args: unknown[]) => useSkillReadmeMock(...args),
   useSkillFile: (...args: unknown[]) => useSkillFileMock(...args),
+  useTranslateSkillDocumentation: () => ({
+    data: undefined,
+    error: null,
+    isPending: false,
+    mutate: vi.fn(),
+    reset: vi.fn(),
+  }),
   useArchiveSkill: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useDeleteSkill: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useDeleteSkillVersion: () => ({ mutateAsync: vi.fn(), isPending: false }),

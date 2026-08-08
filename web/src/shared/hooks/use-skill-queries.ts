@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import type { SkillSummary, SkillDetail, SkillVersion, SkillVersionDetail, SkillVersionCompare, SkillFile, SearchParams, PagedResponse, PublishResult, BatchPublishResult } from '@/api/types'
-import { fetchJson, fetchText, getCsrfHeaders, skillLifecycleApi, WEB_API_PREFIX } from '@/api/client'
+import { fetchJson, fetchText, getCsrfHeaders, skillDocumentationApi, skillLifecycleApi, WEB_API_PREFIX } from '@/api/client'
 import { clearDeletedSkillQueries } from '@/features/skill/skill-delete-flow'
 import { getSkillDetailQueryKey } from './query-keys'
 import { buildSkillSearchUrl } from './skill-query-helpers'
@@ -121,6 +121,16 @@ export function useSkillReadme(namespace: string, slug: string, version?: string
     queryKey: ['skills', namespace, slug, 'versions', version, 'readme', path],
     queryFn: () => getSkillDocumentation(namespace, slug, version!, path!),
     enabled: enabled && !!namespace && !!slug && !!version && !!path,
+  })
+}
+
+export function useTranslateSkillDocumentation() {
+  return useMutation({
+    mutationFn: ({ namespace, slug, version, path }: { namespace: string; slug: string; version: string; path: string }) =>
+      skillDocumentationApi.translate(namespace, slug, version, path),
+    meta: {
+      skipGlobalErrorHandler: true,
+    },
   })
 }
 

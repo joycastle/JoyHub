@@ -1313,6 +1313,20 @@ export const profileApi = {
   },
 }
 
+export const skillDocumentationApi = {
+  async translate(namespace: string, slug: string, version: string, path: string): Promise<string> {
+    const cleanNamespace = namespace.startsWith('@') ? namespace.slice(1) : namespace
+    const query = `?path=${encodeURIComponent(path)}`
+    return fetchJson<string>(
+      `${WEB_API_PREFIX}/skills/${cleanNamespace}/${encodeURIComponent(slug)}/versions/${encodeURIComponent(version)}/file/translate${query}`,
+      {
+        method: 'POST',
+        headers: await ensureCsrfHeaders(),
+      },
+    )
+  },
+}
+
 export const adminApi = {
   async getUsers(params: { search?: string; status?: string; page?: number; size?: number }) {
     const searchParams = new URLSearchParams()

@@ -9,6 +9,7 @@ import com.iflytek.skillhub.domain.skill.SkillVersion;
 import com.iflytek.skillhub.domain.skill.service.SkillDownloadService;
 import com.iflytek.skillhub.domain.skill.service.SkillQueryService;
 import com.iflytek.skillhub.service.SkillLabelAppService;
+import com.iflytek.skillhub.service.SkillDocumentationTranslationService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -27,6 +28,7 @@ import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.Mockito.when;
 import static org.mockito.ArgumentMatchers.any;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -49,6 +51,24 @@ class SkillControllerTest {
 
     @MockBean
     private SkillLabelAppService skillLabelAppService;
+
+    @MockBean
+    private SkillDocumentationTranslationService documentationTranslationService;
+
+    @Test
+    void translateFileContentShouldReturnTranslatedMarkdown() throws Exception {
+        when(documentationTranslationService.translate(
+                eq("team"), eq("demo"), eq("1.0.0"), eq("SKILL.md"), eq("zh-CN"),
+                eq((String) null), eq(Map.<Long, NamespaceRole>of())))
+                .thenReturn("# 示例技能");
+
+        mockMvc.perform(post("/api/web/skills/team/demo/versions/1.0.0/file/translate")
+                        .param("path", "SKILL.md")
+                        .header("Accept-Language", "zh-CN"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(0))
+                .andExpect(jsonPath("$.data").value("# 示例技能"));
+    }
 
     @Test
     void getVersionDetailShouldReturnMetadataFields() throws Exception {

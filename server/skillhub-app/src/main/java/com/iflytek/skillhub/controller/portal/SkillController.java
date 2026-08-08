@@ -23,6 +23,7 @@ import com.iflytek.skillhub.dto.SkillVersionResponse;
 import com.iflytek.skillhub.metrics.SkillHubMetrics;
 import com.iflytek.skillhub.ratelimit.RateLimit;
 import com.iflytek.skillhub.service.SkillLabelAppService;
+import com.iflytek.skillhub.service.SkillDocumentationTranslationService;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -50,18 +51,21 @@ public class SkillController extends BaseApiController {
     private final SkillQueryService skillQueryService;
     private final SkillDownloadService skillDownloadService;
     private final SkillLabelAppService skillLabelAppService;
+    private final SkillDocumentationTranslationService documentationTranslationService;
     private final SkillHubMetrics metrics;
 
     public SkillController(
             SkillQueryService skillQueryService,
             SkillDownloadService skillDownloadService,
             SkillLabelAppService skillLabelAppService,
+            SkillDocumentationTranslationService documentationTranslationService,
             SkillHubMetrics metrics,
             ApiResponseFactory responseFactory) {
         super(responseFactory);
         this.skillQueryService = skillQueryService;
         this.skillDownloadService = skillDownloadService;
         this.skillLabelAppService = skillLabelAppService;
+        this.documentationTranslationService = documentationTranslationService;
         this.metrics = metrics;
     }
 
@@ -286,6 +290,21 @@ public class SkillController extends BaseApiController {
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .body(new InputStreamResource(content));
+    }
+
+    @PostMapping("/{namespace}/{slug}/versions/{version}/file/translate")
+    @RateLimit(category = "skill-translation", authenticated = 10, anonymous = 3, windowSeconds = 60)
+    public ApiResponse<String> translateFileContent(
+            @PathVariable String namespace,
+            @PathVariable String slug,
+            @PathVariable String version,
+            @RequestParam("path") String path,
+            @RequestHeader(value = "Accept-Language", required = false) String language,
+            @RequestAttribute(value = "userId", required = false) String userId,
+            @RequestAttribute(value = "userNsRoles", required = false) Map<Long, NamespaceRole> userNsRoles) {
+        return ok("response.success.read", documentationTranslationService.translate(
+                namespace, slug, version, path, language, userId,
+                userNsRoles == null ? Map.of() : userNsRoles));
     }
 
     @GetMapping("/{namespace}/{slug}/tags/{tagName}/file")

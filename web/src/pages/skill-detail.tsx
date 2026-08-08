@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type MouseEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, useParams, useNavigate, useRouterState, useSearch } from '@tanstack/react-router'
 import { useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, ChevronDown, ChevronUp, Folder, Globe, Lock, MoreHorizontal, RefreshCw, Terminal } from 'lucide-react'
+import { ArrowLeft, ChevronDown, ChevronUp, Folder, Globe, Languages, Lock, MoreHorizontal, RefreshCw, Terminal } from 'lucide-react'
 import { MarkdownRenderer } from '@/features/skill/markdown-renderer'
 import { resolvePackageRelativeLink } from '@/features/skill/package-relative-link'
 import { FileTree } from '@/features/skill/file-tree'
@@ -54,6 +54,7 @@ import {
   useSkillVersionDetail,
   useSkillFiles,
   useSkillReadme,
+  useTranslateSkillDocumentation,
   useSkillFile,
   useArchiveSkill,
   useDeleteSkill,
@@ -129,6 +130,7 @@ export function SkillDetailPage() {
   const [isOverviewExpanded, setIsOverviewExpanded] = useState(false)
   const [isOverviewCollapsible, setIsOverviewCollapsible] = useState(false)
   const [overviewMaxHeight, setOverviewMaxHeight] = useState(OVERVIEW_COLLAPSE_DESKTOP_MAX_HEIGHT)
+  const [isReadmeTranslated, setIsReadmeTranslated] = useState(false)
   // File preview state
   const [previewNode, setPreviewNode] = useState<FileTreeNode | null>(null)
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false)
@@ -151,6 +153,16 @@ export function SkillDetailPage() {
   const { data: files } = useSkillFiles(qns, qslug, selectedVersion, skillReady)
   const documentationPath = resolveDocumentationFilePath(files)
   const { data: readme, error: readmeError } = useSkillReadme(qns, qslug, selectedVersion, documentationPath, skillReady)
+  const documentationTranslationMutation = useTranslateSkillDocumentation()
+  const {
+    data: translatedDocumentation,
+    error: documentationTranslationError,
+    isPending: isTranslatingDocumentation,
+    mutate: translateDocumentation,
+    reset: resetDocumentationTranslation,
+  } = documentationTranslationMutation
+  const translatedReadme = isReadmeTranslated ? translatedDocumentation : null
+  const displayedReadme = translatedReadme ?? readme
   const { data: previewContent, isLoading: isLoadingPreview, error: previewError } = useSkillFile(
     qns,
     qslug,
@@ -176,7 +188,7 @@ export function SkillDetailPage() {
   useEffect(() => {
     // Recompute collapse rules whenever rendered documentation height changes so the page can keep
     // a readable summary section on different screen sizes.
-    if (!readme || typeof window === 'undefined') {
+    if (!displayedReadme || typeof window === 'undefined') {
       setIsOverviewCollapsible(false)
       setIsOverviewExpanded(false)
       return
@@ -217,7 +229,12 @@ export function SkillDetailPage() {
       window.removeEventListener('resize', updateOverviewState)
       resizeObserver?.disconnect()
     }
-  }, [readme])
+  }, [displayedReadme])
+
+  useEffect(() => {
+    setIsReadmeTranslated(false)
+    resetDocumentationTranslation()
+  }, [documentationPath, resetDocumentationTranslation, selectedVersion])
 
   const handleToggleOverview = () => {
     if (!isOverviewExpanded) {
@@ -229,6 +246,20 @@ export function SkillDetailPage() {
     requestAnimationFrame(() => {
       overviewSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     })
+  }
+
+  const handleTranslateReadme = () => {
+    if (translatedDocumentation) {
+      setIsReadmeTranslated((current) => !current)
+      return
+    }
+    if (!selectedVersion || !documentationPath) {
+      return
+    }
+    translateDocumentation(
+      { namespace: qns, slug: qslug, version: selectedVersion, path: documentationPath },
+      { onSuccess: () => setIsReadmeTranslated(true) },
+    )
   }
 
   const archiveMutation = useArchiveSkill()
@@ -740,10 +771,30 @@ export function SkillDetailPage() {
           <TabsContent value="readme" className="mt-6">
             {readme ? (
               <Card className="p-8 space-y-4">
-                {documentationPath ? (
-                  <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
-                    {t('skillDetail.documentationSource', { path: documentationPath })}
-                  </div>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  {documentationPath ? (
+                    <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground">
+                      {t('skillDetail.documentationSource', { path: documentationPath })}
+                    </div>
+                  ) : <span />}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="gap-2 rounded-full"
+                    onClick={handleTranslateReadme}
+                    disabled={isTranslatingDocumentation || !documentationPath || !selectedVersion}
+                  >
+                    <Languages className="h-4 w-4" />
+                    {isTranslatingDocumentation
+                      ? t('skillDetail.translatingDocumentation')
+                      : isReadmeTranslated
+                        ? t('skillDetail.showOriginalDocumentation')
+                        : t('skillDetail.translateDocumentation')}
+                  </Button>
+                </div>
+                {documentationTranslationError ? (
+                  <p className="text-sm text-destructive">{t('skillDetail.translationUnavailable')}</p>
                 ) : null}
                 <div ref={overviewSectionRef} className="space-y-4">
                   <div
@@ -754,7 +805,7 @@ export function SkillDetailPage() {
                     style={!isOverviewExpanded && isOverviewCollapsible ? { maxHeight: `${overviewMaxHeight}px` } : undefined}
                   >
                     <div ref={overviewContentRef}>
-                      <MarkdownRenderer content={readme} onLinkClick={handleOverviewLinkClick} />
+                      <MarkdownRenderer content={displayedReadme ?? readme} onLinkClick={handleOverviewLinkClick} />
                     </div>
                     {!isOverviewExpanded && isOverviewCollapsible ? (
                       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-card via-card/95 to-transparent" />
