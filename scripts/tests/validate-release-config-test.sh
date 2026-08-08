@@ -29,6 +29,8 @@ write_env() {
   local file="$1"
   local secret="${2:-}"
   local include_secret="${3:-yes}"
+  local hermes_secret="${4:-release-hermes-jwt-secret-32-bytes-minimum}"
+  local include_hermes_secret="${5:-yes}"
   cat >"$file" <<EOF
 SKILLHUB_PUBLIC_BASE_URL=https://skillhub.example.com
 POSTGRES_DB=skillhub
@@ -49,6 +51,10 @@ SKILLHUB_STORAGE_S3_AUTO_CREATE_BUCKET=false
 EOF
   if [[ "$include_secret" == "yes" ]]; then
     printf 'SKILLHUB_DOWNLOAD_ANON_COOKIE_SECRET=%s\n' "$secret" >>"$file"
+  fi
+  if [[ "$include_hermes_secret" == "yes" ]]; then
+    printf 'HERMES_SKILLHUB_JWT_SECRET=%s\n' "$hermes_secret" >>"$file"
+    printf 'HERMES_SKILLHUB_JWT_ISSUER=hermes-agent\n' >>"$file"
   fi
 }
 
@@ -86,6 +92,18 @@ expect_fail "$placeholder_env" "SKILLHUB_DOWNLOAD_ANON_COOKIE_SECRET still uses 
 short_env="$tmp/short.env"
 write_env "$short_env" "too-short"
 expect_fail "$short_env" "SKILLHUB_DOWNLOAD_ANON_COOKIE_SECRET must be at least 32 characters"
+
+missing_hermes_jwt_env="$tmp/missing-hermes-jwt.env"
+write_env "$missing_hermes_jwt_env" "release-download-secret-32-bytes-minimum" yes ignored no
+expect_fail "$missing_hermes_jwt_env" "HERMES_SKILLHUB_JWT_SECRET is required"
+
+placeholder_hermes_jwt_env="$tmp/placeholder-hermes-jwt.env"
+write_env "$placeholder_hermes_jwt_env" "release-download-secret-32-bytes-minimum" yes "replace-with-a-long-random-shared-secret"
+expect_fail "$placeholder_hermes_jwt_env" "HERMES_SKILLHUB_JWT_SECRET still uses placeholder/default value"
+
+short_hermes_jwt_env="$tmp/short-hermes-jwt.env"
+write_env "$short_hermes_jwt_env" "release-download-secret-32-bytes-minimum" yes "too-short"
+expect_fail "$short_hermes_jwt_env" "HERMES_SKILLHUB_JWT_SECRET must be at least 32 characters"
 
 invalid_forwarded_proto_env="$tmp/invalid-forwarded-proto.env"
 write_env "$invalid_forwarded_proto_env" "release-download-secret-32-bytes-minimum"
