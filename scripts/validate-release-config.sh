@@ -203,6 +203,11 @@ reject_values SKILLHUB_DOWNLOAD_ANON_COOKIE_SECRET "change-me-in-production" "re
 reject_patterns SKILLHUB_DOWNLOAD_ANON_COOKIE_SECRET "TODO_*" "todo_*" "replace*"
 validate_min_length SKILLHUB_DOWNLOAD_ANON_COOKIE_SECRET 32
 
+require_non_empty HERMES_SKILLHUB_JWT_SECRET
+reject_values HERMES_SKILLHUB_JWT_SECRET "replace-with-a-long-random-shared-secret" "replace-with-same-secret-as-hermes-agent"
+reject_patterns HERMES_SKILLHUB_JWT_SECRET "TODO_*" "todo_*" "replace*"
+validate_min_length HERMES_SKILLHUB_JWT_SECRET 32
+
 reject_values POSTGRES_PASSWORD "change-this-postgres-password" "skillhub_demo" "skillhub_dev"
 reject_patterns POSTGRES_PASSWORD "TODO_*" "todo_*"
 reject_values BOOTSTRAP_ADMIN_PASSWORD "replace-this-admin-password" "ChangeMe!2026" "Admin@2026"
