@@ -64,6 +64,16 @@ class BingoFrenzyCatalogInitializerTest {
             assertThat(resource.getVisibilityScope()).isEqualTo(CatalogVisibilityScope.DEPARTMENTS);
             assertThat(resource.getVisibleNamespaceIds()).containsExactly(19L);
             assertThat(resource.getOwnerId()).isEqualTo("feishu:owner");
+            assertThat(resource.getDocumentation())
+                    .contains("## 使用前准备")
+                    .contains("## 访问与支持")
+                    .doesNotContain("首批接入方式");
         });
+        assertThat(saved)
+                .filteredOn(resource -> resource.getSlug().equals("slice9-editor"))
+                .singleElement()
+                .extracting(CatalogResource::getDocumentation)
+                .asString()
+                .contains("四个角不应进入拉伸区域");
     }
 }
