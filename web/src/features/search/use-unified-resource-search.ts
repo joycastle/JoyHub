@@ -8,6 +8,7 @@ export interface UnifiedResourceSearchParams {
   label?: string
   sort?: string
   type?: UnifiedResourceSearchType
+  starredOnly?: boolean
   page?: number
   size?: number
 }

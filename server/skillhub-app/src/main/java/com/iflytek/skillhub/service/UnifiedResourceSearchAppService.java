@@ -15,6 +15,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,13 +28,16 @@ public class UnifiedResourceSearchAppService {
 
     private final SkillSearchAppService skillSearchAppService;
     private final CatalogResourceQueryAppService catalogSearchAppService;
+    private final ResourceFavoriteAppService favoriteAppService;
     private final HybridResourceSearchRanker searchRanker;
 
     public UnifiedResourceSearchAppService(SkillSearchAppService skillSearchAppService,
                                            CatalogResourceQueryAppService catalogSearchAppService,
+                                           ResourceFavoriteAppService favoriteAppService,
                                            HybridResourceSearchRanker searchRanker) {
         this.skillSearchAppService = skillSearchAppService;
         this.catalogSearchAppService = catalogSearchAppService;
+        this.favoriteAppService = favoriteAppService;
         this.searchRanker = searchRanker;
     }
 
@@ -44,6 +48,7 @@ public class UnifiedResourceSearchAppService {
             String label,
             String sort,
             UnifiedResourceSearchType type,
+            boolean starredOnly,
             int page,
             int size,
             String userId,
@@ -71,6 +76,11 @@ public class UnifiedResourceSearchAppService {
                     null, center, null, null, null, null, catalogViewer,
                     PageRequest.of(0, MAX_CATALOG_CANDIDATES));
             catalog.items().forEach(resource -> candidates.add(catalogCandidate(resource)));
+        }
+
+        if (starredOnly) {
+            Set<String> favorites = favoriteAppService.findFavoriteResourceIds(userId);
+            candidates.removeIf(candidate -> !favorites.contains(favoriteKey(candidate)));
         }
 
         List<RankedCandidate> ranked = new ArrayList<>(rank(query, scope, candidates));
@@ -159,6 +169,12 @@ public class UnifiedResourceSearchAppService {
 
     private String key(ResourceSearchDocument document) {
         return document.resourceType() + ":" + document.id();
+    }
+
+    private String favoriteKey(Candidate candidate) {
+        return candidate.skill() != null
+                ? "SKILL:" + candidate.skill().id()
+                : "CATALOG:" + candidate.catalogResource().id();
     }
 
     private String preferred(String localized, String fallback) {

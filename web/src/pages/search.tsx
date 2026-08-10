@@ -2,7 +2,7 @@ import { startTransition, useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { Bot, Boxes, Loader2, Puzzle, Sparkles, Wrench } from 'lucide-react'
-import type { SkillSummary, UnifiedResourceSearchType } from '@/api/types'
+import type { UnifiedResourceSearchType } from '@/api/types'
 import { useAuth } from '@/features/auth/use-auth'
 import { SearchBar } from '@/features/search/search-bar'
 import { SkillCard } from '@/features/skill/skill-card'
@@ -12,7 +12,6 @@ import { SkeletonList } from '@/shared/components/skeleton-loader'
 import { EmptyState } from '@/shared/components/empty-state'
 import { Pagination } from '@/shared/components/pagination'
 import { useVisibleLabels } from '@/shared/hooks/use-label-queries'
-import { useMyStars } from '@/shared/hooks/use-user-queries'
 import { formatNamespaceSearchInput, normalizeSearchQuery, parseNamespaceSearchInput } from '@/shared/lib/search-query'
 import { Button } from '@/shared/ui/button'
 import { APP_SHELL_PAGE_CLASS_NAME } from '@/app/page-shell-style'
@@ -72,35 +71,6 @@ function scrollToTopOnPageChange() {
  * Search text, sorting, pagination, and the starred-only filter are mirrored into router search
  * params so the page can be shared, restored, and revisited without losing state.
  */
-function filterStarredSkills(skills: SkillSummary[], query: string, namespace: string): SkillSummary[] {
-  const normalizedQuery = query.trim().toLowerCase()
-  const normalizedNamespace = namespace.trim().toLowerCase()
-
-  return skills.filter((skill) => {
-    const matchesNamespace = !normalizedNamespace || skill.namespace.toLowerCase() === normalizedNamespace
-    if (!matchesNamespace) {
-      return false
-    }
-    if (!normalizedQuery) {
-      return true
-    }
-    return [skill.displayName, skill.summary, skill.namespace, skill.slug]
-        .filter(Boolean)
-        .some((value) => value!.toLowerCase().includes(normalizedQuery))
-  })
-}
-
-function sortStarredSkills(skills: SkillSummary[], sort: string): SkillSummary[] {
-  const sorted = [...skills]
-  if (sort === 'downloads') {
-    return sorted.sort((left, right) => right.downloadCount - left.downloadCount)
-  }
-  if (sort === 'newest' || sort === 'relevance') {
-    return sorted.sort((left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime())
-  }
-  return sorted
-}
-
 export function SearchPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -141,15 +111,11 @@ export function SearchPage() {
     label: selectedLabel || undefined,
     sort,
     type: resourceType,
+    starredOnly,
     page,
     size: PAGE_SIZE,
-  }, !starredOnly)
+  }, !starredOnly || isAuthenticated)
   const { data: labels } = useVisibleLabels()
-  const {
-    data: starredSkills,
-    isLoading: isLoadingStarred,
-    isFetching: isFetchingStarred,
-  } = useMyStars(starredOnly && isAuthenticated)
   useEffect(() => {
     // Debounce URL updates while the user is typing so query state stays shareable without
     // triggering a navigation on every keystroke.
@@ -211,11 +177,11 @@ export function SearchPage() {
       return
     }
 
-    navigate({ to: '/search', search: { q, namespace, label: selectedLabel, sort, page: 0, starredOnly: !starredOnly, type: 'SKILL' } })
+    navigate({ to: '/search', search: { q, namespace, label: selectedLabel, sort, page: 0, starredOnly: !starredOnly, type: resourceType } })
   }
 
   const handleResourceTypeChange = (type: SearchResourceType) => {
-    navigate({ to: '/search', search: { q, namespace, label: selectedLabel, sort, page: 0, starredOnly: type === 'SKILL' ? starredOnly : false, type } })
+    navigate({ to: '/search', search: { q, namespace, label: selectedLabel, sort, page: 0, starredOnly, type } })
   }
 
   const handleScenarioSearch = (query: string) => {
@@ -227,22 +193,12 @@ export function SearchPage() {
     navigate({ to: `/space/${namespace}/${encodeURIComponent(slug)}`, search: { returnTo: `${window.location.pathname}${window.location.search}` } })
   }
 
-  const filteredStarredSkills = starredOnly
-    ? sortStarredSkills(filterStarredSkills(starredSkills ?? [], q, namespace), sort)
-    : []
-  const starredPageItems = starredOnly
-    ? filteredStarredSkills.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
-    : []
-  const totalPages = starredOnly
-    ? Math.ceil(filteredStarredSkills.length / PAGE_SIZE)
-    : unifiedResults
-      ? Math.ceil(unifiedResults.total / unifiedResults.size)
-      : 0
-  const isPageLoading = starredOnly ? isLoadingStarred : isLoading
-  const isUpdatingResults = starredOnly ? isFetchingStarred && !isLoadingStarred : isFetching && !isLoading
-  const resultCount = starredOnly ? filteredStarredSkills.length : (unifiedResults?.total ?? 0)
+  const totalPages = unifiedResults ? Math.ceil(unifiedResults.total / unifiedResults.size) : 0
+  const isPageLoading = isLoading
+  const isUpdatingResults = isFetching && !isLoading
+  const resultCount = unifiedResults?.total ?? 0
   const unifiedItems = unifiedResults?.items ?? []
-  const hasAnyResults = starredOnly ? starredPageItems.length > 0 : unifiedItems.length > 0
+  const hasAnyResults = unifiedItems.length > 0
 
   return (
     <div className={APP_SHELL_PAGE_CLASS_NAME}>
@@ -367,17 +323,7 @@ export function SearchPage() {
       ) : hasAnyResults ? (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {starredOnly
-              ? starredPageItems.map((skill, idx) => (
-                  <div key={`SKILL:${skill.id}`} className={`h-full animate-fade-up delay-${Math.min(idx % 6 + 1, 6)}`}>
-                    <SkillCard
-                      skill={skill}
-                      highlightStarred
-                      onClick={() => handleSkillClick(skill.namespace, skill.slug)}
-                    />
-                  </div>
-                ))
-              : unifiedItems.map((item, idx) => {
+            {unifiedItems.map((item, idx) => {
                   const animationClass = `h-full animate-fade-up delay-${Math.min(idx % 6 + 1, 6)}`
                   const skill = item.skill
                   if (item.resourceType === 'SKILL' && skill) {

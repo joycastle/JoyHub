@@ -4,6 +4,7 @@ import com.iflytek.skillhub.catalog.domain.CatalogResourceRepository;
 import com.iflytek.skillhub.domain.shared.exception.DomainNotFoundException;
 import com.iflytek.skillhub.domain.skill.SkillRepository;
 import com.iflytek.skillhub.domain.social.SkillStarService;
+import java.util.Set;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -75,6 +76,23 @@ public class ResourceFavoriteAppService {
                 "SELECT COUNT(*) FROM resource_favorite WHERE source_type = 'CATALOG' AND source_id = ?",
                 Integer.class, sourceId);
         return count != null ? count : 0;
+    }
+
+    /** Returns canonical references for every resource favorited by one user. */
+    @Transactional(readOnly = true)
+    public Set<String> findFavoriteResourceIds(String userId) {
+        if (userId == null || userId.isBlank()) {
+            return Set.of();
+        }
+        return Set.copyOf(jdbcTemplate.queryForList("""
+                SELECT 'SKILL:' || skill_id::text
+                  FROM skill_star
+                 WHERE user_id = ?
+                UNION ALL
+                SELECT 'CATALOG:' || source_id::text
+                  FROM resource_favorite
+                 WHERE source_type = 'CATALOG' AND user_id = ?
+                """, String.class, userId, userId));
     }
 
     private ResourceReference requireExisting(String rawReference) {

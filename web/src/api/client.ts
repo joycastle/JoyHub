@@ -740,12 +740,14 @@ export const resourcesApi = {
     label?: string
     sort?: string
     type?: UnifiedResourceSearchType
+    starredOnly?: boolean
     page?: number
     size?: number
   } = {}): Promise<PagedResponse<UnifiedResourceSearchItem>> {
     const query = new URLSearchParams({
       sort: params.sort ?? 'relevance',
       type: params.type ?? 'ALL',
+      starredOnly: String(params.starredOnly ?? false),
       page: String(params.page ?? 0),
       size: String(params.size ?? 12),
     })

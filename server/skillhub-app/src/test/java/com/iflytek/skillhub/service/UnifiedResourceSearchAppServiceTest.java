@@ -33,6 +33,8 @@ class UnifiedResourceSearchAppServiceTest {
     private SkillSearchAppService skillSearchAppService;
     @Mock
     private CatalogResourceQueryAppService catalogSearchAppService;
+    @Mock
+    private ResourceFavoriteAppService favoriteAppService;
 
     private UnifiedResourceSearchAppService service;
     private CatalogViewer viewer;
@@ -42,6 +44,7 @@ class UnifiedResourceSearchAppServiceTest {
         service = new UnifiedResourceSearchAppService(
                 skillSearchAppService,
                 catalogSearchAppService,
+                favoriteAppService,
                 new HybridResourceSearchRanker(
                         new HashingSearchEmbeddingService(),
                         new ResourceSearchQueryInterpreter(new SearchTextTokenizer())));
@@ -65,7 +68,7 @@ class UnifiedResourceSearchAppServiceTest {
 
         var result = service.search(
                 "生成报告", null, null, "relevance", UnifiedResourceSearchType.ALL,
-                0, 12, "user-1", Map.of(), viewer);
+                false, 0, 12, "user-1", Map.of(), viewer);
 
         assertThat(result.items())
                 .extracting(item -> item.resourceType() + ":" + (item.skill() != null
@@ -85,7 +88,7 @@ class UnifiedResourceSearchAppServiceTest {
 
         var result = service.search(
                 "图集拆分", null, null, "relevance", UnifiedResourceSearchType.TOOL,
-                0, 12, "user-1", Map.of(), viewer);
+                false, 0, 12, "user-1", Map.of(), viewer);
 
         assertThat(result.items()).singleElement().satisfies(item -> {
             assertThat(item.resourceType()).isEqualTo("TOOL");
@@ -110,10 +113,37 @@ class UnifiedResourceSearchAppServiceTest {
 
         var result = service.search(
                 "", null, null, "newest", UnifiedResourceSearchType.ALL,
-                0, 12, "user-1", Map.of(), viewer);
+                false, 0, 12, "user-1", Map.of(), viewer);
 
         assertThat(result.items()).hasSize(2);
         assertThat(result.total()).isEqualTo(2);
+    }
+
+    @Test
+    void starredOnlyFiltersSkillsAgentsAndToolsInsideTheSamePool() {
+        given(skillSearchAppService.search(
+                null, null, "newest", 0, 500, List.of(), "user-1", Map.of()))
+                .willReturn(new SkillSearchAppService.SearchResponse(
+                        List.of(skill(1L, "html-report", "每周HTML报告生成", "生成报告。")),
+                        1, 0, 500));
+        given(catalogSearchAppService.search(
+                eq(null), eq(null), eq(null), eq(null), eq(null), eq(null), eq(viewer), any(Pageable.class)))
+                .willReturn(new PageResponse<>(List.of(
+                        catalog(2L, "wangzong", "AGENT", "通用王总", "生成报告。"),
+                        catalog(3L, "atlas-unpacker", "ONLINE_TOOL", "图集拆分", "拆分图集。")
+                ), 2, 0, 500));
+        given(favoriteAppService.findFavoriteResourceIds("user-1"))
+                .willReturn(Set.of("SKILL:1", "CATALOG:2"));
+
+        var result = service.search(
+                "", null, null, "newest", UnifiedResourceSearchType.ALL,
+                true, 0, 12, "user-1", Map.of(), viewer);
+
+        assertThat(result.items())
+                .extracting(item -> item.resourceType() + ":" + (item.skill() != null
+                        ? item.skill().slug()
+                        : item.catalogResource().slug()))
+                .containsExactlyInAnyOrder("SKILL:html-report", "AGENT:wangzong");
     }
 
     private SkillSummaryResponse skill(Long id, String slug, String name, String summary) {

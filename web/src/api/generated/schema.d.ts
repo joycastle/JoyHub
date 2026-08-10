@@ -9918,6 +9918,7 @@ export interface operations {
                 kind?: "AGENT" | "PLUGIN" | "MCP_SERVER" | "ONLINE_TOOL" | "INTERNAL_SERVICE" | "KNOWLEDGE_BASE" | "TEMPLATE" | "RESOURCE_PACK";
                 scenario?: string;
                 departmentId?: number;
+                sort?: string;
                 page?: number;
                 size?: number;
             };
@@ -9970,6 +9971,7 @@ export interface operations {
                 kind?: "AGENT" | "PLUGIN" | "MCP_SERVER" | "ONLINE_TOOL" | "INTERNAL_SERVICE" | "KNOWLEDGE_BASE" | "TEMPLATE" | "RESOURCE_PACK";
                 scenario?: string;
                 departmentId?: number;
+                sort?: string;
                 page?: number;
                 size?: number;
             };
@@ -12186,6 +12188,7 @@ export interface operations {
                 label?: string;
                 sort?: string;
                 type?: "ALL" | "AGENT" | "TOOL" | "SKILL";
+                starredOnly?: boolean;
                 page?: number;
                 size?: number;
             };
@@ -12214,6 +12217,7 @@ export interface operations {
                 label?: string;
                 sort?: string;
                 type?: "ALL" | "AGENT" | "TOOL" | "SKILL";
+                starredOnly?: boolean;
                 page?: number;
                 size?: number;
             };

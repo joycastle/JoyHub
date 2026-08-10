@@ -239,7 +239,7 @@ describe('SearchPage', () => {
         sort: 'downloads',
         page: 0,
         starredOnly: true,
-        type: 'SKILL',
+        type: 'ALL',
       },
     })
   })
@@ -255,6 +255,7 @@ describe('SearchPage', () => {
       page: 1,
       size: 12,
       type: 'ALL',
+      starredOnly: false,
     })
   })
 
@@ -315,6 +316,35 @@ describe('SearchPage', () => {
     const html = renderToStaticMarkup(<SearchPage />)
 
     expect(html.indexOf('catalog-card:wangzong')).toBeLessThan(html.indexOf('skill-card:report'))
+  })
+
+  it('keeps favorite Skills and Agents in the same backend-provided pool', () => {
+    useSearchMock.mockReturnValue({
+      q: '',
+      sort: 'newest',
+      page: 0,
+      starredOnly: true,
+      type: 'ALL',
+    })
+    useUnifiedResourceSearchMock.mockReturnValue({
+      data: {
+        items: [
+          { resourceType: 'AGENT', accessMode: 'OPEN', relevanceScore: 0, catalogResource: { id: 2, slug: 'wangzong', name: '王总', summary: '报告', kind: 'AGENT' } },
+          { resourceType: 'SKILL', accessMode: 'INSTALL', relevanceScore: 0, skill: { id: 1, displayName: '报告生成', summary: '报告', namespace: 'global', slug: 'report', downloadCount: 0, starCount: 0, ratingCount: 0, updatedAt: '2026-08-10T00:00:00Z', canSubmitPromotion: false } },
+        ],
+        total: 2,
+        page: 0,
+        size: 12,
+      },
+      isLoading: false,
+      isFetching: false,
+    })
+
+    const html = renderToStaticMarkup(<SearchPage />)
+
+    expect(unifiedSearchParams[0]).toMatchObject({ starredOnly: true, type: 'ALL' })
+    expect(html).toContain('catalog-card:wangzong')
+    expect(html).toContain('skill-card:report')
   })
 
   it('renders the default skill list when the empty query still returns items', () => {

@@ -78,6 +78,7 @@ public class ResourceController extends BaseApiController {
             @RequestParam(required = false) String label,
             @RequestParam(defaultValue = "relevance") String sort,
             @RequestParam(defaultValue = "ALL") UnifiedResourceSearchType type,
+            @RequestParam(defaultValue = "false") boolean starredOnly,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "12") int size,
             @AuthenticationPrincipal PlatformPrincipal principal,
@@ -88,7 +89,7 @@ public class ResourceController extends BaseApiController {
                 principal.userId(), roles,
                 principal.platformRoles() != null ? principal.platformRoles() : Set.of());
         return ok("response.success.read", unifiedResourceSearchAppService.search(
-                q, namespace, label, sort, type, page, size, userId, roles, catalogViewer));
+                q, namespace, label, sort, type, starredOnly, page, size, userId, roles, catalogViewer));
     }
 
     @GetMapping("/mine")
