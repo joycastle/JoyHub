@@ -68,7 +68,7 @@ public class UnifiedResourceSearchAppService {
                     ? "AGENT"
                     : scope == UnifiedResourceSearchType.TOOL ? "TOOL" : null;
             PageResponse<CatalogResourceSummaryResponse> catalog = catalogSearchAppService.search(
-                    null, center, null, null, null, catalogViewer,
+                    null, center, null, null, null, null, catalogViewer,
                     PageRequest.of(0, MAX_CATALOG_CANDIDATES));
             catalog.items().forEach(resource -> candidates.add(catalogCandidate(resource)));
         }

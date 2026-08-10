@@ -56,7 +56,7 @@ class UnifiedResourceSearchAppServiceTest {
                         List.of(skill(1L, "html-report", "每周HTML报告生成",
                                 "把表格数据生成响应式HTML报告。")), 1, 0, 500));
         given(catalogSearchAppService.search(
-                eq(null), eq(null), eq(null), eq(null), eq(null), eq(viewer), any(Pageable.class)))
+                eq(null), eq(null), eq(null), eq(null), eq(null), eq(null), eq(viewer), any(Pageable.class)))
                 .willReturn(new PageResponse<>(List.of(
                         catalog(2L, "wangzong", "AGENT", "通用王总", "生成图片与多格式报告。"),
                         catalog(3L, "build-package", "ONLINE_TOOL", "构建包", "游戏构建包下载入口。"),
@@ -78,7 +78,7 @@ class UnifiedResourceSearchAppServiceTest {
     @Test
     void toolScopeSkipsSkillCandidatesAndAppliesCatalogScopeBeforeRanking() {
         given(catalogSearchAppService.search(
-                eq(null), eq("TOOL"), eq(null), eq(null), eq(null), eq(viewer), any(Pageable.class)))
+                eq(null), eq("TOOL"), eq(null), eq(null), eq(null), eq(null), eq(viewer), any(Pageable.class)))
                 .willReturn(new PageResponse<>(List.of(
                         catalog(3L, "atlas-unpacker", "ONLINE_TOOL", "图集拆分", "图集拆分和资源提取工具。")
                 ), 1, 0, 500));
@@ -103,7 +103,7 @@ class UnifiedResourceSearchAppServiceTest {
                         List.of(skill(1L, "html-report", "每周HTML报告生成", "生成响应式HTML报告。")),
                         1, 0, 500));
         given(catalogSearchAppService.search(
-                eq(null), eq(null), eq(null), eq(null), eq(null), eq(viewer), any(Pageable.class)))
+                eq(null), eq(null), eq(null), eq(null), eq(null), eq(null), eq(viewer), any(Pageable.class)))
                 .willReturn(new PageResponse<>(List.of(
                         catalog(2L, "wangzong", "AGENT", "通用王总", "生成图片与多格式报告。")
                 ), 1, 0, 500));
