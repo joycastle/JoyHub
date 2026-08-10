@@ -86,6 +86,43 @@ class DiscoveryAssistantAppServiceTest {
                 eq(new DiscoveryConversationTurn("那帮我整理一下", "分两步完成。")));
     }
 
+    @Test
+    void keepsTopUnifiedSearchCandidatesWhenModelRejectsEveryCandidate() {
+        DiscoveryAiClient aiClient = mock(DiscoveryAiClient.class);
+        DiscoveryKnowledgeRetriever retriever = mock(DiscoveryKnowledgeRetriever.class);
+        DiscoveryConversationStore conversationStore = mock(DiscoveryConversationStore.class);
+        DiscoveryAiProperties properties = new DiscoveryAiProperties();
+        properties.setEnabled(true);
+        properties.setApiKey("test-key");
+        DiscoverySearchPlan plan = DiscoverySearchPlan.singleStep("生成报告");
+        DiscoverySuggestionResponse reportAgent = new DiscoverySuggestionResponse(
+                "catalog", 9L, "通用王总", "生成多格式报告", "AGENT",
+                "general-agent", null, "https://example.com/agent", null,
+                "支持生成多格式报告", "对应文档");
+        when(conversationStore.load("user-1", null))
+                .thenReturn(new DiscoveryConversationStore.Conversation("conversation-1", List.of()));
+        when(aiClient.plan(anyString(), anyString(), anyList(), anyString())).thenReturn(plan);
+        when(retriever.retrieve(
+                List.of("我想生成一个有视频素材的报告", "生成报告"),
+                principal(), Map.of(), "zh-CN"))
+                .thenReturn(List.of(reportAgent));
+        when(aiClient.answer(anyString(), anyString(), anyList(), anyList(), anyString()))
+                .thenReturn(new DiscoveryAiClient.AiAnswer(
+                        "暂时没有找到匹配能力。", "gpt-test", false,
+                        List.of(new DiscoveryAiClient.StepSelection(0, List.of()))));
+        DiscoveryAssistantAppService service = new DiscoveryAssistantAppService(
+                aiClient, properties, retriever, conversationStore);
+
+        DiscoveryAssistResponse response = service.assist(
+                "我想生成一个有视频素材的报告", "zh-CN", null, principal(), Map.of());
+
+        assertThat(response.answer()).contains("匹配了你有权限查看的能力");
+        assertThat(response.suggestions()).singleElement()
+                .extracting(DiscoverySuggestionResponse::title)
+                .isEqualTo("通用王总");
+        assertThat(response.modelGenerated()).isFalse();
+    }
+
     private static PlatformPrincipal principal() {
         return new PlatformPrincipal("user-1", "User", "user@example.com", null, "local", Set.of("USER"));
     }

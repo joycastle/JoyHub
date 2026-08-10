@@ -61,9 +61,15 @@ public class DiscoveryAssistantAppService {
                         question, language, candidateSteps, conversation.turns(), safetyIdentifier);
                 List<DiscoveryPlanStepResponse> steps = applySelections(candidateSteps, answer.selections());
                 List<DiscoverySuggestionResponse> suggestions = flatten(steps);
-                response = new DiscoveryAssistResponse(
-                        conversation.id(), answer.text(), suggestions, steps,
-                        answer.model(), true, answer.fallbackUsed());
+                if (suggestions.isEmpty() && !flatten(candidateSteps).isEmpty()) {
+                    steps = limitCandidates(candidateSteps, 3);
+                    suggestions = flatten(steps);
+                    response = localFallback(conversation.id(), language, steps, suggestions);
+                } else {
+                    response = new DiscoveryAssistResponse(
+                            conversation.id(), answer.text(), suggestions, steps,
+                            answer.model(), true, answer.fallbackUsed());
+                }
             } catch (RuntimeException exception) {
                 log.warn("JoyHub AI assistant degraded to local guidance");
                 List<DiscoverySuggestionResponse> suggestions = flatten(candidateSteps);
@@ -122,6 +128,15 @@ public class DiscoveryAssistantAppService {
             }
         }
         return List.copyOf(unique.values());
+    }
+
+    private List<DiscoveryPlanStepResponse> limitCandidates(
+            List<DiscoveryPlanStepResponse> steps,
+            int limitPerStep) {
+        return steps.stream()
+                .map(step -> new DiscoveryPlanStepResponse(
+                        step.objective(), step.suggestions().stream().limit(limitPerStep).toList()))
+                .toList();
     }
 
     private List<DiscoveryPlanStepResponse> applySelections(
