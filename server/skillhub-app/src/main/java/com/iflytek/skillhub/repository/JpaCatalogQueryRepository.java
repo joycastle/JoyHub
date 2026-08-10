@@ -36,6 +36,7 @@ public class JpaCatalogQueryRepository implements CatalogQueryRepository {
             CatalogResourceKind kind,
             String scenario,
             Long departmentId,
+            String sort,
             Set<Long> viewerNamespaceIds,
             boolean superAdmin,
             Pageable pageable) {
@@ -92,7 +93,7 @@ public class JpaCatalogQueryRepository implements CatalogQueryRepository {
         }
 
         TypedQuery<CatalogResource> contentQuery = entityManager.createQuery(
-                "SELECT DISTINCT resource" + from + " ORDER BY resource.updatedAt DESC",
+                "SELECT DISTINCT resource" + from + orderBy(sort),
                 CatalogResource.class
         );
         applyParameters(contentQuery, parameters);
@@ -117,5 +118,12 @@ public class JpaCatalogQueryRepository implements CatalogQueryRepository {
             return null;
         }
         return value.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private static String orderBy(String sort) {
+        if ("newest".equalsIgnoreCase(sort)) {
+            return " ORDER BY resource.updatedAt DESC";
+        }
+        return " ORDER BY resource.publishedAt DESC, resource.updatedAt DESC";
     }
 }

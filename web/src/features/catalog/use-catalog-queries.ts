@@ -48,6 +48,7 @@ export function useCatalogResources(params: {
   kind?: CatalogResourceKind
   scenario?: string
   departmentId?: number
+  sort?: 'recommended' | 'newest'
   page?: number
   size?: number
   enabled?: boolean

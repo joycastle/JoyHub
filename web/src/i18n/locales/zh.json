@@ -1774,8 +1774,9 @@
   },
   "onboarding": {
     "replay": "查看新手引导",
+    "returnToMap": "返回入门地图",
     "planLabel": "JoyHub 入门地图",
-    "planTitle": "先用这 5 步熟悉平台",
+    "planTitle": "先用这 6 步熟悉平台",
     "planDescription": "选择一个入口开始，之后随时可以回到这里查看指南。",
     "loginGreeting": "{{name}}，欢迎回来",
     "member": "新同事",
@@ -1790,16 +1791,16 @@
       "welcome": {
         "shortTitle": "认识 JoyHub",
         "title": "欢迎来到 JoyHub",
-        "description": "这里是公司统一的 AI 能力入口，帮助你快速找到能直接解决工作问题的 Agent、Skill 和工具。",
+        "description": "这里是公司统一的 AI 能力入口，帮助你快速找到并使用 Agent、工具和 Skill，也能统一维护你发布的内容。",
         "nextTitle": "接下来会逐个进入功能了解用法",
-        "nextDescription": "从 Agent 开始，之后依次介绍 Skill、工具和按目标搜索。每个步骤都会直接进入对应功能进行导览。",
+        "nextDescription": "从 Agent 开始，之后依次介绍工具、Skill、我的内容和按目标搜索。每个步骤都会直接进入对应功能进行导览。",
         "action": "开始了解 Agent"
       },
       "agents": {
         "shortTitle": "使用 Agent",
         "title": "让 Agent 帮你完成任务",
         "description": "Agent 中心汇集可直接使用的 AI 助手、机器人和自动化流程。",
-        "howToUse": "进入 Agent 中心，按名称、场景或所属部门筛选。打开详情可查看适用场景、使用入口和维护人。",
+        "howToUse": "进入 Agent 中心后，先按适用场景、所属部门筛选，再按推荐或最新排序。打开详情可复制示例提问并直接在飞书中使用。",
         "action": "去 Agent 中心"
       },
       "skills": {
@@ -1815,6 +1816,13 @@
         "description": "工具中心把插件、MCP、在线工具、内部服务和资源包集中到一个入口。",
         "howToUse": "通过工具中心确认功能、访问地址和前置配置。每项资源都关联说明文档，避免在多个群和页面之间反复查找。",
         "action": "去工具中心"
+      },
+      "content": {
+        "shortTitle": "管理我的内容",
+        "title": "发布后持续维护内容",
+        "description": "“我的内容”集中管理你发布的 Skill、Agent 和工具，也能继续编辑、上架、下架或归档。",
+        "howToUse": "把稳定可复用的能力发布给团队；后续在这里查看状态、更新说明和维护入口。",
+        "action": "查看我的内容"
       },
       "search": {
         "shortTitle": "按目标搜索",
@@ -1835,6 +1843,7 @@
     "centers": {
       "AGENT": {
         "search": { "title": "按任务搜索 Agent", "description": "输入工作目标、业务场景或能力关键词，快速定位合适的 AI 助手与自动化流程。" },
+        "filters": { "title": "按场景和部门筛选", "description": "先选适用场景或所属部门，再按“推荐”或“最新”排序，快速缩小到当前最适合的 Agent。" },
         "catalog": { "title": "从资源卡片了解 Agent", "description": "每张卡片展示 Agent 的定位和能力。打开详情后可确认适用场景、使用入口、可见范围和维护人。" },
         "publish": { "title": "沉淀可复用的 Agent", "description": "如果你已配置好稳定的助手或机器人，可以从这里发布给公司或指定部门使用。" }
       },

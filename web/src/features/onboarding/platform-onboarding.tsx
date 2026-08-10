@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ComponentType } from 'react'
 import { useNavigate } from '@tanstack/react-router'
-import { Bot, Boxes, CheckCircle2, Compass, Search, Sparkles, Wrench } from 'lucide-react'
+import { Bot, Boxes, CheckCircle2, Compass, FolderCog, Search, Sparkles, Wrench } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { RESUME_PLATFORM_ONBOARDING_EVENT } from './onboarding-events'
 import { Button } from '@/shared/ui/button'
@@ -14,7 +14,7 @@ import {
 } from '@/shared/ui/dialog'
 
 interface OnboardingStep {
-  key: 'welcome' | 'agents' | 'skills' | 'tools' | 'search'
+  key: 'welcome' | 'agents' | 'skills' | 'tools' | 'content' | 'search'
   icon: ComponentType<{ className?: string }>
 }
 
@@ -23,9 +23,11 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
   { key: 'agents', icon: Bot },
   { key: 'skills', icon: Boxes },
   { key: 'tools', icon: Wrench },
+  { key: 'content', icon: FolderCog },
   { key: 'search', icon: Search },
 ]
-const ONBOARDING_SEEN_STORAGE_PREFIX = 'joyhub-platform-onboarding-seen:'
+// Bump this key when the guided product map changes materially, so every existing employee sees it once.
+const ONBOARDING_SEEN_STORAGE_PREFIX = 'joyhub-platform-onboarding-v2-seen:'
 const inMemorySeenOnboarding = new Set<string>()
 
 function hasSeenOnboarding(storageKey: string) {
@@ -119,9 +121,13 @@ export function PlatformOnboarding({ userId, displayName }: PlatformOnboardingPr
         dismiss()
         navigate({ to: '/tools', search: { onboarding: true } })
         return
+      case 'content':
+        dismiss()
+        navigate({ to: '/dashboard/resources', search: { onboarding: true } })
+        return
       case 'search':
         dismiss()
-        navigate({ to: '/search', search: { q: '', sort: 'newest', page: 0, starredOnly: false } })
+        navigate({ to: '/search', search: { q: '', sort: 'newest', page: 0, starredOnly: false, onboarding: true } })
     }
   }
 
