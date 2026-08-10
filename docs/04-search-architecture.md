@@ -27,7 +27,7 @@ public record ResourceSearchDocument(
 |------|---------|
 | 全站搜索 | 当前用户可见的全部资源 |
 | Agent / Tool / Skill 中心 | 对应资源类型 |
-| AI 能力顾问 | 小规模时提供全部可见轻量文档；超过预算时提供混合检索候选 |
+| AI 能力顾问 | 复用统一资源搜索池，再为命中项补充文档证据 |
 | Agent 安装接口 | `resourceType=SKILL AND accessMode=INSTALL` |
 
 Web 搜索页统一调用 `GET /api/web/resources/search`。该接口负责先完成 Skill、Agent、Tool
@@ -44,6 +44,11 @@ resourceType + accessMode + relevanceScore + (skill | catalogResource)
 ```
 
 其中载荷保持原业务摘要结构，避免搜索接口反向污染 Skill 或 Catalog 的生命周期模型。
+
+AI 能力顾问不得重新读取 Skill 与 Catalog 后分别召回、排序和合并。它可以把用户需求拆成
+多个检索表达，但每个表达都必须调用与 Web 搜索相同的 `UnifiedResourceSearchAppService`，
+并在统一结果返回后仅补充 `SKILL.md`、配套文档或资源说明作为模型证据。模型负责选择、解释
+和组织方案，不负责绕过统一候选池重新发明搜索结果。
 
 查询流程固定为：权限和生命周期过滤 → 精确/分词/语义并行召回 → 去重排序 →
 按入口投影响应。语义检索必须扫描过滤后的候选语料，不能只重排关键词已经命中的结果。
