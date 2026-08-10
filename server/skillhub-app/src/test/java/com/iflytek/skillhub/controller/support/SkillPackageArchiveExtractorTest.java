@@ -312,11 +312,12 @@ class SkillPackageArchiveExtractorTest {
 
     @Test
     void extractsTarCreatedFromCurrentDirectory(@TempDir Path tempDir) throws Exception {
-        Files.writeString(tempDir.resolve("SKILL.md"), "---\nname: weekly-report\nversion: 1.0.0\n---\n");
-        Files.writeString(tempDir.resolve("README.md"), "# readme");
+        Path sourceDir = Files.createDirectory(tempDir.resolve("source"));
+        Files.writeString(sourceDir.resolve("SKILL.md"), "---\nname: weekly-report\nversion: 1.0.0\n---\n");
+        Files.writeString(sourceDir.resolve("README.md"), "# readme");
         Path tarPath = tempDir.resolve("package.tar");
-        assertEquals(0, new ProcessBuilder("tar", "--exclude=package.tar", "-cf", tarPath.toString(), ".")
-                .directory(tempDir.toFile())
+        assertEquals(0, new ProcessBuilder("tar", "-cf", tarPath.toString(), ".")
+                .directory(sourceDir.toFile())
                 .redirectErrorStream(true)
                 .start()
                 .waitFor());
@@ -335,10 +336,11 @@ class SkillPackageArchiveExtractorTest {
 
     @Test
     void extractsTarGzFromMultipartStreamWithoutMarkSupport(@TempDir Path tempDir) throws Exception {
-        Files.writeString(tempDir.resolve("SKILL.md"), "---\nname: weekly-report\nversion: 1.0.0\n---\n");
+        Path sourceDir = Files.createDirectory(tempDir.resolve("source"));
+        Files.writeString(sourceDir.resolve("SKILL.md"), "---\nname: weekly-report\nversion: 1.0.0\n---\n");
         Path tarGzPath = tempDir.resolve("package.tar.gz");
-        assertEquals(0, new ProcessBuilder("tar", "--exclude=package.tar.gz", "-czf", tarGzPath.toString(), ".")
-                .directory(tempDir.toFile())
+        assertEquals(0, new ProcessBuilder("tar", "-czf", tarGzPath.toString(), ".")
+                .directory(sourceDir.toFile())
                 .redirectErrorStream(true)
                 .start()
                 .waitFor());
@@ -405,10 +407,11 @@ class SkillPackageArchiveExtractorTest {
 
     @Test
     void extractsTarGzCreatedFromCurrentDirectory(@TempDir Path tempDir) throws Exception {
-        Files.writeString(tempDir.resolve("SKILL.md"), "---\nname: weekly-report\nversion: 1.0.0\n---\n");
+        Path sourceDir = Files.createDirectory(tempDir.resolve("source"));
+        Files.writeString(sourceDir.resolve("SKILL.md"), "---\nname: weekly-report\nversion: 1.0.0\n---\n");
         Path tarGzPath = tempDir.resolve("package.tar.gz");
-        assertEquals(0, new ProcessBuilder("tar", "--exclude=package.tar.gz", "-czf", tarGzPath.toString(), ".")
-                .directory(tempDir.toFile())
+        assertEquals(0, new ProcessBuilder("tar", "-czf", tarGzPath.toString(), ".")
+                .directory(sourceDir.toFile())
                 .redirectErrorStream(true)
                 .start()
                 .waitFor());
