@@ -29,6 +29,7 @@ import static org.mockito.Mockito.when;
 import static org.mockito.ArgumentMatchers.any;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -64,7 +65,8 @@ class SkillControllerTest {
 
         mockMvc.perform(post("/api/web/skills/team/demo/versions/1.0.0/file/translate")
                         .param("path", "SKILL.md")
-                        .header("Accept-Language", "zh-CN"))
+                        .header("Accept-Language", "zh-CN")
+                        .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(0))
                 .andExpect(jsonPath("$.data").value("# 示例技能"));

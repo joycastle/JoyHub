@@ -74,6 +74,21 @@ class RouteSecurityPolicyRegistryTest {
     }
 
     @Test
+    void authorizationPolicies_shouldKeepDocumentationTranslationAnonymous() {
+        boolean matchedV1 = registry.authorizationPolicies().stream()
+                .anyMatch(policy -> policy.method() == HttpMethod.POST
+                        && "/api/v1/skills/*/*/versions/*/file/translate".equals(policy.pattern())
+                        && policy.accessLevel() == RouteSecurityPolicyRegistry.AccessLevel.PERMIT_ALL);
+        boolean matchedWeb = registry.authorizationPolicies().stream()
+                .anyMatch(policy -> policy.method() == HttpMethod.POST
+                        && "/api/web/skills/*/*/versions/*/file/translate".equals(policy.pattern())
+                        && policy.accessLevel() == RouteSecurityPolicyRegistry.AccessLevel.PERMIT_ALL);
+
+        assertTrue(matchedV1);
+        assertTrue(matchedWeb);
+    }
+
+    @Test
     void authorizationPolicies_shouldRequireAuthenticationForNamespaceDiscovery() {
         boolean matchedV1 = registry.authorizationPolicies().stream()
                 .anyMatch(policy -> policy.method() == HttpMethod.GET
