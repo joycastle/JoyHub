@@ -5,7 +5,19 @@ import { clearDeletedSkillQueries } from '@/features/skill/skill-delete-flow'
 import { getSkillDetailQueryKey } from './query-keys'
 import { buildSkillSearchUrl } from './skill-query-helpers'
 
-const PUBLISH_REQUEST_TIMEOUT_MS = 60_000
+const MIN_PUBLISH_REQUEST_TIMEOUT_MS = 5 * 60_000
+const MAX_PUBLISH_REQUEST_TIMEOUT_MS = 30 * 60_000
+const PUBLISH_PROCESSING_BUDGET_MS = 2 * 60_000
+const ASSUMED_MIN_UPLOAD_BYTES_PER_SECOND = 64 * 1024
+
+export function getPublishRequestTimeoutMs(files: readonly { size: number }[]): number {
+  const totalBytes = files.reduce((sum, file) => sum + Math.max(0, file.size), 0)
+  const uploadBudgetMs = Math.ceil(totalBytes / ASSUMED_MIN_UPLOAD_BYTES_PER_SECOND * 1000)
+  return Math.min(
+    MAX_PUBLISH_REQUEST_TIMEOUT_MS,
+    Math.max(MIN_PUBLISH_REQUEST_TIMEOUT_MS, PUBLISH_PROCESSING_BUDGET_MS + uploadBudgetMs),
+  )
+}
 
 async function searchSkills(params: SearchParams): Promise<PagedResponse<SkillSummary>> {
   return fetchJson<PagedResponse<SkillSummary>>(buildSkillSearchUrl(params))
@@ -55,7 +67,7 @@ async function publishSkill(params: { namespace: string; file: File; visibility:
     method: 'POST',
     headers: getCsrfHeaders(),
     body: formData,
-    timeoutMs: PUBLISH_REQUEST_TIMEOUT_MS,
+    timeoutMs: getPublishRequestTimeoutMs([params.file]),
   })
 }
 
@@ -73,13 +85,11 @@ async function publishSkillsBatch(params: {
   formData.append('visibility', params.visibility)
   formData.append('confirmWarnings', String(params.confirmWarnings === true))
 
-  const timeoutMs = PUBLISH_REQUEST_TIMEOUT_MS + Math.max(0, params.files.length - 1) * 30_000
-
   return fetchJson<BatchPublishResult>(`${WEB_API_PREFIX}/skills/${cleanNamespace}/publish-batch`, {
     method: 'POST',
     headers: getCsrfHeaders(),
     body: formData,
-    timeoutMs,
+    timeoutMs: getPublishRequestTimeoutMs(params.files),
   })
 }
 
