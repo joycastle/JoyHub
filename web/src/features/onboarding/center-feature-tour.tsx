@@ -17,6 +17,7 @@ interface TourStep {
 const CENTER_STEPS: Record<GuidedCenter, TourStep[]> = {
   AGENT: [
     { key: 'search', target: 'search', icon: Search },
+    { key: 'filters', target: 'filters', icon: SlidersHorizontal },
     { key: 'catalog', target: 'catalog', icon: LayoutGrid },
     { key: 'publish', target: 'publish', icon: Plus },
   ],

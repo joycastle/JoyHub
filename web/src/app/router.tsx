@@ -224,7 +224,7 @@ const searchRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: 'search',
   component: SearchPage,
-  validateSearch: (search: Record<string, unknown>): { q: string; namespace?: string; label?: string; sort: string; page: number; starredOnly: boolean; type?: 'ALL' | 'AGENT' | 'TOOL' | 'SKILL' } => {
+  validateSearch: (search: Record<string, unknown>): { q: string; namespace?: string; label?: string; sort: string; page: number; starredOnly: boolean; type?: 'ALL' | 'AGENT' | 'TOOL' | 'SKILL'; onboarding?: boolean } => {
     const resourceType = typeof search.type === 'string' && ['ALL', 'AGENT', 'TOOL', 'SKILL'].includes(search.type)
       ? search.type as 'ALL' | 'AGENT' | 'TOOL' | 'SKILL'
       : undefined
@@ -236,6 +236,7 @@ const searchRoute = createRoute({
       page: Number(search.page) || 0,
       starredOnly: search.starredOnly === true || search.starredOnly === 'true',
       type: resourceType,
+      onboarding: search.onboarding === true || search.onboarding === 'true' ? true : undefined,
     }
   },
 })
@@ -283,6 +284,9 @@ const dashboardResourcesRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: 'dashboard/resources',
   beforeLoad: requireAuth,
+  validateSearch: (search: Record<string, unknown>): { onboarding?: boolean } => ({
+    onboarding: search.onboarding === true || search.onboarding === 'true' ? true : undefined,
+  }),
   component: ResourcesPage,
 })
 

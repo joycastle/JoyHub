@@ -1773,8 +1773,9 @@
   },
   "onboarding": {
     "replay": "View onboarding",
+    "returnToMap": "Return to starter map",
     "planLabel": "JoyHub starter map",
-    "planTitle": "Get familiar in five steps",
+    "planTitle": "Get familiar in six steps",
     "planDescription": "Choose one entry point to begin, then return here whenever you need a refresher.",
     "loginGreeting": "Welcome back, {{name}}",
     "member": "there",
@@ -1789,16 +1790,16 @@
       "welcome": {
         "shortTitle": "Meet JoyHub",
         "title": "Welcome to JoyHub",
-        "description": "Your unified entry point for company AI capabilities: Agents, Skills, and tools that help solve real work.",
+        "description": "Your unified entry point for company AI capabilities: find and use Agents, tools, and Skills, then manage what you publish.",
         "nextTitle": "Next, explore each capability in context",
-        "nextDescription": "Start with Agents, then continue through Skills, tools, and goal-based search. Each step opens the feature it introduces.",
+        "nextDescription": "Start with Agents, then continue through tools, Skills, My Content, and goal-based search. Each step opens the feature it introduces.",
         "action": "Start with Agents"
       },
       "agents": {
         "shortTitle": "Use an Agent",
         "title": "Let Agents help with your work",
         "description": "The Agent Center brings together ready-to-use AI assistants, bots, and automated workflows.",
-        "howToUse": "Filter the Agent Center by name, scenario, or department. Open a detail page to see use cases, the access point, and its maintainer.",
+        "howToUse": "Filter by scenario or department, then sort by Recommended or Newest. Open a detail page to copy a prompt and start using the Agent in Feishu.",
         "action": "Go to Agent Center"
       },
       "skills": {
@@ -1814,6 +1815,13 @@
         "description": "The Tool Center gathers plugins, MCPs, web tools, internal services, and resource packages.",
         "howToUse": "Confirm the capability, access URL, and prerequisites in the Tool Center. Each resource links to a companion document so you do not need to search across chats and pages.",
         "action": "Go to Tool Center"
+      },
+      "content": {
+        "shortTitle": "Manage My Content",
+        "title": "Maintain what you publish",
+        "description": "My Content brings together the Skills, Agents, and tools you publish, where you can continue editing, publishing, taking offline, or archiving them.",
+        "howToUse": "Publish dependable capabilities for the team, then use this page to review their status, update documentation, and keep their entry maintained.",
+        "action": "View My Content"
       },
       "search": {
         "shortTitle": "Search by goal",
@@ -1834,6 +1842,7 @@
     "centers": {
       "AGENT": {
         "search": { "title": "Search for an Agent by task", "description": "Use a work goal, business scenario, or capability keyword to find suitable assistants and automated workflows." },
+        "filters": { "title": "Filter by scenario and department", "description": "Start with a scenario or department, then switch between Recommended and Newest to narrow down to the most suitable Agent." },
         "catalog": { "title": "Understand an Agent from its card", "description": "Cards introduce an Agent's purpose and capabilities. Its detail page confirms use cases, access, visibility, and maintainer." },
         "publish": { "title": "Share a reusable Agent", "description": "Publish a dependable assistant or bot here for your company or selected departments." }
       },

@@ -1,10 +1,12 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import { Plus, Search } from 'lucide-react'
 import type { CatalogCenter, CatalogResourceKind } from '@/api/types'
 import { CatalogResourceCard } from '@/entities/catalog-resource/catalog-resource-card'
 import { CATALOG_RESOURCE_KINDS, catalogKindLabel } from '@/entities/catalog-resource/catalog-resource-kind'
 import { useCatalogResources } from '@/features/catalog/use-catalog-queries'
+import { namespaceApi } from '@/api/client'
 import { CenterFeatureTour, type CenterTourTarget } from '@/features/onboarding/center-feature-tour'
 import { resumePlatformOnboarding } from '@/features/onboarding/onboarding-events'
 import { cn } from '@/shared/lib/utils'
@@ -17,14 +19,30 @@ function CatalogCenterPage({ center, showArrivalGuide }: { center: CatalogCenter
   const [queryInput, setQueryInput] = useState('')
   const [query, setQuery] = useState('')
   const [kind, setKind] = useState<CatalogResourceKind | undefined>()
+  const [scenario, setScenario] = useState('')
+  const [departmentId, setDepartmentId] = useState<number | undefined>()
+  const [sort, setSort] = useState<'recommended' | 'newest'>('recommended')
   const [isArrivalGuideVisible, setIsArrivalGuideVisible] = useState(showArrivalGuide)
   const [tourTarget, setTourTarget] = useState<CenterTourTarget | null>(null)
-  const { data, isLoading, isError } = useCatalogResources({ center, q: query, kind, size: 48 })
   const isAgent = center === 'AGENT'
+  const { data: departments = [] } = useQuery({ queryKey: ['namespaces', 'mine'], queryFn: () => namespaceApi.listMine() })
+  const { data, isLoading, isError } = useCatalogResources({
+    center,
+    q: query,
+    kind,
+    scenario: scenario || undefined,
+    departmentId,
+    sort: isAgent ? sort : undefined,
+    size: 48,
+  })
   const availableKinds = isAgent ? ['AGENT'] as CatalogResourceKind[] : CATALOG_RESOURCE_KINDS.filter((item) => item !== 'AGENT')
   const publishKind: CatalogResourceKind = isAgent ? 'AGENT' : (kind ?? 'ONLINE_TOOL')
   const publishLabel = isAgent ? '发布 Agent' : `发布${kind ? catalogKindLabel(kind) : '工具'}`
-  const resources = data?.items ?? []
+  const resources = useMemo(() => data?.items ?? [], [data?.items])
+  const scenarios = useMemo(
+    () => Array.from(new Set(resources.flatMap((resource) => resource.scenarios ?? []))).sort((left, right) => left.localeCompare(right, 'zh-CN')),
+    [resources],
+  )
   const isCatalogHighlighted = tourTarget === 'catalog'
 
   useEffect(() => {
@@ -84,19 +102,33 @@ function CatalogCenterPage({ center, showArrivalGuide }: { center: CatalogCenter
         </form>
       </section>
 
-      {!isAgent ? (
-        <div
-          className={cn('flex flex-wrap gap-2 rounded-xl', tourTarget === 'filters' && 'relative z-50 ring-4 ring-primary/50 ring-offset-4')}
-          data-onboarding-target="filters"
-        >
+      <div
+        className={cn('flex flex-wrap items-center gap-2 rounded-xl', tourTarget === 'filters' && 'relative z-50 ring-4 ring-primary/50 ring-offset-4')}
+        data-onboarding-target="filters"
+      >
+        {isAgent ? <>
+          <span className="mr-1 text-sm font-medium text-muted-foreground">筛选</span>
+          <select value={scenario} onChange={(event) => setScenario(event.target.value)} className="h-9 rounded-md border border-input bg-background px-3 text-sm">
+            <option value="">全部场景</option>
+            {scenario && !scenarios.includes(scenario) ? <option value={scenario}>{scenario}</option> : null}
+            {scenarios.map((item) => <option key={item} value={item}>{item}</option>)}
+          </select>
+          <select value={departmentId?.toString() ?? ''} onChange={(event) => setDepartmentId(event.target.value ? Number(event.target.value) : undefined)} className="h-9 rounded-md border border-input bg-background px-3 text-sm">
+            <option value="">全部部门</option>
+            {departments.map((department) => <option key={department.id} value={department.id}>{department.displayName}</option>)}
+          </select>
+          <span className="ml-2 mr-1 text-sm font-medium text-muted-foreground">排序</span>
+          <Button variant={sort === 'recommended' ? 'default' : 'outline'} size="sm" onClick={() => setSort('recommended')}>推荐</Button>
+          <Button variant={sort === 'newest' ? 'default' : 'outline'} size="sm" onClick={() => setSort('newest')}>最新</Button>
+        </> : <>
           <Button variant={kind === undefined ? 'default' : 'outline'} size="sm" onClick={() => setKind(undefined)}>全部</Button>
           {availableKinds.map((item) => (
             <Button key={item} variant={kind === item ? 'default' : 'outline'} size="sm" onClick={() => setKind(item)}>
               {catalogKindLabel(item)}
             </Button>
           ))}
-        </div>
-      ) : null}
+        </>}
+      </div>
 
       {isLoading ? <div className="py-20 text-center text-muted-foreground">正在加载...</div> : null}
       {isError ? <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-5 text-destructive">加载失败，请稍后重试。</div> : null}

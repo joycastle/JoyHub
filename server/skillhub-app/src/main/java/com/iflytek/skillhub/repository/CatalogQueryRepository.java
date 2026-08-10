@@ -14,6 +14,7 @@ public interface CatalogQueryRepository {
             CatalogResourceKind kind,
             String scenario,
             Long departmentId,
+            String sort,
             Set<Long> viewerNamespaceIds,
             boolean superAdmin,
             Pageable pageable

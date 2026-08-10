@@ -648,6 +648,7 @@ export const catalogApi = {
     kind?: CatalogResourceKind
     scenario?: string
     departmentId?: number
+    sort?: 'recommended' | 'newest'
     page?: number
     size?: number
   } = {}): Promise<PagedResponse<CatalogResourceSummary>> {
@@ -657,6 +658,7 @@ export const catalogApi = {
     if (params.kind) query.set('kind', params.kind)
     if (params.scenario?.trim()) query.set('scenario', params.scenario.trim())
     if (params.departmentId !== undefined) query.set('departmentId', String(params.departmentId))
+    if (params.sort) query.set('sort', params.sort)
     query.set('page', String(params.page ?? 0))
     query.set('size', String(params.size ?? 24))
     return fetchJson<PagedResponse<CatalogResourceSummary>>(

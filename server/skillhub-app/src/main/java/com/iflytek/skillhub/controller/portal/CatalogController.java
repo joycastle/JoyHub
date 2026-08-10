@@ -118,13 +118,14 @@ public class CatalogController extends BaseApiController {
             @RequestParam(required = false) CatalogResourceKind kind,
             @RequestParam(required = false) String scenario,
             @RequestParam(required = false) Long departmentId,
+            @RequestParam(defaultValue = "recommended") String sort,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "24") int size,
             @AuthenticationPrincipal PlatformPrincipal principal,
             @RequestAttribute(value = "userNsRoles", required = false) Map<Long, NamespaceRole> namespaceRoles) {
         CatalogViewer viewer = viewer(principal, namespaceRoles);
         return ok("response.success.read", queryAppService.search(
-                q, center, kind, scenario, departmentId, viewer,
+                q, center, kind, scenario, departmentId, sort, viewer,
                 PageRequest.of(Math.max(page, 0), Math.min(Math.max(size, 1), 100))));
     }
 

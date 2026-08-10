@@ -53,4 +53,20 @@ describe('PlatformOnboarding', () => {
 
     expect(navigateMock).toHaveBeenCalledWith({ to: '/agents', search: { onboarding: true } })
   })
+
+  it('keeps an entry point back to the guide after opening content or search', () => {
+    render(<PlatformOnboarding userId="user-d" />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'onboarding.steps.content.shortTitle' }))
+    fireEvent.click(screen.getByRole('button', { name: 'onboarding.steps.content.action' }))
+    expect(navigateMock).toHaveBeenCalledWith({ to: '/dashboard/resources', search: { onboarding: true } })
+
+    fireEvent.click(screen.getByRole('button', { name: 'onboarding.replay' }))
+    fireEvent.click(screen.getByRole('button', { name: 'onboarding.steps.search.shortTitle' }))
+    fireEvent.click(screen.getByRole('button', { name: 'onboarding.steps.search.action' }))
+    expect(navigateMock).toHaveBeenCalledWith({
+      to: '/search',
+      search: { q: '', sort: 'newest', page: 0, starredOnly: false, onboarding: true },
+    })
+  })
 })

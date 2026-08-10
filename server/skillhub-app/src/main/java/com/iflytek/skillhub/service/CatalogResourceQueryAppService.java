@@ -50,10 +50,11 @@ public class CatalogResourceQueryAppService {
             CatalogResourceKind kind,
             String scenario,
             Long departmentId,
+            String sort,
             CatalogViewer viewer,
             Pageable pageable) {
         if (query != null && !query.isBlank()) {
-            return searchHybrid(query, center, kind, scenario, departmentId, viewer, pageable);
+            return searchHybrid(query, center, kind, scenario, departmentId, sort, viewer, pageable);
         }
         Page<CatalogResource> page = queryRepository.searchPublished(
                 null,
@@ -61,6 +62,7 @@ public class CatalogResourceQueryAppService {
                 kind,
                 scenario,
                 departmentId,
+                sort,
                 viewer.namespaceIds(),
                 viewer.superAdmin(),
                 pageable
@@ -75,10 +77,11 @@ public class CatalogResourceQueryAppService {
             CatalogResourceKind kind,
             String scenario,
             Long departmentId,
+            String sort,
             CatalogViewer viewer,
             Pageable pageable) {
         Page<CatalogResource> candidates = queryRepository.searchPublished(
-                null, center, kind, scenario, departmentId,
+                null, center, kind, scenario, departmentId, sort,
                 viewer.namespaceIds(), viewer.superAdmin(),
                 PageRequest.of(0, HYBRID_CANDIDATE_LIMIT));
         Map<String, CatalogResource> resourcesById = new LinkedHashMap<>();
