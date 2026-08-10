@@ -50,6 +50,10 @@ public class DiscoveryAssistantAppService {
         DiscoverySearchPlan plan = plan(question, language, conversation.turns(), safetyIdentifier);
         List<DiscoveryPlanStepResponse> candidateSteps = retrieveSteps(
                 question, plan, language, principal, normalizedRoles);
+        log.info("AI discovery candidates prepared [steps={}, candidates={}]",
+                candidateSteps.size(), candidateSteps.stream()
+                        .mapToInt(step -> step.suggestions().size())
+                        .sum());
         DiscoveryAssistResponse response;
 
         if (!properties.isEnabled() || properties.getApiKey() == null || properties.getApiKey().isBlank()) {

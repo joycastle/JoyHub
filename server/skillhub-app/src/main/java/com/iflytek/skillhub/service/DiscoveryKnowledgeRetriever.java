@@ -23,12 +23,15 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /** Enriches the shared permission-aware resource search results with evidence for AI grounding. */
 @Service
 public class DiscoveryKnowledgeRetriever {
+    private static final Logger log = LoggerFactory.getLogger(DiscoveryKnowledgeRetriever.class);
     private static final int RESULT_LIMIT = 100;
     private static final int CHUNK_MAX_CHARS = 720;
     private static final int CHUNK_OVERLAP_CHARS = 80;
@@ -98,12 +101,20 @@ public class DiscoveryKnowledgeRetriever {
                 principal.userId(), roles,
                 principal.platformRoles() == null ? Set.of() : principal.platformRoles());
         Map<String, RankedSuggestion> merged = new LinkedHashMap<>();
+        int unifiedCandidateCount = 0;
+        int evidenceCandidateCount = 0;
         for (String query : queries) {
             PageResponse<UnifiedResourceSearchItemResponse> unifiedResults = unifiedSearchAppService.search(
                     query, null, null, "relevance", UnifiedResourceSearchType.ALL, false,
                     0, RESULT_LIMIT, principal.userId(), roles, viewer);
-            mergeRanked(merged, enrich(query, unifiedResults.items(), language));
+            List<DiscoverySuggestionResponse> enriched = enrich(query, unifiedResults.items(), language);
+            unifiedCandidateCount += unifiedResults.items().size();
+            evidenceCandidateCount += enriched.size();
+            mergeRanked(merged, enriched);
         }
+        log.info("AI discovery retrieval completed [queries={}, unifiedCandidates={}, evidenceCandidates={}, "
+                        + "mergedCandidates={}]",
+                queries.size(), unifiedCandidateCount, evidenceCandidateCount, merged.size());
         return merged.values().stream()
                 .sorted(Comparator.comparingDouble(RankedSuggestion::score).reversed()
                         .thenComparing(match -> match.suggestion().type())
