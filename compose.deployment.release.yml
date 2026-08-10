@@ -1,0 +1,48 @@
+# Static-application deployment services for the JoyHub production stack.
+# Compose with compose.release.yml, compose.light.release.yml, and compose.api.release.yml.
+
+services:
+  server:
+    environment:
+      JOYHUB_DEPLOYMENT_RUNNER_BASE_URL: http://deployment-runner:8091
+      JOYHUB_DEPLOYMENT_RUNNER_TOKEN: ${JOYHUB_RUNNER_TOKEN:?required}
+      JOYHUB_DEPLOYMENT_PUBLIC_ORIGIN: ${JOYHUB_DEPLOYMENT_PUBLIC_ORIGIN:?required}
+      JOYHUB_DEPLOYMENT_PATH_PREFIX: ${JOYHUB_DEPLOYMENT_PATH_PREFIX:-/apps}
+    depends_on:
+      deployment-runner:
+        condition: service_healthy
+
+  static-host:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    volumes:
+      - deployment_data:/srv/static:ro
+      - ${JOYHUB_STATIC_HOST_NGINX_CONFIG:-/opt/joyhub/static-host-nginx.conf}:/etc/nginx/conf.d/default.conf:ro
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  deployment-runner:
+    image: ${JOYHUB_DEPLOYMENT_RUNNER_IMAGE:-ghcr.io/joycastle/joyhub-deployment-runner}:${SKILLHUB_VERSION:-latest}
+    restart: unless-stopped
+    environment:
+      JOYHUB_RUNNER_TOKEN: ${JOYHUB_RUNNER_TOKEN:?required}
+      JOYHUB_RUNNER_DATA_PATH: /data
+      JOYHUB_STATIC_VERIFICATION_ORIGIN: http://static-host
+      JOYHUB_STATIC_PATH_PREFIX: ${JOYHUB_DEPLOYMENT_PATH_PREFIX:-/apps}
+    volumes:
+      - deployment_data:/data
+    depends_on:
+      static-host:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8091/actuator/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 15s
+
+volumes:
+  deployment_data:

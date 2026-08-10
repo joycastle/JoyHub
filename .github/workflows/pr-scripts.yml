@@ -7,9 +7,16 @@ on:
       - '.env.release.example'
       - '.env.release.draft'
       - 'compose.release.yml'
+      - 'compose.light.release.yml'
+      - 'compose.api.release.yml'
+      - 'compose.deployment.release.yml'
       - 'Makefile'
+      - 'server/Dockerfile'
       - 'web/Dockerfile'
       - 'web/nginx.conf.template'
+      - 'scanner/Dockerfile'
+      - 'runner/Dockerfile'
+      - '.github/workflows/deploy-main.yml'
       - '.github/workflows/pr-cli.yml'
       - '.github/workflows/pr-e2e.yml'
       - '.github/workflows/pr-helm-chart.yml'
@@ -40,3 +47,4 @@ jobs:
       - run: bash scripts/tests/nginx-forwarded-proto-test.sh
       - run: bash scripts/tests/dev-web-host-test.sh
       - run: bash scripts/tests/workflow-security-test.sh
+      - run: bash scripts/tests/main-deployment-test.sh

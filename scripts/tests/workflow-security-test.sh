@@ -4,6 +4,7 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 SECURITY_WORKFLOW="$REPO_ROOT/.github/workflows/security.yml"
 PR_SCRIPTS_WORKFLOW="$REPO_ROOT/.github/workflows/pr-scripts.yml"
+DEPLOY_MAIN_WORKFLOW="$REPO_ROOT/.github/workflows/deploy-main.yml"
 
 fail() {
   echo "FAIL: $*" >&2
@@ -28,6 +29,7 @@ assert_pr_workflow_hardened "$REPO_ROOT/.github/workflows/pr-helm-chart.yml"
 assert_pr_workflow_hardened "$REPO_ROOT/.github/workflows/pr-tests.yml"
 assert_pr_workflow_hardened "$PR_SCRIPTS_WORKFLOW"
 assert_pr_workflow_hardened "$SECURITY_WORKFLOW"
+assert_pr_workflow_hardened "$DEPLOY_MAIN_WORKFLOW"
 
 grep -Fq 'actions/dependency-review-action' "$SECURITY_WORKFLOW" \
   || fail "security workflow must run dependency review"
@@ -51,6 +53,8 @@ fi
 
 grep -Fq '.github/workflows/security.yml' "$PR_SCRIPTS_WORKFLOW" \
   || fail "pr-scripts must run when security workflow changes"
+grep -Fq '.github/workflows/deploy-main.yml' "$PR_SCRIPTS_WORKFLOW" \
+  || fail "pr-scripts must run when production deployment changes"
 grep -Fq '.github/workflows/pr-cli.yml' "$PR_SCRIPTS_WORKFLOW" \
   || fail "pr-scripts must run when PR CLI workflow changes"
 grep -Fq '.github/workflows/pr-e2e.yml' "$PR_SCRIPTS_WORKFLOW" \
@@ -83,5 +87,7 @@ grep -Fq 'bash scripts/tests/dev-web-host-test.sh' "$PR_SCRIPTS_WORKFLOW" \
   || fail "pr-scripts must run dev-web-host-test"
 grep -Fq 'bash scripts/tests/workflow-security-test.sh' "$PR_SCRIPTS_WORKFLOW" \
   || fail "pr-scripts must run workflow-security-test"
+grep -Fq 'bash scripts/tests/main-deployment-test.sh' "$PR_SCRIPTS_WORKFLOW" \
+  || fail "pr-scripts must run main-deployment-test"
 
 echo "workflow-security-test passed"
