@@ -1777,8 +1777,8 @@
     "replay": "查看新手引导",
     "returnToMap": "返回入门地图",
     "planLabel": "JoyHub 入门地图",
-    "planTitle": "先用这 6 步熟悉平台",
-    "planDescription": "选择一个入口开始，之后随时可以回到这里查看指南。",
+    "planTitle": "用 5 步开始使用 JoyHub",
+    "planDescription": "先从首页发现能力，再进入对应中心完成筛选、使用或发布。",
     "loginGreeting": "{{name}}，欢迎回来",
     "member": "新同事",
     "stepCounter": "第 {{current}} 步，共 {{total}} 步",
@@ -1790,32 +1790,32 @@
     "finish": "开始探索",
     "steps": {
       "welcome": {
-        "shortTitle": "认识 JoyHub",
-        "title": "欢迎来到 JoyHub",
-        "description": "这里是公司统一的 AI 能力入口，帮助你快速找到并使用 Agent、工具和 Skill，也能统一维护你发布的内容。",
-        "nextTitle": "接下来会逐个进入功能了解用法",
-        "nextDescription": "从 Agent 开始，之后依次介绍工具、Skill、我的内容和按目标搜索。每个步骤都会直接进入对应功能进行导览。",
-        "action": "开始了解 Agent"
+        "shortTitle": "从首页开始",
+        "title": "先从工作目标发现能力",
+        "description": "首页会按你的部门和工作场景推荐 Agent、工具与 Skill；也可以直接搜索想完成的事。",
+        "nextTitle": "先看搜索、场景和推荐卡片",
+        "nextDescription": "首页导览会带你认识搜索入口、快速浏览、二级筛选和快捷使用入口；之后再进入各中心深入了解。",
+        "action": "查看首页导览"
       },
       "agents": {
         "shortTitle": "使用 Agent",
         "title": "让 Agent 帮你完成任务",
-        "description": "Agent 中心汇集可直接使用的 AI 助手、机器人和自动化流程。",
-        "howToUse": "进入 Agent 中心后，先按适用场景、所属部门筛选，再按推荐或最新排序。打开详情可复制示例提问并直接在飞书中使用。",
+        "description": "Agent 中心汇集可直接使用的 AI 助手、飞书机器人和自动化流程。",
+        "howToUse": "先用搜索或左侧场景缩小范围，再用二级筛选确认可见范围与排序。下滑后搜索栏会固定在顶部；卡片可直接进入飞书使用。",
         "action": "去 Agent 中心"
       },
       "skills": {
         "shortTitle": "复用 Skill",
         "title": "复用经过验证的技能",
         "description": "技能中心提供可安装、可复用的 Skill 包、脚本、模板和参考资料。",
-        "howToUse": "在技能中心搜索需求，阅读说明后复制安装命令或按文档接入；你也可以把成熟方法沉淀为 Skill 分享给团队。",
+        "howToUse": "在技能中心搜索需求，按最新或热度浏览；阅读卡片说明后可直接复制安装命令，详情页提供完整文档。",
         "action": "去技能中心"
       },
       "tools": {
         "shortTitle": "打开工具",
         "title": "集中使用工具与服务",
         "description": "工具中心把插件、MCP、在线工具、内部服务和资源包集中到一个入口。",
-        "howToUse": "通过工具中心确认功能、访问地址和前置配置。每项资源都关联说明文档，避免在多个群和页面之间反复查找。",
+        "howToUse": "通过工具类型、场景和可见范围筛选，确认访问地址或下载入口；详情页可继续查看前置配置与说明文档。",
         "action": "去工具中心"
       },
       "content": {
@@ -1829,8 +1829,8 @@
         "shortTitle": "按目标搜索",
         "title": "从你的工作目标开始搜索",
         "description": "无论你要做内容生产、数据分析还是研发提效，都可以直接搜索任务或使用场景。",
-        "howToUse": "使用顶部搜索或首页场景入口。找到合适能力后，先查看可见范围和文档；需要贡献内容时，从“我的内容”提交并持续维护。",
-        "action": "开始搜索"
+        "howToUse": "使用首页搜索或场景入口；下滑时搜索栏会固定在顶部，方便随时切换目标。",
+        "action": "返回首页搜索"
       }
     }
   },
@@ -1843,22 +1843,36 @@
     "finish": "完成导览",
     "centers": {
       "AGENT": {
-        "search": { "title": "按任务搜索 Agent", "description": "输入工作目标、业务场景或能力关键词，快速定位合适的 AI 助手与自动化流程。" },
-        "filters": { "title": "按场景和部门筛选", "description": "先选适用场景或所属部门，再按“推荐”或“最新”排序，快速缩小到当前最适合的 Agent。" },
-        "catalog": { "title": "从资源卡片了解 Agent", "description": "每张卡片展示 Agent 的定位和能力。打开详情后可确认适用场景、使用入口、可见范围和维护人。" },
+        "search": { "title": "按任务搜索 Agent", "description": "输入工作目标、业务场景或能力关键词；向下浏览时，这个搜索入口会固定在顶栏下方。" },
+        "quickBrowse": { "title": "先确认使用方式", "description": "右侧提示说明 Agent 的典型使用方式。卡片中有“立即使用”时可直接进入飞书会话。" },
+        "filters": { "title": "组合筛选缩小范围", "description": "左侧先选场景，右侧再确认适用场景、可见范围与排序，快速找到可用的 Agent。" },
+        "catalog": { "title": "从卡片快速开始", "description": "卡片同时提供用途、快捷使用入口和详情入口；详情页可继续查看说明、权限和维护人。" },
         "publish": { "title": "沉淀可复用的 Agent", "description": "如果你已配置好稳定的助手或机器人，可以从这里发布给公司或指定部门使用。" }
       },
       "SKILL": {
-        "search": { "title": "按目标搜索 Skill", "description": "从任务目标或技术关键词开始，寻找已经沉淀好的脚本、模板、参考资料和工作方法。" },
-        "filters": { "title": "切换排序方式", "description": "可按最新发布或最常使用的 Skill 浏览，快速找到适合当前需求的内容。" },
-        "catalog": { "title": "阅读 Skill 详情并复用", "description": "打开卡片可查看版本、依赖和使用文档，再通过安装命令或接入说明加入你的工作流。" },
+        "search": { "title": "按目标搜索 Skill", "description": "从任务目标或技术关键词开始，寻找已沉淀的脚本、模板、参考资料和工作方法；向下浏览时搜索会固定在顶栏下方。" },
+        "quickBrowse": { "title": "确认 Skill 的复用方式", "description": "右侧说明提醒你先阅读使用说明，再从卡片直接复制安装命令。" },
+        "filters": { "title": "按最新或热度浏览", "description": "左侧快速切换最近上新和下载热榜，在当前列表中继续筛选后再选择合适 Skill。" },
+        "catalog": { "title": "从卡片复制安装", "description": "卡片保留下载、收藏和复制安装入口；打开详情可查看版本、依赖和完整文档。" },
         "publish": { "title": "把成熟方法分享给团队", "description": "将反复验证的流程、脚本或模板发布为 Skill，帮助其他同事直接复用。" }
       },
       "TOOL": {
-        "search": { "title": "按场景搜索工具", "description": "用任务或能力关键词搜索在线工具、MCP、插件、内部服务和资源包。" },
-        "filters": { "title": "按资源类型筛选", "description": "用类型筛选聚焦工具、MCP、插件或服务，减少在不相关资源中的查找时间。" },
-        "catalog": { "title": "确认工具能否直接使用", "description": "在资源详情中查看访问入口、前置配置、权限要求和关联文档，再决定是否接入。" },
+        "search": { "title": "按场景搜索工具", "description": "用任务或能力关键词搜索在线工具、MCP、插件、内部服务和资源包；向下浏览时搜索会固定在顶栏下方。" },
+        "quickBrowse": { "title": "确认工具入口", "description": "右侧提示工具的典型形态；卡片会直接给出打开或下载入口。" },
+        "filters": { "title": "组合筛选找到可用工具", "description": "左侧按工具类型和场景浏览，右侧再确认可见范围，避免在无权限内容里反复查找。" },
+        "catalog": { "title": "从卡片直接使用或下载", "description": "卡片会展示工具用途和快捷入口；详情页提供访问地址、前置配置、权限要求和关联文档。" },
         "publish": { "title": "发布团队工具与服务", "description": "把稳定可用的工具、服务或资源包登记到中心，统一维护和发现。" }
+      },
+      "LANDING": {
+        "search": { "title": "先说你想完成什么", "description": "从工作目标、业务场景或能力关键词开始搜索；常用场景提供一键进入。" },
+        "quickBrowse": { "title": "按能力形态进入中心", "description": "不确定该找什么时，先从 Agent、Skill 或工具的使用方式开始判断。" },
+        "filters": { "title": "在推荐流中继续筛选", "description": "首页推荐流支持按适用场景、可见范围和排序组合筛选，减少盲目搜索。" },
+        "catalog": { "title": "从卡片直接使用", "description": "卡片展示用途、下载与收藏，并按资源类型提供立即使用、复制安装或下载入口。" }
+      },
+      "CONTENT": {
+        "publish": { "title": "从这里发布新内容", "description": "“发布 Skill”和“发布资源”分别用于沉淀可复用的工作方法，以及登记 Agent、工具和服务。" },
+        "filters": { "title": "搜索和区分自己发布的内容", "description": "发布内容多起来后，可按名称搜索，并切换 Skill、资源或全部内容查看状态。" },
+        "catalog": { "title": "这里会展示你发布的全部内容", "description": "当前没有内容很正常：先选择发布 Skill 或发布资源。发布后可以在这里编辑、上架、下架、归档和查看收藏。" }
       }
     }
   },

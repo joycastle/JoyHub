@@ -182,7 +182,7 @@ export function CatalogResourcePage() {
         ]}
       />
 
-      <Card className="space-y-3 p-5">
+      <Card className="sticky top-5 z-10 space-y-3 p-5 shadow-md">
         <div className="text-sm font-semibold font-heading text-foreground">使用与分发</div>
         {resource.accessUrl ? (
           <a href={resource.accessUrl} target="_blank" rel="noreferrer" onClick={handleUse} className={cn(buttonVariants({ size: 'lg' }), 'w-full gap-2')}>

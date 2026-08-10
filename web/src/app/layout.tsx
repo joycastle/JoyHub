@@ -82,19 +82,12 @@ export function Layout() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col relative overflow-x-clip" style={{ background: 'var(--bg-page, hsl(var(--background)))' }}>
-      <div
-        className="absolute top-0 right-0 w-[600px] h-[500px] rounded-full opacity-90 pointer-events-none z-0"
-        style={{
-          background: 'radial-gradient(ellipse at 70% 20%, rgba(46,138,230,0.18) 0%, rgba(92,173,245,0.10) 40%, transparent 70%)',
-          filter: 'blur(60px)',
-        }}
-      />
+    <div className="relative flex min-h-screen flex-col overflow-x-clip bg-[#f6f8fa]">
 
       <header className={getAppHeaderClassName(isHeaderElevated)} style={{ borderColor: 'hsl(var(--border))' }}>
         <Link to="/" className="flex items-center gap-2">
           <BrandMark size="sm" />
-          <span className="translate-y-[3px] text-[22px]/7 font-bold tracking-[-0.04em] text-brand-gradient">
+          <span className="translate-y-[3px] text-[22px]/7 font-bold tracking-[-0.04em] text-foreground">
             {t('brand.name')}
           </span>
         </Link>
@@ -109,8 +102,8 @@ export function Layout() {
                 to={item.to}
                 className={
                   active
-                    ? 'px-4 py-1.5 rounded-full bg-brand-gradient text-white shadow-sm'
-                    : 'hover:opacity-80 transition-opacity duration-150'
+                    ? 'border-b-2 border-primary py-2 font-semibold text-foreground'
+                    : 'border-b-2 border-transparent py-2 hover:border-border hover:text-foreground transition-colors duration-150'
                 }
               >
                 {item.label}
@@ -164,7 +157,7 @@ export function Layout() {
               search={loginSearch}
               className="inline-flex items-center gap-2 rounded-full px-1 py-1 transition-colors hover:bg-secondary hover:text-foreground"
             >
-              <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-brand-gradient text-white">
+              <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
                 <LogIn className="h-4 w-4" strokeWidth={2} />
               </span>
               <span>{t('nav.login')}</span>
@@ -199,13 +192,13 @@ export function Layout() {
         </button>
       ) : null}
 
-      <footer className="relative z-10 border-t rounded-t-2xl mt-auto" style={{ background: '#F0F7FF', borderColor: 'hsl(var(--border))' }}>
+      <footer className="relative z-10 mt-auto border-t bg-white" style={{ borderColor: 'hsl(var(--border))' }}>
         <div className="max-w-6xl mx-auto px-6 md:px-12 py-10">
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-10 md:gap-12">
             <div className="flex-shrink-0">
               <div className="mb-3 flex items-center gap-2">
                 <BrandMark size="sm" />
-                <span className="translate-y-[3px] text-[22px]/7 font-bold tracking-[-0.04em] text-brand-gradient">
+                <span className="translate-y-[3px] text-[22px]/7 font-bold tracking-[-0.04em] text-foreground">
                   {t('brand.name')}
                 </span>
               </div>

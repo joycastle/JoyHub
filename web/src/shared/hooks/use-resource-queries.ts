@@ -58,16 +58,18 @@ export function useToggleResourceFavorite() {
   })
 }
 
-export function useResourceStats(resourceId: string, enabled = true) {
+export function useResourceStats(resourceId: string, enabled = true, recordView = true) {
   return useQuery<ResourceStats>({
     queryKey: ['resources', resourceId, 'stats'],
     queryFn: async () => {
       // A counter must never make the public detail page unusable when analytics is temporarily
       // unavailable (for example during a rolling deployment).
-      try {
-        await resourcesApi.recordView(resourceId)
-      } catch {
-        // Continue with the authoritative snapshot below.
+      if (recordView) {
+        try {
+          await resourcesApi.recordView(resourceId)
+        } catch {
+          // Continue with the authoritative snapshot below.
+        }
       }
       return resourcesApi.stats(resourceId)
     },

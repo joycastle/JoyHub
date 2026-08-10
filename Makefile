@@ -9,6 +9,10 @@ DEV_WEB_URL := http://localhost:3000
 DEV_WEB_HOST ?= 127.0.0.1
 DEV_API_URL := http://localhost:8080
 DEV_SCANNER_URL := http://localhost:8000
+DEV_DB_URL ?= jdbc:postgresql://localhost:5432/skillhub
+DEV_DB_USER ?= skillhub
+DEV_DB_PASSWORD ?= skillhub_dev
+DEV_JAVA_HOME ?= /opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home
 STAGING_API_URL := http://localhost:8080
 STAGING_WEB_URL := http://localhost
 STAGING_SERVER_IMAGE := skillhub-server:staging
@@ -316,7 +320,10 @@ publish-cli-major: ## 发布 CLI（major 版本）- 本地 build+test → 推 re
 db-reset: ## 重置数据库
 	$(DEV_COMPOSE) down -v --remove-orphans
 	$(DEV_COMPOSE) up -d --wait --remove-orphans postgres
-	cd server && ./mvnw flyway:migrate -pl skillhub-app
+	cd server && JAVA_HOME=$(DEV_JAVA_HOME) PATH=$(DEV_JAVA_HOME)/bin:$$PATH ./mvnw flyway:migrate -pl skillhub-app \
+		-Dflyway.url=$(DEV_DB_URL) \
+		-Dflyway.user=$(DEV_DB_USER) \
+		-Dflyway.password=$(DEV_DB_PASSWORD)
 
 validate-release-config: ## 校验发布环境变量文件（默认 .env.release）
 	./scripts/validate-release-config.sh .env.release

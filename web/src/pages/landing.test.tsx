@@ -3,6 +3,11 @@ import { describe, expect, it, vi } from 'vitest'
 vi.mock('@tanstack/react-router', () => ({
   Link: ({ children }: { children: unknown }) => children,
   useNavigate: () => vi.fn(),
+  useSearch: () => ({}),
+}))
+
+vi.mock('@tanstack/react-query', () => ({
+  useQuery: () => ({ data: [] }),
 }))
 
 vi.mock('react-i18next', async () => {
@@ -34,6 +39,15 @@ vi.mock('@/shared/hooks/use-skill-queries', () => ({
   }),
 }))
 
+vi.mock('@/features/auth/use-auth', () => ({
+  useAuth: () => ({ isAuthenticated: false }),
+}))
+
+vi.mock('@/features/search/use-unified-resource-search', () => ({
+  useResourceRecommendations: () => ({ data: [] }),
+  useUnifiedResourceSearch: () => ({ data: { items: [] } }),
+}))
+
 vi.mock('@/shared/hooks/use-in-view', () => ({
   useInView: () => ({ ref: vi.fn(), inView: true }),
 }))
@@ -59,8 +73,7 @@ describe('LandingPage', () => {
     const html = renderToStaticMarkup(<LandingPage />)
 
     expect(html).toContain('joyhubHome.title')
-    expect(html).toContain('joyhubHome.centers.agents.title')
-    expect(html).toContain('joyhubHome.centers.skills.title')
-    expect(html).toContain('joyhubHome.centers.tools.title')
+    expect(html).toContain('JOYHUB MARKETPLACE')
+    expect(html).toContain('DISCOVER')
   })
 })

@@ -55,6 +55,7 @@ import type {
   ResourceSummary,
   ResourceStats,
   UnifiedResourceSearchItem,
+  RecommendedResource,
   UnifiedResourceSearchType,
 } from './types'
 import { ApiError } from '@/shared/lib/api-error'
@@ -734,6 +735,9 @@ export const catalogApi = {
 }
 
 export const resourcesApi = {
+  async recommendations(size = 12): Promise<RecommendedResource[]> {
+    return fetchJson<RecommendedResource[]>(`${WEB_API_PREFIX}/resources/recommendations?size=${size}`)
+  },
   async search(params: {
     q?: string
     namespace?: string

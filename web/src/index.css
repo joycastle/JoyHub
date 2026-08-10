@@ -4,29 +4,27 @@
 
 @layer base {
   :root {
-    /* Joycastle — light blue & white theme */
-    --background: 210 40% 99%;
-    --foreground: 215 35% 18%;
+    /* JoyHub marketplace: neutral product surfaces with a single action blue. */
+    --background: 210 20% 98%;
+    --foreground: 210 12% 16%;
     --card: 0 0% 100%;
-    --card-foreground: 215 35% 18%;
+    --card-foreground: 210 12% 16%;
     --popover: 0 0% 100%;
-    --popover-foreground: 215 35% 18%;
-    /* Joycastle blue (#2E8AE6) */
-    --primary: 207 78% 54%;
+    --popover-foreground: 210 12% 16%;
+    --primary: 212 92% 45%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 210 60% 97%;
-    --secondary-foreground: 215 35% 18%;
-    --muted: 210 45% 96%;
-    --muted-foreground: 215 16% 46%;
-    /* Lighter blue accent (#5CADF5) */
-    --accent: 207 86% 66%;
+    --secondary: 210 24% 96%;
+    --secondary-foreground: 210 12% 16%;
+    --muted: 210 20% 96%;
+    --muted-foreground: 210 10% 38%;
+    --accent: 212 92% 45%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 72% 55%;
     --destructive-foreground: 0 0% 100%;
-    --border: 210 35% 90%;
-    --input: 210 35% 90%;
-    --ring: 207 78% 54%;
-    --radius: 0.75rem;
+    --border: 210 16% 87%;
+    --input: 210 16% 87%;
+    --ring: 212 92% 45%;
+    --radius: 0.375rem;
 
     --surface-glass: 210 60% 98%;
     --glow-primary: 207 78% 54%;
@@ -34,16 +32,16 @@
     --success: 160 60% 45%;
     --warning: 38 92% 58%;
 
-    --brand-start: #2E8AE6;
-    --brand-end: #5CADF5;
-    --brand-gradient: linear-gradient(135deg, #2E8AE6 0%, #5CADF5 100%);
-    --bg-page: #F8FBFF;
+    --brand-start: #0969da;
+    --brand-end: #0969da;
+    --brand-gradient: #0969da;
+    --bg-page: #f6f8fa;
 
-    --text-secondary: 215 20% 38%;
-    --text-muted: 215 16% 46%;
+    --text-secondary: 210 10% 38%;
+    --text-muted: 210 10% 38%;
     --text-placeholder: 213 12% 63%;
 
-    --border-card: 210 40% 93%;
+    --border-card: 210 16% 87%;
   }
 
   .dark {
@@ -88,7 +86,7 @@
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Syne', 'IBM Plex Sans', system-ui, sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   }
 
   code, pre, kbd {

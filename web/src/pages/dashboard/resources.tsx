@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react'
-import { Link, useLocation, useNavigate } from '@tanstack/react-router'
+import { useEffect, useMemo, useState } from 'react'
+import { Link, useLocation, useNavigate, useSearch } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { Download, Heart, HeartOff } from 'lucide-react'
 import type { ResourceSummary } from '@/api/types'
@@ -15,6 +15,9 @@ import { Input } from '@/shared/ui/input'
 import { ConfirmDialog } from '@/shared/components/confirm-dialog'
 import { DashboardPageHeader } from '@/shared/components/dashboard-page-header'
 import { APP_SHELL_PAGE_CLASS_NAME } from '@/app/page-shell-style'
+import { CenterFeatureTour, type CenterTourTarget } from '@/features/onboarding/center-feature-tour'
+import { resumePlatformOnboarding } from '@/features/onboarding/onboarding-events'
+import { cn } from '@/shared/lib/utils'
 
 type ResourceFilter = 'ALL' | 'SKILL' | 'CATALOG'
 
@@ -50,10 +53,13 @@ export function ResourcesPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
+  const { onboarding } = useSearch({ from: '/dashboard/resources' })
   const [filter, setFilter] = useState<ResourceFilter>('ALL')
   const [keyword, setKeyword] = useState('')
   const [archiveTarget, setArchiveTarget] = useState<UnifiedResource | null>(null)
   const [unarchiveTarget, setUnarchiveTarget] = useState<UnifiedResource | null>(null)
+  const [isArrivalGuideVisible, setIsArrivalGuideVisible] = useState(Boolean(onboarding))
+  const [tourTarget, setTourTarget] = useState<CenterTourTarget | null>(null)
 
   const { data: resourcePage, isLoading } = useMyResources({ page: 0, size: 100 })
   const archiveResource = useResourceLifecycleAction('archive')
@@ -142,20 +148,30 @@ export function ResourcesPage() {
     ? { label: t('resources.publishSkill'), onClick: () => navigate({ to: '/dashboard/publish' }) }
     : { label: t('resources.publishResource'), onClick: () => navigate({ to: '/dashboard/catalog/new' }) }
 
+  useEffect(() => {
+    setIsArrivalGuideVisible(Boolean(onboarding))
+    if (!onboarding) setTourTarget(null)
+  }, [onboarding])
+
+  const dismissArrivalGuide = () => {
+    setTourTarget(null)
+    setIsArrivalGuideVisible(false)
+  }
+
   return (
     <div className={`${APP_SHELL_PAGE_CLASS_NAME} space-y-8`}>
       <DashboardPageHeader
         title={t('resources.title')}
         subtitle={t('resources.subtitle')}
         actions={(
-          <div className="flex flex-wrap gap-2">
+          <div className={cn('flex flex-wrap gap-2', tourTarget === 'publish' && 'relative z-50 rounded-md ring-4 ring-primary/50 ring-offset-4')} data-onboarding-target="publish">
             <Button variant="outline" onClick={() => navigate({ to: '/dashboard/publish' })}>{t('resources.publishSkill')}</Button>
             <Button onClick={() => navigate({ to: '/dashboard/catalog/new' })}>{t('resources.publishResource')}</Button>
           </div>
         )}
       />
 
-      <div className="flex flex-col gap-3 sm:flex-row">
+      <div className={cn('flex flex-col gap-3 sm:flex-row', tourTarget === 'filters' && 'relative z-50 rounded-md ring-4 ring-primary/50 ring-offset-4')} data-onboarding-target="filters">
         <Input
           value={keyword}
           onChange={(event) => setKeyword(event.target.value)}
@@ -175,19 +191,19 @@ export function ResourcesPage() {
       {isLoading ? <div className="py-16 text-center text-muted-foreground">{t('resources.loading')}</div> : null}
 
       {!isLoading && resources.length === 0 ? (
-        <div className="rounded-2xl border border-dashed p-14 text-center text-muted-foreground">
+        <div className={cn('rounded-lg border border-dashed bg-white p-14 text-center text-muted-foreground', tourTarget === 'catalog' && 'relative z-50 ring-4 ring-primary/50 ring-offset-4')} data-onboarding-target="catalog">
           <p>{keyword.trim() ? t('resources.emptySearch') : t('resources.empty')}</p>
           <Button className="mt-5" onClick={emptyAction.onClick}>{emptyAction.label}</Button>
         </div>
       ) : null}
 
       <div className="space-y-3">
-        {resources.map((resource) => {
+        {resources.map((resource, index) => {
           const isArchivedSkill = resource.source === 'SKILL' && resource.status === 'ARCHIVED'
           const hasPublishedSkill = resource.source === 'SKILL' && resource.versionStatus === 'PUBLISHED'
           const canDownload = resource.actions.includes('DOWNLOAD')
           return (
-            <Card key={resource.resourceId} className="cursor-pointer transition-colors hover:border-primary/50" onClick={() => openResource(resource)}>
+            <Card key={resource.resourceId} className={cn('cursor-pointer transition-colors hover:border-primary/50', tourTarget === 'catalog' && index === 0 && 'relative z-50 ring-4 ring-primary/50 ring-offset-4')} data-onboarding-target={tourTarget === 'catalog' && index === 0 ? 'catalog' : undefined} onClick={() => openResource(resource)}>
               <CardContent className="flex flex-col justify-between gap-4 p-5 md:flex-row md:items-center">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-primary">
@@ -254,6 +270,7 @@ export function ResourcesPage() {
         confirmText={t('resources.unarchive')}
         onConfirm={handleUnarchive}
       />
+      {isArrivalGuideVisible ? <CenterFeatureTour center="CONTENT" hasCatalogItems onDismiss={dismissArrivalGuide} onReturnToOnboarding={resumePlatformOnboarding} onTargetChange={setTourTarget} /> : null}
     </div>
   )
 }

@@ -1776,8 +1776,8 @@
     "replay": "View onboarding",
     "returnToMap": "Return to starter map",
     "planLabel": "JoyHub starter map",
-    "planTitle": "Get familiar in six steps",
-    "planDescription": "Choose one entry point to begin, then return here whenever you need a refresher.",
+    "planTitle": "Start using JoyHub in five steps",
+    "planDescription": "Discover capabilities from the home page, then enter each center to filter, use, or publish them.",
     "loginGreeting": "Welcome back, {{name}}",
     "member": "there",
     "stepCounter": "Step {{current}} of {{total}}",
@@ -1789,32 +1789,32 @@
     "finish": "Start exploring",
     "steps": {
       "welcome": {
-        "shortTitle": "Meet JoyHub",
-        "title": "Welcome to JoyHub",
-        "description": "Your unified entry point for company AI capabilities: find and use Agents, tools, and Skills, then manage what you publish.",
-        "nextTitle": "Next, explore each capability in context",
-        "nextDescription": "Start with Agents, then continue through tools, Skills, My Content, and goal-based search. Each step opens the feature it introduces.",
-        "action": "Start with Agents"
+        "shortTitle": "Start from Home",
+        "title": "Start with the work you want to do",
+        "description": "The home page recommends Agents, tools, and Skills by department and work scenario, or lets you search for a task directly.",
+        "nextTitle": "See search, scenarios, and recommendation cards first",
+        "nextDescription": "The home tour introduces search, quick browse, secondary filters, and quick-use actions before you explore each center in depth.",
+        "action": "View home tour"
       },
       "agents": {
         "shortTitle": "Use an Agent",
         "title": "Let Agents help with your work",
-        "description": "The Agent Center brings together ready-to-use AI assistants, bots, and automated workflows.",
-        "howToUse": "Filter by scenario or department, then sort by Recommended or Newest. Open a detail page to copy a prompt and start using the Agent in Feishu.",
+        "description": "The Agent Center brings together ready-to-use AI assistants, Feishu bots, and automated workflows.",
+        "howToUse": "Start with search or the scenario menu, then confirm visibility and sorting with the secondary filters. The search stays pinned while browsing and cards can open Feishu directly.",
         "action": "Go to Agent Center"
       },
       "skills": {
         "shortTitle": "Reuse Skills",
         "title": "Reuse proven skills",
         "description": "The Skill Center provides installable, reusable Skill packages, scripts, templates, and references.",
-        "howToUse": "Search the Skill Center, read the guidance, then copy an install command or follow the documentation. You can also share a proven workflow as a Skill.",
+        "howToUse": "Search the Skill Center, browse by newest or popularity, then copy an install command directly from a card. The detail page keeps the complete guidance.",
         "action": "Go to Skill Center"
       },
       "tools": {
         "shortTitle": "Open a tool",
         "title": "Use tools and services in one place",
         "description": "The Tool Center gathers plugins, MCPs, web tools, internal services, and resource packages.",
-        "howToUse": "Confirm the capability, access URL, and prerequisites in the Tool Center. Each resource links to a companion document so you do not need to search across chats and pages.",
+        "howToUse": "Filter by tool type, scenario, and visibility, then confirm the access URL or download action. The detail page keeps setup and documentation together.",
         "action": "Go to Tool Center"
       },
       "content": {
@@ -1842,22 +1842,36 @@
     "finish": "Finish tour",
     "centers": {
       "AGENT": {
-        "search": { "title": "Search for an Agent by task", "description": "Use a work goal, business scenario, or capability keyword to find suitable assistants and automated workflows." },
-        "filters": { "title": "Filter by scenario and department", "description": "Start with a scenario or department, then switch between Recommended and Newest to narrow down to the most suitable Agent." },
-        "catalog": { "title": "Understand an Agent from its card", "description": "Cards introduce an Agent's purpose and capabilities. Its detail page confirms use cases, access, visibility, and maintainer." },
+        "search": { "title": "Search for an Agent by task", "description": "Use a work goal, business scenario, or capability keyword. This search stays under the top bar while you browse." },
+        "quickBrowse": { "title": "Confirm how to use an Agent", "description": "The right-side note explains the typical entry point. When a card offers Use now, it opens the Feishu conversation directly." },
+        "filters": { "title": "Combine filters to narrow the list", "description": "Choose a scenario from the left, then confirm scenario, visibility, and sort order in the secondary filters." },
+        "catalog": { "title": "Start quickly from a card", "description": "Cards show purpose, a quick-use action, and details. The detail page adds guidance, permissions, and maintainer information." },
         "publish": { "title": "Share a reusable Agent", "description": "Publish a dependable assistant or bot here for your company or selected departments." }
       },
       "SKILL": {
-        "search": { "title": "Search for a Skill by goal", "description": "Start with a work goal or technical keyword to find proven scripts, templates, references, and ways of working." },
-        "filters": { "title": "Change the sort order", "description": "Browse the newest or most-used Skills to find relevant content faster." },
-        "catalog": { "title": "Read Skill details, then reuse", "description": "Open a card to review the version, dependencies, and usage guide before adding it through the install command or integration documentation." },
+        "search": { "title": "Search for a Skill by goal", "description": "Use a work goal or technical keyword to find proven scripts, templates, references, and practices. The search stays pinned while browsing." },
+        "quickBrowse": { "title": "Confirm how a Skill is reused", "description": "The right-side note reminds you to review the guidance, then copy an install command directly from a card." },
+        "filters": { "title": "Browse newest or popular Skills", "description": "Switch quickly between recent releases and the download leaderboard, then filter the active list further." },
+        "catalog": { "title": "Copy install from the card", "description": "Cards retain download, favorite, and copy-install actions; details add version, dependencies, and complete documentation." },
         "publish": { "title": "Share a proven practice", "description": "Publish a well-tested process, script, or template as a Skill for others to reuse." }
       },
       "TOOL": {
-        "search": { "title": "Search for a tool by scenario", "description": "Use task or capability keywords to find web tools, MCPs, plugins, internal services, and resource packages." },
-        "filters": { "title": "Filter by resource type", "description": "Focus on tools, MCPs, plugins, or services to reduce unrelated results." },
-        "catalog": { "title": "Confirm a tool is ready to use", "description": "Review the access point, setup requirements, permissions, and linked documentation before adopting a resource." },
+        "search": { "title": "Search for a tool by scenario", "description": "Use task or capability keywords to find web tools, MCPs, plugins, internal services, and resource packages. Search stays pinned while browsing." },
+        "quickBrowse": { "title": "Confirm the tool entry point", "description": "The right-side note explains common tool forms; cards provide a direct open or download action." },
+        "filters": { "title": "Combine filters to find usable tools", "description": "Browse by type and scenario on the left, then confirm visibility in the secondary filters." },
+        "catalog": { "title": "Use or download from the card", "description": "Cards show purpose and quick actions. Details add the access point, setup, permissions, and linked documentation." },
         "publish": { "title": "Publish a team tool or service", "description": "Register dependable tools, services, and resource packages here for centralized discovery and maintenance." }
+      },
+      "LANDING": {
+        "search": { "title": "Start with what you need to do", "description": "Search by work goal, business scenario, or capability keyword. Common scenarios provide a one-click start." },
+        "quickBrowse": { "title": "Choose a capability shape", "description": "If you are not sure what to search for, start by deciding whether you need an Agent, Skill, or tool." },
+        "filters": { "title": "Refine the recommendation feed", "description": "Combine scenario, visibility, and sorting filters to reduce blind searching." },
+        "catalog": { "title": "Use a card directly", "description": "Cards show purpose, downloads, and favorites, then provide Use now, Copy install, or Download according to the resource type." }
+      },
+      "CONTENT": {
+        "publish": { "title": "Publish new content here", "description": "Publish Skill is for reusable practices, while Publish Resource registers Agents, tools, and services." },
+        "filters": { "title": "Search and separate what you publish", "description": "As your content grows, search by name and switch between Skills, resources, or all content to review status." },
+        "catalog": { "title": "Everything you publish appears here", "description": "It is normal for this page to be empty at first: choose Publish Skill or Publish Resource. After publishing, this is where you edit, publish, take offline, archive, and review favorites." }
       }
     }
   },

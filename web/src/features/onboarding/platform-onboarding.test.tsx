@@ -44,14 +44,11 @@ describe('PlatformOnboarding', () => {
     expect(screen.getByText('onboarding.loginGreeting:onboarding.member')).toBeTruthy()
   })
 
-  it('opens a center with its contextual introduction', () => {
+  it('opens the refreshed home-page tour from the first onboarding step', () => {
     render(<PlatformOnboarding userId="user-c" />)
 
     fireEvent.click(screen.getByRole('button', { name: 'onboarding.steps.welcome.action' }))
-    expect(navigateMock).not.toHaveBeenCalled()
-    fireEvent.click(screen.getByRole('button', { name: 'onboarding.steps.agents.action' }))
-
-    expect(navigateMock).toHaveBeenCalledWith({ to: '/agents', search: { onboarding: true } })
+    expect(navigateMock).toHaveBeenCalledWith({ to: '/', search: { onboarding: true } })
   })
 
   it('keeps an entry point back to the guide after opening content or search', () => {
@@ -62,11 +59,7 @@ describe('PlatformOnboarding', () => {
     expect(navigateMock).toHaveBeenCalledWith({ to: '/dashboard/resources', search: { onboarding: true } })
 
     fireEvent.click(screen.getByRole('button', { name: 'onboarding.replay' }))
-    fireEvent.click(screen.getByRole('button', { name: 'onboarding.steps.search.shortTitle' }))
-    fireEvent.click(screen.getByRole('button', { name: 'onboarding.steps.search.action' }))
-    expect(navigateMock).toHaveBeenCalledWith({
-      to: '/search',
-      search: { q: '', sort: 'newest', page: 0, starredOnly: false, onboarding: true },
-    })
+    fireEvent.click(screen.getByRole('button', { name: 'onboarding.steps.welcome.action' }))
+    expect(navigateMock).toHaveBeenCalledWith({ to: '/', search: { onboarding: true } })
   })
 })

@@ -197,15 +197,17 @@ export type CatalogResourceSummary = Omit<
 
 export type UnifiedResourceSearchType = 'ALL' | 'AGENT' | 'TOOL' | 'SKILL'
 
-export type UnifiedResourceSearchItem = Omit<
-  components['schemas']['UnifiedResourceSearchItemResponse'],
-  'resourceType' | 'accessMode' | 'relevanceScore' | 'skill' | 'catalogResource'
-> & {
+export interface UnifiedResourceSearchItem {
   resourceType: Exclude<UnifiedResourceSearchType, 'ALL'>
   accessMode: 'INSTALL' | 'OPEN' | 'DOWNLOAD' | string
   relevanceScore: number
   skill?: SkillSummary
   catalogResource?: CatalogResourceSummary
+}
+
+export interface RecommendedResource {
+  resource: UnifiedResourceSearchItem
+  reason: string
 }
 
 export type CatalogResourceDetail = Omit<

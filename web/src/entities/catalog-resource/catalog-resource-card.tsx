@@ -1,15 +1,38 @@
-import { ArrowUpRight, Building2, MessageCircle } from 'lucide-react'
+import { ArrowUpRight, Bookmark, Building2, Download, MessageCircle } from 'lucide-react'
 import type { CatalogResourceSummary } from '@/api/types'
 import { Card, CardContent } from '@/shared/ui/card'
 import { catalogKindEmoji, catalogKindLabel } from './catalog-resource-kind'
+import { useResourceStats } from '@/shared/hooks/use-resource-queries'
 
 interface CatalogResourceCardProps {
   resource: CatalogResourceSummary
   onClick: () => void
   onUse?: () => void
+  quickActionLabel?: string
+  variant?: 'default' | 'list'
 }
 
-export function CatalogResourceCard({ resource, onClick, onUse }: CatalogResourceCardProps) {
+export function CatalogResourceCard({ resource, onClick, onUse, quickActionLabel, variant = 'default' }: CatalogResourceCardProps) {
+  const { data: stats } = useResourceStats(`catalog:${resource.id}`, variant === 'list', false)
+  if (variant === 'list') {
+    return <Card role="button" tabIndex={0} className="group h-full cursor-pointer rounded-md border-border shadow-none transition hover:border-primary/50 hover:shadow-sm" onClick={onClick} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') onClick() }}>
+      <CardContent className="flex min-h-40 flex-col p-4">
+        <div className="flex min-w-0 items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary/10 text-xl">{resource.icon || catalogKindEmoji(resource.kind)}</div>
+          <div className="min-w-0 flex-1">
+            <h3 className="truncate text-base font-semibold leading-5 transition-colors group-hover:text-primary">{resource.name}</h3>
+            <p className="mt-1 truncate text-xs text-muted-foreground">{resource.department?.name || resource.owner?.displayName || 'JoyHub 公共库'}</p>
+          </div>
+          <span className="shrink-0 rounded-full border border-border px-2 py-0.5 text-[11px] font-medium text-muted-foreground">{catalogKindLabel(resource.kind)}</span>
+        </div>
+        <p className="mt-3 line-clamp-2 text-sm leading-5 text-muted-foreground">{resource.summary}</p>
+        <div className="mt-auto flex items-center justify-between gap-3 border-t border-border/60 pt-3 text-xs">
+          <div className="flex items-center gap-3 text-muted-foreground">{stats?.downloadCount ? <span className="inline-flex items-center gap-1"><Download className="h-3.5 w-3.5" />{stats.downloadCount}</span> : null}{stats?.favoriteCount ? <span className="inline-flex items-center gap-1"><Bookmark className="h-3.5 w-3.5" />{stats.favoriteCount}</span> : null}</div>
+          <div className="flex shrink-0 items-center gap-3 font-medium text-primary">{onUse ? <button type="button" onClick={(event) => { event.stopPropagation(); onUse() }} className="hover:underline">{quickActionLabel || '立即使用'}</button> : null}<span className="inline-flex items-center gap-1">详情 <ArrowUpRight className="h-3.5 w-3.5" /></span></div>
+        </div>
+      </CardContent>
+    </Card>
+  }
   return (
     <Card
       role="button"
@@ -54,7 +77,7 @@ export function CatalogResourceCard({ resource, onClick, onUse }: CatalogResourc
             <Building2 className="h-3.5 w-3.5" />
             {resource.department?.name || '全公司'}
           </span>
-          {resource.kind === 'AGENT' && resource.accessUrl && onUse ? <button type="button" onClick={(event) => { event.stopPropagation(); onUse() }} className="inline-flex items-center gap-1.5 font-medium text-primary hover:underline"><MessageCircle className="h-3.5 w-3.5" />立即使用</button> : <span>{resource.owner?.displayName || resource.owner?.id}</span>}
+          {onUse ? <button type="button" onClick={(event) => { event.stopPropagation(); onUse() }} className="inline-flex items-center gap-1.5 font-medium text-primary hover:underline"><MessageCircle className="h-3.5 w-3.5" />{quickActionLabel || '立即使用'}</button> : <span>{resource.owner?.displayName || resource.owner?.id}</span>}
         </div>
       </CardContent>
     </Card>

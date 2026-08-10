@@ -15,6 +15,7 @@ import com.iflytek.skillhub.service.ResourceAppService;
 import com.iflytek.skillhub.service.ResourceDownloadAppService;
 import com.iflytek.skillhub.service.ResourceFavoriteAppService;
 import com.iflytek.skillhub.service.ResourceLifecycleAppService;
+import com.iflytek.skillhub.service.ResourceRecommendationAppService;
 import com.iflytek.skillhub.service.ResourceStatsAppService;
 import com.iflytek.skillhub.service.UnifiedResourceSearchAppService;
 import java.time.Clock;
@@ -51,6 +52,9 @@ class ResourceControllerTest {
     @Mock
     private UnifiedResourceSearchAppService unifiedResourceSearchAppService;
 
+    @Mock
+    private ResourceRecommendationAppService recommendationAppService;
+
     private ResourceController controller;
 
     @BeforeEach
@@ -64,6 +68,7 @@ class ResourceControllerTest {
                 resourceDownloadAppService,
                 resourceStatsAppService,
                 unifiedResourceSearchAppService,
+                recommendationAppService,
                 new ApiResponseFactory(
                         messageSource,
                         Clock.fixed(Instant.parse("2026-08-06T00:00:00Z"), ZoneOffset.UTC),

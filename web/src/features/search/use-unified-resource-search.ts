@@ -13,6 +13,13 @@ export interface UnifiedResourceSearchParams {
   size?: number
 }
 
+export function useResourceRecommendations(size = 12) {
+  return useQuery({
+    queryKey: ['resources', 'recommendations', size],
+    queryFn: () => resourcesApi.recommendations(size),
+  })
+}
+
 export function useUnifiedResourceSearch(
   params: UnifiedResourceSearchParams,
   enabled = true,

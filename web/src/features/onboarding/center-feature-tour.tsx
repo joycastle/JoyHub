@@ -5,8 +5,8 @@ import { useTranslation } from 'react-i18next'
 import type { CatalogCenter } from '@/api/types'
 import { Button } from '@/shared/ui/button'
 
-export type CenterTourTarget = 'search' | 'filters' | 'catalog' | 'publish'
-type GuidedCenter = CatalogCenter | 'SKILL'
+export type CenterTourTarget = 'search' | 'quickBrowse' | 'filters' | 'catalog' | 'publish'
+type GuidedCenter = CatalogCenter | 'SKILL' | 'LANDING' | 'CONTENT'
 
 interface TourStep {
   key: string
@@ -17,21 +17,35 @@ interface TourStep {
 const CENTER_STEPS: Record<GuidedCenter, TourStep[]> = {
   AGENT: [
     { key: 'search', target: 'search', icon: Search },
+    { key: 'quickBrowse', target: 'quickBrowse', icon: LayoutGrid },
     { key: 'filters', target: 'filters', icon: SlidersHorizontal },
     { key: 'catalog', target: 'catalog', icon: LayoutGrid },
     { key: 'publish', target: 'publish', icon: Plus },
   ],
   SKILL: [
     { key: 'search', target: 'search', icon: Search },
+    { key: 'quickBrowse', target: 'quickBrowse', icon: LayoutGrid },
     { key: 'filters', target: 'filters', icon: SlidersHorizontal },
     { key: 'catalog', target: 'catalog', icon: BookOpenCheck },
     { key: 'publish', target: 'publish', icon: Plus },
   ],
   TOOL: [
     { key: 'search', target: 'search', icon: Search },
+    { key: 'quickBrowse', target: 'quickBrowse', icon: LayoutGrid },
     { key: 'filters', target: 'filters', icon: SlidersHorizontal },
     { key: 'catalog', target: 'catalog', icon: LayoutGrid },
     { key: 'publish', target: 'publish', icon: Plus },
+  ],
+  LANDING: [
+    { key: 'search', target: 'search', icon: Search },
+    { key: 'quickBrowse', target: 'quickBrowse', icon: LayoutGrid },
+    { key: 'filters', target: 'filters', icon: SlidersHorizontal },
+    { key: 'catalog', target: 'catalog', icon: BookOpenCheck },
+  ],
+  CONTENT: [
+    { key: 'publish', target: 'publish', icon: Plus },
+    { key: 'filters', target: 'filters', icon: SlidersHorizontal },
+    { key: 'catalog', target: 'catalog', icon: BookOpenCheck },
   ],
 }
 
@@ -133,15 +147,15 @@ export function CenterFeatureTour({ center, hasCatalogItems, onDismiss, onReturn
         <section
           ref={panelRef}
           className={position
-            ? 'fixed z-[2147483647] w-[min(28rem,calc(100vw-2rem))] rounded-2xl border bg-background p-5 shadow-2xl md:p-6'
-            : 'fixed inset-x-4 bottom-4 z-[2147483647] mx-auto max-w-xl rounded-2xl border bg-background p-5 shadow-2xl md:bottom-8 md:p-6'}
+            ? 'fixed z-[2147483647] w-[min(28rem,calc(100vw-2rem))] rounded-lg border bg-background p-5 shadow-xl md:p-6'
+            : 'fixed inset-x-4 bottom-4 z-[2147483647] mx-auto max-w-xl rounded-lg border bg-background p-5 shadow-xl md:bottom-8 md:p-6'}
           style={position ?? undefined}
           role="dialog"
           aria-modal="true"
           aria-labelledby="center-feature-tour-title"
         >
           <div className="flex items-start gap-4">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground">
               <StepIcon className="h-5 w-5" />
             </div>
             <div className="min-w-0 flex-1">

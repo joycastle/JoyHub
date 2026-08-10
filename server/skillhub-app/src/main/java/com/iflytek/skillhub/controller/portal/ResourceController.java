@@ -8,6 +8,7 @@ import com.iflytek.skillhub.dto.PageResponse;
 import com.iflytek.skillhub.dto.ResourceActionResponse;
 import com.iflytek.skillhub.dto.ResourceSummaryResponse;
 import com.iflytek.skillhub.dto.ResourceStatsResponse;
+import com.iflytek.skillhub.dto.RecommendedResourceResponse;
 import com.iflytek.skillhub.dto.UnifiedResourceSearchItemResponse;
 import com.iflytek.skillhub.dto.UnifiedResourceSearchType;
 import com.iflytek.skillhub.domain.namespace.NamespaceRole;
@@ -19,6 +20,7 @@ import com.iflytek.skillhub.service.ResourceDownloadAppService;
 import com.iflytek.skillhub.service.ResourceFavoriteAppService;
 import com.iflytek.skillhub.service.ResourceLifecycleAppService;
 import com.iflytek.skillhub.service.ResourceStatsAppService;
+import com.iflytek.skillhub.service.ResourceRecommendationAppService;
 import com.iflytek.skillhub.service.UnifiedResourceSearchAppService;
 import jakarta.servlet.http.HttpServletRequest;
 import io.swagger.v3.oas.annotations.Operation;
@@ -53,6 +55,7 @@ public class ResourceController extends BaseApiController {
     private final ResourceDownloadAppService resourceDownloadAppService;
     private final ResourceStatsAppService resourceStatsAppService;
     private final UnifiedResourceSearchAppService unifiedResourceSearchAppService;
+    private final ResourceRecommendationAppService recommendationAppService;
 
     public ResourceController(ResourceAppService resourceAppService,
                               ResourceLifecycleAppService resourceLifecycleAppService,
@@ -60,6 +63,7 @@ public class ResourceController extends BaseApiController {
                               ResourceDownloadAppService resourceDownloadAppService,
                               ResourceStatsAppService resourceStatsAppService,
                               UnifiedResourceSearchAppService unifiedResourceSearchAppService,
+                              ResourceRecommendationAppService recommendationAppService,
                               ApiResponseFactory responseFactory) {
         super(responseFactory);
         this.resourceAppService = resourceAppService;
@@ -68,6 +72,20 @@ public class ResourceController extends BaseApiController {
         this.resourceDownloadAppService = resourceDownloadAppService;
         this.resourceStatsAppService = resourceStatsAppService;
         this.unifiedResourceSearchAppService = unifiedResourceSearchAppService;
+        this.recommendationAppService = recommendationAppService;
+    }
+
+    @GetMapping("/recommendations")
+    @Operation(summary = "Recommend visible Agents, Tools, and Skills for the current department")
+    public ApiResponse<java.util.List<RecommendedResourceResponse>> recommendations(
+            @RequestParam(defaultValue = "12") int size,
+            @AuthenticationPrincipal PlatformPrincipal principal,
+            @RequestAttribute(value = "userNsRoles", required = false) Map<Long, NamespaceRole> namespaceRoles) {
+        Map<Long, NamespaceRole> roles = namespaceRoles != null ? namespaceRoles : Map.of();
+        CatalogViewer viewer = principal == null ? null : new CatalogViewer(principal.userId(), roles,
+                principal.platformRoles() != null ? principal.platformRoles() : Set.of());
+        return ok("response.success.read", recommendationAppService.recommend(
+                size, principal != null ? principal.userId() : null, roles, viewer));
     }
 
     @GetMapping("/search")

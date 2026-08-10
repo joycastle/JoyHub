@@ -1,36 +1,48 @@
-import { Link, useNavigate } from '@tanstack/react-router'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { Link, useNavigate, useSearch } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import {
   ArrowRight,
+  Bookmark,
   Bot,
   Boxes,
   Briefcase,
   Code2,
   Database,
-  FileText,
+  Download,
   Palette,
-  Search,
-  ShieldCheck,
+  Puzzle,
   Sparkles,
-  UploadCloud,
   Wrench,
   type LucideIcon,
 } from 'lucide-react'
 import { SearchBar } from '@/features/search/search-bar'
+import { useResourceRecommendations, useUnifiedResourceSearch } from '@/features/search/use-unified-resource-search'
+import { useAuth } from '@/features/auth/use-auth'
+import { namespaceApi, resourcesApi } from '@/api/client'
+import type { UnifiedResourceSearchItem, UnifiedResourceSearchType } from '@/api/types'
+import { useCopyToClipboard } from '@/shared/lib/clipboard'
 import { normalizeSearchQuery } from '@/shared/lib/search-query'
+import { cn } from '@/shared/lib/utils'
+import { buildInstallCommand, getBaseUrl } from '@/features/skill/install-command'
+import { CenterFeatureTour, type CenterTourTarget } from '@/features/onboarding/center-feature-tour'
+import { resumePlatformOnboarding } from '@/features/onboarding/onboarding-events'
 
-interface HomeEntry {
-  key: 'agents' | 'skills' | 'tools'
-  to: '/agents' | '/skills' | '/tools'
-  icon: LucideIcon
-  accentClassName: string
-}
+type DiscoveryMode = 'recommended' | 'downloads' | 'newest'
+type HomeScopeFilter = 'ALL' | 'PUBLIC' | 'DEPARTMENT'
 
-const CENTER_ENTRIES: HomeEntry[] = [
-  { key: 'agents', to: '/agents', icon: Bot, accentClassName: 'from-blue-500/15 to-cyan-400/5 text-blue-600' },
-  { key: 'skills', to: '/skills', icon: Boxes, accentClassName: 'from-violet-500/15 to-fuchsia-400/5 text-violet-600' },
-  { key: 'tools', to: '/tools', icon: Wrench, accentClassName: 'from-emerald-500/15 to-teal-400/5 text-emerald-600' },
+const DISCOVERY_ITEMS: Array<{ key: DiscoveryMode; label: string }> = [
+  { key: 'recommended', label: '为你和所在部门推荐' },
+  { key: 'downloads', label: '下载热榜' },
+  { key: 'newest', label: '最近上新' },
 ]
+
+const DISCOVERY_TITLES: Record<DiscoveryMode, string> = {
+  recommended: '为你和所在部门推荐',
+  downloads: '下载热榜',
+  newest: '最近上新',
+}
 
 const SCENARIOS: Array<{ key: string; query: string; icon: LucideIcon }> = [
   { key: 'content', query: '内容生产', icon: Sparkles },
@@ -40,140 +52,377 @@ const SCENARIOS: Array<{ key: string; query: string; icon: LucideIcon }> = [
   { key: 'art', query: '美术资产处理', icon: Palette },
 ]
 
-const PLATFORM_FEATURES: Array<{ key: string; icon: LucideIcon }> = [
-  { key: 'visibility', icon: ShieldCheck },
-  { key: 'documentation', icon: FileText },
-  { key: 'publishing', icon: UploadCloud },
+const RESOURCE_TYPES: Array<{ type: UnifiedResourceSearchType; labelKey: string; icon: LucideIcon }> = [
+  { type: 'ALL', labelKey: 'search.types.all', icon: Boxes },
+  { type: 'AGENT', labelKey: 'search.types.agent', icon: Bot },
+  { type: 'TOOL', labelKey: 'search.types.tool', icon: Wrench },
+  { type: 'SKILL', labelKey: 'search.types.skill', icon: Puzzle },
 ]
+
+const QUICK_BROWSE_ITEMS: Array<{ to: '/agents' | '/skills' | '/tools'; label: string; description: string; icon: LucideIcon }> = [
+  { to: '/agents', label: 'Agent 中心', description: '直接在飞书中使用', icon: Bot },
+  { to: '/skills', label: '技能中心', description: '复制安装，沉淀方法', icon: Puzzle },
+  { to: '/tools', label: '工具中心', description: '下载或打开工具', icon: Wrench },
+]
+
+function RecommendationCard({ resource, onOpen }: { resource: UnifiedResourceSearchItem; onOpen: () => void }) {
+  const catalog = resource.catalogResource
+  const skill = resource.skill
+  const [copied, copy] = useCopyToClipboard()
+  const title = catalog?.name || skill?.localizedDisplayName || skill?.displayName || '未命名能力'
+  const identifier = catalog?.slug || (skill ? `@${skill.namespace}/${skill.slug}` : '')
+  const summary = catalog?.summary || skill?.localizedSummary || skill?.summary || '暂未提供能力说明。'
+  const Icon = resource.resourceType === 'AGENT' ? Bot : resource.resourceType === 'TOOL' ? Wrench : Boxes
+  const iconClassName = resource.resourceType === 'AGENT'
+    ? 'bg-blue-50 text-blue-600'
+    : resource.resourceType === 'TOOL'
+      ? 'bg-emerald-50 text-emerald-600'
+      : 'bg-violet-50 text-violet-600'
+  const quickActionLabel = skill
+    ? copied ? '已复制' : '复制安装'
+    : catalog?.accessUrl
+      ? catalog.kind === 'AGENT' ? '立即使用' : '打开工具'
+      : catalog?.artifactAvailable ? '下载' : null
+  const handleQuickAction = () => {
+    if (skill) {
+      void copy(buildInstallCommand(skill.namespace, skill.slug, getBaseUrl()))
+      return
+    }
+    if (catalog?.accessUrl) {
+      window.open(catalog.accessUrl, '_blank', 'noopener,noreferrer')
+      return
+    }
+    if (catalog?.artifactAvailable) {
+      window.open(resourcesApi.downloadUrl(`catalog:${catalog.id}`), '_blank', 'noopener,noreferrer')
+    }
+  }
+
+  return (
+    <div
+      role="link"
+      tabIndex={0}
+      onClick={onOpen}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          onOpen()
+        }
+      }}
+      className="group flex min-h-40 flex-col rounded-md border border-border bg-white p-4 text-left shadow-none transition hover:border-primary/50 hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70 focus-visible:ring-offset-2"
+    >
+      <div className="flex min-w-0 items-start gap-3">
+        <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-md ${iconClassName}`}>
+          {catalog?.icon ? <span className="text-lg">{catalog.icon}</span> : <Icon className="h-[18px] w-[18px]" aria-hidden="true" />}
+        </span>
+        <div className="min-w-0 pt-0.5">
+          <h3 className="truncate text-base font-semibold leading-5 text-foreground transition-colors group-hover:text-primary">{title}</h3>
+          <p className="mt-1 truncate font-mono text-xs text-muted-foreground">{identifier}</p>
+        </div>
+        <span className="ml-auto shrink-0 rounded-full border border-border px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+          {resource.resourceType === 'AGENT' ? 'Agent' : resource.resourceType === 'TOOL' ? '工具' : 'Skill'}
+        </span>
+      </div>
+      <p className="mt-3 line-clamp-2 text-sm leading-5 text-muted-foreground">{summary}</p>
+      <div className="mt-auto flex items-center justify-between gap-3 border-t border-border/60 pt-3 text-xs">
+        <span className="flex items-center gap-3 text-muted-foreground">
+          <span className="inline-flex items-center gap-1"><Download className="h-3.5 w-3.5" />{skill?.downloadCount ?? 0}</span>
+          <span className="inline-flex items-center gap-1"><Bookmark className="h-3.5 w-3.5" />{skill?.starCount ?? 0}</span>
+        </span>
+        <span className="flex shrink-0 items-center gap-3">
+          {quickActionLabel ? <button type="button" onClick={(event) => { event.stopPropagation(); handleQuickAction() }} className="font-medium text-primary hover:underline">{quickActionLabel}</button> : null}
+          <span className="inline-flex items-center gap-1 font-medium text-primary">查看详情 <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" /></span>
+        </span>
+      </div>
+    </div>
+  )
+}
 
 /** JoyHub product home: a unified starting point for every internal AI capability. */
 export function LandingPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const { onboarding } = useSearch({ from: '/' })
+  const { isAuthenticated } = useAuth()
+  const [discoveryMode, setDiscoveryMode] = useState<DiscoveryMode>('recommended')
+  const [homeResourceType, setHomeResourceType] = useState<UnifiedResourceSearchType>('ALL')
+  const [homeScenario, setHomeScenario] = useState('')
+  const [homeScopeFilter, setHomeScopeFilter] = useState<HomeScopeFilter>('ALL')
+  const [searchInput, setSearchInput] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchType, setSearchType] = useState<UnifiedResourceSearchType>('ALL')
+  const [searchSort, setSearchSort] = useState<'relevance' | 'downloads' | 'newest'>('relevance')
+  const [isQuickSearchPinned, setIsQuickSearchPinned] = useState(false)
+  const [isArrivalGuideVisible, setIsArrivalGuideVisible] = useState(Boolean(onboarding))
+  const [tourTarget, setTourTarget] = useState<CenterTourTarget | null>(null)
+  const quickSearchRef = useRef<HTMLDivElement>(null)
+  const { data: recommendations = [] } = useResourceRecommendations(12)
+  const { data: myNamespaces = [] } = useQuery({ queryKey: ['namespaces', 'mine'], queryFn: () => namespaceApi.listMine() })
+  const { data: rankedResources } = useUnifiedResourceSearch(
+    {
+      q: '',
+      sort: discoveryMode === 'downloads' ? 'downloads' : 'newest',
+      page: 0,
+      size: 12,
+    },
+    discoveryMode !== 'recommended',
+  )
+  const { data: scenarioResources } = useUnifiedResourceSearch(
+    {
+      q: homeScenario,
+      sort: discoveryMode === 'downloads' ? 'downloads' : discoveryMode === 'newest' ? 'newest' : 'relevance',
+      page: 0,
+      size: 24,
+    },
+    Boolean(homeScenario),
+  )
+  const { data: searchResults, isFetching: isSearching } = useUnifiedResourceSearch(
+    {
+      q: searchQuery,
+      sort: searchSort,
+      type: searchType,
+      page: 0,
+      size: 12,
+    },
+    Boolean(searchQuery),
+  )
+  const discoveryResources = useMemo(
+    () => homeScenario
+      ? scenarioResources?.items ?? []
+      : discoveryMode === 'recommended'
+      ? recommendations.map(({ resource }) => resource)
+      : rankedResources?.items ?? [],
+    [discoveryMode, homeScenario, rankedResources?.items, recommendations, scenarioResources?.items],
+  )
+  const visibleDiscoveryResources = discoveryResources.filter((resource) => {
+    if (homeResourceType !== 'ALL' && resource.resourceType !== homeResourceType) return false
+    if (homeScenario && !resource.catalogResource?.scenarios?.includes(homeScenario)) return false
+    if (homeScopeFilter === 'PUBLIC') {
+      return resource.skill?.namespace === 'global' || resource.catalogResource?.department == null
+    }
+    if (homeScopeFilter === 'DEPARTMENT') {
+      return (resource.catalogResource?.department?.id != null && myNamespaces.some((namespace) => namespace.id === resource.catalogResource?.department?.id))
+        || (resource.skill?.namespace != null && myNamespaces.some((namespace) => namespace.slug === resource.skill?.namespace))
+    }
+    return true
+  })
 
   const handleSearch = (query: string) => {
-    navigate({
-      to: '/search',
-      search: { q: normalizeSearchQuery(query), sort: 'relevance', page: 0, starredOnly: false },
-    })
+    const normalizedQuery = normalizeSearchQuery(query)
+    setSearchInput(normalizedQuery)
+    setSearchQuery(normalizedQuery)
+    setSearchSort('relevance')
   }
 
   const searchScenario = (query: string) => {
-    navigate({ to: '/search', search: { q: query, sort: 'relevance', page: 0, starredOnly: false } })
+    handleSearch(query)
+  }
+
+  useEffect(() => {
+    const updatePinnedState = () => setIsQuickSearchPinned((quickSearchRef.current?.getBoundingClientRect().bottom ?? Number.POSITIVE_INFINITY) <= 72)
+    updatePinnedState()
+    window.addEventListener('scroll', updatePinnedState, { passive: true })
+    return () => window.removeEventListener('scroll', updatePinnedState)
+  }, [])
+
+  useEffect(() => {
+    setIsArrivalGuideVisible(Boolean(onboarding))
+    if (!onboarding) setTourTarget(null)
+  }, [onboarding])
+
+  const dismissArrivalGuide = () => {
+    setTourTarget(null)
+    setIsArrivalGuideVisible(false)
   }
 
   return (
     <div className="relative z-10">
-      <section className="px-5 pb-16 pt-16 md:px-10 md:pb-24 md:pt-24">
-        <div className="mx-auto max-w-6xl overflow-hidden rounded-[2rem] border border-primary/15 bg-gradient-to-br from-blue-100/90 via-white to-violet-100/70 px-6 py-14 shadow-[0_30px_100px_-55px_rgba(37,99,235,0.55)] md:px-14 md:py-20">
-          <div className="mx-auto max-w-4xl text-center">
-            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-white/80 px-4 py-2 text-sm font-semibold text-primary shadow-sm">
-              <Sparkles className="h-4 w-4" />
-              {t('joyhubHome.badge')}
+      <section className="border-b border-border bg-[#f6f8fa] px-5 py-9 md:px-10">
+        <div className="mx-auto max-w-7xl">
+          <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
+            <div className="max-w-4xl">
+              <div className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-primary">JOYHUB MARKETPLACE</div>
+              <h1 className="text-3xl font-semibold tracking-tight text-foreground md:text-[2.5rem]">
+                {t('joyhubHome.title')}
+              </h1>
+              <p className="mt-2 text-muted-foreground">
+                {t('search.subtitle')}
+              </p>
+              <div ref={quickSearchRef} data-onboarding-target="search" className={cn(tourTarget === 'search' && 'relative z-50 rounded-md ring-4 ring-primary/50 ring-offset-4')}>
+                <div className="mt-6 max-w-4xl">
+                  <SearchBar
+                    value={searchInput}
+                    placeholder={t('search.placeholder')}
+                    isSearching={isSearching}
+                    onChange={setSearchInput}
+                    onSearch={handleSearch}
+                  />
+                </div>
+                <div className="mt-4 flex max-w-6xl flex-nowrap items-center gap-2 overflow-x-auto pb-1">
+                  <span className="shrink-0 text-xs font-medium text-muted-foreground">{t('search.scenarios.label')}</span>
+                  {SCENARIOS.map((scenario) => {
+                    const Icon = scenario.icon
+                    return (
+                      <button
+                        key={scenario.key}
+                        type="button"
+                        onClick={() => searchScenario(scenario.query)}
+                        className="group inline-flex shrink-0 items-center gap-2 rounded-md border border-border bg-white px-3 py-2 text-sm font-medium transition-colors hover:border-primary/50 hover:text-primary"
+                      >
+                        <Icon className="h-4 w-4 text-primary" />
+                        <span>{t(`joyhubHome.scenarios.${scenario.key}`)}</span>
+                        <ArrowRight className="h-3.5 w-3.5 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
             </div>
-            <h1 className="text-4xl font-bold tracking-tight text-foreground md:text-6xl">
-              {t('joyhubHome.title')}
-            </h1>
-            <p className="mx-auto mt-6 max-w-3xl text-lg leading-8 text-muted-foreground md:text-xl">
-              {t('joyhubHome.description')}
-            </p>
-            <div className="mx-auto mt-10 max-w-3xl text-left">
-              <SearchBar placeholder={t('joyhubHome.searchPlaceholder')} onSearch={handleSearch} />
-            </div>
-            <div className="mt-5 flex flex-wrap items-center justify-center gap-2 text-sm text-muted-foreground">
-              <Search className="h-4 w-4" />
-              <span>{t('joyhubHome.searchHint')}</span>
-            </div>
+            <aside className={cn('border-l border-border pl-6 lg:mt-1', tourTarget === 'quickBrowse' && 'relative z-50 rounded-md ring-4 ring-primary/50 ring-offset-4')} data-onboarding-target="quickBrowse">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">快速浏览</p>
+              <div className="mt-3 divide-y divide-border">
+                {QUICK_BROWSE_ITEMS.map(({ to, label, description, icon: Icon }) => (
+                  <Link key={to} to={to} className="group flex items-center gap-3 py-3 first:pt-0 last:pb-0">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-md bg-white text-primary shadow-sm ring-1 ring-border"><Icon className="h-4 w-4" /></span>
+                    <span className="min-w-0 flex-1"><span className="block text-sm font-semibold text-foreground group-hover:text-primary">{label}</span><span className="mt-0.5 block text-xs text-muted-foreground">{description}</span></span>
+                    <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
+                  </Link>
+                ))}
+              </div>
+            </aside>
           </div>
         </div>
       </section>
 
-      <section className="px-5 py-12 md:px-10 md:py-16">
-        <div className="mx-auto max-w-6xl">
-          <div className="mb-8 max-w-3xl">
-            <div className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">{t('joyhubHome.centersEyebrow')}</div>
-            <h2 className="mt-3 text-3xl font-bold tracking-tight md:text-4xl">{t('joyhubHome.centersTitle')}</h2>
-            <p className="mt-3 text-base leading-7 text-muted-foreground">{t('joyhubHome.centersDescription')}</p>
-          </div>
-          <div className="grid gap-5 md:grid-cols-3">
-            {CENTER_ENTRIES.map((entry) => {
-              const Icon = entry.icon
-              return (
-                <Link
-                  key={entry.key}
-                  to={entry.to}
-                  className="group rounded-3xl border bg-white p-7 shadow-sm transition-all hover:-translate-y-1 hover:border-primary/30 hover:shadow-lg"
-                >
-                  <div className={`inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br ${entry.accentClassName}`}>
-                    <Icon className="h-6 w-6" />
-                  </div>
-                  <h3 className="mt-6 text-2xl font-semibold">{t(`joyhubHome.centers.${entry.key}.title`)}</h3>
-                  <p className="mt-3 min-h-[5rem] leading-7 text-muted-foreground">{t(`joyhubHome.centers.${entry.key}.description`)}</p>
-                  <span className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-primary">
-                    {t('joyhubHome.enterCenter')}
-                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                  </span>
-                </Link>
-              )
-            })}
-          </div>
-        </div>
-      </section>
-
-      <section className="bg-slate-50/80 px-5 py-16 md:px-10 md:py-20">
-        <div className="mx-auto max-w-6xl">
-          <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-2xl">
-              <div className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">{t('joyhubHome.scenariosEyebrow')}</div>
-              <h2 className="mt-3 text-3xl font-bold tracking-tight md:text-4xl">{t('joyhubHome.scenariosTitle')}</h2>
-              <p className="mt-3 leading-7 text-muted-foreground">{t('joyhubHome.scenariosDescription')}</p>
-            </div>
-          </div>
-          <div className="mt-9 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      <section className={cn('fixed inset-x-0 top-16 z-40 border-b border-border bg-white/95 shadow-sm backdrop-blur transition-all duration-200', isQuickSearchPinned ? 'translate-y-0 opacity-100' : '-translate-y-full invisible pointer-events-none opacity-0')} aria-label="快捷搜索">
+        <div className="mx-auto flex max-w-7xl items-center gap-4 px-5 py-3 md:px-10">
+          <div className="min-w-0 flex-1"><SearchBar value={searchInput} placeholder={t('search.placeholder')} isSearching={isSearching} onChange={setSearchInput} onSearch={handleSearch} /></div>
+          <div className="hidden items-center gap-2 lg:flex">
             {SCENARIOS.map((scenario) => {
               const Icon = scenario.icon
-              return (
-                <button
-                  key={scenario.key}
-                  type="button"
-                  onClick={() => searchScenario(scenario.query)}
-                  className="group flex min-h-36 flex-col justify-between rounded-2xl border bg-white p-5 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md"
-                >
-                  <Icon className="h-6 w-6 text-primary" />
-                  <span className="mt-7 flex items-center justify-between gap-3 font-semibold">
-                    {t(`joyhubHome.scenarios.${scenario.key}`)}
-                    <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1" />
-                  </span>
-                </button>
-              )
+              return <button key={scenario.key} type="button" onClick={() => searchScenario(scenario.query)} className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md border border-border bg-white px-2.5 py-2 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary"><Icon className="h-3.5 w-3.5" />{t(`joyhubHome.scenarios.${scenario.key}`)}</button>
             })}
           </div>
         </div>
       </section>
 
-      <section className="px-5 py-16 md:px-10 md:py-20">
-        <div className="mx-auto max-w-6xl rounded-3xl border bg-white p-8 md:p-12">
-          <div className="grid gap-10 lg:grid-cols-[0.85fr_1.5fr] lg:items-start">
-            <div>
-              <div className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">{t('joyhubHome.platformEyebrow')}</div>
-              <h2 className="mt-3 text-3xl font-bold tracking-tight">{t('joyhubHome.platformTitle')}</h2>
-              <p className="mt-4 leading-7 text-muted-foreground">{t('joyhubHome.platformDescription')}</p>
+      {searchQuery ? (
+        <section className="border-b bg-[#f6f8fa] px-5 py-8 md:px-10">
+          <div className="mx-auto max-w-7xl space-y-6">
+            <div className="flex flex-wrap gap-2 border-b pb-4">
+              {RESOURCE_TYPES.map(({ type, labelKey, icon: Icon }) => (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => setSearchType(type)}
+                  className={`inline-flex items-center rounded-md border px-3 py-1.5 text-sm font-medium transition-colors ${searchType === type ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-white hover:border-primary/50 hover:text-primary'}`}
+                >
+                  <Icon className="mr-2 h-4 w-4" />
+                  {t(labelKey)}
+                </button>
+              ))}
             </div>
-            <div className="grid gap-5 sm:grid-cols-3">
-              {PLATFORM_FEATURES.map((feature) => {
-                const Icon = feature.icon
-                return (
-                  <div key={feature.key} className="rounded-2xl bg-secondary/45 p-5">
-                    <Icon className="h-6 w-6 text-primary" />
-                    <h3 className="mt-4 font-semibold">{t(`joyhubHome.platform.${feature.key}.title`)}</h3>
-                    <p className="mt-2 text-sm leading-6 text-muted-foreground">{t(`joyhubHome.platform.${feature.key}.description`)}</p>
-                  </div>
-                )
-              })}
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <span className="text-sm font-medium text-muted-foreground">{t('search.sort.label')}</span>
+                <div className="flex gap-2">
+                  {(['relevance', 'downloads', 'newest'] as const).map((sort) => (
+                    <button
+                      key={sort}
+                      type="button"
+                      onClick={() => setSearchSort(sort)}
+                      className={`rounded-md border px-3 py-1.5 text-sm font-medium transition-colors ${searchSort === sort ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-white hover:border-primary/50'}`}
+                    >
+                      {t(`search.sort.${sort}`)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <span className="text-sm text-muted-foreground">{t('search.results', { count: searchResults?.total ?? 0 })}</span>
             </div>
+            {searchResults?.items.length ? (
+              <div className="grid gap-3 md:grid-cols-2">
+                {searchResults.items.map((resource) => {
+                  const catalog = resource.catalogResource
+                  const skill = resource.skill
+                  if (skill) {
+                    return <RecommendationCard
+                      key={`SKILL:${skill.id}`}
+                      resource={resource}
+                      onOpen={() => navigate({ to: `/space/${skill.namespace}/${encodeURIComponent(skill.slug)}` })}
+                    />
+                  }
+                  if (catalog) {
+                    return <RecommendationCard
+                      key={`CATALOG:${catalog.id}`}
+                      resource={resource}
+                      onOpen={() => navigate({ to: '/catalog/$slug', params: { slug: catalog.slug } })}
+                    />
+                  }
+                  return null
+                })}
+              </div>
+            ) : !isSearching ? (
+              <p className="rounded-md border bg-white px-5 py-10 text-center text-sm text-muted-foreground">{t('search.noResultsFor', { q: searchQuery })}</p>
+            ) : null}
+          </div>
+        </section>
+      ) : null}
+
+      {!searchQuery ? <section className="border-b bg-[#f6f8fa] px-5 py-8 md:px-10">
+        <div className="mx-auto grid max-w-7xl gap-9 lg:grid-cols-[13rem_minmax(0,1fr)]">
+          <aside className="h-fit border-r border-border pr-5 lg:sticky lg:top-6">
+            <p className="px-2 pb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">精选</p>
+            <button type="button" onClick={() => { setDiscoveryMode('recommended'); setHomeResourceType('ALL') }} className={cn('relative block w-full rounded-md px-2.5 py-2 text-left text-sm transition-colors', discoveryMode === 'recommended' ? 'bg-slate-100 font-semibold text-foreground before:absolute before:-left-[13px] before:top-1.5 before:h-6 before:w-1 before:rounded-full before:bg-primary' : 'text-muted-foreground hover:bg-slate-100')}>为你推荐</button>
+            <div className="my-3 border-t" />
+            <p className="px-2 pb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">能力类型</p>
+            {RESOURCE_TYPES.map(({ type, labelKey, icon: Icon }) => <button key={type} type="button" onClick={() => setHomeResourceType(type)} className={cn('flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-sm transition-colors', homeResourceType === type ? 'bg-slate-100 font-semibold text-foreground' : 'text-muted-foreground hover:bg-slate-100')}><Icon className="h-4 w-4 text-primary" />{t(labelKey)}</button>)}
+            <div className="my-3 border-t" /><p className="px-2 pb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">发现</p>
+            {DISCOVERY_ITEMS.map((item) => <button key={item.key} type="button" onClick={() => setDiscoveryMode(item.key)} className={`relative block w-full rounded-md px-2.5 py-2 text-left text-sm transition-colors ${discoveryMode === item.key ? 'bg-slate-100 font-semibold text-foreground before:absolute before:-left-[13px] before:top-1.5 before:h-6 before:w-1 before:rounded-full before:bg-primary' : 'text-muted-foreground hover:bg-slate-100'}`} aria-pressed={discoveryMode === item.key}>{item.label}</button>)}
+          </aside>
+          <div>
+          <div className="mb-5 flex items-end justify-between gap-4">
+            <div><p className="text-sm font-semibold text-primary">DISCOVER</p><h2 className="mt-1 text-2xl font-semibold">{discoveryMode === 'recommended' && !isAuthenticated ? '推荐能力' : DISCOVERY_TITLES[discoveryMode]}</h2></div>
+            <Link to="/search" search={{ q: '', sort: 'relevance', page: 0, starredOnly: false }} className="text-sm font-medium text-primary">浏览全部 →</Link>
+          </div>
+          <div className={cn('mb-5 flex flex-wrap items-center gap-2 border-b pb-4', tourTarget === 'filters' && 'relative z-50 rounded-md ring-4 ring-primary/50 ring-offset-4')} data-onboarding-target="filters">
+            <span className="mr-1 text-sm font-medium text-muted-foreground">进一步筛选</span>
+            <label className="sr-only" htmlFor="home-scenario-filter">适用场景</label>
+            <select id="home-scenario-filter" value={homeScenario} onChange={(event) => setHomeScenario(event.target.value)} className="h-9 rounded-md border border-input bg-white px-3 text-sm">
+              <option value="">适用场景：全部</option>
+              {SCENARIOS.map((scenario) => <option key={scenario.key} value={scenario.query}>适用场景：{t(`joyhubHome.scenarios.${scenario.key}`)}</option>)}
+            </select>
+            <label className="sr-only" htmlFor="home-scope-filter">可见范围</label>
+            <select id="home-scope-filter" value={homeScopeFilter} onChange={(event) => setHomeScopeFilter(event.target.value as HomeScopeFilter)} className="h-9 rounded-md border border-input bg-white px-3 text-sm">
+              <option value="ALL">可见范围：全部</option>
+              <option value="PUBLIC">可见范围：公司公共库</option>
+              <option value="DEPARTMENT">可见范围：所在部门</option>
+            </select>
+            <label className="sr-only" htmlFor="home-sort-filter">排序</label>
+            <select id="home-sort-filter" value={discoveryMode} onChange={(event) => setDiscoveryMode(event.target.value as DiscoveryMode)} className="h-9 rounded-md border border-input bg-white px-3 text-sm">
+              <option value="recommended">排序：为你推荐</option>
+              <option value="newest">排序：最新发布</option>
+              <option value="downloads">排序：下载最多</option>
+            </select>
+          </div>
+          <div className="grid gap-3 md:grid-cols-2">
+            {visibleDiscoveryResources.map((resource, index) => {
+              const catalog = resource.catalogResource
+              const skill = resource.skill
+              if (skill) {
+                return <div key={`SKILL:${skill.id}`} className={cn(tourTarget === 'catalog' && index === 0 && 'relative z-50 rounded-md ring-4 ring-primary/50 ring-offset-4')} data-onboarding-target={tourTarget === 'catalog' && index === 0 ? 'catalog' : undefined}><RecommendationCard resource={resource} onOpen={() => navigate({ to: `/space/${skill.namespace}/${encodeURIComponent(skill.slug)}` })} /></div>
+              }
+              if (catalog) {
+                return <div key={`CATALOG:${catalog.id}`} className={cn(tourTarget === 'catalog' && index === 0 && 'relative z-50 rounded-md ring-4 ring-primary/50 ring-offset-4')} data-onboarding-target={tourTarget === 'catalog' && index === 0 ? 'catalog' : undefined}><RecommendationCard resource={resource} onOpen={() => navigate({ to: '/catalog/$slug', params: { slug: catalog.slug } })} /></div>
+              }
+              return null
+            })}
+          </div>
           </div>
         </div>
-      </section>
+      </section> : null}
+
+      {isArrivalGuideVisible ? <CenterFeatureTour center="LANDING" hasCatalogItems={visibleDiscoveryResources.length > 0} onDismiss={dismissArrivalGuide} onReturnToOnboarding={resumePlatformOnboarding} onTargetChange={setTourTarget} /> : null}
+
     </div>
   )
 }

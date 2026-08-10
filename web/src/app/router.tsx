@@ -141,6 +141,9 @@ const requireAuth = createRequireAuth(getCurrentUser)
 const landingRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
+  validateSearch: (search: Record<string, unknown>): { onboarding?: boolean } => ({
+    onboarding: search.onboarding === true || search.onboarding === 'true' ? true : undefined,
+  }),
   component: LandingPage,
 })
 

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ComponentType } from 'react'
 import { useNavigate } from '@tanstack/react-router'
-import { Bot, Boxes, CheckCircle2, Compass, FolderCog, Search, Sparkles, Wrench } from 'lucide-react'
+import { Bot, Boxes, CheckCircle2, Compass, FolderCog, Sparkles, Wrench } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { RESUME_PLATFORM_ONBOARDING_EVENT } from './onboarding-events'
 import { Button } from '@/shared/ui/button'
@@ -14,7 +14,7 @@ import {
 } from '@/shared/ui/dialog'
 
 interface OnboardingStep {
-  key: 'welcome' | 'agents' | 'skills' | 'tools' | 'content' | 'search'
+  key: 'welcome' | 'agents' | 'skills' | 'tools' | 'content'
   icon: ComponentType<{ className?: string }>
 }
 
@@ -24,10 +24,9 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
   { key: 'skills', icon: Boxes },
   { key: 'tools', icon: Wrench },
   { key: 'content', icon: FolderCog },
-  { key: 'search', icon: Search },
 ]
 // Bump this key when the guided product map changes materially, so every existing employee sees it once.
-const ONBOARDING_SEEN_STORAGE_PREFIX = 'joyhub-platform-onboarding-v2-seen:'
+const ONBOARDING_SEEN_STORAGE_PREFIX = 'joyhub-platform-onboarding-v3-seen:'
 const inMemorySeenOnboarding = new Set<string>()
 
 function hasSeenOnboarding(storageKey: string) {
@@ -107,7 +106,8 @@ export function PlatformOnboarding({ userId, displayName }: PlatformOnboardingPr
   const openCurrentCenter = () => {
     switch (currentStep.key) {
       case 'welcome':
-        setStepIndex(1)
+        dismiss()
+        navigate({ to: '/', search: { onboarding: true } })
         return
       case 'agents':
         dismiss()
@@ -125,9 +125,6 @@ export function PlatformOnboarding({ userId, displayName }: PlatformOnboardingPr
         dismiss()
         navigate({ to: '/dashboard/resources', search: { onboarding: true } })
         return
-      case 'search':
-        dismiss()
-        navigate({ to: '/search', search: { q: '', sort: 'newest', page: 0, starredOnly: false, onboarding: true } })
     }
   }
 
@@ -144,14 +141,14 @@ export function PlatformOnboarding({ userId, displayName }: PlatformOnboardingPr
       </button>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="w-[min(calc(100vw-2rem),50rem)] gap-0 overflow-hidden p-0 md:grid md:grid-cols-[15rem_1fr]">
-          <aside className="bg-slate-950 px-5 py-6 text-slate-100 md:px-6 md:py-8">
-            <div className="flex items-center gap-2 text-sm font-semibold text-sky-300">
+        <DialogContent className="w-[min(calc(100vw-2rem),50rem)] gap-0 overflow-hidden rounded-lg border p-0 shadow-xl md:grid md:grid-cols-[15rem_1fr]">
+          <aside className="border-b bg-[#f6f8fa] px-5 py-6 text-foreground md:border-b-0 md:border-r md:px-6 md:py-8">
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-primary">
               <Sparkles className="h-4 w-4" />
               {t('onboarding.planLabel')}
             </div>
             <h2 className="mt-3 text-xl font-semibold tracking-tight">{t('onboarding.planTitle')}</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-300">{t('onboarding.planDescription')}</p>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">{t('onboarding.planDescription')}</p>
 
             <div className="mt-7 space-y-1">
               {ONBOARDING_STEPS.map((step, index) => {
@@ -163,15 +160,15 @@ export function PlatformOnboarding({ userId, displayName }: PlatformOnboardingPr
                     type="button"
                     onClick={() => setStepIndex(index)}
                     aria-current={selected ? 'step' : undefined}
-                    className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm transition-colors ${
-                      selected ? 'bg-white/15 text-white shadow-sm' : 'text-slate-300 hover:bg-white/10 hover:text-white'
+                    className={`relative flex w-full items-center gap-3 rounded-md px-3 py-3 text-left text-sm transition-colors ${
+                      selected ? 'bg-white font-semibold text-foreground shadow-sm before:absolute before:-left-6 before:top-2 before:h-8 before:w-1 before:rounded-full before:bg-primary' : 'text-muted-foreground hover:bg-white hover:text-foreground'
                     }`}
                   >
-                    <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${selected ? 'bg-sky-400 text-slate-950' : 'bg-white/10 text-slate-300'}`}>
+                    <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${selected ? 'bg-primary text-primary-foreground' : 'bg-slate-200 text-muted-foreground'}`}>
                       <Icon className="h-4 w-4" />
                     </span>
                     <span className="min-w-0 flex-1 truncate">{t(`onboarding.steps.${step.key}.shortTitle`)}</span>
-                    {index < stepIndex ? <CheckCircle2 className="h-4 w-4 text-sky-300" /> : null}
+                    {index < stepIndex ? <CheckCircle2 className="h-4 w-4 text-primary" /> : null}
                   </button>
                 )
               })}
@@ -189,7 +186,7 @@ export function PlatformOnboarding({ userId, displayName }: PlatformOnboardingPr
             </div>
 
             <div className="flex-1 px-7 pb-7 pt-8 md:px-9 md:pb-9">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-primary/15">
+              <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-primary/10 text-primary ring-1 ring-primary/15">
                 <StepIcon className="h-7 w-7" />
               </div>
               <DialogHeader className="mt-6 text-left">
@@ -202,7 +199,7 @@ export function PlatformOnboarding({ userId, displayName }: PlatformOnboardingPr
               </DialogHeader>
 
               {currentStep.key === 'welcome' ? (
-                <div className="mt-7 rounded-2xl border bg-secondary/35 p-5">
+                <div className="mt-7 rounded-md border bg-[#f6f8fa] p-5">
                   <p className="text-sm font-semibold text-foreground">{t('onboarding.steps.welcome.nextTitle')}</p>
                   <p className="mt-2 text-sm leading-6 text-muted-foreground">{t('onboarding.steps.welcome.nextDescription')}</p>
                   <Button variant="outline" className="mt-5" onClick={openCurrentCenter}>
@@ -210,7 +207,7 @@ export function PlatformOnboarding({ userId, displayName }: PlatformOnboardingPr
                   </Button>
                 </div>
               ) : (
-                <div className="mt-7 rounded-2xl border bg-secondary/35 p-5">
+                <div className="mt-7 rounded-md border bg-[#f6f8fa] p-5">
                   <p className="text-sm font-semibold text-foreground">{t('onboarding.recommendedAction')}</p>
                   <p className="mt-2 text-sm leading-6 text-muted-foreground">{t(`onboarding.steps.${currentStep.key}.howToUse`)}</p>
                   <Button variant="outline" className="mt-5" onClick={openCurrentCenter}>
