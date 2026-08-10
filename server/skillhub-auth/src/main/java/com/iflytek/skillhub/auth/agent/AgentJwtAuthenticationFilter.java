@@ -142,17 +142,19 @@ public class AgentJwtAuthenticationFilter extends OncePerRequestFilter {
 
     private PlatformPrincipal principalFromClaims(Map<String, Object> claims) {
         String userId = stringClaim(claims, "sub");
-        String displayName = stringClaim(claims, "name");
+        String claimedDisplayName = stringClaim(claims, "name");
         String email = stringClaim(claims, "email");
         String avatar = stringClaim(claims, "avatar_url");
-        if (displayName == null || displayName.isBlank()) {
-            displayName = userId;
-        }
-
-        String finalDisplayName = displayName;
         UserAccount user = userAccountRepository.findById(userId)
-                .orElseGet(() -> new UserAccount(userId, finalDisplayName, email, avatar));
-        user.setDisplayName(displayName);
+                .orElseGet(() -> new UserAccount(
+                        userId,
+                        claimedDisplayName == null ? userId : claimedDisplayName,
+                        email,
+                        avatar
+                ));
+        if (claimedDisplayName != null) {
+            user.setDisplayName(claimedDisplayName);
+        }
         if (email != null && !email.isBlank()) {
             user.setEmail(email);
         }
