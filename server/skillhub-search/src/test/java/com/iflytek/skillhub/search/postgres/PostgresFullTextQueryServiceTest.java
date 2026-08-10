@@ -657,8 +657,6 @@ class PostgresFullTextQueryServiceTest {
                 embeddingService,
                 new SearchTextTokenizer(),
                 true,
-                0.6D,
-                8,
                 120
         );
 
@@ -671,15 +669,18 @@ class PostgresFullTextQueryServiceTest {
                 2
         ));
 
-        verify(nativeQuery).setParameter("limit", 16);
+        verify(nativeQuery).setParameter("limit", 120);
         verify(nativeQuery).setParameter("offset", 0);
         verify(nativeQuery).setParameter("tsQuery", "self:* | improvement:*");
-        verify(countQuery).setParameter("tsQuery", "self:* | improvement:*");
+        verify(countQuery, never()).setParameter("tsQuery", "self:* | improvement:*");
         ArgumentCaptor<String> sqlCaptor = ArgumentCaptor.forClass(String.class);
         verify(entityManager, org.mockito.Mockito.times(2)).createNativeQuery(sqlCaptor.capture());
-        assertThat(sqlCaptor.getAllValues().get(0)).contains("d.search_vector @@ to_tsquery('simple', :tsQuery)");
-        assertThat(sqlCaptor.getAllValues().get(1)).contains("d.search_vector @@ to_tsquery('simple', :tsQuery)");
-        assertThat(result.skillIds()).containsExactly(1L, 2L);
+        assertThat(sqlCaptor.getAllValues().get(0))
+                .doesNotContain("AND (d.search_vector @@")
+                .contains("ts_rank_cd(d.search_vector, to_tsquery('simple', :tsQuery))");
+        assertThat(sqlCaptor.getAllValues().get(1)).doesNotContain("d.search_vector @@");
+        assertThat(result.skillIds()).containsExactly(1L);
+        assertThat(result.total()).isEqualTo(1L);
     }
 
     @Test
@@ -703,8 +704,6 @@ class PostgresFullTextQueryServiceTest {
                 embeddingService,
                 new SearchTextTokenizer(),
                 true,
-                0.6D,
-                8,
                 120
         );
 

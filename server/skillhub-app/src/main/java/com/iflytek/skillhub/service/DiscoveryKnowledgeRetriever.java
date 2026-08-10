@@ -10,6 +10,8 @@ import com.iflytek.skillhub.dto.DiscoverySuggestionResponse;
 import com.iflytek.skillhub.dto.SkillSummaryResponse;
 import com.iflytek.skillhub.infra.jpa.SkillSearchDocumentEntity;
 import com.iflytek.skillhub.infra.jpa.SkillSearchDocumentJpaRepository;
+import com.iflytek.skillhub.search.HybridResourceSearchRanker;
+import com.iflytek.skillhub.search.ResourceSearchDocument;
 import com.iflytek.skillhub.search.SearchEmbeddingService;
 import com.iflytek.skillhub.search.SearchTextTokenizer;
 import java.util.ArrayList;
@@ -27,7 +29,8 @@ import org.springframework.transaction.annotation.Transactional;
 /** Permission-aware hybrid retrieval across catalog documents and fully indexed skill packages. */
 @Service
 public class DiscoveryKnowledgeRetriever {
-    private static final int RESULT_LIMIT = 6;
+    private static final int RESULT_LIMIT = 100;
+    private static final int FULL_CATALOG_CONTEXT_LIMIT = 40;
     private static final int CHUNK_MAX_CHARS = 720;
     private static final int CHUNK_OVERLAP_CHARS = 80;
     /**
@@ -36,9 +39,7 @@ public class DiscoveryKnowledgeRetriever {
      * AI discovery performs its own semantic/lexical rerank after retrieval.
      */
     private static final int SKILL_CANDIDATE_LIMIT = 40;
-    private static final int SKILL_SEMANTIC_POOL_LIMIT = 120;
-    /** Conservative until the internal relevance set calibrates this value. */
-    private static final double MIN_SEMANTIC_SCORE = 0.72D;
+    private static final int SKILL_SEMANTIC_POOL_LIMIT = 500;
     private static final double RRF_K = 60D;
     private static final Set<String> QUERY_STOP_WORDS = Set.of(
             "有", "没有", "什么", "有什么", "哪个", "哪些", "可以", "能够", "能", "帮我",
@@ -51,6 +52,7 @@ public class DiscoveryKnowledgeRetriever {
     private final SkillSearchDocumentJpaRepository skillSearchDocumentRepository;
     private final SearchEmbeddingService embeddingService;
     private final SearchTextTokenizer tokenizer;
+    private final HybridResourceSearchRanker resourceSearchRanker;
     private final Map<String, List<IndexedChunk>> chunkCache = Collections.synchronizedMap(
             new LinkedHashMap<>(128, 0.75F, true) {
                 @Override
@@ -64,13 +66,15 @@ public class DiscoveryKnowledgeRetriever {
                                        SkillSearchAppService skillSearchAppService,
                                        SkillSearchDocumentJpaRepository skillSearchDocumentRepository,
                                        SearchEmbeddingService embeddingService,
-                                       SearchTextTokenizer tokenizer) {
+                                       SearchTextTokenizer tokenizer,
+                                       HybridResourceSearchRanker resourceSearchRanker) {
         this.catalogRepository = catalogRepository;
         this.catalogPolicy = catalogPolicy;
         this.skillSearchAppService = skillSearchAppService;
         this.skillSearchDocumentRepository = skillSearchDocumentRepository;
         this.embeddingService = embeddingService;
         this.tokenizer = tokenizer;
+        this.resourceSearchRanker = resourceSearchRanker;
     }
 
     @Transactional(readOnly = true)
@@ -108,9 +112,19 @@ public class DiscoveryKnowledgeRetriever {
                 null, null, "newest", 0, SKILL_SEMANTIC_POOL_LIMIT, principal.userId(), roles);
         Map<String, RankedSuggestion> merged = new LinkedHashMap<>();
         for (String query : queries) {
-            mergeRanked(merged, retrieveCatalog(query, principal, namespaceIds));
-            mergeRanked(merged, retrieveSkills(
-                    query, principal.userId(), roles, language, semanticPool.items()));
+            var intent = resourceSearchRanker.interpret(query);
+            boolean catalogRequested = intent.resourceTypes().isEmpty()
+                    || intent.resourceTypes().contains("AGENT")
+                    || intent.resourceTypes().contains("TOOL");
+            boolean skillRequested = intent.resourceTypes().isEmpty()
+                    || intent.resourceTypes().contains("SKILL");
+            if (catalogRequested) {
+                mergeRanked(merged, retrieveCatalog(query, principal, namespaceIds));
+            }
+            if (skillRequested) {
+                mergeRanked(merged, retrieveSkills(
+                        query, principal.userId(), roles, language, semanticPool.items()));
+            }
         }
         return merged.values().stream()
                 .sorted(Comparator.comparingDouble(RankedSuggestion::score).reversed()
@@ -149,43 +163,40 @@ public class DiscoveryKnowledgeRetriever {
             return List.of();
         }
 
-        List<String> terms = meaningfulTerms(question);
-        Map<Long, Double> semanticScores = new HashMap<>();
-        Map<Long, Double> lexicalScores = new HashMap<>();
         Map<Long, String> evidenceByResource = new HashMap<>();
         for (CatalogResource resource : visible) {
             String content = searchableContent(resource);
             ChunkMatch best = bestChunk(
                     question,
-                    terms,
+                    meaningfulTerms(question),
                     resource.getId() + ":catalog:" + resource.getUpdatedAt(),
                     content,
                     resource.getSummary());
-            semanticScores.put(resource.getId(), best.semanticScore());
-            lexicalScores.put(resource.getId(), best.lexicalScore());
             evidenceByResource.put(resource.getId(), best.text());
         }
-
-        Map<Long, Integer> lexicalRanks = ranks(visible.stream()
-                .filter(resource -> lexicalScores.getOrDefault(resource.getId(), 0D) > 0D).toList(), lexicalScores);
-        boolean hasLexicalMatches = !lexicalRanks.isEmpty();
-        double semanticThreshold = MIN_SEMANTIC_SCORE + (hasLexicalMatches ? 0.05D : 0D);
-        Map<Long, Integer> semanticRanks = ranks(visible.stream()
-                .filter(resource -> semanticScores.getOrDefault(resource.getId(), 0D) >= semanticThreshold)
-                .toList(), semanticScores);
-
-        return visible.stream()
-                .map(resource -> new RankedCatalog(
-                        resource,
-                        rrfScore(resource.getId(), semanticRanks, lexicalRanks),
-                        semanticScores.getOrDefault(resource.getId(), 0D),
-                        lexicalScores.getOrDefault(resource.getId(), 0D)))
-                .filter(match -> match.lexicalScore() > 0D
-                        || match.semanticScore() >= semanticThreshold)
-                .sorted(Comparator.comparingDouble(RankedCatalog::score).reversed()
-                        .thenComparing(match -> match.resource().getUpdatedAt(), Comparator.reverseOrder()))
-                .map(match -> catalogSuggestion(match.resource(), evidenceByResource.get(match.resource().getId())))
+        Map<String, CatalogResource> resourcesById = visible.stream()
+                .collect(java.util.stream.Collectors.toMap(resource -> resource.getId().toString(), resource -> resource));
+        return resourceSearchRanker.rank(
+                        question,
+                        visible.stream().map(this::catalogSearchDocument).toList(),
+                        RESULT_LIMIT,
+                        visible.size() <= FULL_CATALOG_CONTEXT_LIMIT).stream()
+                .map(match -> resourcesById.get(match.document().id()))
+                .filter(java.util.Objects::nonNull)
+                .map(resource -> catalogSuggestion(resource, evidenceByResource.get(resource.getId())))
                 .toList();
+    }
+
+    private ResourceSearchDocument catalogSearchDocument(CatalogResource resource) {
+        return new ResourceSearchDocument(
+                resource.getId().toString(),
+                resource.getKind().name().equals("AGENT") ? "AGENT" : "TOOL",
+                resource.getName(), resource.getSlug(), resource.getSummary(),
+                List.copyOf(resource.getScenarios()), List.copyOf(resource.getTags()),
+                resource.getDocumentation(),
+                resource.getAccessUrl() != null && !resource.getAccessUrl().isBlank()
+                        ? "OPEN" : resource.getArtifactStorageKey() != null ? "DOWNLOAD" : "OPEN",
+                null, 0D);
     }
 
     private List<DiscoverySuggestionResponse> retrieveSkills(String question,
@@ -206,8 +217,8 @@ public class DiscoveryKnowledgeRetriever {
         skillSearchDocumentRepository.findBySkillIdIn(ids)
                 .forEach(document -> documents.put(document.getSkillId(), document));
         List<String> terms = meaningfulTerms(question);
-        boolean hasLexicalMatches = !lexicalResponse.items().isEmpty();
-        return skillsById.values().stream().map(skill -> {
+        Map<String, DiscoverySuggestionResponse> suggestionsById = new HashMap<>();
+        List<ResourceSearchDocument> searchDocuments = skillsById.values().stream().map(skill -> {
             SkillSearchDocumentEntity document = documents.get(skill.id());
             String searchText = document == null ? "" : safe(document.getSearchText());
             ChunkMatch best = document == null
@@ -220,16 +231,22 @@ public class DiscoveryKnowledgeRetriever {
                             skill.summary());
             String title = localized(language, skill.localizedDisplayName(), skill.displayName());
             String summary = localized(language, skill.localizedSummary(), skill.summary());
-            return new RankedSkill(new DiscoverySuggestionResponse(
+            suggestionsById.put(skill.id().toString(), new DiscoverySuggestionResponse(
                     "skill", skill.id(), title, summary, "SKILL",
-                    skill.slug(), skill.namespace(), null, null, best.text(), "SKILL.md / 配套文档"),
-                    best.semanticScore(), best.lexicalScore());
-        }).filter(match -> match.lexicalScore() > 0D
-                || match.semanticScore() >= MIN_SEMANTIC_SCORE + (hasLexicalMatches ? 0.05D : 0D))
-                .sorted(Comparator.comparingDouble(DiscoveryKnowledgeRetriever::skillScore).reversed()
-                        .thenComparing(match -> match.suggestion().title()))
-                .map(RankedSkill::suggestion)
-                .limit(RESULT_LIMIT)
+                    skill.slug(), skill.namespace(), null, null, best.text(), "SKILL.md / 配套文档"));
+            return new ResourceSearchDocument(
+                    skill.id().toString(), "SKILL", title, skill.slug(), summary,
+                    List.of(),
+                    document == null || document.getKeywords() == null
+                            ? List.of() : List.of(document.getKeywords()),
+                    searchText, "INSTALL",
+                    document == null ? null : document.getSemanticVector(),
+                    0D);
+        }).toList();
+        return resourceSearchRanker.rankWithinScope(
+                        question, searchDocuments, RESULT_LIMIT, searchDocuments.size() <= RESULT_LIMIT).stream()
+                .map(match -> suggestionsById.get(match.document().id()))
+                .filter(java.util.Objects::nonNull)
                 .toList();
     }
 
@@ -238,24 +255,6 @@ public class DiscoveryKnowledgeRetriever {
                 "catalog", resource.getId(), resource.getName(), resource.getSummary(),
                 resource.getKind().name(), resource.getSlug(), null, resource.getAccessUrl(), null,
                 evidence, "对应文档");
-    }
-
-    private Map<Long, Integer> ranks(List<CatalogResource> resources, Map<Long, Double> scores) {
-        Map<Long, Integer> ranks = new HashMap<>();
-        List<CatalogResource> sorted = resources.stream()
-                .sorted(Comparator.comparingDouble(
-                        (CatalogResource resource) -> scores.getOrDefault(resource.getId(), 0D)).reversed())
-                .toList();
-        for (int index = 0; index < sorted.size(); index++) {
-            ranks.put(sorted.get(index).getId(), index + 1);
-        }
-        return ranks;
-    }
-
-    private double rrfScore(Long id, Map<Long, Integer> semanticRanks, Map<Long, Integer> lexicalRanks) {
-        double score = semanticRanks.containsKey(id) ? 1D / (RRF_K + semanticRanks.get(id)) : 0D;
-        score += lexicalRanks.containsKey(id) ? 1D / (RRF_K + lexicalRanks.get(id)) : 0D;
-        return score;
     }
 
     private double lexicalScore(List<String> terms, String content) {
@@ -358,10 +357,6 @@ public class DiscoveryKnowledgeRetriever {
         return chunks.stream().filter(chunk -> chunk.length() >= 12).toList();
     }
 
-    private static double skillScore(RankedSkill match) {
-        return match.semanticScore() + Math.min(match.lexicalScore(), 4D) * 0.2D;
-    }
-
     private String searchableContent(CatalogResource resource) {
         return String.join("\n",
                 safe(resource.getName()), safe(resource.getSummary()),
@@ -396,14 +391,6 @@ public class DiscoveryKnowledgeRetriever {
 
     private String safe(String value) {
         return value == null ? "" : value;
-    }
-
-    private record RankedCatalog(CatalogResource resource, double score,
-                                 double semanticScore, double lexicalScore) {
-    }
-
-    private record RankedSkill(DiscoverySuggestionResponse suggestion,
-                               double semanticScore, double lexicalScore) {
     }
 
     private record RankedSuggestion(DiscoverySuggestionResponse suggestion, double score) {

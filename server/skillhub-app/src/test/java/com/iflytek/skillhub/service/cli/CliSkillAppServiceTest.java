@@ -79,7 +79,7 @@ class CliSkillAppServiceTest {
                 )),
                 1L, 0, 20
         );
-        given(skillSearchAppService.searchInstallableLatest("pdf", null, "newest", 0, 20, null, null))
+        given(skillSearchAppService.searchInstallableLatest("pdf", null, "relevance", 0, 20, null, null))
                 .willReturn(searchResponse);
 
         var result = service.search("pdf", 20, null, null);
@@ -108,7 +108,7 @@ class CliSkillAppServiceTest {
                 ),
                 1L, 0, 20
         );
-        given(skillSearchAppService.searchInstallableLatest("demo", null, "newest", 0, 20, null, null))
+        given(skillSearchAppService.searchInstallableLatest("demo", null, "relevance", 0, 20, null, null))
                 .willReturn(searchResponse);
 
         var result = service.search("demo", 20, null, null);

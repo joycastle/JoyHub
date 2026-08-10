@@ -9,7 +9,11 @@ import com.iflytek.skillhub.dto.CatalogResourceDetailResponse;
 import com.iflytek.skillhub.dto.CatalogResourceSummaryResponse;
 import com.iflytek.skillhub.dto.PageResponse;
 import com.iflytek.skillhub.repository.CatalogQueryRepository;
+import com.iflytek.skillhub.search.HybridResourceSearchRanker;
+import com.iflytek.skillhub.search.ResourceSearchDocument;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -19,19 +23,24 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class CatalogResourceQueryAppService {
+    private static final int HYBRID_CANDIDATE_LIMIT = 1000;
+
     private final CatalogQueryRepository queryRepository;
     private final CatalogResourceRepository resourceRepository;
     private final CatalogResourcePolicy policy;
     private final CatalogResourceProjectionAssembler assembler;
+    private final HybridResourceSearchRanker searchRanker;
 
     public CatalogResourceQueryAppService(CatalogQueryRepository queryRepository,
                                           CatalogResourceRepository resourceRepository,
                                           CatalogResourcePolicy policy,
-                                          CatalogResourceProjectionAssembler assembler) {
+                                          CatalogResourceProjectionAssembler assembler,
+                                          HybridResourceSearchRanker searchRanker) {
         this.queryRepository = queryRepository;
         this.resourceRepository = resourceRepository;
         this.policy = policy;
         this.assembler = assembler;
+        this.searchRanker = searchRanker;
     }
 
     @Transactional(readOnly = true)
@@ -43,8 +52,11 @@ public class CatalogResourceQueryAppService {
             Long departmentId,
             CatalogViewer viewer,
             Pageable pageable) {
+        if (query != null && !query.isBlank()) {
+            return searchHybrid(query, center, kind, scenario, departmentId, viewer, pageable);
+        }
         Page<CatalogResource> page = queryRepository.searchPublished(
-                query,
+                null,
                 center,
                 kind,
                 scenario,
@@ -55,6 +67,58 @@ public class CatalogResourceQueryAppService {
         );
         List<CatalogResourceSummaryResponse> summaries = assembler.summaries(page.getContent());
         return PageResponse.from(new PageImpl<>(summaries, pageable, page.getTotalElements()));
+    }
+
+    private PageResponse<CatalogResourceSummaryResponse> searchHybrid(
+            String query,
+            String center,
+            CatalogResourceKind kind,
+            String scenario,
+            Long departmentId,
+            CatalogViewer viewer,
+            Pageable pageable) {
+        Page<CatalogResource> candidates = queryRepository.searchPublished(
+                null, center, kind, scenario, departmentId,
+                viewer.namespaceIds(), viewer.superAdmin(),
+                PageRequest.of(0, HYBRID_CANDIDATE_LIMIT));
+        Map<String, CatalogResource> resourcesById = new LinkedHashMap<>();
+        candidates.getContent().forEach(resource -> resourcesById.put(resource.getId().toString(), resource));
+        List<ResourceSearchDocument> documents = candidates.getContent().stream()
+                .map(this::toSearchDocument)
+                .toList();
+        List<HybridResourceSearchRanker.RankedResource> matches = kind == null
+                ? searchRanker.rank(query, documents, HYBRID_CANDIDATE_LIMIT, false)
+                : searchRanker.rankWithinScope(query, documents, HYBRID_CANDIDATE_LIMIT, false);
+        List<CatalogResource> ranked = matches.stream()
+                .map(match -> resourcesById.get(match.document().id()))
+                .filter(java.util.Objects::nonNull)
+                .toList();
+        int from = Math.min((int) pageable.getOffset(), ranked.size());
+        int to = Math.min(from + pageable.getPageSize(), ranked.size());
+        List<CatalogResourceSummaryResponse> summaries = assembler.summaries(ranked.subList(from, to));
+        return PageResponse.from(new PageImpl<>(summaries, pageable, ranked.size()));
+    }
+
+    private ResourceSearchDocument toSearchDocument(CatalogResource resource) {
+        return new ResourceSearchDocument(
+                resource.getId().toString(),
+                resource.getKind() == CatalogResourceKind.AGENT ? "AGENT" : "TOOL",
+                resource.getName(),
+                resource.getSlug(),
+                resource.getSummary(),
+                List.copyOf(resource.getScenarios()),
+                List.copyOf(resource.getTags()),
+                resource.getDocumentation(),
+                accessMode(resource),
+                null,
+                0D);
+    }
+
+    private String accessMode(CatalogResource resource) {
+        if (resource.getAccessUrl() != null && !resource.getAccessUrl().isBlank()) {
+            return "OPEN";
+        }
+        return resource.getArtifactStorageKey() != null ? "DOWNLOAD" : "OPEN";
     }
 
     @Transactional(readOnly = true)

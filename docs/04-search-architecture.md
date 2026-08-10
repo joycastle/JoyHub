@@ -1,4 +1,37 @@
-# skillhub 搜索架构
+# JoyHub 统一资源搜索架构
+
+## 0 统一搜索边界
+
+Skill、Agent、Tool 保持各自的业务聚合与生命周期，但必须投影成同一种轻量搜索文档，
+并复用同一个查询理解和混合排序器：
+
+```java
+public record ResourceSearchDocument(
+    String id,
+    String resourceType,     // SKILL / AGENT / TOOL
+    String title,
+    String slug,
+    String summary,
+    List<String> scenarios,
+    List<String> tags,
+    String documentation,
+    String accessMode,       // INSTALL / OPEN / DOWNLOAD
+    String semanticVector,
+    double qualityScore
+) {}
+```
+
+不同入口只增加结构化条件，不得维护另一套相关性算法：
+
+| 入口 | 资源范围 |
+|------|---------|
+| 全站搜索 | 当前用户可见的全部资源 |
+| Agent / Tool / Skill 中心 | 对应资源类型 |
+| AI 能力顾问 | 小规模时提供全部可见轻量文档；超过预算时提供混合检索候选 |
+| Agent 安装接口 | `resourceType=SKILL AND accessMode=INSTALL` |
+
+查询流程固定为：权限和生命周期过滤 → 精确/分词/语义并行召回 → 去重排序 →
+按入口投影响应。语义检索必须扫描过滤后的候选语料，不能只重排关键词已经命中的结果。
 
 ## 1 SPI 接口
 
@@ -108,16 +141,17 @@ PostgreSQL 全文搜索索引：表增加 `search_vector tsvector` 生成列，�
 | 阶段 | 实现 | 索引粒度 | 切换方式 |
 |------|------|---------|---------|
 | 一期 | PostgreSQL Full-Text (tsvector + GIN) | 每 skill 一条（latest published） | 默认 |
-| 一点五期 | PostgreSQL Full-Text + 语义向量重排 | 每 skill 一条（latest published） | 配置 `skillhub.search.semantic.enabled=true` |
+| 一点五期 | PostgreSQL Full-Text + 有界语义召回 | 每 skill 一条（latest published） | 配置 `skillhub.search.semantic.enabled=true` |
 | 二期 | ES / OpenSearch | 每 skill_version 一条 + skill 聚合文档 | 配置 `search.provider=elasticsearch` |
 | 三期 | 向量检索 | 每 skill_version 多条（chunk 级） | 配置 `search.provider=vector` |
 | 四期 | 混合排序 | 关键词 + 向量混合 | 配置 `search.provider=hybrid` |
 
 当前代码实现已落在“一点五期”：
-- 仍然使用 PostgreSQL 全文搜索作为主召回
+- PostgreSQL 先执行权限、生命周期、命名空间与可安装状态过滤
 - 搜索文档表新增 `semantic_vector` 缓存字段
-- relevance 排序下，对全文候选集追加语义向量重排
-- 语义向量不可用时自动降级为现有全文相关度排序
+- 过滤后的有界候选集同时计算标题、分词和语义相关性，不要求候选先命中关键词
+- Agent、Tool 使用同一个 `ResourceSearchDocument` 与混合排序器，不再维护字符串包含搜索
+- 当前公司规模扫描上限为 500 个可见候选；达到规模上限前必须用真实查询集重新校准
 
 ### 5.3 SPI 演进策略
 

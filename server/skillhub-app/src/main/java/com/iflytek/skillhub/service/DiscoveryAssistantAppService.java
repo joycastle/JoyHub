@@ -22,8 +22,8 @@ import org.springframework.stereotype.Service;
 @Service
 public class DiscoveryAssistantAppService {
     private static final Logger log = LoggerFactory.getLogger(DiscoveryAssistantAppService.class);
-    private static final int STEP_RESULT_LIMIT = 5;
-    private static final int TOTAL_RESULT_LIMIT = 12;
+    private static final int STEP_RESULT_LIMIT = 100;
+    private static final int TOTAL_RESULT_LIMIT = 100;
 
     private final DiscoveryAiClient aiClient;
     private final DiscoveryAiProperties properties;

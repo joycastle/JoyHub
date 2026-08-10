@@ -142,11 +142,9 @@ skillhub:
     rebuild-on-startup: false
     semantic:
       enabled: true
-      # Semantic similarity is a second-stage signal. Keep lexical rank strong
-      # enough to prevent generic embeddings from outranking exact matches.
-      weight: 0.60
-      candidate-multiplier: 8
-      max-candidates: 120
+      # Scan the complete visible corpus at the current company scale. Increase this only after
+      # relevance benchmarks cover the larger inventory.
+      max-candidates: 500
   ratelimit:
     download:
       anonymous-cookie-name: ${SKILLHUB_DOWNLOAD_ANON_COOKIE_NAME:skillhub_anon_dl}

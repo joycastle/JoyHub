@@ -51,8 +51,9 @@ public class CliSkillAppService {
     public record CliSearchResult(List<CliSearchItem> items, long total, int limit) {}
 
     public CliSearchResult search(String q, int limit, String userId, Map<Long, NamespaceRole> userNsRoles) {
+        String sort = q == null || q.isBlank() ? "newest" : "relevance";
         SkillSearchAppService.SearchResponse response = skillSearchAppService.searchInstallableLatest(
-                q, null, "newest", 0, limit, userId, userNsRoles
+                q, null, sort, 0, limit, userId, userNsRoles
         );
 
         List<CliSearchItem> items = response.items().stream()
