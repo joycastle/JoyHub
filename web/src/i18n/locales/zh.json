@@ -349,6 +349,7 @@
     "placeholder": "例如：我想自动整理会议纪要",
     "ask": "询问",
     "thinking": "正在检索你可见的能力...",
+    "requestFailed": "本次推荐请求没有完成，请稍后重试。这不代表 JoyHub 中没有匹配能力。",
     "planTitle": "任务方案",
     "recommendationsTitle": "推荐能力",
     "planHint": "每一步给出首选能力，其他可用方案按需展开。",

@@ -92,7 +92,9 @@ export function DiscoveryAssistant({ isAuthenticated }: { isAuthenticated: boole
     suggestions: toDiscoverySuggestions(step.suggestions),
   })) ?? [], [assistant.data?.steps])
   const shownSuggestions = assistant.data ? aiSuggestions : recommendation.suggestions
-  const shownSummary = assistant.data?.answer ?? recommendation.summary
+  const shownSummary = assistant.isError
+    ? t('discoveryAssistant.requestFailed')
+    : assistant.data?.answer ?? recommendation.summary
   const isThinking = isLoading || (enabled && isAuthenticated && assistant.isPending)
 
   const ask = (value: string) => {

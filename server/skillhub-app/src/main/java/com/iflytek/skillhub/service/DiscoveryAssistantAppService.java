@@ -47,7 +47,11 @@ public class DiscoveryAssistantAppService {
         String safetyIdentifier = safetyIdentifier(principal.userId());
         DiscoveryConversationStore.Conversation conversation = conversationStore.load(
                 principal.userId(), conversationId);
-        DiscoverySearchPlan plan = plan(question, language, conversation.turns(), safetyIdentifier);
+        // Retrieval must stay deterministic and finish within the web request budget.
+        // Query expansion is handled locally by DiscoveryKnowledgeRetriever, so an
+        // extra model call here only delays the unified search and can make the CDN
+        // close the request before recommendations are returned.
+        DiscoverySearchPlan plan = DiscoverySearchPlan.singleStep(question);
         List<DiscoveryPlanStepResponse> candidateSteps = retrieveSteps(
                 question, plan, language, principal, normalizedRoles);
         log.info("AI discovery candidates prepared [steps={}, candidates={}]",
@@ -83,20 +87,6 @@ public class DiscoveryAssistantAppService {
         conversationStore.append(principal.userId(), conversation.id(),
                 new DiscoveryConversationTurn(question, response.answer()));
         return response;
-    }
-
-    private DiscoverySearchPlan plan(String question, String language,
-                                     List<DiscoveryConversationTurn> history,
-                                     String safetyIdentifier) {
-        if (!properties.isEnabled() || properties.getApiKey() == null || properties.getApiKey().isBlank()) {
-            return DiscoverySearchPlan.singleStep(question);
-        }
-        try {
-            return aiClient.plan(question, language, history, safetyIdentifier);
-        } catch (RuntimeException exception) {
-            log.warn("JoyHub goal planning degraded to a single retrieval step");
-            return DiscoverySearchPlan.singleStep(question);
-        }
     }
 
     private List<DiscoveryPlanStepResponse> retrieveSteps(String question,

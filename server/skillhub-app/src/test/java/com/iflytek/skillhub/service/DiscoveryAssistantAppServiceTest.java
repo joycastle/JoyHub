@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -20,16 +21,13 @@ import org.junit.jupiter.api.Test;
 class DiscoveryAssistantAppServiceTest {
 
     @Test
-    void decomposesGoalAndRetrievesResourcesForEveryStep() {
+    void retrievesUnifiedCandidatesBeforeGeneratingAnswer() {
         DiscoveryAiClient aiClient = mock(DiscoveryAiClient.class);
         DiscoveryKnowledgeRetriever retriever = mock(DiscoveryKnowledgeRetriever.class);
         DiscoveryConversationStore conversationStore = mock(DiscoveryConversationStore.class);
         DiscoveryAiProperties properties = new DiscoveryAiProperties();
         properties.setEnabled(true);
         properties.setApiKey("test-key");
-        DiscoverySearchPlan plan = new DiscoverySearchPlan("完成周报", List.of(
-                new DiscoverySearchPlan.Step("收集项目进展", List.of("project progress collection")),
-                new DiscoverySearchPlan.Step("整理并生成报告", List.of("report generation"))));
         DiscoverySuggestionResponse reportSkill = new DiscoverySuggestionResponse(
                 "skill", 7L, "Documentation Writer", "Writes reports", "SKILL",
                 "documentation-writer", "global", null, null, "Generate structured reports", "SKILL.md");
@@ -38,19 +36,13 @@ class DiscoveryAssistantAppServiceTest {
         when(conversationStore.load("user-1", "0f40ad3f-7ce2-4bbb-89ec-63080a7f0648"))
                 .thenReturn(new DiscoveryConversationStore.Conversation(
                         "0f40ad3f-7ce2-4bbb-89ec-63080a7f0648", history));
-        when(aiClient.plan(anyString(), anyString(), anyList(), anyString())).thenReturn(plan);
         when(retriever.retrieve(
-                List.of("那帮我整理一下", "project progress collection"),
-                principal(), Map.of(), "zh-CN"))
-                .thenReturn(List.of());
-        when(retriever.retrieve(
-                List.of("那帮我整理一下", "report generation"),
+                List.of("那帮我整理一下"),
                 principal(), Map.of(), "zh-CN"))
                 .thenReturn(List.of(reportSkill));
         when(aiClient.answer(anyString(), anyString(), anyList(), anyList(), anyString()))
-                .thenReturn(new DiscoveryAiClient.AiAnswer("分两步完成。", "gpt-test", false, List.of(
-                        new DiscoveryAiClient.StepSelection(0, List.of()),
-                        new DiscoveryAiClient.StepSelection(1, List.of(
+                .thenReturn(new DiscoveryAiClient.AiAnswer("已找到合适能力。", "gpt-test", false, List.of(
+                        new DiscoveryAiClient.StepSelection(0, List.of(
                                 new DiscoveryAiClient.ResourceRef(
                                         "skill", 7L, "帮助生成结构化报告。", "打开后粘贴报告材料。"))))));
         DiscoveryAssistantAppService service = new DiscoveryAssistantAppService(
@@ -61,9 +53,8 @@ class DiscoveryAssistantAppServiceTest {
                 principal(), Map.of());
 
         assertThat(response.conversationId()).isEqualTo("0f40ad3f-7ce2-4bbb-89ec-63080a7f0648");
-        assertThat(response.steps()).hasSize(2);
-        assertThat(response.steps().get(0).suggestions()).isEmpty();
-        assertThat(response.steps().get(1).suggestions()).singleElement()
+        assertThat(response.steps()).hasSize(1);
+        assertThat(response.steps().get(0).suggestions()).singleElement()
                 .satisfies(suggestion -> {
                     assertThat(suggestion.title()).isEqualTo("Documentation Writer");
                     assertThat(suggestion.description()).isEqualTo("帮助生成结构化报告。");
@@ -72,18 +63,15 @@ class DiscoveryAssistantAppServiceTest {
                 .extracting(DiscoverySuggestionResponse::usage)
                 .isEqualTo("打开后粘贴报告材料。");
         assertThat(response.modelGenerated()).isTrue();
-        verify(aiClient).plan(eq("那帮我整理一下"), eq("zh-CN"), eq(history), anyString());
+        verify(aiClient, never()).plan(anyString(), anyString(), anyList(), anyString());
         verify(aiClient).answer(
                 eq("那帮我整理一下"), eq("zh-CN"), anyList(), eq(history), anyString());
         verify(retriever).retrieve(
-                List.of("那帮我整理一下", "project progress collection"),
-                principal(), Map.of(), "zh-CN");
-        verify(retriever).retrieve(
-                List.of("那帮我整理一下", "report generation"),
+                List.of("那帮我整理一下"),
                 principal(), Map.of(), "zh-CN");
         verify(conversationStore).append(
                 eq("user-1"), eq("0f40ad3f-7ce2-4bbb-89ec-63080a7f0648"),
-                eq(new DiscoveryConversationTurn("那帮我整理一下", "分两步完成。")));
+                eq(new DiscoveryConversationTurn("那帮我整理一下", "已找到合适能力。")));
     }
 
     @Test
@@ -94,16 +82,14 @@ class DiscoveryAssistantAppServiceTest {
         DiscoveryAiProperties properties = new DiscoveryAiProperties();
         properties.setEnabled(true);
         properties.setApiKey("test-key");
-        DiscoverySearchPlan plan = DiscoverySearchPlan.singleStep("生成报告");
         DiscoverySuggestionResponse reportAgent = new DiscoverySuggestionResponse(
                 "catalog", 9L, "通用王总", "生成多格式报告", "AGENT",
                 "general-agent", null, "https://example.com/agent", null,
                 "支持生成多格式报告", "对应文档");
         when(conversationStore.load("user-1", null))
                 .thenReturn(new DiscoveryConversationStore.Conversation("conversation-1", List.of()));
-        when(aiClient.plan(anyString(), anyString(), anyList(), anyString())).thenReturn(plan);
         when(retriever.retrieve(
-                List.of("我想生成一个有视频素材的报告", "生成报告"),
+                List.of("我想生成一个有视频素材的报告"),
                 principal(), Map.of(), "zh-CN"))
                 .thenReturn(List.of(reportAgent));
         when(aiClient.answer(anyString(), anyString(), anyList(), anyList(), anyString()))

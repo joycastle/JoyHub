@@ -349,6 +349,7 @@
     "placeholder": "For example: summarize meeting notes automatically",
     "ask": "Ask",
     "thinking": "Searching the capabilities available to you...",
+    "requestFailed": "This recommendation request did not finish. Please try again; this does not mean JoyHub has no matching capability.",
     "planTitle": "Task plan",
     "recommendationsTitle": "Recommended capabilities",
     "planHint": "Each step shows a primary capability with alternatives available on demand.",
