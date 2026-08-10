@@ -80,10 +80,46 @@ class HybridResourceSearchRankerTest {
                 .startsWith("每日站会日志");
     }
 
+    @Test
+    void reportQueryRejectsUnrelatedToolsWhenStrongReportMatchesExist() {
+        SearchEmbeddingService bge = new BgeSearchEmbeddingService();
+        HybridResourceSearchRanker semanticRanker = new HybridResourceSearchRanker(
+                bge,
+                new ResourceSearchQueryInterpreter(new SearchTextTokenizer()));
+        var resources = List.of(
+                semanticDocument(bge, "1", "AGENT", "通用王总",
+                        "在飞书中处理文件、生成图片与多格式报告。", "OPEN"),
+                semanticDocument(bge, "2", "SKILL", "每周HTML报告生成",
+                        "把飞书表格、Excel或CSV数据生成响应式HTML报告。", "INSTALL"),
+                semanticDocument(bge, "3", "TOOL", "构建包",
+                        "Bingo Frenzy 游戏构建包下载入口。", "DOWNLOAD"),
+                semanticDocument(bge, "4", "TOOL", "图集拆分",
+                        "图集拆分和美术资源提取工具。", "OPEN"),
+                semanticDocument(bge, "5", "TOOL", "棋盘预览",
+                        "二合玩法棋盘预览与布局调试工具。", "OPEN")
+        );
+
+        assertThat(semanticRanker.rank("生成报告", resources, 10, false))
+                .extracting(result -> result.document().title())
+                .containsExactly("每周HTML报告生成", "通用王总");
+    }
+
     private ResourceSearchDocument document(String id, String type, String title, String summary, String accessMode) {
         String text = String.join(" ", title, summary, type, accessMode);
         return new ResourceSearchDocument(
                 id, type, title, title, summary, List.of(), List.of(), "", accessMode,
                 embeddings.embed(text), 0D);
+    }
+
+    private ResourceSearchDocument semanticDocument(SearchEmbeddingService service,
+                                                    String id,
+                                                    String type,
+                                                    String title,
+                                                    String summary,
+                                                    String accessMode) {
+        String text = String.join(" ", title, summary, type, accessMode);
+        return new ResourceSearchDocument(
+                id, type, title, title, summary, List.of(), List.of(), "", accessMode,
+                service.embed(text), 0D);
     }
 }

@@ -8,6 +8,7 @@ import com.iflytek.skillhub.auth.rbac.PlatformPrincipal;
 import com.iflytek.skillhub.dto.ApiResponseFactory;
 import com.iflytek.skillhub.dto.PageResponse;
 import com.iflytek.skillhub.dto.ResourceSummaryResponse;
+import com.iflytek.skillhub.dto.UnifiedResourceSearchType;
 import com.iflytek.skillhub.exception.UnauthorizedException;
 import com.iflytek.skillhub.observability.RequestIdAccessor;
 import com.iflytek.skillhub.service.ResourceAppService;
@@ -15,6 +16,7 @@ import com.iflytek.skillhub.service.ResourceDownloadAppService;
 import com.iflytek.skillhub.service.ResourceFavoriteAppService;
 import com.iflytek.skillhub.service.ResourceLifecycleAppService;
 import com.iflytek.skillhub.service.ResourceStatsAppService;
+import com.iflytek.skillhub.service.UnifiedResourceSearchAppService;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -46,6 +48,9 @@ class ResourceControllerTest {
     @Mock
     private ResourceStatsAppService resourceStatsAppService;
 
+    @Mock
+    private UnifiedResourceSearchAppService unifiedResourceSearchAppService;
+
     private ResourceController controller;
 
     @BeforeEach
@@ -58,6 +63,7 @@ class ResourceControllerTest {
                 resourceFavoriteAppService,
                 resourceDownloadAppService,
                 resourceStatsAppService,
+                unifiedResourceSearchAppService,
                 new ApiResponseFactory(
                         messageSource,
                         Clock.fixed(Instant.parse("2026-08-06T00:00:00Z"), ZoneOffset.UTC),
@@ -84,5 +90,20 @@ class ResourceControllerTest {
     void listMineRequiresAnAuthenticatedPrincipal() {
         assertThatThrownBy(() -> controller.listMine(0, 24, null, null, null))
                 .isInstanceOf(UnauthorizedException.class);
+    }
+
+    @Test
+    void searchDelegatesTheSinglePoolContractForAnonymousUsers() {
+        PageResponse<com.iflytek.skillhub.dto.UnifiedResourceSearchItemResponse> page =
+                new PageResponse<>(List.of(), 0, 0, 12);
+        given(unifiedResourceSearchAppService.search(
+                "生成报告", null, null, "relevance", UnifiedResourceSearchType.ALL,
+                0, 12, null, java.util.Map.of(), null)).willReturn(page);
+
+        var response = controller.search(
+                "生成报告", null, null, "relevance", UnifiedResourceSearchType.ALL,
+                0, 12, null, null);
+
+        assertThat(response.data()).isEqualTo(page);
     }
 }

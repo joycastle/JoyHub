@@ -8,14 +8,18 @@ import com.iflytek.skillhub.dto.PageResponse;
 import com.iflytek.skillhub.dto.ResourceActionResponse;
 import com.iflytek.skillhub.dto.ResourceSummaryResponse;
 import com.iflytek.skillhub.dto.ResourceStatsResponse;
+import com.iflytek.skillhub.dto.UnifiedResourceSearchItemResponse;
+import com.iflytek.skillhub.dto.UnifiedResourceSearchType;
 import com.iflytek.skillhub.domain.namespace.NamespaceRole;
-import com.iflytek.skillhub.service.AuditRequestContext;
 import com.iflytek.skillhub.exception.UnauthorizedException;
+import com.iflytek.skillhub.service.AuditRequestContext;
+import com.iflytek.skillhub.service.CatalogViewer;
 import com.iflytek.skillhub.service.ResourceAppService;
 import com.iflytek.skillhub.service.ResourceDownloadAppService;
 import com.iflytek.skillhub.service.ResourceFavoriteAppService;
 import com.iflytek.skillhub.service.ResourceLifecycleAppService;
 import com.iflytek.skillhub.service.ResourceStatsAppService;
+import com.iflytek.skillhub.service.UnifiedResourceSearchAppService;
 import jakarta.servlet.http.HttpServletRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -41,19 +45,21 @@ import org.springframework.web.bind.annotation.RestController;
 /** Unified resource workspace endpoint for Skills and static Catalog resources. */
 @RestController
 @RequestMapping({"/api/web/resources", "/api/v1/resources"})
-    @Tag(name = "Resources")
+@Tag(name = "Resources")
 public class ResourceController extends BaseApiController {
     private final ResourceAppService resourceAppService;
     private final ResourceLifecycleAppService resourceLifecycleAppService;
     private final ResourceFavoriteAppService resourceFavoriteAppService;
     private final ResourceDownloadAppService resourceDownloadAppService;
     private final ResourceStatsAppService resourceStatsAppService;
+    private final UnifiedResourceSearchAppService unifiedResourceSearchAppService;
 
     public ResourceController(ResourceAppService resourceAppService,
                               ResourceLifecycleAppService resourceLifecycleAppService,
                               ResourceFavoriteAppService resourceFavoriteAppService,
                               ResourceDownloadAppService resourceDownloadAppService,
                               ResourceStatsAppService resourceStatsAppService,
+                              UnifiedResourceSearchAppService unifiedResourceSearchAppService,
                               ApiResponseFactory responseFactory) {
         super(responseFactory);
         this.resourceAppService = resourceAppService;
@@ -61,6 +67,28 @@ public class ResourceController extends BaseApiController {
         this.resourceFavoriteAppService = resourceFavoriteAppService;
         this.resourceDownloadAppService = resourceDownloadAppService;
         this.resourceStatsAppService = resourceStatsAppService;
+        this.unifiedResourceSearchAppService = unifiedResourceSearchAppService;
+    }
+
+    @GetMapping("/search")
+    @Operation(summary = "Search Skills, Agents, and Tools in one ranked resource pool")
+    public ApiResponse<PageResponse<UnifiedResourceSearchItemResponse>> search(
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String namespace,
+            @RequestParam(required = false) String label,
+            @RequestParam(defaultValue = "relevance") String sort,
+            @RequestParam(defaultValue = "ALL") UnifiedResourceSearchType type,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "12") int size,
+            @AuthenticationPrincipal PlatformPrincipal principal,
+            @RequestAttribute(value = "userNsRoles", required = false) Map<Long, NamespaceRole> namespaceRoles) {
+        Map<Long, NamespaceRole> roles = namespaceRoles != null ? namespaceRoles : Map.of();
+        String userId = principal != null ? principal.userId() : null;
+        CatalogViewer catalogViewer = principal == null ? null : new CatalogViewer(
+                principal.userId(), roles,
+                principal.platformRoles() != null ? principal.platformRoles() : Set.of());
+        return ok("response.success.read", unifiedResourceSearchAppService.search(
+                q, namespace, label, sort, type, page, size, userId, roles, catalogViewer));
     }
 
     @GetMapping("/mine")

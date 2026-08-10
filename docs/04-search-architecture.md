@@ -30,8 +30,23 @@ public record ResourceSearchDocument(
 | AI 能力顾问 | 小规模时提供全部可见轻量文档；超过预算时提供混合检索候选 |
 | Agent 安装接口 | `resourceType=SKILL AND accessMode=INSTALL` |
 
+Web 搜索页统一调用 `GET /api/web/resources/search`。该接口负责先完成 Skill、Agent、Tool
+的权限过滤和轻量文档投影，再把所有候选一次性交给混合排序器，最后统一截断、分页和返回。
+前端不得分别调用 Skill 搜索和 Catalog 搜索后自行拼接，也不得按资源类型分段展示“伪统一”结果。
+`type=AGENT|TOOL|SKILL` 只是同一候选池上的硬过滤条件，`type=ALL` 才执行跨类型混排。
+
+统一响应中每一项都带有公共判别字段：
+
+```text
+resourceType + accessMode + relevanceScore + (skill | catalogResource)
+```
+
+其中载荷保持原业务摘要结构，避免搜索接口反向污染 Skill 或 Catalog 的生命周期模型。
+
 查询流程固定为：权限和生命周期过滤 → 精确/分词/语义并行召回 → 去重排序 →
 按入口投影响应。语义检索必须扫描过滤后的候选语料，不能只重排关键词已经命中的结果。
+当查询已存在标题、摘要、场景或标签的强词法命中时，纯语义候选必须同时满足更高的绝对阈值
+和相对最优分数窗口；这用于阻止“生成报告”一类明确需求被通用文档噪声扩散成所有资源。
 
 ## 1 SPI 接口
 

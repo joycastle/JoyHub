@@ -54,6 +54,8 @@ import type {
   DiscoveryAssistResponse,
   ResourceSummary,
   ResourceStats,
+  UnifiedResourceSearchItem,
+  UnifiedResourceSearchType,
 } from './types'
 import { ApiError } from '@/shared/lib/api-error'
 import i18n from '@/i18n/config'
@@ -730,6 +732,29 @@ export const catalogApi = {
 }
 
 export const resourcesApi = {
+  async search(params: {
+    q?: string
+    namespace?: string
+    label?: string
+    sort?: string
+    type?: UnifiedResourceSearchType
+    page?: number
+    size?: number
+  } = {}): Promise<PagedResponse<UnifiedResourceSearchItem>> {
+    const query = new URLSearchParams({
+      sort: params.sort ?? 'relevance',
+      type: params.type ?? 'ALL',
+      page: String(params.page ?? 0),
+      size: String(params.size ?? 12),
+    })
+    if (params.q?.trim()) query.set('q', params.q.trim())
+    if (params.namespace?.trim()) query.set('namespace', params.namespace.trim())
+    if (params.label?.trim()) query.set('label', params.label.trim())
+    return fetchJson<PagedResponse<UnifiedResourceSearchItem>>(
+      `${WEB_API_PREFIX}/resources/search?${query.toString()}`,
+    )
+  },
+
   async mine(params: { page?: number; size?: number; kind?: string; q?: string } = {}): Promise<PagedResponse<ResourceSummary>> {
     const query = new URLSearchParams({
       page: String(params.page ?? 0),

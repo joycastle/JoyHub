@@ -2,16 +2,15 @@ import { startTransition, useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { Bot, Boxes, Loader2, Puzzle, Sparkles, Wrench } from 'lucide-react'
-import type { SkillSummary } from '@/api/types'
+import type { SkillSummary, UnifiedResourceSearchType } from '@/api/types'
 import { useAuth } from '@/features/auth/use-auth'
 import { SearchBar } from '@/features/search/search-bar'
 import { SkillCard } from '@/features/skill/skill-card'
 import { CatalogResourceCard } from '@/entities/catalog-resource/catalog-resource-card'
-import { useCatalogResources } from '@/features/catalog/use-catalog-queries'
+import { useUnifiedResourceSearch } from '@/features/search/use-unified-resource-search'
 import { SkeletonList } from '@/shared/components/skeleton-loader'
 import { EmptyState } from '@/shared/components/empty-state'
 import { Pagination } from '@/shared/components/pagination'
-import { useSearchSkills } from '@/shared/hooks/use-skill-queries'
 import { useVisibleLabels } from '@/shared/hooks/use-label-queries'
 import { useMyStars } from '@/shared/hooks/use-user-queries'
 import { formatNamespaceSearchInput, normalizeSearchQuery, parseNamespaceSearchInput } from '@/shared/lib/search-query'
@@ -19,7 +18,7 @@ import { Button } from '@/shared/ui/button'
 import { APP_SHELL_PAGE_CLASS_NAME } from '@/app/page-shell-style'
 
 const PAGE_SIZE = 12
-type SearchResourceType = 'ALL' | 'AGENT' | 'TOOL' | 'SKILL'
+type SearchResourceType = UnifiedResourceSearchType
 
 const RESOURCE_TYPES: Array<{ type: SearchResourceType; labelKey: string; icon: typeof Boxes }> = [
   { type: 'ALL', labelKey: 'search.types.all', icon: Boxes },
@@ -115,8 +114,6 @@ export function SearchPage() {
   const page = searchParams.page ?? 0
   const starredOnly = searchParams.starredOnly ?? false
   const resourceType = searchParams.type ?? 'ALL'
-  const showSkills = resourceType === 'ALL' || resourceType === 'SKILL' || starredOnly
-  const showCatalog = isAuthenticated && !starredOnly && resourceType !== 'SKILL'
   const [queryInput, setQueryInput] = useState(formatNamespaceSearchInput(namespace, q))
   const previousPageRef = useRef(page)
 
@@ -138,22 +135,15 @@ export function SearchPage() {
     previousPageRef.current = page
   }, [page])
 
-  const { data, isLoading, isFetching } = useSearchSkills({
+  const { data: unifiedResults, isLoading, isFetching } = useUnifiedResourceSearch({
     q,
     namespace: namespace || undefined,
     label: selectedLabel || undefined,
     sort,
+    type: resourceType,
     page,
     size: PAGE_SIZE,
-    starredOnly,
-  }, showSkills)
-  const { data: catalogResults, isLoading: isLoadingCatalog } = useCatalogResources({
-    q,
-    center: resourceType === 'AGENT' ? 'AGENT' : resourceType === 'TOOL' ? 'TOOL' : undefined,
-    page: resourceType === 'AGENT' || resourceType === 'TOOL' ? page : 0,
-    size: resourceType === 'ALL' ? 6 : PAGE_SIZE,
-    enabled: showCatalog,
-  })
+  }, !starredOnly)
   const { data: labels } = useVisibleLabels()
   const {
     data: starredSkills,
@@ -243,22 +233,16 @@ export function SearchPage() {
   const starredPageItems = starredOnly
     ? filteredStarredSkills.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
     : []
-  const skillTotalPages = starredOnly
+  const totalPages = starredOnly
     ? Math.ceil(filteredStarredSkills.length / PAGE_SIZE)
-    : data
-      ? Math.ceil(data.total / data.size)
+    : unifiedResults
+      ? Math.ceil(unifiedResults.total / unifiedResults.size)
       : 0
-  const displayItems = starredOnly ? starredPageItems : (data?.items ?? [])
-  const catalogTotalPages = catalogResults ? Math.ceil(catalogResults.total / catalogResults.size) : 0
-  const totalPages = resourceType === 'AGENT' || resourceType === 'TOOL' ? catalogTotalPages : skillTotalPages
-  const isPageLoading = showSkills && (starredOnly ? isLoadingStarred : isLoading)
+  const isPageLoading = starredOnly ? isLoadingStarred : isLoading
   const isUpdatingResults = starredOnly ? isFetchingStarred && !isLoadingStarred : isFetching && !isLoading
-  const skillResultCount = showSkills ? (starredOnly ? filteredStarredSkills.length : (data?.total ?? 0)) : 0
-  const catalogResultCount = showCatalog ? (catalogResults?.total ?? 0) : 0
-  const resultCount = resourceType === 'ALL' ? skillResultCount + catalogResultCount : resourceType === 'SKILL' ? skillResultCount : catalogResultCount
-  const hasCatalogResults = showCatalog && (catalogResults?.items.length ?? 0) > 0
-  const hasSkillResults = showSkills && displayItems.length > 0
-  const hasAnyResults = hasCatalogResults || hasSkillResults
+  const resultCount = starredOnly ? filteredStarredSkills.length : (unifiedResults?.total ?? 0)
+  const unifiedItems = unifiedResults?.items ?? []
+  const hasAnyResults = starredOnly ? starredPageItems.length > 0 : unifiedItems.length > 0
 
   return (
     <div className={APP_SHELL_PAGE_CLASS_NAME}>
@@ -374,47 +358,57 @@ export function SearchPage() {
       </div>
 
       {/* Results */}
-      {showCatalog && (isLoadingCatalog || hasCatalogResults) ? (
-        <section className="space-y-4">
-          <div>
-            <h2 className="text-2xl font-semibold">{t('search.catalogSection')}</h2>
-            <p className="mt-1 text-sm text-muted-foreground">{t('search.catalogSectionDescription')}</p>
-          </div>
-          {isLoadingCatalog ? <SkeletonList count={3} /> : (
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
-              {catalogResults?.items.map((resource) => (
-                <CatalogResourceCard
-                  key={resource.id}
-                  resource={resource}
-                  onClick={() => navigate({ to: '/catalog/$slug', params: { slug: resource.slug } })}
-                />
-              ))}
-            </div>
-          )}
-        </section>
-      ) : null}
-
       {!isAuthenticated && resourceType !== 'SKILL' ? (
         <div className="rounded-2xl border border-dashed bg-secondary/20 p-5 text-center text-sm text-muted-foreground">{t('search.loginForInternal')}</div>
       ) : null}
 
-      {showSkills && !starredOnly && (resourceType === 'ALL' && isAuthenticated) ? <div className="border-t pt-8"><h2 className="text-2xl font-semibold">{t('search.skillSection')}</h2></div> : null}
-      {showSkills && isPageLoading ? (
+      {isPageLoading ? (
         <SkeletonList count={PAGE_SIZE} />
-      ) : hasSkillResults ? (
+      ) : hasAnyResults ? (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {displayItems.map((skill, idx) => (
-              <div key={skill.id} className={`h-full animate-fade-up delay-${Math.min(idx % 6 + 1, 6)}`}>
-                <SkillCard
-                  skill={skill}
-                  highlightStarred
-                  onClick={() => handleSkillClick(skill.namespace, skill.slug)}
-                />
-              </div>
-            ))}
+            {starredOnly
+              ? starredPageItems.map((skill, idx) => (
+                  <div key={`SKILL:${skill.id}`} className={`h-full animate-fade-up delay-${Math.min(idx % 6 + 1, 6)}`}>
+                    <SkillCard
+                      skill={skill}
+                      highlightStarred
+                      onClick={() => handleSkillClick(skill.namespace, skill.slug)}
+                    />
+                  </div>
+                ))
+              : unifiedItems.map((item, idx) => {
+                  const animationClass = `h-full animate-fade-up delay-${Math.min(idx % 6 + 1, 6)}`
+                  const skill = item.skill
+                  if (item.resourceType === 'SKILL' && skill) {
+                    return (
+                      <div key={`SKILL:${skill.id}`} className={animationClass}>
+                        <SkillCard
+                          skill={skill}
+                          highlightStarred
+                          onClick={() => handleSkillClick(skill.namespace, skill.slug)}
+                        />
+                      </div>
+                    )
+                  }
+                  const resource = item.catalogResource
+                  if (resource) {
+                    return (
+                      <div key={`${item.resourceType}:${resource.id}`} className={animationClass}>
+                        <CatalogResourceCard
+                          resource={resource}
+                          onClick={() => navigate({
+                            to: '/catalog/$slug',
+                            params: { slug: resource.slug },
+                          })}
+                        />
+                      </div>
+                    )
+                  }
+                  return null
+                })}
           </div>
-          {totalPages > 1 && resourceType !== 'AGENT' && resourceType !== 'TOOL' && (
+          {totalPages > 1 && (
             <Pagination
               page={page}
               totalPages={totalPages}
@@ -422,7 +416,7 @@ export function SearchPage() {
             />
           )}
         </>
-      ) : showSkills && !hasCatalogResults ? (
+      ) : (
         <EmptyState
           title={starredOnly ? t('search.noStarredResults') : t('search.noResults')}
           description={
@@ -431,13 +425,7 @@ export function SearchPage() {
               : (q ? t('search.noResultsFor', { q }) : undefined)
           }
         />
-      ) : null}
-      {(resourceType === 'AGENT' || resourceType === 'TOOL') && totalPages > 1 ? (
-        <Pagination page={page} totalPages={totalPages} onPageChange={handlePageChange} />
-      ) : null}
-      {!isPageLoading && !isLoadingCatalog && !hasAnyResults && !showSkills ? (
-        <EmptyState title={t('search.noResults')} description={q ? t('search.noResultsFor', { q }) : undefined} />
-      ) : null}
+      )}
     </div>
   )
 }

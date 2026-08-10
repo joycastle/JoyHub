@@ -542,6 +542,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/web/skills/{namespace}/{slug}/versions/{version}/file/translate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["translateFileContent"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/skills/{namespace}/{slug}/versions/{version}/file/translate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["translateFileContent_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/web/skills/{namespace}/{slug}/unarchive": {
         parameters: {
             query?: never;
@@ -1696,7 +1728,7 @@ export interface paths {
             cookie?: never;
         };
         /** Search visible published Catalog resources */
-        get: operations["search_1"];
+        get: operations["search_3"];
         put?: never;
         /** Create a Catalog resource or resume the current user's draft with the same slug */
         post: operations["create"];
@@ -1714,7 +1746,7 @@ export interface paths {
             cookie?: never;
         };
         /** Search visible published Catalog resources */
-        get: operations["search_2"];
+        get: operations["search_4"];
         put?: never;
         /** Create a Catalog resource or resume the current user's draft with the same slug */
         post: operations["create_1"];
@@ -3031,6 +3063,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/resources/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search Skills, Agents, and Tools in one ranked resource pool */
+        get: operations["search_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/web/resources/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search Skills, Agents, and Tools in one ranked resource pool */
+        get: operations["search_2"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/web/resources/mine": {
         parameters: {
             query?: never;
@@ -3666,7 +3732,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["search_3"];
+        get: operations["search_5"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3956,7 +4022,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["search_4"];
+        get: operations["search_6"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4036,7 +4102,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["search_5"];
+        get: operations["search_7"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4571,6 +4637,15 @@ export interface components {
             targetVersion: string;
             confirmWarnings?: boolean;
         };
+        ApiResponseString: {
+            /** Format: int32 */
+            code?: number;
+            msg?: string;
+            data?: string;
+            /** Format: date-time */
+            timestamp?: string;
+            requestId?: string;
+        };
         SubmitReviewRequest: {
             version: string;
             targetVisibility: string;
@@ -4881,15 +4956,6 @@ export interface components {
         };
         CatalogPublishRequest: {
             version?: string;
-        };
-        ApiResponseString: {
-            /** Format: int32 */
-            code?: number;
-            msg?: string;
-            data?: string;
-            /** Format: date-time */
-            timestamp?: string;
-            requestId?: string;
         };
         AgentDocumentationDraftRequest: {
             name: string;
@@ -5509,6 +5575,32 @@ export interface components {
             /** Format: int32 */
             favoriteCount?: number;
             favorited?: boolean;
+        };
+        ApiResponsePageResponseUnifiedResourceSearchItemResponse: {
+            /** Format: int32 */
+            code?: number;
+            msg?: string;
+            data?: components["schemas"]["PageResponseUnifiedResourceSearchItemResponse"];
+            /** Format: date-time */
+            timestamp?: string;
+            requestId?: string;
+        };
+        PageResponseUnifiedResourceSearchItemResponse: {
+            items?: components["schemas"]["UnifiedResourceSearchItemResponse"][];
+            /** Format: int64 */
+            total?: number;
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+        };
+        UnifiedResourceSearchItemResponse: {
+            resourceType?: string;
+            accessMode?: string;
+            /** Format: double */
+            relevanceScore?: number;
+            skill?: components["schemas"]["SkillSummaryResponse"];
+            catalogResource?: components["schemas"]["CatalogResourceSummaryResponse"];
         };
         ApiResponsePageResponseResourceSummaryResponse: {
             /** Format: int32 */
@@ -7776,6 +7868,62 @@ export interface operations {
             };
         };
     };
+    translateFileContent: {
+        parameters: {
+            query: {
+                path: string;
+            };
+            header?: {
+                "Accept-Language"?: string;
+            };
+            path: {
+                namespace: string;
+                slug: string;
+                version: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseString"];
+                };
+            };
+        };
+    };
+    translateFileContent_1: {
+        parameters: {
+            query: {
+                path: string;
+            };
+            header?: {
+                "Accept-Language"?: string;
+            };
+            path: {
+                namespace: string;
+                slug: string;
+                version: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseString"];
+                };
+            };
+        };
+    };
     unarchiveSkill: {
         parameters: {
             query?: never;
@@ -9762,7 +9910,7 @@ export interface operations {
             };
         };
     };
-    search_1: {
+    search_3: {
         parameters: {
             query?: {
                 q?: string;
@@ -9814,7 +9962,7 @@ export interface operations {
             };
         };
     };
-    search_2: {
+    search_4: {
         parameters: {
             query?: {
                 q?: string;
@@ -12030,6 +12178,62 @@ export interface operations {
             };
         };
     };
+    search_1: {
+        parameters: {
+            query?: {
+                q?: string;
+                namespace?: string;
+                label?: string;
+                sort?: string;
+                type?: "ALL" | "AGENT" | "TOOL" | "SKILL";
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponsePageResponseUnifiedResourceSearchItemResponse"];
+                };
+            };
+        };
+    };
+    search_2: {
+        parameters: {
+            query?: {
+                q?: string;
+                namespace?: string;
+                label?: string;
+                sort?: string;
+                type?: "ALL" | "AGENT" | "TOOL" | "SKILL";
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponsePageResponseUnifiedResourceSearchItemResponse"];
+                };
+            };
+        };
+    };
     listMine: {
         parameters: {
             query?: {
@@ -12927,7 +13131,7 @@ export interface operations {
             };
         };
     };
-    search_3: {
+    search_5: {
         parameters: {
             query: {
                 q: string;
@@ -13347,7 +13551,7 @@ export interface operations {
             };
         };
     };
-    search_4: {
+    search_6: {
         parameters: {
             query?: {
                 q?: string;
@@ -13462,7 +13666,7 @@ export interface operations {
             };
         };
     };
-    search_5: {
+    search_7: {
         parameters: {
             query?: {
                 q?: string;

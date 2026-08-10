@@ -59,6 +59,21 @@ class RouteSecurityPolicyRegistryTest {
     }
 
     @Test
+    void authorizationPolicies_shouldKeepUnifiedResourceSearchAnonymous() {
+        boolean matchedV1 = registry.authorizationPolicies().stream()
+                .anyMatch(policy -> policy.method() == HttpMethod.GET
+                        && "/api/v1/resources/search".equals(policy.pattern())
+                        && policy.accessLevel() == RouteSecurityPolicyRegistry.AccessLevel.PERMIT_ALL);
+        boolean matchedWeb = registry.authorizationPolicies().stream()
+                .anyMatch(policy -> policy.method() == HttpMethod.GET
+                        && "/api/web/resources/search".equals(policy.pattern())
+                        && policy.accessLevel() == RouteSecurityPolicyRegistry.AccessLevel.PERMIT_ALL);
+
+        assertTrue(matchedV1);
+        assertTrue(matchedWeb);
+    }
+
+    @Test
     void authorizationPolicies_shouldRequireAuthenticationForNamespaceDiscovery() {
         boolean matchedV1 = registry.authorizationPolicies().stream()
                 .anyMatch(policy -> policy.method() == HttpMethod.GET

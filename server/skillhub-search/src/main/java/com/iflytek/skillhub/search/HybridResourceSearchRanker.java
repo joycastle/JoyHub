@@ -12,6 +12,9 @@ import org.springframework.stereotype.Service;
 @Service
 public class HybridResourceSearchRanker {
     private static final double MIN_SEMANTIC_RECALL = 0.50D;
+    private static final double MIN_SEMANTIC_WITH_STRONG_LEXICAL_RESULTS = 0.62D;
+    private static final double SEMANTIC_RECALL_MARGIN = 0.08D;
+    private static final double SEMANTIC_RECALL_MARGIN_WITH_STRONG_LEXICAL_RESULTS = 0.04D;
     private static final int VECTOR_CACHE_SIZE = 1024;
 
     private final SearchEmbeddingService embeddingService;
@@ -59,22 +62,48 @@ public class HybridResourceSearchRanker {
                                       boolean includeAllEligible) {
         if (intent.normalizedQuery().isBlank()) {
             return documents.stream()
-                    .map(document -> new RankedResource(document, document.qualityScore(), 0D, 0D))
+                    .map(document -> new RankedResource(document, document.qualityScore(), 0D, 0D, false))
                     .sorted(ordering())
                     .limit(limit)
                     .toList();
         }
 
-        return documents.stream()
+        List<RankedResource> scored = documents.stream()
                 .filter(document -> matchesStructuredConstraints(intent, document))
                 .map(document -> score(intent, document))
-                .filter(result -> includeAllEligible
-                        || result.lexicalScore() > 0D
-                        || result.semanticScore() >= MIN_SEMANTIC_RECALL
-                        || (intent.terms().isEmpty() && intent.hasStructuredConstraint()))
+                .toList();
+        boolean hasStrongLexicalResult = scored.stream().anyMatch(RankedResource::strongLexicalMatch);
+        double bestSemanticScore = scored.stream()
+                .mapToDouble(RankedResource::semanticScore)
+                .max()
+                .orElse(0D);
+        return scored.stream()
+                .filter(result -> qualifies(
+                        intent, result, includeAllEligible, hasStrongLexicalResult, bestSemanticScore))
                 .sorted(ordering())
                 .limit(limit)
                 .toList();
+    }
+
+    private boolean qualifies(ResourceSearchIntent intent,
+                              RankedResource result,
+                              boolean includeAllEligible,
+                              boolean hasStrongLexicalResult,
+                              double bestSemanticScore) {
+        if (includeAllEligible || result.strongLexicalMatch()) {
+            return true;
+        }
+        if (intent.terms().isEmpty() && intent.hasStructuredConstraint()) {
+            return true;
+        }
+        double minimumSemantic = hasStrongLexicalResult
+                ? MIN_SEMANTIC_WITH_STRONG_LEXICAL_RESULTS
+                : MIN_SEMANTIC_RECALL;
+        double margin = hasStrongLexicalResult
+                ? SEMANTIC_RECALL_MARGIN_WITH_STRONG_LEXICAL_RESULTS
+                : SEMANTIC_RECALL_MARGIN;
+        return result.semanticScore() >= minimumSemantic
+                && result.semanticScore() >= bestSemanticScore - margin;
     }
 
     private RankedResource score(ResourceSearchIntent intent, ResourceSearchDocument document) {
@@ -85,6 +114,7 @@ public class HybridResourceSearchRanker {
         String tags = normalize(String.join(" ", document.tags()));
         String documentation = normalize(document.documentation());
         String fullText = searchableText(document);
+        String highSignalText = String.join("\n", title, slug, summary, scenarios, tags);
 
         double lexical = 0D;
         if (!intent.normalizedQuery().isBlank()) {
@@ -115,6 +145,17 @@ public class HybridResourceSearchRanker {
             }
         }
         double semantic = similarity(intent.normalizedQuery(), document, fullText);
+        long matchedHighSignalTerms = intent.terms().stream()
+                .filter(highSignalText::contains)
+                .count();
+        double termCoverage = intent.terms().isEmpty()
+                ? 0D
+                : (double) matchedHighSignalTerms / intent.terms().size();
+        boolean phraseMatch = !intent.normalizedQuery().isBlank()
+                && highSignalText.contains(intent.normalizedQuery());
+        boolean strongLexicalMatch = phraseMatch
+                || (intent.terms().size() == 1 && termCoverage == 1D)
+                || (intent.terms().size() > 1 && termCoverage >= 0.66D);
         double typeBoost = intent.resourceTypes().isEmpty() ? 0D : 1.4D;
         double accessBoost = intent.accessModes().isEmpty() ? 0D : 0.8D;
         double normalizedLexical = Math.min(lexical / 6D, 1D);
@@ -123,7 +164,7 @@ public class HybridResourceSearchRanker {
                 + typeBoost * 0.20D
                 + accessBoost * 0.10D
                 + Math.min(Math.max(document.qualityScore(), 0D), 1D) * 0.05D;
-        return new RankedResource(document, score, semantic, lexical);
+        return new RankedResource(document, score, semantic, lexical, strongLexicalMatch);
     }
 
     private boolean matchesStructuredConstraints(ResourceSearchIntent intent, ResourceSearchDocument document) {
@@ -194,6 +235,7 @@ public class HybridResourceSearchRanker {
             ResourceSearchDocument document,
             double score,
             double semanticScore,
-            double lexicalScore
+            double lexicalScore,
+            boolean strongLexicalMatch
     ) {}
 }

@@ -7,8 +7,7 @@ const useSearchMock = vi.fn()
 const buttonRecords: Array<{ label: string; variant?: string | null; onClick?: (() => void) | undefined }> = []
 const paginationProps: Array<{ onPageChange: (page: number) => void }> = []
 const searchBarProps: Array<{ value?: string; onSearch?: (query: string) => void }> = []
-const searchSkillParams: Array<Record<string, unknown>> = []
-const catalogSearchParams: Array<Record<string, unknown>> = []
+const unifiedSearchParams: Array<Record<string, unknown>> = []
 
 vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => navigateMock,
@@ -44,20 +43,19 @@ vi.mock('@/features/search/search-bar', () => ({
 }))
 
 vi.mock('@/features/skill/skill-card', () => ({
-  SkillCard: () => <div>skill-card</div>,
+  SkillCard: ({ skill }: { skill: { slug: string } }) => <div>{`skill-card:${skill.slug}`}</div>,
 }))
 
 vi.mock('@/entities/catalog-resource/catalog-resource-card', () => ({
-  CatalogResourceCard: () => <div>catalog-card</div>,
+  CatalogResourceCard: ({ resource }: { resource: { slug: string } }) => <div>{`catalog-card:${resource.slug}`}</div>,
 }))
 
-vi.mock('@/features/catalog/use-catalog-queries', () => ({
-  useCatalogResources: (params: Record<string, unknown>) => {
-    catalogSearchParams.push(params)
-    return {
-      data: { items: [], total: 0, page: 0, size: 12 },
-      isLoading: false,
-    }
+const useUnifiedResourceSearchMock = vi.fn()
+
+vi.mock('@/features/search/use-unified-resource-search', () => ({
+  useUnifiedResourceSearch: (params: Record<string, unknown>) => {
+    unifiedSearchParams.push(params)
+    return useUnifiedResourceSearchMock()
   },
 }))
 
@@ -102,15 +100,6 @@ vi.mock('@/app/page-shell-style', () => ({
   APP_SHELL_PAGE_CLASS_NAME: 'page-shell',
 }))
 
-const useSearchSkillsMock = vi.fn()
-
-vi.mock('@/shared/hooks/use-skill-queries', () => ({
-  useSearchSkills: (params: Record<string, unknown>) => {
-    searchSkillParams.push(params)
-    return useSearchSkillsMock()
-  },
-}))
-
 vi.mock('@/shared/hooks/use-label-queries', () => ({
   useVisibleLabels: () => ({
     data: [
@@ -144,8 +133,7 @@ describe('SearchPage', () => {
     buttonRecords.length = 0
     paginationProps.length = 0
     searchBarProps.length = 0
-    searchSkillParams.length = 0
-    catalogSearchParams.length = 0
+    unifiedSearchParams.length = 0
     useSearchMock.mockReturnValue({
       q: 'agent',
       namespace: 'team-ai',
@@ -155,9 +143,14 @@ describe('SearchPage', () => {
       starredOnly: false,
       type: 'ALL',
     })
-    useSearchSkillsMock.mockReturnValue({
+    useUnifiedResourceSearchMock.mockReturnValue({
       data: {
-        items: [{ id: 1, displayName: 'Demo Skill', summary: 'summary', namespace: 'global', slug: 'demo', downloadCount: 1, starCount: 1, ratingCount: 0, updatedAt: '2026-03-20T00:00:00Z', canSubmitPromotion: false }],
+        items: [{
+          resourceType: 'SKILL',
+          accessMode: 'INSTALL',
+          relevanceScore: 1,
+          skill: { id: 1, displayName: 'Demo Skill', summary: 'summary', namespace: 'global', slug: 'demo', downloadCount: 1, starCount: 1, ratingCount: 0, updatedAt: '2026-03-20T00:00:00Z', canSubmitPromotion: false },
+        }],
         total: 24,
         page: 1,
         size: 12,
@@ -251,16 +244,17 @@ describe('SearchPage', () => {
     })
   })
 
-  it('passes the namespace URL state into skill search', () => {
+  it('passes the namespace URL state into unified resource search', () => {
     renderToStaticMarkup(<SearchPage />)
 
-    expect(searchSkillParams[0]).toMatchObject({
+    expect(unifiedSearchParams[0]).toMatchObject({
       q: 'agent',
       namespace: 'team-ai',
       label: 'code-generation',
       sort: 'downloads',
       page: 1,
       size: 12,
+      type: 'ALL',
     })
   })
 
@@ -284,7 +278,7 @@ describe('SearchPage', () => {
     })
   })
 
-  it('limits catalog discovery to agents when the Agent tab is active', () => {
+  it('applies the Agent tab as a hard scope on the same unified search request', () => {
     useSearchMock.mockReturnValue({
       q: 'assistant',
       sort: 'relevance',
@@ -295,13 +289,32 @@ describe('SearchPage', () => {
 
     renderToStaticMarkup(<SearchPage />)
 
-    expect(catalogSearchParams[0]).toMatchObject({
+    expect(unifiedSearchParams[0]).toMatchObject({
       q: 'assistant',
-      center: 'AGENT',
+      type: 'AGENT',
       page: 0,
       size: 12,
-      enabled: true,
     })
+  })
+
+  it('renders Skills, Agents, and Tools in the backend-provided unified order', () => {
+    useUnifiedResourceSearchMock.mockReturnValue({
+      data: {
+        items: [
+          { resourceType: 'AGENT', accessMode: 'OPEN', relevanceScore: 0.9, catalogResource: { id: 2, slug: 'wangzong', name: '王总', summary: '报告', kind: 'AGENT' } },
+          { resourceType: 'SKILL', accessMode: 'INSTALL', relevanceScore: 0.8, skill: { id: 1, displayName: '报告生成', summary: '报告', namespace: 'global', slug: 'report', downloadCount: 0, starCount: 0, ratingCount: 0, updatedAt: '2026-08-10T00:00:00Z', canSubmitPromotion: false } },
+        ],
+        total: 2,
+        page: 0,
+        size: 12,
+      },
+      isLoading: false,
+      isFetching: false,
+    })
+
+    const html = renderToStaticMarkup(<SearchPage />)
+
+    expect(html.indexOf('catalog-card:wangzong')).toBeLessThan(html.indexOf('skill-card:report'))
   })
 
   it('renders the default skill list when the empty query still returns items', () => {
@@ -312,9 +325,9 @@ describe('SearchPage', () => {
       page: 0,
       starredOnly: false,
     })
-    useSearchSkillsMock.mockReturnValue({
+    useUnifiedResourceSearchMock.mockReturnValue({
       data: {
-        items: [{ id: 1, displayName: 'Demo Skill', summary: 'summary', namespace: 'global', slug: 'demo', downloadCount: 1, starCount: 1, ratingCount: 0, updatedAt: '2026-03-20T00:00:00Z', canSubmitPromotion: false }],
+        items: [{ resourceType: 'SKILL', accessMode: 'INSTALL', relevanceScore: 0, skill: { id: 1, displayName: 'Demo Skill', summary: 'summary', namespace: 'global', slug: 'demo', downloadCount: 1, starCount: 1, ratingCount: 0, updatedAt: '2026-03-20T00:00:00Z', canSubmitPromotion: false } }],
         total: 1,
         page: 0,
         size: 12,
@@ -325,7 +338,7 @@ describe('SearchPage', () => {
 
     const html = renderToStaticMarkup(<SearchPage />)
 
-    expect(html).toContain('skill-card')
+    expect(html).toContain('skill-card:demo')
     expect(html).not.toContain('empty-state')
   })
 
@@ -337,7 +350,7 @@ describe('SearchPage', () => {
       page: 0,
       starredOnly: false,
     })
-    useSearchSkillsMock.mockReturnValue({
+    useUnifiedResourceSearchMock.mockReturnValue({
       data: {
         items: [],
         total: 0,
