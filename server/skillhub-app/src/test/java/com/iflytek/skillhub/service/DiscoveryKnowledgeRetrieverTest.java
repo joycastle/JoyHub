@@ -89,4 +89,34 @@ class DiscoveryKnowledgeRetrieverTest {
                 "生成报告", null, null, "relevance", UnifiedResourceSearchType.ALL, false,
                 0, 100, "user-1", roles, viewer);
     }
+
+    @Test
+    void expandsCompoundGoalThroughTheSameUnifiedSearchPool() {
+        CatalogResourceRepository catalogRepository = mock(CatalogResourceRepository.class);
+        UnifiedResourceSearchAppService unifiedSearch = mock(UnifiedResourceSearchAppService.class);
+        SkillSearchDocumentJpaRepository skillDocuments = mock(SkillSearchDocumentJpaRepository.class);
+        PlatformPrincipal principal = new PlatformPrincipal(
+                "user-1", "User", "user@example.com", null, "feishu", Set.of("USER"));
+        CatalogViewer viewer = new CatalogViewer("user-1", Map.of(), Set.of("USER"));
+        for (String query : List.of(
+                "我想生成一个有视频素材的报告", "生成 报告", "视频 素材")) {
+            when(unifiedSearch.search(
+                    query, null, null, "relevance", UnifiedResourceSearchType.ALL, false,
+                    0, 100, "user-1", Map.of(), viewer))
+                    .thenReturn(new PageResponse<>(List.of(), 0, 0, 100));
+        }
+        DiscoveryKnowledgeRetriever retriever = new DiscoveryKnowledgeRetriever(
+                catalogRepository, unifiedSearch, skillDocuments,
+                new HashingSearchEmbeddingService(), new SearchTextTokenizer());
+
+        retriever.retrieve(
+                List.of("我想生成一个有视频素材的报告"), principal, Map.of(), "zh-CN");
+
+        for (String query : List.of(
+                "我想生成一个有视频素材的报告", "生成 报告", "视频 素材")) {
+            verify(unifiedSearch).search(
+                    query, null, null, "relevance", UnifiedResourceSearchType.ALL, false,
+                    0, 100, "user-1", Map.of(), viewer);
+        }
+    }
 }

@@ -18,6 +18,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -34,8 +35,9 @@ public class DiscoveryKnowledgeRetriever {
     private static final double RRF_K = 60D;
     private static final Set<String> QUERY_STOP_WORDS = Set.of(
             "有", "没有", "什么", "有什么", "哪个", "哪些", "可以", "能够", "能", "帮我",
-            "推荐", "找", "找到", "一下", "的", "了", "吗", "呢", "工具", "能力",
-            "a", "an", "the", "is", "are", "can", "could", "find", "tool", "tools");
+            "推荐", "找", "找到", "一下", "的", "了", "吗", "呢", "工具", "能力", "我",
+            "想", "要", "需要", "一个", "一份", "做", "制作",
+            "a", "an", "the", "is", "are", "can", "could", "find", "tool", "tools", "with");
 
     private final CatalogResourceRepository catalogRepository;
     private final UnifiedResourceSearchAppService unifiedSearchAppService;
@@ -81,12 +83,12 @@ public class DiscoveryKnowledgeRetriever {
                                                       PlatformPrincipal principal,
                                                       Map<Long, NamespaceRole> namespaceRoles,
                                                       String language) {
-        List<String> queries = searchQueries.stream()
+        List<String> queries = expandSearchQueries(searchQueries.stream()
                 .filter(query -> query != null && !query.isBlank())
                 .map(String::trim)
                 .distinct()
                 .limit(4)
-                .toList();
+                .toList());
         if (queries.isEmpty()) {
             return List.of();
         }
@@ -109,6 +111,21 @@ public class DiscoveryKnowledgeRetriever {
                 .map(RankedSuggestion::suggestion)
                 .limit(RESULT_LIMIT)
                 .toList();
+    }
+
+    private List<String> expandSearchQueries(List<String> sourceQueries) {
+        Set<String> expanded = new LinkedHashSet<>();
+        for (String query : sourceQueries) {
+            expanded.add(query);
+            List<String> terms = meaningfulTerms(query);
+            if (terms.size() >= 3) {
+                expanded.add(terms.getFirst() + " " + terms.getLast());
+                if (terms.size() >= 4) {
+                    expanded.add(String.join(" ", terms.subList(1, terms.size() - 1)));
+                }
+            }
+        }
+        return expanded.stream().limit(12).toList();
     }
 
     private void mergeRanked(Map<String, RankedSuggestion> merged,
