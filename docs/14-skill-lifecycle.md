@@ -1,15 +1,15 @@
 # Skill Lifecycle
 
-Date: 2026-03-18
+Date: 2026-08-10
 Status: current code-aligned reference
 
 本文件是 skill 生命周期的单一规范入口。结论以当前代码实现为准，并已经同步到领域模型、业务流程、API、前端、搜索和兼容层文档。
 
 ## 1. 设计原则
 
-- skill 生命周期不再被建模为一个混杂状态机，而是拆分为容器状态、版本状态、审核工作流状态和可见性覆盖层
+- skill 生命周期不再被建模为一个混杂状态机，而是拆分为容器状态、版本状态和可见性覆盖层
 - 前端不再从 `status + hidden + latestVersionStatus + viewingVersionStatus` 拼装状态，而统一消费后端 lifecycle projection
-- destructive action 和 reversible action 必须分离；`withdraw-review` 只表示撤回提审，不表示删除版本
+- 新发布不再进入人工审核队列；旧审核记录和治理接口仅用于历史数据兼容
 - 对外仍可保留 `latest` 协议词汇，但内部语义必须严格等价于 latest published
 
 ## 2. 状态模型
@@ -46,7 +46,7 @@ Status: current code-aligned reference
 - `APPROVED`
 - `REJECTED`
 
-`ReviewTask` 仅表达审核流程，不再被前端当作展示态来源。
+`ReviewTask` 仅表达历史审核流程，不再由新发布创建，也不再被前端当作展示态来源。
 
 ## 3. 核心语义
 
@@ -63,7 +63,7 @@ Status: current code-aligned reference
 
 - `headlineVersion`：当前页面主展示版本
 - `publishedVersion`：最新已发布版本
-- `ownerPreviewVersion`：owner / namespace 管理者可见的待审核预览版本
+- `ownerPreviewVersion`：历史待审核数据的 owner 预览版本；新发布不会产生该状态
 - `resolutionMode`：`PUBLISHED` / `OWNER_PREVIEW` / `NONE`
 
 约束：
@@ -76,25 +76,26 @@ Status: current code-aligned reference
 
 ### 4.1 首次上传
 
-- 普通用户上传后直接创建 `PENDING_REVIEW` 版本
-- 同时创建 `PENDING` review task
-- 不会创建初始 `DRAFT`
-- 不会更新 `latestVersionId`
+- 通过包校验的上传直接创建 `PUBLISHED` 版本，不区分普通用户和管理员
+- 不创建 review task
+- `Skill.latestVersionId` 立即指向新版本
+- 请求的 `PUBLIC` / `NAMESPACE_ONLY` / `PRIVATE` 可见性立即生效
+- 安全扫描仍异步执行，但不再把版本放入人工审核队列
 
-### 4.2 审核通过
+### 4.2 历史审核通过
 
 - `PENDING_REVIEW -> PUBLISHED`
 - review task 标记为 `APPROVED`
 - `Skill.latestVersionId` 指向该版本
 - skill 展示元数据从发布版本刷新
 
-### 4.3 审核拒绝
+### 4.3 历史审核拒绝
 
 - `PENDING_REVIEW -> REJECTED`
 - review task 标记为 `REJECTED`
 - 版本保留，可后续删除
 
-### 4.4 撤回审核
+### 4.4 历史撤回审核
 
 - `withdraw-review` 的统一语义是 `PENDING_REVIEW -> DRAFT`
 - 同时删除关联的 `PENDING review_task`
@@ -103,15 +104,13 @@ Status: current code-aligned reference
 
 ### 4.5 重传新版本
 
-- 若发现旧的 `PENDING_REVIEW` 版本，会先把旧版本自动降回 `DRAFT`
-- 然后创建新的待审版本
-- 自动撤回与手动撤回必须保持同一语义
+- 若发现旧的 `PENDING_REVIEW` 版本，会先清理其待处理 review task，并将旧版本降为非公开状态
+- 新版本直接创建为 `PUBLISHED`，并成为新的 `latestVersionId`
 
 ### 4.6 已发布版本重发
 
-- rerelease 当前本质上是从已发布版本复制并重新走发布流程
-- 当前实现允许特权路径直接产出新 `PUBLISHED` 版本
-- 该能力应被理解为发布路径特例，不是生命周期展示态
+- rerelease 从已发布版本复制并重新走同一套直接发布流程
+- 新版本直接成为 `PUBLISHED`，不创建 review task
 
 ### 4.7 隐藏 / 恢复 / 归档 / 撤回已发布版本
 

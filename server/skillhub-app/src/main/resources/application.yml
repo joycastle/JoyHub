@@ -154,7 +154,6 @@ skillhub:
     max-file-count: 100
     max-single-file-size: 10485760 # 10MB
     max-package-size: 104857600 # 100MB
-    auto-publish: ${SKILLHUB_PUBLISH_AUTO_PUBLISH:false}
     # allowed-file-extensions: uses SkillPackagePolicy.ALLOWED_EXTENSIONS by default
     # Override via SKILLHUB_PUBLISH_ALLOWED_FILE_EXTENSIONS env var if needed
   governance:

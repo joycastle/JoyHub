@@ -1,7 +1,6 @@
 package com.iflytek.skillhub.domain.skill.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.iflytek.skillhub.domain.event.ReviewSubmittedEvent;
 import com.iflytek.skillhub.domain.event.SkillPublishedEvent;
 import com.iflytek.skillhub.domain.namespace.Namespace;
 import com.iflytek.skillhub.domain.namespace.NamespaceMember;
@@ -101,7 +100,6 @@ class SkillPublishServiceTest {
                 eventPublisher,
                 CLOCK,
                 false,
-                false,
                 "global"
         );
         lenient().when(securityScanService.isEnabled()).thenReturn(true);
@@ -166,17 +164,16 @@ class SkillPublishServiceTest {
         assertEquals(1L, result.skillId());
         assertEquals("test-skill", result.slug());
         assertEquals("1.0.0", result.version().getVersion());
-        assertEquals(SkillVersionStatus.PENDING_REVIEW, result.version().getStatus());
+        assertEquals(SkillVersionStatus.PUBLISHED, result.version().getStatus());
         verify(skillFileRepository).saveAll(anyList());
         verify(objectStorageService, atLeastOnce()).putObject(anyString(), any(), anyLong(), anyString());
-        verify(reviewTaskRepository).save(any(ReviewTask.class));
+        verify(reviewTaskRepository, never()).save(any(ReviewTask.class));
         ArgumentCaptor<Object> eventCaptor = ArgumentCaptor.forClass(Object.class);
         verify(eventPublisher).publishEvent(eventCaptor.capture());
-        ReviewSubmittedEvent submittedEvent = (ReviewSubmittedEvent) eventCaptor.getValue();
-        assertEquals(1L, submittedEvent.skillId());
-        assertEquals(10L, submittedEvent.versionId());
-        assertEquals(publisherId, submittedEvent.submitterId());
-        assertEquals(1L, submittedEvent.namespaceId());
+        SkillPublishedEvent publishedEvent = (SkillPublishedEvent) eventCaptor.getValue();
+        assertEquals(1L, publishedEvent.skillId());
+        assertEquals(10L, publishedEvent.versionId());
+        assertEquals(publisherId, publishedEvent.publisherId());
     }
 
     @Test
@@ -258,7 +255,7 @@ class SkillPublishServiceTest {
         );
 
         assertEquals("1.0.0", result.version().getVersion());
-        assertEquals(SkillVersionStatus.PENDING_REVIEW, result.version().getStatus());
+        assertEquals(SkillVersionStatus.PUBLISHED, result.version().getStatus());
         verify(skillVersionRepository, atLeastOnce()).save(any(SkillVersion.class));
     }
 
@@ -311,17 +308,14 @@ class SkillPublishServiceTest {
         );
 
         assertEquals("1.0.0", result.version().getVersion());
-        assertEquals(SkillVersionStatus.PENDING_REVIEW, result.version().getStatus());
+        assertEquals(SkillVersionStatus.PUBLISHED, result.version().getStatus());
         verify(reviewTaskRepository).deleteBySkillVersionIdIn(List.of(8L));
         verify(skillFileRepository).deleteByVersionId(8L);
         verify(skillVersionRepository).delete(rejectedVersion);
         verify(skillVersionRepository).flush();
         verify(objectStorageService).deleteObjects(List.of("skills/1/8/SKILL.md", "packages/1/8/bundle.zip"));
 
-        ArgumentCaptor<ReviewTask> reviewTaskCaptor = ArgumentCaptor.forClass(ReviewTask.class);
-        verify(reviewTaskRepository).save(reviewTaskCaptor.capture());
-        assertEquals(result.version().getId(), reviewTaskCaptor.getValue().getSkillVersionId());
-        assertEquals(publisherId, reviewTaskCaptor.getValue().getSubmittedBy());
+        verify(reviewTaskRepository, never()).save(any(ReviewTask.class));
     }
 
     @Test
@@ -539,7 +533,7 @@ class SkillPublishServiceTest {
                 Set.of()
         );
 
-        assertNull(skill.getLatestVersionId());
+        assertEquals(10L, skill.getLatestVersionId());
         InOrder inOrder = inOrder(skillRepository, skillVersionRepository);
         inOrder.verify(skillRepository).save(skill);
         inOrder.verify(skillRepository).flush();
@@ -592,7 +586,8 @@ class SkillPublishServiceTest {
 
         assertEquals("smoke-skill-two", result.slug());
         verify(skillRepository).findByNamespaceIdAndSlug(1L, "smoke-skill-two");
-        verify(reviewTaskRepository).save(any(ReviewTask.class));
+        verify(reviewTaskRepository, never()).save(any(ReviewTask.class));
+        verify(eventPublisher).publishEvent(any(SkillPublishedEvent.class));
     }
 
     @Test
@@ -848,13 +843,13 @@ class SkillPublishServiceTest {
         );
 
         assertEquals(longDescription, skill.getSummary());
-        assertEquals(SkillVersionStatus.PENDING_REVIEW, result.version().getStatus());
+        assertEquals(SkillVersionStatus.PUBLISHED, result.version().getStatus());
         verify(prePublishValidator).validate(any());
         verify(skillRepository).save(skill);
     }
 
     @Test
-    void testRereleasePublishedVersion_ShouldCloneFilesAndSubmitForReview() throws Exception {
+    void testRereleasePublishedVersion_ShouldCloneFilesAndPublishDirectly() throws Exception {
         String publisherId = "user-100";
         Skill skill = new Skill(1L, "demo-skill", publisherId, SkillVisibility.PUBLIC);
         setId(skill, 11L);
@@ -918,11 +913,9 @@ class SkillPublishServiceTest {
         );
 
         assertEquals("1.2.4", result.version().getVersion());
-        // Rerelease for PUBLIC skill should go to PENDING_REVIEW (respecting visibility rules)
-        assertEquals(SkillVersionStatus.PENDING_REVIEW, result.version().getStatus());
-        // Review task should be created for PUBLIC skill
-        verify(reviewTaskRepository).save(any());
-        verify(eventPublisher, never()).publishEvent(any(SkillPublishedEvent.class));
+        assertEquals(SkillVersionStatus.PUBLISHED, result.version().getStatus());
+        verify(reviewTaskRepository, never()).save(any());
+        verify(eventPublisher).publishEvent(any(SkillPublishedEvent.class));
         verify(skillPackageValidator).validate(argThat(entries ->
                 entries.size() == 2
                         && entries.stream().anyMatch(entry ->
@@ -1018,12 +1011,9 @@ class SkillPublishServiceTest {
         );
 
         assertEquals("1.2.4", result.version().getVersion());
-        // Rerelease for PRIVATE skill should go to UPLOADED status
-        assertEquals(SkillVersionStatus.UPLOADED, result.version().getStatus());
-        // No review task for PRIVATE skill
+        assertEquals(SkillVersionStatus.PUBLISHED, result.version().getStatus());
         verify(reviewTaskRepository, never()).save(any());
-        verify(eventPublisher, never()).publishEvent(any(SkillPublishedEvent.class));
-        // latestVersionId should be updated for PRIVATE skill
+        verify(eventPublisher).publishEvent(any(SkillPublishedEvent.class));
         assertEquals(30L, skill.getLatestVersionId());
     }
 
@@ -1117,7 +1107,7 @@ class SkillPublishServiceTest {
         );
 
         assertEquals("1.2.4", result.version().getVersion());
-        assertEquals(SkillVersionStatus.PENDING_REVIEW, result.version().getStatus());
+        assertEquals(SkillVersionStatus.PUBLISHED, result.version().getStatus());
         verify(skillVersionRepository, atLeastOnce()).save(any(SkillVersion.class));
     }
 
@@ -1282,7 +1272,7 @@ class SkillPublishServiceTest {
     }
 
     @Test
-    void testPublishFromEntries_ShouldDeferVisibilityChangeUntilApproval() throws Exception {
+    void testPublishFromEntries_ShouldApplyVisibilityOnDirectPublish() throws Exception {
         // Arrange
         String namespaceSlug = "test-ns";
         String publisherId = "user-100";
@@ -1326,8 +1316,8 @@ class SkillPublishServiceTest {
                 Set.of()
         );
 
-        // Assert — current published visibility stays unchanged until approval
-        assertEquals(SkillVisibility.PRIVATE, skill.getVisibility());
+        // Assert — direct publication applies the requested visibility immediately.
+        assertEquals(SkillVisibility.PUBLIC, skill.getVisibility());
         assertEquals(SkillVisibility.PUBLIC, result.version().getRequestedVisibility());
     }
 
@@ -1398,7 +1388,7 @@ class SkillPublishServiceTest {
                 Set.of()
         );
 
-        assertEquals(SkillVersionStatus.UPLOADED, result.version().getStatus());
+        assertEquals(SkillVersionStatus.PUBLISHED, result.version().getStatus());
         verify(securityScanService, never()).triggerScan(anyLong(), anyList(), anyString());
         verify(reviewTaskRepository, never()).save(any(ReviewTask.class));
     }
@@ -1495,7 +1485,8 @@ class SkillPublishServiceTest {
         );
 
         assertNotNull(result);
-        verify(reviewTaskRepository).save(any(ReviewTask.class));
+        verify(reviewTaskRepository, never()).save(any(ReviewTask.class));
+        verify(eventPublisher).publishEvent(any(SkillPublishedEvent.class));
         verify(securityScanService).triggerScan(eq(10L), anyList(), eq(publisherId));
     }
 

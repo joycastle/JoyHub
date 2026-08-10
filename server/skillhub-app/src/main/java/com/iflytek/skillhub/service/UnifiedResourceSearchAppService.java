@@ -59,7 +59,7 @@ public class UnifiedResourceSearchAppService {
 
         if (scope == UnifiedResourceSearchType.ALL || scope == UnifiedResourceSearchType.SKILL) {
             List<String> labels = label == null || label.isBlank() ? List.of() : List.of(label);
-            SkillSearchAppService.SearchResponse skills = skillSearchAppService.search(
+            SkillSearchAppService.SearchResponse skills = skillSearchAppService.searchInstallableLatest(
                     null, namespace, "newest", 0, MAX_SKILL_CANDIDATES, labels, userId, namespaceRoles);
             skills.items().forEach(skill -> candidates.add(skillCandidate(skill)));
         }

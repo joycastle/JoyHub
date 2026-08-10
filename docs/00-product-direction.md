@@ -95,7 +95,7 @@ ClawHub CLI 使用单一 slug 模型，slug 校验规则为 `[a-z0-9]([a-z0-9-]*
 ## 4. 一期 MVP 功能
 
 核心能力：
-- 技能发布（当前版本采用“提交 → 审核 → 上线”；`SUPER_ADMIN` 保留直发能力）
+- 技能发布（包校验通过后直接上线，所有入口语义一致）
 - 技能版本管理（semver + 标签）
 - 技能浏览、详情、下载（公共技能匿名可访问）
 - 标签管理（`latest` 系统保留只读 + 自定义标签人工维护）
@@ -108,14 +108,12 @@ ClawHub CLI 使用单一 slug 模型，slug 校验规则为 `[a-z0-9]([a-z0-9-]*
 - 命名空间成员管理
 - 创建技能时选择归属空间
 
-审核流程：
-- 当前版本：普通用户发布后进入审核，审核通过后上线
-- `SUPER_ADMIN` 发布可直达 `PUBLISHED`
-- 分级审核：团队空间由团队管理员审核，全局空间由平台管理员审核
+发布与治理：
+- 普通用户与管理员发布均直接进入 `PUBLISHED`，不创建 skill review task
+- 可见性仍由 `PUBLIC` / `NAMESPACE_ONLY` / `PRIVATE` 控制
+- 安全扫描继续异步执行，人工审核不再阻塞发布
 - 团队技能提升到全局需平台管理员二次审核
-- 平台管理员只负责全局空间审核与提升审核，不介入团队空间审核
-- 当前不引入自动审核；`PrePublishValidator` 仅作为未来扩展点保留，默认实现为 `NoOp`
-- 撤回审核语义统一为 `PENDING_REVIEW → DRAFT`，不再走删除版本记录
+- 历史 skill review task 和相关接口仅用于兼容已有记录
 - skill 生命周期管理读模型统一为 `headlineVersion / publishedVersion / ownerPreviewVersion / resolutionMode`
 - `hidden` 是独立治理覆盖层，不属于 skill 容器状态机
 

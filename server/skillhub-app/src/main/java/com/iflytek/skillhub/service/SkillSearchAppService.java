@@ -96,9 +96,23 @@ public class SkillSearchAppService {
             int size,
             String userId,
             Map<Long, NamespaceRole> userNsRoles) {
+        return searchInstallableLatest(
+                keyword, namespaceSlug, sortBy, page, size, List.of(), userId, userNsRoles);
+    }
+
+    public SearchResponse searchInstallableLatest(
+            String keyword,
+            String namespaceSlug,
+            String sortBy,
+            int page,
+            int size,
+            List<String> labelSlugs,
+            String userId,
+            Map<Long, NamespaceRole> userNsRoles) {
         Long namespaceId = resolveNamespaceId(namespaceSlug, userId, userNsRoles);
         SearchVisibilityScope scope = buildVisibilityScope(userId, userNsRoles);
-        return searchVisibleSkills(keyword, namespaceId, sortBy != null ? sortBy : "newest", page, size, List.of(), scope, true);
+        return searchVisibleSkills(
+                keyword, namespaceId, sortBy != null ? sortBy : "newest", page, size, labelSlugs, scope, true);
     }
 
     private Long resolveNamespaceId(String namespaceSlug, String userId, Map<Long, NamespaceRole> userNsRoles) {

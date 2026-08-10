@@ -53,7 +53,7 @@ class UnifiedResourceSearchAppServiceTest {
 
     @Test
     void searchRanksEveryResourceTypeInOnePoolAndRejectsUnrelatedTools() {
-        given(skillSearchAppService.search(
+        given(skillSearchAppService.searchInstallableLatest(
                 null, null, "newest", 0, 500, List.of(), "user-1", Map.of()))
                 .willReturn(new SkillSearchAppService.SearchResponse(
                         List.of(skill(1L, "html-report", "每周HTML报告生成",
@@ -94,13 +94,13 @@ class UnifiedResourceSearchAppServiceTest {
             assertThat(item.resourceType()).isEqualTo("TOOL");
             assertThat(item.catalogResource().slug()).isEqualTo("atlas-unpacker");
         });
-        verify(skillSearchAppService, never()).search(
+        verify(skillSearchAppService, never()).searchInstallableLatest(
                 any(), any(), any(), any(Integer.class), any(Integer.class), any(), any(), any());
     }
 
     @Test
     void emptyQueryCanSortTheUnifiedPoolWithoutMutatingAnImmutableList() {
-        given(skillSearchAppService.search(
+        given(skillSearchAppService.searchInstallableLatest(
                 null, null, "newest", 0, 500, List.of(), "user-1", Map.of()))
                 .willReturn(new SkillSearchAppService.SearchResponse(
                         List.of(skill(1L, "html-report", "每周HTML报告生成", "生成响应式HTML报告。")),
@@ -121,7 +121,7 @@ class UnifiedResourceSearchAppServiceTest {
 
     @Test
     void starredOnlyFiltersSkillsAgentsAndToolsInsideTheSamePool() {
-        given(skillSearchAppService.search(
+        given(skillSearchAppService.searchInstallableLatest(
                 null, null, "newest", 0, 500, List.of(), "user-1", Map.of()))
                 .willReturn(new SkillSearchAppService.SearchResponse(
                         List.of(skill(1L, "html-report", "每周HTML报告生成", "生成报告。")),

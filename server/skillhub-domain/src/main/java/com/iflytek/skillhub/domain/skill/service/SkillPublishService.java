@@ -1,7 +1,6 @@
 package com.iflytek.skillhub.domain.skill.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.iflytek.skillhub.domain.event.ReviewSubmittedEvent;
 import com.iflytek.skillhub.domain.event.SkillPublishedEvent;
 import com.iflytek.skillhub.domain.namespace.Namespace;
 import com.iflytek.skillhub.domain.namespace.NamespaceMemberRepository;
@@ -10,7 +9,6 @@ import com.iflytek.skillhub.domain.namespace.NamespaceRole;
 import com.iflytek.skillhub.domain.namespace.NamespaceStatus;
 import com.iflytek.skillhub.domain.namespace.SlugValidator;
 import com.iflytek.skillhub.domain.review.ReviewTaskStatus;
-import com.iflytek.skillhub.domain.review.ReviewTask;
 import com.iflytek.skillhub.domain.review.ReviewTaskRepository;
 import com.iflytek.skillhub.domain.security.SecurityScanService;
 import com.iflytek.skillhub.domain.shared.exception.DomainBadRequestException;
@@ -57,7 +55,7 @@ import java.util.zip.ZipOutputStream;
  * Publishes packaged skill artifacts into persisted skill and version records.
  *
  * <p>The service validates archive contents, parses metadata, stores files,
- * creates review tasks when needed, and updates the skill's lifecycle pointer.
+ * publishes the version immediately, and updates the skill's lifecycle pointer.
  */
 @Service
 public class SkillPublishService {
@@ -93,7 +91,6 @@ public class SkillPublishService {
     private final SkillStorageDeletionCompensationService compensationService;
     private final ApplicationEventPublisher eventPublisher;
     private final Clock clock;
-    private final boolean publishAutoPublish;
     private final boolean openRepositoryPublish;
     private final Set<String> openRepositorySlugs;
 
@@ -113,7 +110,6 @@ public class SkillPublishService {
             SkillStorageDeletionCompensationService compensationService,
             ApplicationEventPublisher eventPublisher,
             Clock clock,
-            @Value("${skillhub.publish.auto-publish:false}") boolean publishAutoPublish,
             @Value("${skillhub.repositories.open-publish:false}") boolean openRepositoryPublish,
             @Value("${skillhub.repositories.open-publish-slugs:global}") String openRepositorySlugsCsv) {
         this.namespaceRepository = namespaceRepository;
@@ -131,7 +127,6 @@ public class SkillPublishService {
         this.compensationService = compensationService;
         this.eventPublisher = eventPublisher;
         this.clock = clock;
-        this.publishAutoPublish = publishAutoPublish;
         this.openRepositoryPublish = openRepositoryPublish;
         this.openRepositorySlugs = parseOpenRepositorySlugs(openRepositorySlugsCsv);
     }
@@ -286,8 +281,8 @@ public class SkillPublishService {
     /**
      * Publishes an extracted package into the target namespace.
      *
-     * <p>Super administrators may auto-publish, while regular publishers
-     * usually create a pending-review version.
+     * <p>Every accepted package becomes the current published version immediately.
+     * Visibility still controls who can discover and download it.
      */
     @Transactional
     public PublishResult publishFromEntries(
@@ -307,7 +302,7 @@ public class SkillPublishService {
             SkillVisibility visibility,
             java.util.Set<String> platformRoles,
             boolean confirmWarnings) {
-        return publishFromEntriesInternal(namespaceSlug, entries, publisherId, visibility, platformRoles, confirmWarnings, false, false);
+        return publishFromEntriesInternal(namespaceSlug, entries, publisherId, visibility, platformRoles, confirmWarnings, false);
     }
 
     /**
@@ -337,9 +332,7 @@ public class SkillPublishService {
 
         List<PackageEntry> entries = rebuildEntriesForRerelease(skillId, publishedVersion.getId(), targetVersion);
 
-        // Rerelease follows the same visibility-based workflow as normal publish:
-        // - PRIVATE skills go to UPLOADED status
-        // - PUBLIC/NAMESPACE_ONLY skills go to PENDING_REVIEW (or UPLOADED after scan)
+        // Rerelease follows the same direct-publish workflow as a normal publish.
         return publishFromEntriesInternal(
                 resolveNamespaceSlug(skill.getNamespaceId()),
                 entries,
@@ -347,7 +340,6 @@ public class SkillPublishService {
                 skill.getVisibility(),
                 Set.of(),
                 confirmWarnings,  // confirmWarnings: honour caller's choice for rerelease
-                false,  // forceAutoPublish=false: respect visibility rules
                 true
         );
     }
@@ -359,7 +351,6 @@ public class SkillPublishService {
             SkillVisibility visibility,
             Set<String> platformRoles,
             boolean confirmWarnings,
-            boolean forceAutoPublish,
             boolean bypassMembershipCheck) {
 
         // 1. Find namespace by slug
@@ -472,17 +463,8 @@ public class SkillPublishService {
         // 8. Create SkillVersion
         SkillVersion version = new SkillVersion(skill.getId(), metadata.version(), publisherId);
         version.setRequestedVisibility(visibility);
-        boolean autoPublish = forceAutoPublish || isSuperAdmin || publishAutoPublish;
-        if (autoPublish) {
-            version.setStatus(SkillVersionStatus.PUBLISHED);
-            version.setPublishedAt(currentTime());
-        } else if (visibility == SkillVisibility.PRIVATE) {
-            // PRIVATE skill goes to UPLOADED status, no review task created
-            version.setStatus(SkillVersionStatus.UPLOADED);
-            version.setPublishedAt(currentTime());
-        } else {
-            version.setStatus(SkillVersionStatus.PENDING_REVIEW);
-        }
+        version.setStatus(SkillVersionStatus.PUBLISHED);
+        version.setPublishedAt(currentTime());
 
         // Store metadata as JSON
         try {
@@ -556,38 +538,20 @@ public class SkillPublishService {
         version.setDownloadReady(!skillFiles.isEmpty());
         skillVersionRepository.save(version);
 
-        // Create review task for PUBLIC/NAMESPACE_ONLY (not PRIVATE)
-        if (!autoPublish && visibility != SkillVisibility.PRIVATE) {
-            ReviewTask reviewTask = new ReviewTask(version.getId(), namespace.getId(), publisherId);
-            ReviewTask savedReviewTask = reviewTaskRepository.save(reviewTask);
-            eventPublisher.publishEvent(new ReviewSubmittedEvent(
-                    savedReviewTask.getId(),
-                    skill.getId(),
-                    version.getId(),
-                    savedReviewTask.getSubmittedBy(),
-                    savedReviewTask.getNamespaceId()
-            ));
-        }
-
-        // Trigger security scan for all versions (including auto-publish)
+        // Trigger security scanning without putting publication behind a manual review queue.
         if (securityScanService.isEnabled()) {
             securityScanService.triggerScan(version.getId(), entries, publisherId);
         }
 
-        // 12. Update skill metadata and move the published pointer for auto-publish flows
+        // 12. Update skill metadata and move the published pointer.
         skill.setDisplayName(metadata.name());
         skill.setSummary(metadata.description());
-        if (autoPublish || visibility == SkillVisibility.PRIVATE) {
-            // Update latestVersionId for autoPublish or PRIVATE skill (UPLOADED status)
-            skill.setLatestVersionId(version.getId());
-            skill.setVisibility(visibility);
-        }
+        skill.setLatestVersionId(version.getId());
+        skill.setVisibility(visibility);
         skill.setUpdatedBy(publisherId);
         skillRepository.save(skill);
 
-        if (autoPublish) {
-            eventPublisher.publishEvent(new SkillPublishedEvent(skill.getId(), version.getId(), publisherId));
-        }
+        eventPublisher.publishEvent(new SkillPublishedEvent(skill.getId(), version.getId(), publisherId));
 
         // 13. Return identifiers for the created version
         return new PublishResult(skill.getId(), skill.getSlug(), version);

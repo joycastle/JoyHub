@@ -84,7 +84,7 @@ public class SecurityScanService {
                 System.currentTimeMillis(),
                 Map.of("scannerType", ScannerType.SKILL_SCANNER.getValue())
         ));
-        // Only transition to SCANNING if the version is not already published (auto-publish flow)
+        // Directly published versions remain available while their asynchronous scan runs.
         if (version.getStatus() != SkillVersionStatus.PUBLISHED) {
             version.setStatus(SkillVersionStatus.SCANNING);
             skillVersionRepository.save(version);

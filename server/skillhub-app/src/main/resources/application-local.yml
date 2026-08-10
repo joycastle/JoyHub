@@ -32,7 +32,6 @@ skillhub:
       enabled: false
     web-base-url: ${SKILLHUB_WEB_BASE_URL:http://localhost:3000}
   publish:
-    auto-publish: true
     max-single-file-size: 52428800 # 50MB for local OpenClaw-style bundles
   governance:
     enabled: false
