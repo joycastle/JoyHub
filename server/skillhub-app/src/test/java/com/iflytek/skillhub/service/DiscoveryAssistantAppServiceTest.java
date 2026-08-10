@@ -39,9 +39,13 @@ class DiscoveryAssistantAppServiceTest {
                 .thenReturn(new DiscoveryConversationStore.Conversation(
                         "0f40ad3f-7ce2-4bbb-89ec-63080a7f0648", history));
         when(aiClient.plan(anyString(), anyString(), anyList(), anyString())).thenReturn(plan);
-        when(retriever.retrieve(plan.steps().get(0).queries(), principal(), Map.of(), "zh-CN"))
+        when(retriever.retrieve(
+                List.of("那帮我整理一下", "project progress collection"),
+                principal(), Map.of(), "zh-CN"))
                 .thenReturn(List.of());
-        when(retriever.retrieve(plan.steps().get(1).queries(), principal(), Map.of(), "zh-CN"))
+        when(retriever.retrieve(
+                List.of("那帮我整理一下", "report generation"),
+                principal(), Map.of(), "zh-CN"))
                 .thenReturn(List.of(reportSkill));
         when(aiClient.answer(anyString(), anyString(), anyList(), anyList(), anyString()))
                 .thenReturn(new DiscoveryAiClient.AiAnswer("分两步完成。", "gpt-test", false, List.of(
@@ -71,6 +75,12 @@ class DiscoveryAssistantAppServiceTest {
         verify(aiClient).plan(eq("那帮我整理一下"), eq("zh-CN"), eq(history), anyString());
         verify(aiClient).answer(
                 eq("那帮我整理一下"), eq("zh-CN"), anyList(), eq(history), anyString());
+        verify(retriever).retrieve(
+                List.of("那帮我整理一下", "project progress collection"),
+                principal(), Map.of(), "zh-CN");
+        verify(retriever).retrieve(
+                List.of("那帮我整理一下", "report generation"),
+                principal(), Map.of(), "zh-CN");
         verify(conversationStore).append(
                 eq("user-1"), eq("0f40ad3f-7ce2-4bbb-89ec-63080a7f0648"),
                 eq(new DiscoveryConversationTurn("那帮我整理一下", "分两步完成。")));

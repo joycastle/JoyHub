@@ -49,7 +49,7 @@ public class DiscoveryAssistantAppService {
                 principal.userId(), conversationId);
         DiscoverySearchPlan plan = plan(question, language, conversation.turns(), safetyIdentifier);
         List<DiscoveryPlanStepResponse> candidateSteps = retrieveSteps(
-                plan, language, principal, normalizedRoles);
+                question, plan, language, principal, normalizedRoles);
         DiscoveryAssistResponse response;
 
         if (!properties.isEnabled() || properties.getApiKey() == null || properties.getApiKey().isBlank()) {
@@ -89,14 +89,21 @@ public class DiscoveryAssistantAppService {
         }
     }
 
-    private List<DiscoveryPlanStepResponse> retrieveSteps(DiscoverySearchPlan plan,
+    private List<DiscoveryPlanStepResponse> retrieveSteps(String question,
+                                                          DiscoverySearchPlan plan,
                                                           String language,
                                                           PlatformPrincipal principal,
                                                           Map<Long, NamespaceRole> namespaceRoles) {
         List<DiscoveryPlanStepResponse> steps = new ArrayList<>();
         for (DiscoverySearchPlan.Step step : plan.steps()) {
+            List<String> queries = new ArrayList<>();
+            queries.add(question);
+            queries.addAll(step.queries());
             List<DiscoverySuggestionResponse> matches = knowledgeRetriever
-                    .retrieve(step.queries(), principal, namespaceRoles, language).stream()
+                    .retrieve(queries.stream()
+                            .filter(query -> query != null && !query.isBlank())
+                            .distinct()
+                            .toList(), principal, namespaceRoles, language).stream()
                     .limit(STEP_RESULT_LIMIT)
                     .toList();
             steps.add(new DiscoveryPlanStepResponse(step.objective(), matches));
