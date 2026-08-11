@@ -1,13 +1,11 @@
 import { useRef, useState, type FormEvent } from 'react'
-import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import type { CatalogResourceDetail, CatalogResourceKind, CatalogResourceRequest, CatalogVisibilityScope } from '@/api/types'
-import { fetchJson, getCsrfHeaders, namespaceApi } from '@/api/client'
+import { fetchJson, getCsrfHeaders } from '@/api/client'
 import { CATALOG_RESOURCE_KINDS, catalogKindLabel } from '@/entities/catalog-resource/catalog-resource-kind'
 import { useCreateCatalogResource, useUpdateCatalogResource } from './use-catalog-queries'
 import { usePublishSkill, useSearchSkills } from '@/shared/hooks/use-skill-queries'
-import { useSkillRepositories } from '@/shared/hooks/use-skill-repositories'
-import { resolveDefaultRepositorySlug } from '@/shared/lib/repository-display'
+import { usePublishTargets } from '@/shared/hooks/use-publish-targets'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
@@ -35,7 +33,7 @@ export function CatalogResourceForm({ onCreated, initialKind, resource }: Catalo
   const { t } = useTranslation()
   const createMutation = useCreateCatalogResource()
   const updateMutation = useUpdateCatalogResource()
-  const { data: departments = [] } = useQuery({ queryKey: ['namespaces', 'mine'], queryFn: () => namespaceApi.listMine() })
+  const { data: publishTargets = [] } = usePublishTargets()
   const [kind, setKind] = useState<CatalogResourceKind>(() => resource?.kind ?? initialKind ?? 'ONLINE_TOOL')
   const [visibility, setVisibility] = useState<CatalogVisibilityScope>(() => resource?.visibilityScope ?? 'COMPANY')
   const [artifact, setArtifact] = useState<File>()
@@ -52,6 +50,7 @@ export function CatalogResourceForm({ onCreated, initialKind, resource }: Catalo
     return 'EXTERNAL'
   })
   const [selectedDepartments, setSelectedDepartments] = useState<number[]>(() => resource?.visibleDepartments?.flatMap((item) => item.id === undefined ? [] : [item.id]) ?? [])
+  const [primaryDepartmentId, setPrimaryDepartmentId] = useState<number | undefined>(() => resource?.department?.id)
   const [documentation, setDocumentation] = useState(() => resource?.documentation ?? '')
   const [summary, setSummary] = useState(() => resource?.summary ?? '')
   const [isExtractingDocument, setIsExtractingDocument] = useState(false)
@@ -61,7 +60,6 @@ export function CatalogResourceForm({ onCreated, initialKind, resource }: Catalo
   const [selectedSkillIds, setSelectedSkillIds] = useState<number[]>(() => resource?.relatedSkills?.flatMap((skill) => skill.id === undefined ? [] : [skill.id]) ?? [])
   const [skillQuery, setSkillQuery] = useState('')
   const [localSkillFile, setLocalSkillFile] = useState<File>()
-  const [skillRepository, setSkillRepository] = useState('')
   const [skillVisibility, setSkillVisibility] = useState('WAREHOUSE')
   const [localSkillError, setLocalSkillError] = useState('')
   const isAgent = kind === 'AGENT'
@@ -72,7 +70,6 @@ export function CatalogResourceForm({ onCreated, initialKind, resource }: Catalo
     && resource.artifactAvailable
     && (!resource.accessUrl || resource.accessUrl.includes(`/apps/${resource.slug}/`))
   const { data: skills } = useSearchSkills({ q: skillQuery || undefined, sort: 'newest', page: 0, size: 12 })
-  const { data: repositories = [] } = useSkillRepositories()
   const publishSkillMutation = usePublishSkill()
   const formRef = useRef<HTMLFormElement>(null)
   const isEditing = Boolean(resource)
@@ -83,20 +80,19 @@ export function CatalogResourceForm({ onCreated, initialKind, resource }: Catalo
     event.preventDefault()
     const form = new FormData(event.currentTarget)
     const split = (value: FormDataEntryValue | null) => String(value ?? '').split(',').map((item) => item.trim()).filter(Boolean)
-    const primaryDepartmentValue = String(form.get('primaryDepartmentId') ?? '')
     const feishuAppId = String(form.get('feishuAppId') ?? '').trim()
     const requestedVersion = String(form.get('version') ?? '').trim()
     const publishRequested = !isEditing && form.get('publish') === 'on'
     setLocalSkillError('')
     let relatedSkillIds = selectedSkillIds
     if (isAgent && localSkillFile) {
-      const repository = skillRepository || resolveDefaultRepositorySlug(repositories)
-      if (!repository) {
-        setLocalSkillError('请选择上传 Skill 的归属空间。')
+      const publishTarget = publishTargets.find((target) => target.id === primaryDepartmentId)
+      if (!publishTarget) {
+        setLocalSkillError('请先选择 Agent 的所属部门。')
         return
       }
       const publishedSkill = await publishSkillMutation.mutateAsync({
-        namespace: repository,
+        namespace: publishTarget.slug,
         file: localSkillFile,
         visibility: skillVisibility,
       })
@@ -123,7 +119,7 @@ export function CatalogResourceForm({ onCreated, initialKind, resource }: Catalo
         agentOutputGuide: undefined,
         agentSupportContact: undefined,
         agentExamplePrompts: isAgent ? splitLines(examplePrompts) : [],
-        primaryDepartmentId: primaryDepartmentValue ? Number(primaryDepartmentValue) : undefined,
+        primaryDepartmentId,
         maintenanceStatus: resource?.maintenanceStatus ?? 'ACTIVE',
         visibilityScope: visibility,
         visibleDepartmentIds: visibility === 'DEPARTMENTS' ? selectedDepartments : [],
@@ -287,7 +283,7 @@ export function CatalogResourceForm({ onCreated, initialKind, resource }: Catalo
           <Label htmlFor="localSkill">上传本地 Skill 包</Label>
           <Input id="localSkill" className="mt-2" type="file" accept=".zip,application/zip" onChange={(event) => setLocalSkillFile(event.target.files?.[0])} />
           <p className="mt-1 text-xs text-muted-foreground">ZIP 内须包含 SKILL.md；会使用平台原有的安全校验和发布流程。</p>
-          {localSkillFile ? <div className="mt-4 grid gap-3 md:grid-cols-2"><div><Label htmlFor="skillRepository">归属空间 *</Label><select id="skillRepository" className={FIELD_CLASS} value={skillRepository || resolveDefaultRepositorySlug(repositories)} onChange={(event) => setSkillRepository(event.target.value)}><option value="">请选择</option>{repositories.map((repository) => <option key={repository.slug} value={repository.slug}>{repository.displayName}</option>)}</select></div><div><Label htmlFor="skillVisibility">可见范围</Label><select id="skillVisibility" className={FIELD_CLASS} value={skillVisibility} onChange={(event) => setSkillVisibility(event.target.value)}><option value="WAREHOUSE">空间内可见</option><option value="PRIVATE">仅自己可见</option></select></div></div> : null}
+          {localSkillFile ? <div className="mt-4"><Label htmlFor="skillVisibility">Skill 可见范围</Label><select id="skillVisibility" className={FIELD_CLASS} value={skillVisibility} onChange={(event) => setSkillVisibility(event.target.value)}><option value="WAREHOUSE">部门内可见</option><option value="PRIVATE">仅自己可见</option></select><p className="mt-2 text-xs text-muted-foreground">Skill 会与 Agent 发布到同一个所属部门。</p></div> : null}
           {localSkillError ? <p className="mt-2 text-sm text-destructive">{localSkillError}</p> : null}
         </div>
       </section> : null}
@@ -308,10 +304,10 @@ export function CatalogResourceForm({ onCreated, initialKind, resource }: Catalo
       <section className="grid gap-6 rounded-2xl border bg-card p-6 md:grid-cols-2">
         <div className="md:col-span-2"><h2 className="text-xl font-semibold">归属与可见范围</h2></div>
         <div>
-          <Label htmlFor="primaryDepartmentId">所属部门</Label>
-          <select id="primaryDepartmentId" name="primaryDepartmentId" className={FIELD_CLASS} defaultValue={resource?.department?.id ?? ''}>
-            <option value="">不指定</option>
-            {departments.map((item) => <option key={item.id} value={item.id}>{item.displayName}</option>)}
+          <Label htmlFor="primaryDepartmentId">所属部门 *</Label>
+          <select id="primaryDepartmentId" name="primaryDepartmentId" required className={FIELD_CLASS} value={primaryDepartmentId ?? ''} onChange={(event) => setPrimaryDepartmentId(event.target.value ? Number(event.target.value) : undefined)}>
+            <option value="">请选择</option>
+            {publishTargets.map((item) => <option key={item.id} value={item.id}>{item.displayName}</option>)}
           </select>
         </div>
         <div>
@@ -325,7 +321,7 @@ export function CatalogResourceForm({ onCreated, initialKind, resource }: Catalo
           <div className="space-y-2 md:col-span-2">
             <Label>可见部门 *</Label>
             <div className="grid gap-2 md:grid-cols-3">
-              {departments.map((item) => (
+              {publishTargets.map((item) => (
                 <label key={item.id} className="flex items-center gap-2 rounded-lg border p-3 text-sm">
                   <input
                     type="checkbox"

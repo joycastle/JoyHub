@@ -53,6 +53,7 @@ import type {
   DiscoveryAssistRequest,
   DiscoveryAssistResponse,
   ResourceSummary,
+  PublishTarget,
   ResourceStats,
   UnifiedResourceSearchItem,
   RecommendedResource,
@@ -735,6 +736,10 @@ export const catalogApi = {
 }
 
 export const resourcesApi = {
+  async publishTargets(): Promise<PublishTarget[]> {
+    return fetchJson<PublishTarget[]>(`${WEB_API_PREFIX}/resources/publish-targets`)
+  },
+
   async recommendations(size = 12): Promise<RecommendedResource[]> {
     return fetchJson<RecommendedResource[]>(`${WEB_API_PREFIX}/resources/recommendations?size=${size}`)
   },

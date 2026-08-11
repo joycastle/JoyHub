@@ -51,7 +51,7 @@ public class CatalogResourceCommandAppService {
 
     @Transactional
     public CatalogResourceDetailResponse create(CatalogResourceRequest request, CatalogViewer viewer) {
-        CatalogResourceDraft draft = validateAndMap(request, null, null);
+        CatalogResourceDraft draft = validateAndMap(request, null, null, viewer);
         CatalogResource existing = resourceRepository.findBySlug(draft.slug()).orElse(null);
         if (existing != null
                 && existing.getStatus() == CatalogResourceStatus.DRAFT
@@ -73,7 +73,7 @@ public class CatalogResourceCommandAppService {
             CatalogResourceRequest request,
             CatalogViewer viewer) {
         CatalogResource existing = resourceService.requireBySlug(slug);
-        CatalogResourceDraft draft = validateAndMap(request, existing.getId(), existing.getSlug());
+        CatalogResourceDraft draft = validateAndMap(request, existing.getId(), existing.getSlug(), viewer);
         CatalogResource resource = resourceService.update(
                 slug,
                 draft,
@@ -88,6 +88,7 @@ public class CatalogResourceCommandAppService {
 
     @Transactional
     public CatalogResourceDetailResponse publish(String slug, CatalogViewer viewer) {
+        assertPublishTargetAccess(slug, viewer);
         return assembler.detail(resourceService.publish(
                 slug,
                 viewer.userId(),
@@ -142,7 +143,8 @@ public class CatalogResourceCommandAppService {
     private CatalogResourceDraft validateAndMap(
             CatalogResourceRequest request,
             Long currentResourceId,
-            String existingSlug) {
+            String existingSlug,
+            CatalogViewer viewer) {
         validateAccessUrl(request.accessUrl());
         Set<Long> visibleDepartmentIds = request.visibilityScope() == CatalogVisibilityScope.DEPARTMENTS
                 ? safeLongSet(request.visibleDepartmentIds()) : Set.of();
@@ -151,6 +153,7 @@ public class CatalogResourceCommandAppService {
             departmentIds.add(request.primaryDepartmentId());
         }
         validateDepartments(departmentIds);
+        requirePublishTargetAccess(request.primaryDepartmentId(), viewer);
         validateResourceLinks(safeLongSet(request.relatedResourceIds()), currentResourceId);
         validateSkillLinks(safeLongSet(request.relatedSkillIds()));
 
@@ -201,6 +204,20 @@ public class CatalogResourceCommandAppService {
         if (!activeIds.containsAll(departmentIds)) {
             throw CatalogDomainException.badRequest("error.catalog.department.invalid");
         }
+    }
+
+    private void requirePublishTargetAccess(Long namespaceId, CatalogViewer viewer) {
+        if (namespaceId == null) {
+            throw CatalogDomainException.badRequest("error.catalog.publishTarget.required");
+        }
+        if (!viewer.superAdmin() && !viewer.namespaceIds().contains(namespaceId)) {
+            throw CatalogDomainException.forbidden("error.catalog.publishTarget.membershipRequired");
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public void assertPublishTargetAccess(String slug, CatalogViewer viewer) {
+        requirePublishTargetAccess(resourceService.requireBySlug(slug).getPrimaryNamespaceId(), viewer);
     }
 
     private void validateResourceLinks(Set<Long> resourceIds, Long currentResourceId) {

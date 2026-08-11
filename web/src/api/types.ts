@@ -327,6 +327,13 @@ export interface ResourceSummary {
   favorited: boolean
 }
 
+export type PublishTarget = Omit<components['schemas']['PublishTargetResponse'], 'id' | 'slug' | 'displayName' | 'supportedResourceTypes'> & {
+  id: number
+  slug: string
+  displayName: string
+  supportedResourceTypes: Array<'SKILL' | 'TOOL' | 'AGENT' | string>
+}
+
 export interface ResourceStats {
   resourceId: string
   viewCount: number

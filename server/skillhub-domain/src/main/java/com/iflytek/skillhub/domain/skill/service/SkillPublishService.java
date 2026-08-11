@@ -25,7 +25,6 @@ import com.iflytek.skillhub.storage.ObjectStorageService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -91,8 +90,6 @@ public class SkillPublishService {
     private final SkillStorageDeletionCompensationService compensationService;
     private final ApplicationEventPublisher eventPublisher;
     private final Clock clock;
-    private final boolean openRepositoryPublish;
-    private final Set<String> openRepositorySlugs;
 
     public SkillPublishService(
             NamespaceRepository namespaceRepository,
@@ -109,9 +106,7 @@ public class SkillPublishService {
             SecurityScanService securityScanService,
             SkillStorageDeletionCompensationService compensationService,
             ApplicationEventPublisher eventPublisher,
-            Clock clock,
-            @Value("${skillhub.repositories.open-publish:false}") boolean openRepositoryPublish,
-            @Value("${skillhub.repositories.open-publish-slugs:global}") String openRepositorySlugsCsv) {
+            Clock clock) {
         this.namespaceRepository = namespaceRepository;
         this.namespaceMemberRepository = namespaceMemberRepository;
         this.skillRepository = skillRepository;
@@ -127,24 +122,6 @@ public class SkillPublishService {
         this.compensationService = compensationService;
         this.eventPublisher = eventPublisher;
         this.clock = clock;
-        this.openRepositoryPublish = openRepositoryPublish;
-        this.openRepositorySlugs = parseOpenRepositorySlugs(openRepositorySlugsCsv);
-    }
-
-    private static Set<String> parseOpenRepositorySlugs(String csv) {
-        if (csv == null || csv.isBlank()) {
-            return Set.of("global");
-        }
-        return java.util.Arrays.stream(csv.split(","))
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .collect(java.util.stream.Collectors.toUnmodifiableSet());
-    }
-
-    private boolean isOpenPublishNamespace(String namespaceSlug) {
-        return openRepositoryPublish
-                && namespaceSlug != null
-                && openRepositorySlugs.contains(namespaceSlug);
     }
 
     public record DryRunResult(
@@ -192,7 +169,7 @@ public class SkillPublishService {
 
         // 2. Check membership
         boolean isSuperAdmin = platformRoles.contains("SUPER_ADMIN");
-        if (!isSuperAdmin && !isOpenPublishNamespace(namespaceSlug)) {
+        if (!isSuperAdmin) {
             var member = namespaceMemberRepository.findByNamespaceIdAndUserId(namespace.getId(), publisherId);
             if (member.isEmpty()) {
                 errors.add("Publisher is not a member of namespace: " + namespaceSlug);
@@ -361,7 +338,7 @@ public class SkillPublishService {
         boolean isSuperAdmin = platformRoles.contains("SUPER_ADMIN");
 
         // 2. Check publisher is member unless SUPER_ADMIN short-circuits permission checks
-        if (!isSuperAdmin && !bypassMembershipCheck && !isOpenPublishNamespace(namespaceSlug)) {
+        if (!isSuperAdmin && !bypassMembershipCheck) {
             namespaceMemberRepository.findByNamespaceIdAndUserId(namespace.getId(), publisherId)
                     .orElseThrow(() -> new DomainBadRequestException("error.skill.publish.publisher.notMember", namespaceSlug));
         }

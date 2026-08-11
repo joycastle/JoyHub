@@ -9,6 +9,7 @@ import com.iflytek.skillhub.dto.ResourceActionResponse;
 import com.iflytek.skillhub.dto.ResourceSummaryResponse;
 import com.iflytek.skillhub.dto.ResourceStatsResponse;
 import com.iflytek.skillhub.dto.RecommendedResourceResponse;
+import com.iflytek.skillhub.dto.PublishTargetResponse;
 import com.iflytek.skillhub.dto.UnifiedResourceSearchItemResponse;
 import com.iflytek.skillhub.dto.UnifiedResourceSearchType;
 import com.iflytek.skillhub.domain.namespace.NamespaceRole;
@@ -21,6 +22,7 @@ import com.iflytek.skillhub.service.ResourceFavoriteAppService;
 import com.iflytek.skillhub.service.ResourceLifecycleAppService;
 import com.iflytek.skillhub.service.ResourceStatsAppService;
 import com.iflytek.skillhub.service.ResourceRecommendationAppService;
+import com.iflytek.skillhub.service.PublishTargetQueryAppService;
 import com.iflytek.skillhub.service.UnifiedResourceSearchAppService;
 import jakarta.servlet.http.HttpServletRequest;
 import io.swagger.v3.oas.annotations.Operation;
@@ -56,6 +58,7 @@ public class ResourceController extends BaseApiController {
     private final ResourceStatsAppService resourceStatsAppService;
     private final UnifiedResourceSearchAppService unifiedResourceSearchAppService;
     private final ResourceRecommendationAppService recommendationAppService;
+    private final PublishTargetQueryAppService publishTargetQueryAppService;
 
     public ResourceController(ResourceAppService resourceAppService,
                               ResourceLifecycleAppService resourceLifecycleAppService,
@@ -64,6 +67,7 @@ public class ResourceController extends BaseApiController {
                               ResourceStatsAppService resourceStatsAppService,
                               UnifiedResourceSearchAppService unifiedResourceSearchAppService,
                               ResourceRecommendationAppService recommendationAppService,
+                              PublishTargetQueryAppService publishTargetQueryAppService,
                               ApiResponseFactory responseFactory) {
         super(responseFactory);
         this.resourceAppService = resourceAppService;
@@ -73,6 +77,18 @@ public class ResourceController extends BaseApiController {
         this.resourceStatsAppService = resourceStatsAppService;
         this.unifiedResourceSearchAppService = unifiedResourceSearchAppService;
         this.recommendationAppService = recommendationAppService;
+        this.publishTargetQueryAppService = publishTargetQueryAppService;
+    }
+
+    @GetMapping("/publish-targets")
+    @Operation(summary = "List namespaces where the current user may publish Skills, Agents, and Tools")
+    public ApiResponse<java.util.List<PublishTargetResponse>> publishTargets(
+            @AuthenticationPrincipal PlatformPrincipal principal,
+            @RequestAttribute(value = "userNsRoles", required = false) Map<Long, NamespaceRole> namespaceRoles) {
+        requireUser(principal);
+        return ok("response.success.read", publishTargetQueryAppService.list(
+                namespaceRoles,
+                platformRoles(principal)));
     }
 
     @GetMapping("/recommendations")

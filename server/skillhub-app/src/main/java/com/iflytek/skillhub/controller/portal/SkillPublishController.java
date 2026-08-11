@@ -1,7 +1,6 @@
 package com.iflytek.skillhub.controller.portal;
 
 import com.iflytek.skillhub.auth.rbac.PlatformPrincipal;
-import com.iflytek.skillhub.config.SkillRepositoryProperties;
 import com.iflytek.skillhub.controller.BaseApiController;
 import com.iflytek.skillhub.controller.support.SkillPackageArchiveExtractor;
 import com.iflytek.skillhub.domain.shared.exception.DomainBadRequestException;
@@ -50,7 +49,6 @@ public class SkillPublishController extends BaseApiController {
     private final SkillPackageArchiveExtractor skillPackageArchiveExtractor;
     private final SkillHubMetrics skillHubMetrics;
     private final SkillVisibilityScopeResolver visibilityScopeResolver;
-    private final SkillRepositoryProperties repositoryProperties;
     private final MessageSource messageSource;
 
     public SkillPublishController(SkillPublishService skillPublishService,
@@ -58,14 +56,12 @@ public class SkillPublishController extends BaseApiController {
                                   ApiResponseFactory responseFactory,
                                   SkillHubMetrics skillHubMetrics,
                                   SkillVisibilityScopeResolver visibilityScopeResolver,
-                                  SkillRepositoryProperties repositoryProperties,
                                   MessageSource messageSource) {
         super(responseFactory);
         this.skillPublishService = skillPublishService;
         this.skillPackageArchiveExtractor = skillPackageArchiveExtractor;
         this.skillHubMetrics = skillHubMetrics;
         this.visibilityScopeResolver = visibilityScopeResolver;
-        this.repositoryProperties = repositoryProperties;
         this.messageSource = messageSource;
     }
 
@@ -83,8 +79,6 @@ public class SkillPublishController extends BaseApiController {
             @AuthenticationPrincipal PlatformPrincipal principal) throws IOException {
 
         SkillVisibility skillVisibility = visibilityScopeResolver.resolve(visibility);
-        validatePublishNamespace(namespace);
-
         PublishResponse response = publishSingleFile(
                 namespace,
                 file,
@@ -111,8 +105,6 @@ public class SkillPublishController extends BaseApiController {
             @AuthenticationPrincipal PlatformPrincipal principal) {
 
         SkillVisibility skillVisibility = visibilityScopeResolver.resolve(visibility);
-        validatePublishNamespace(namespace);
-
         List<MultipartFile> uploadFiles = files == null
                 ? List.of()
                 : Arrays.stream(files).filter(file -> file != null && !file.isEmpty()).toList();
@@ -157,12 +149,6 @@ public class SkillPublishController extends BaseApiController {
         );
 
         return ok("response.success.publishedBatch", response, succeeded, failed);
-    }
-
-    private void validatePublishNamespace(String namespace) {
-        if (!repositoryProperties.isOpenPublishSlug(namespace)) {
-            throw new DomainBadRequestException("error.skill.publish.repository.invalid", namespace);
-        }
     }
 
     private PublishResponse publishSingleFile(

@@ -158,26 +158,6 @@ skillhub:
     # Override via SKILLHUB_PUBLISH_ALLOWED_FILE_EXTENSIONS env var if needed
   governance:
     enabled: ${SKILLHUB_GOVERNANCE_ENABLED:true}
-  repositories:
-    default-slug: global
-    open-publish: ${SKILLHUB_REPOSITORIES_OPEN_PUBLISH:true}
-    open-publish-slugs: ${SKILLHUB_REPOSITORIES_OPEN_PUBLISH_SLUGS:global,hr-yuanqi,gestalt,maiqu,lab,jc-arsenal,horizon}
-    catalog:
-      - slug: global
-        display-name: JoyHub公共库
-        default-repository: true
-      - slug: hr-yuanqi
-        display-name: HR元气中心
-      - slug: gestalt
-        display-name: 格式塔工作室
-      - slug: maiqu
-        display-name: 麦趣工作室
-      - slug: lab
-        display-name: Lab
-      - slug: jc-arsenal
-        display-name: JC弹药库
-      - slug: horizon
-        display-name: 地平线工作室
   profile:
     moderation:
       machine-review: ${SKILLHUB_PROFILE_MACHINE_REVIEW_ENABLED:true} # Enable machine review (e.g. sensitive word detection)

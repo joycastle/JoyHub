@@ -22,8 +22,7 @@ import {
 import { Label } from '@/shared/ui/label'
 import { Card } from '@/shared/ui/card'
 import { usePublishSkill, usePublishSkillsBatch } from '@/shared/hooks/use-skill-queries'
-import { useSkillRepositories } from '@/shared/hooks/use-skill-repositories'
-import { resolveDefaultRepositorySlug } from '@/shared/lib/repository-display'
+import { usePublishTargets } from '@/shared/hooks/use-publish-targets'
 import { ConfirmDialog } from '@/shared/components/confirm-dialog'
 import { DashboardPageHeader } from '@/shared/components/dashboard-page-header'
 import { toast } from '@/shared/lib/toast'
@@ -63,7 +62,7 @@ export function PublishPage() {
   const [precheckWarnings, setPrecheckWarnings] = useState<string[]>([])
   const [batchResults, setBatchResults] = useState<BatchPublishItemResult[] | null>(null)
 
-  const { data: repositories, isLoading: isLoadingRepositories } = useSkillRepositories()
+  const { data: publishTargets, isLoading: isLoadingPublishTargets } = usePublishTargets()
   const publishMutation = usePublishSkill()
   const publishBatchMutation = usePublishSkillsBatch()
   const isPublishing = publishMutation.isPending || publishBatchMutation.isPending
@@ -74,11 +73,11 @@ export function PublishPage() {
   }, [prefill.namespace, prefill.visibility])
 
   useEffect(() => {
-    if (repositorySlug || !repositories?.length) {
+    if (repositorySlug || !publishTargets?.length) {
       return
     }
-    setRepositorySlug(resolveDefaultRepositorySlug(repositories))
-  }, [repositories, repositorySlug])
+    setRepositorySlug(publishTargets[0].slug)
+  }, [publishTargets, repositorySlug])
 
   const pendingConfirmFiles = useMemo(
     () => (batchResults ?? []).filter((item) => item.needsConfirmation),
@@ -268,7 +267,7 @@ export function PublishPage() {
       <Card className="p-8 space-y-8">
         <div className="space-y-3">
           <Label htmlFor="repository" className="text-sm font-semibold font-heading">{t('publish.repository')}</Label>
-          {isLoadingRepositories ? (
+          {isLoadingPublishTargets ? (
             <div className="h-11 animate-shimmer rounded-lg" />
           ) : (
             <Select
@@ -282,9 +281,9 @@ export function PublishPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={EMPTY_REPOSITORY_VALUE}>{t('publish.selectRepository')}</SelectItem>
-                {repositories?.map((repository) => (
-                  <SelectItem key={repository.slug} value={repository.slug}>
-                    {repository.displayName}
+                {publishTargets?.map((target) => (
+                  <SelectItem key={target.slug} value={target.slug}>
+                    {target.displayName}
                   </SelectItem>
                 ))}
               </SelectContent>

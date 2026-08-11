@@ -39,6 +39,7 @@ public class CatalogDeploymentLifecycleAppService {
                                                  String requestedVersion,
                                                  CatalogViewer viewer,
                                                  AuditRequestContext auditContext) {
+        catalogCommandAppService.assertPublishTargetAccess(slug, viewer);
         CatalogResource catalog = requireCatalog(slug);
         Optional<DeployableApplication> application = applicationRepository.findByCatalogResourceId(catalog.getId());
         if (!isManagedStatic(catalog, application)) {

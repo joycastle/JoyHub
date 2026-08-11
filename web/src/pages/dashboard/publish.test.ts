@@ -53,9 +53,9 @@ vi.mock('@/shared/hooks/use-skill-queries', () => ({
   usePublishSkillsBatch: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }))
 
-vi.mock('@/shared/hooks/use-skill-repositories', () => ({
-  useSkillRepositories: () => ({
-    data: [{ slug: 'global', displayName: 'JoyHub公共库', defaultRepository: true }],
+vi.mock('@/shared/hooks/use-publish-targets', () => ({
+  usePublishTargets: () => ({
+    data: [{ id: 1, slug: 'global', displayName: 'JoyHub公共库', supportedResourceTypes: ['SKILL', 'TOOL', 'AGENT'] }],
     isLoading: false,
   }),
 }))

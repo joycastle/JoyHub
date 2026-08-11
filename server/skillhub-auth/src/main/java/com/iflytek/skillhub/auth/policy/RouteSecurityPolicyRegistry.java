@@ -68,6 +68,8 @@ public class RouteSecurityPolicyRegistry {
             RouteAuthorizationPolicy.permitAll(HttpMethod.GET, "/api/web/labels"),
             RouteAuthorizationPolicy.permitAll(HttpMethod.GET, "/api/v1/resources/search"),
             RouteAuthorizationPolicy.permitAll(HttpMethod.GET, "/api/web/resources/search"),
+            RouteAuthorizationPolicy.authenticated(HttpMethod.GET, "/api/web/resources/publish-targets"),
+            RouteAuthorizationPolicy.authenticated(HttpMethod.GET, "/api/v1/resources/publish-targets"),
             RouteAuthorizationPolicy.permitAll(HttpMethod.GET, "/api/v1/resources/*/stats"),
             RouteAuthorizationPolicy.permitAll(HttpMethod.GET, "/api/web/resources/*/stats"),
             RouteAuthorizationPolicy.permitAll(HttpMethod.POST, "/api/v1/resources/*/stats/view"),

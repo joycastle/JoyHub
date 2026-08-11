@@ -1,10 +1,10 @@
 package com.iflytek.skillhub.controller.portal;
 
-import com.iflytek.skillhub.config.SkillRepositoryProperties;
 import com.iflytek.skillhub.controller.BaseApiController;
 import com.iflytek.skillhub.dto.ApiResponse;
 import com.iflytek.skillhub.dto.ApiResponseFactory;
 import com.iflytek.skillhub.dto.SkillRepositoryResponse;
+import com.iflytek.skillhub.service.SkillRepositoryQueryAppService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -15,23 +15,16 @@ import java.util.List;
 @RequestMapping({"/api/v1/repositories", "/api/web/repositories"})
 public class SkillRepositoryController extends BaseApiController {
 
-    private final SkillRepositoryProperties repositoryProperties;
+    private final SkillRepositoryQueryAppService queryAppService;
 
-    public SkillRepositoryController(SkillRepositoryProperties repositoryProperties,
+    public SkillRepositoryController(SkillRepositoryQueryAppService queryAppService,
                                      ApiResponseFactory responseFactory) {
         super(responseFactory);
-        this.repositoryProperties = repositoryProperties;
+        this.queryAppService = queryAppService;
     }
 
     @GetMapping
     public ApiResponse<List<SkillRepositoryResponse>> listRepositories() {
-        List<SkillRepositoryResponse> repositories = repositoryProperties.getCatalog().stream()
-                .map(item -> new SkillRepositoryResponse(
-                        item.slug(),
-                        item.displayName(),
-                        item.defaultRepository()
-                ))
-                .toList();
-        return ok("response.success.read", repositories);
+        return ok("response.success.read", queryAppService.listActive());
     }
 }

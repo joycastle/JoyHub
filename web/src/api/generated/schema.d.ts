@@ -1424,7 +1424,7 @@ export interface paths {
             cookie?: never;
         };
         /** Search visible published Catalog resources */
-        get: operations["search_1"];
+        get: operations["search_3"];
         put?: never;
         /** Create a Catalog resource or resume the current user's draft with the same slug */
         post: operations["create"];
@@ -1442,7 +1442,7 @@ export interface paths {
             cookie?: never;
         };
         /** Search visible published Catalog resources */
-        get: operations["search_2"];
+        get: operations["search_4"];
         put?: never;
         /** Create a Catalog resource or resume the current user's draft with the same slug */
         post: operations["create_1"];
@@ -2439,6 +2439,108 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/resources/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search Skills, Agents, and Tools in one ranked resource pool */
+        get: operations["search_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/web/resources/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search Skills, Agents, and Tools in one ranked resource pool */
+        get: operations["search_2"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/web/resources/recommendations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Recommend visible Agents, Tools, and Skills for the current department */
+        get: operations["recommendations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/resources/recommendations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Recommend visible Agents, Tools, and Skills for the current department */
+        get: operations["recommendations_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/web/resources/publish-targets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List namespaces where the current user may publish Skills, Agents, and Tools */
+        get: operations["publishTargets"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/resources/publish-targets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List namespaces where the current user may publish Skills, Agents, and Tools */
+        get: operations["publishTargets_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/web/resources/mine": {
         parameters: {
             query?: never;
@@ -2882,7 +2984,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["search_3"];
+        get: operations["search_5"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3140,7 +3242,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["search_4"];
+        get: operations["search_6"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3220,7 +3322,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["search_5"];
+        get: operations["search_7"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4411,6 +4513,63 @@ export interface components {
             /** Format: int32 */
             favoriteCount?: number;
             favorited?: boolean;
+        };
+        ApiResponsePageResponseUnifiedResourceSearchItemResponse: {
+            /** Format: int32 */
+            code?: number;
+            msg?: string;
+            data?: components["schemas"]["PageResponseUnifiedResourceSearchItemResponse"];
+            /** Format: date-time */
+            timestamp?: string;
+            requestId?: string;
+        };
+        PageResponseUnifiedResourceSearchItemResponse: {
+            items?: components["schemas"]["UnifiedResourceSearchItemResponse"][];
+            /** Format: int64 */
+            total?: number;
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+        };
+        UnifiedResourceSearchItemResponse: {
+            resourceType?: string;
+            accessMode?: string;
+            /** Format: double */
+            relevanceScore?: number;
+            skill?: components["schemas"]["SkillSummaryResponse"];
+            catalogResource?: components["schemas"]["CatalogResourceSummaryResponse"];
+        };
+        ApiResponseListRecommendedResourceResponse: {
+            /** Format: int32 */
+            code?: number;
+            msg?: string;
+            data?: components["schemas"]["RecommendedResourceResponse"][];
+            /** Format: date-time */
+            timestamp?: string;
+            requestId?: string;
+        };
+        RecommendedResourceResponse: {
+            resource?: components["schemas"]["UnifiedResourceSearchItemResponse"];
+            reason?: string;
+        };
+        ApiResponseListPublishTargetResponse: {
+            /** Format: int32 */
+            code?: number;
+            msg?: string;
+            data?: components["schemas"]["PublishTargetResponse"][];
+            /** Format: date-time */
+            timestamp?: string;
+            requestId?: string;
+        };
+        PublishTargetResponse: {
+            /** Format: int64 */
+            id?: number;
+            slug?: string;
+            displayName?: string;
+            /** @enum {string} */
+            currentUserRole?: "OWNER" | "ADMIN" | "MEMBER";
+            supportedResourceTypes?: string[];
         };
         ApiResponsePageResponseResourceSummaryResponse: {
             /** Format: int32 */
@@ -7942,7 +8101,7 @@ export interface operations {
             };
         };
     };
-    search_1: {
+    search_3: {
         parameters: {
             query?: {
                 q?: string;
@@ -7995,7 +8154,7 @@ export interface operations {
             };
         };
     };
-    search_2: {
+    search_4: {
         parameters: {
             query?: {
                 q?: string;
@@ -9723,6 +9882,148 @@ export interface operations {
             };
         };
     };
+    search_1: {
+        parameters: {
+            query?: {
+                q?: string;
+                namespace?: string;
+                label?: string;
+                sort?: string;
+                type?: "ALL" | "AGENT" | "TOOL" | "SKILL";
+                starredOnly?: boolean;
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponsePageResponseUnifiedResourceSearchItemResponse"];
+                };
+            };
+        };
+    };
+    search_2: {
+        parameters: {
+            query?: {
+                q?: string;
+                namespace?: string;
+                label?: string;
+                sort?: string;
+                type?: "ALL" | "AGENT" | "TOOL" | "SKILL";
+                starredOnly?: boolean;
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponsePageResponseUnifiedResourceSearchItemResponse"];
+                };
+            };
+        };
+    };
+    recommendations: {
+        parameters: {
+            query?: {
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseListRecommendedResourceResponse"];
+                };
+            };
+        };
+    };
+    recommendations_1: {
+        parameters: {
+            query?: {
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseListRecommendedResourceResponse"];
+                };
+            };
+        };
+    };
+    publishTargets: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseListPublishTargetResponse"];
+                };
+            };
+        };
+    };
+    publishTargets_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseListPublishTargetResponse"];
+                };
+            };
+        };
+    };
     listMine: {
         parameters: {
             query?: {
@@ -10350,7 +10651,7 @@ export interface operations {
             };
         };
     };
-    search_3: {
+    search_5: {
         parameters: {
             query: {
                 q: string;
@@ -10721,7 +11022,7 @@ export interface operations {
             };
         };
     };
-    search_4: {
+    search_6: {
         parameters: {
             query?: {
                 q?: string;
@@ -10836,7 +11137,7 @@ export interface operations {
             };
         };
     };
-    search_5: {
+    search_7: {
         parameters: {
             query?: {
                 q?: string;

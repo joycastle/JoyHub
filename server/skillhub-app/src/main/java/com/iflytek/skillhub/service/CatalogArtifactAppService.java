@@ -22,15 +22,18 @@ public class CatalogArtifactAppService {
     private final CatalogResourcePolicy policy;
     private final ObjectStorageService objectStorageService;
     private final CatalogResourceProjectionAssembler assembler;
+    private final CatalogResourceCommandAppService commandAppService;
 
     public CatalogArtifactAppService(CatalogResourceRepository repository,
                                      CatalogResourcePolicy policy,
                                      ObjectStorageService objectStorageService,
-                                     CatalogResourceProjectionAssembler assembler) {
+                                     CatalogResourceProjectionAssembler assembler,
+                                     CatalogResourceCommandAppService commandAppService) {
         this.repository = repository;
         this.policy = policy;
         this.objectStorageService = objectStorageService;
         this.assembler = assembler;
+        this.commandAppService = commandAppService;
     }
 
     @Transactional
@@ -40,6 +43,7 @@ public class CatalogArtifactAppService {
             CatalogViewer viewer) {
         CatalogResource resource = requireResource(slug);
         policy.requireManage(resource, viewer.userId(), viewer.superAdmin());
+        commandAppService.assertPublishTargetAccess(slug, viewer);
         validate(file);
 
         String originalFilename = safeFilename(file.getOriginalFilename());
