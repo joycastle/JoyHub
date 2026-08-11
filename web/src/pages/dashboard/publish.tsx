@@ -23,6 +23,7 @@ import { Label } from '@/shared/ui/label'
 import { Card } from '@/shared/ui/card'
 import { usePublishSkill, usePublishSkillsBatch } from '@/shared/hooks/use-skill-queries'
 import { usePublishTargets } from '@/shared/hooks/use-publish-targets'
+import { resolveDefaultPublishTarget } from '@/shared/lib/publish-targets'
 import { ConfirmDialog } from '@/shared/components/confirm-dialog'
 import { DashboardPageHeader } from '@/shared/components/dashboard-page-header'
 import { toast } from '@/shared/lib/toast'
@@ -76,7 +77,7 @@ export function PublishPage() {
     if (repositorySlug || !publishTargets?.length) {
       return
     }
-    setRepositorySlug(publishTargets[0].slug)
+    setRepositorySlug(resolveDefaultPublishTarget(publishTargets)?.slug ?? '')
   }, [publishTargets, repositorySlug])
 
   const pendingConfirmFiles = useMemo(

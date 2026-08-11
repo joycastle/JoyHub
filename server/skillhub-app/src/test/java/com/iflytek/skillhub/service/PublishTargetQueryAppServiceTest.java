@@ -24,14 +24,16 @@ class PublishTargetQueryAppServiceTest {
         Namespace teamB = namespace(2L, "team-b", NamespaceStatus.ACTIVE);
         Namespace archived = namespace(3L, "archived", NamespaceStatus.ARCHIVED);
         Namespace teamA = namespace(1L, "team-a", NamespaceStatus.ACTIVE);
-        given(namespaceRepository.findByIdIn(anyList())).willReturn(List.of(teamB, archived, teamA));
+        Namespace global = namespace(4L, "global", NamespaceStatus.ACTIVE);
+        given(namespaceRepository.findByIdIn(anyList())).willReturn(List.of(teamB, archived, teamA, global));
 
         var targets = service.list(Map.of(
                 1L, NamespaceRole.MEMBER,
                 2L, NamespaceRole.ADMIN,
-                3L, NamespaceRole.OWNER), Set.of("USER"));
+                3L, NamespaceRole.OWNER,
+                4L, NamespaceRole.MEMBER), Set.of("USER"));
 
-        assertThat(targets).extracting(target -> target.slug()).containsExactly("team-a", "team-b");
+        assertThat(targets).extracting(target -> target.slug()).containsExactly("global", "team-a", "team-b");
         assertThat(targets).allSatisfy(target -> assertThat(target.supportedResourceTypes())
                 .containsExactlyInAnyOrder("SKILL", "TOOL", "AGENT"));
     }

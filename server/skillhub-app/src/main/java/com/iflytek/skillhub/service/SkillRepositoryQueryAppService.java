@@ -1,5 +1,6 @@
 package com.iflytek.skillhub.service;
 
+import com.iflytek.skillhub.domain.namespace.Namespace;
 import com.iflytek.skillhub.domain.namespace.NamespaceRepository;
 import com.iflytek.skillhub.domain.namespace.NamespaceStatus;
 import com.iflytek.skillhub.dto.SkillRepositoryResponse;
@@ -21,7 +22,9 @@ public class SkillRepositoryQueryAppService {
     @Transactional(readOnly = true)
     public List<SkillRepositoryResponse> listActive() {
         return namespaceRepository.findByStatus(NamespaceStatus.ACTIVE, Pageable.unpaged()).getContent().stream()
-                .sorted(Comparator.comparing(namespace -> namespace.getSlug()))
+                .sorted(Comparator
+                        .comparing((Namespace namespace) -> !"global".equals(namespace.getSlug()))
+                        .thenComparing(Namespace::getSlug))
                 .map(namespace -> new SkillRepositoryResponse(
                         namespace.getSlug(),
                         namespace.getDisplayName(),

@@ -35,7 +35,9 @@ public class PublishTargetQueryAppService {
                 : namespaceRepository.findByIdIn(roles.keySet().stream().toList());
         return namespaces.stream()
                 .filter(namespace -> namespace.getStatus() == NamespaceStatus.ACTIVE)
-                .sorted(Comparator.comparing(Namespace::getSlug))
+                .sorted(Comparator
+                        .comparing((Namespace namespace) -> !"global".equals(namespace.getSlug()))
+                        .thenComparing(Namespace::getSlug))
                 .map(namespace -> PublishTargetResponse.from(namespace, roles.get(namespace.getId())))
                 .toList();
     }

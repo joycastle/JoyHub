@@ -1,4 +1,4 @@
-import { useRef, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { CatalogResourceDetail, CatalogResourceKind, CatalogResourceRequest, CatalogVisibilityScope } from '@/api/types'
 import { fetchJson, getCsrfHeaders } from '@/api/client'
@@ -6,9 +6,11 @@ import { CATALOG_RESOURCE_KINDS, catalogKindLabel } from '@/entities/catalog-res
 import { useCreateCatalogResource, useUpdateCatalogResource } from './use-catalog-queries'
 import { usePublishSkill, useSearchSkills } from '@/shared/hooks/use-skill-queries'
 import { usePublishTargets } from '@/shared/hooks/use-publish-targets'
+import { resolveDefaultPublishTarget } from '@/shared/lib/publish-targets'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select'
 import { Textarea } from '@/shared/ui/textarea'
 
 interface CatalogResourceFormProps {
@@ -73,6 +75,11 @@ export function CatalogResourceForm({ onCreated, initialKind, resource }: Catalo
   const publishSkillMutation = usePublishSkill()
   const formRef = useRef<HTMLFormElement>(null)
   const isEditing = Boolean(resource)
+
+  useEffect(() => {
+    if (primaryDepartmentId !== undefined || publishTargets.length === 0) return
+    setPrimaryDepartmentId(resolveDefaultPublishTarget(publishTargets)?.id)
+  }, [primaryDepartmentId, publishTargets])
 
   const splitLines = (value: string) => value.split('\n').map((item) => item.trim()).filter(Boolean)
 
@@ -221,22 +228,22 @@ export function CatalogResourceForm({ onCreated, initialKind, resource }: Catalo
         {!isAgent ? <div><Label htmlFor="slug">唯一标识 {isEditing ? '（不可修改）' : '*'}</Label><Input className="mt-2" id="slug" name="slug" required maxLength={96} pattern="[a-z0-9][a-z0-9-]*" placeholder="spine-preview" defaultValue={resource?.slug} readOnly={isEditing} /></div> : null}
         {!isAgent || !initialKind ? <div>
           <Label htmlFor="kind">内容类型 *</Label>
-          <select id="kind" value={kind} onChange={(event) => setKind(event.target.value as CatalogResourceKind)} className={FIELD_CLASS} disabled={isEditing}>
-            {CATALOG_RESOURCE_KINDS.map((item) => <option key={item} value={item}>{catalogKindLabel(item)}</option>)}
-          </select>
+          <Select value={kind} onValueChange={(value) => setKind(value as CatalogResourceKind)} disabled={isEditing}>
+            <SelectTrigger id="kind" className="mt-2"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {CATALOG_RESOURCE_KINDS.map((item) => <SelectItem key={item} value={item}>{catalogKindLabel(item)}</SelectItem>)}
+            </SelectContent>
+          </Select>
         </div> : <div><Label>内容类型</Label><div className={`${FIELD_CLASS} text-muted-foreground`}>Agent</div></div>}
         {isOnlineTool ? <div>
           <Label htmlFor="hostingMode">{t('catalogPublish.hostingMode')}</Label>
-          <select
-            id="hostingMode"
-            value={hostingMode}
-            onChange={(event) => setHostingMode(event.target.value as OnlineToolHostingMode)}
-            disabled={isExistingManagedStatic}
-            className={FIELD_CLASS}
-          >
-            <option value="MANAGED_STATIC">{t('catalogPublish.managedStatic')}</option>
-            <option value="EXTERNAL">{t('catalogPublish.externalLink')}</option>
-          </select>
+          <Select value={hostingMode} onValueChange={(value) => setHostingMode(value as OnlineToolHostingMode)} disabled={isExistingManagedStatic}>
+            <SelectTrigger id="hostingMode" className="mt-2"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="MANAGED_STATIC">{t('catalogPublish.managedStatic')}</SelectItem>
+              <SelectItem value="EXTERNAL">{t('catalogPublish.externalLink')}</SelectItem>
+            </SelectContent>
+          </Select>
           <p className="mt-2 text-xs text-muted-foreground">
             {isManagedStatic ? t('catalogPublish.managedStaticHint') : t('catalogPublish.externalLinkHint')}
           </p>
@@ -283,7 +290,7 @@ export function CatalogResourceForm({ onCreated, initialKind, resource }: Catalo
           <Label htmlFor="localSkill">上传本地 Skill 包</Label>
           <Input id="localSkill" className="mt-2" type="file" accept=".zip,application/zip" onChange={(event) => setLocalSkillFile(event.target.files?.[0])} />
           <p className="mt-1 text-xs text-muted-foreground">ZIP 内须包含 SKILL.md；会使用平台原有的安全校验和发布流程。</p>
-          {localSkillFile ? <div className="mt-4"><Label htmlFor="skillVisibility">Skill 可见范围</Label><select id="skillVisibility" className={FIELD_CLASS} value={skillVisibility} onChange={(event) => setSkillVisibility(event.target.value)}><option value="WAREHOUSE">部门内可见</option><option value="PRIVATE">仅自己可见</option></select><p className="mt-2 text-xs text-muted-foreground">Skill 会与 Agent 发布到同一个所属部门。</p></div> : null}
+          {localSkillFile ? <div className="mt-4"><Label htmlFor="skillVisibility">Skill 可见范围</Label><Select value={skillVisibility} onValueChange={setSkillVisibility}><SelectTrigger id="skillVisibility" className="mt-2"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="WAREHOUSE">部门内可见</SelectItem><SelectItem value="PRIVATE">仅自己可见</SelectItem></SelectContent></Select><p className="mt-2 text-xs text-muted-foreground">Skill 会与 Agent 发布到同一个所属部门。</p></div> : null}
           {localSkillError ? <p className="mt-2 text-sm text-destructive">{localSkillError}</p> : null}
         </div>
       </section> : null}
@@ -305,17 +312,22 @@ export function CatalogResourceForm({ onCreated, initialKind, resource }: Catalo
         <div className="md:col-span-2"><h2 className="text-xl font-semibold">归属与可见范围</h2></div>
         <div>
           <Label htmlFor="primaryDepartmentId">所属部门 *</Label>
-          <select id="primaryDepartmentId" name="primaryDepartmentId" required className={FIELD_CLASS} value={primaryDepartmentId ?? ''} onChange={(event) => setPrimaryDepartmentId(event.target.value ? Number(event.target.value) : undefined)}>
-            <option value="">请选择</option>
-            {publishTargets.map((item) => <option key={item.id} value={item.id}>{item.displayName}</option>)}
-          </select>
+          <Select value={primaryDepartmentId === undefined ? undefined : String(primaryDepartmentId)} onValueChange={(value) => setPrimaryDepartmentId(Number(value))}>
+            <SelectTrigger id="primaryDepartmentId" className="mt-2"><SelectValue placeholder="请选择" /></SelectTrigger>
+            <SelectContent>
+              {publishTargets.map((item) => <SelectItem key={item.id} value={String(item.id)}>{item.displayName}</SelectItem>)}
+            </SelectContent>
+          </Select>
         </div>
         <div>
           <Label htmlFor="visibility">可见范围</Label>
-          <select id="visibility" value={visibility} onChange={(event) => setVisibility(event.target.value as CatalogVisibilityScope)} className={FIELD_CLASS}>
-            <option value="COMPANY">全公司可见</option>
-            <option value="DEPARTMENTS">指定部门可见</option>
-          </select>
+          <Select value={visibility} onValueChange={(value) => setVisibility(value as CatalogVisibilityScope)}>
+            <SelectTrigger id="visibility" className="mt-2"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="COMPANY">全公司可见</SelectItem>
+              <SelectItem value="DEPARTMENTS">指定部门可见</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         {visibility === 'DEPARTMENTS' ? (
           <div className="space-y-2 md:col-span-2">
@@ -338,7 +350,7 @@ export function CatalogResourceForm({ onCreated, initialKind, resource }: Catalo
 
       <div className="flex items-center justify-between rounded-2xl border bg-card p-5">
         {isEditing ? <p className="text-sm text-muted-foreground">{isManagedStatic && artifact && resource?.status === 'PUBLISHED' ? t('catalogPublish.updateDeployHint') : '保存修改不会改变当前的发布状态。'}</p> : <label className="flex items-center gap-3 text-sm"><input name="publish" type="checkbox" defaultChecked /> {isManagedStatic ? t('catalogPublish.publishAndDeploy') : '填写完成后直接发布'}</label>}
-        <Button type="submit" size="lg" disabled={createMutation.isPending || updateMutation.isPending || publishSkillMutation.isPending || (visibility === 'DEPARTMENTS' && selectedDepartments.length === 0)}>
+        <Button type="submit" size="lg" disabled={createMutation.isPending || updateMutation.isPending || publishSkillMutation.isPending || primaryDepartmentId === undefined || (visibility === 'DEPARTMENTS' && selectedDepartments.length === 0)}>
           {createMutation.isPending || updateMutation.isPending || publishSkillMutation.isPending ? t('catalogPublish.deploying') : isEditing && isManagedStatic && artifact && resource?.status === 'PUBLISHED' ? t('catalogPublish.saveAndDeploy') : isEditing ? '保存修改' : isManagedStatic ? t('catalogPublish.saveResource') : '保存资源'}
         </Button>
       </div>
