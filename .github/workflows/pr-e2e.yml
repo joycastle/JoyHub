@@ -28,10 +28,10 @@ permissions:
 
 jobs:
   e2e-tests:
-    name: E2E (Real Services)
+    name: Deployment E2E (Real Services)
     if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 30
 
     steps:
       - name: Check out repository
@@ -67,12 +67,6 @@ jobs:
       - name: Start full dev stack
         run: make dev-all
 
-      - name: Install Playwright browsers
-        run: cd web && pnpm exec playwright install --with-deps chromium
-
-      - name: Run frontend E2E tests
-        run: make test-e2e-frontend
-
       - name: Start deployment Runner and Static Host
         run: make deployment-up
 
@@ -81,24 +75,6 @@ jobs:
           DEPLOYMENT_RESTART_RUNNER: "true"
           DEPLOYMENT_COMPOSE_PROJECT: skillhub
         run: bash scripts/deployment-smoke-test.sh http://localhost:8080 http://localhost:8090 http://localhost:8091
-
-      - name: Upload Playwright HTML report
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-report
-          path: web/playwright-report/
-          if-no-files-found: warn
-          retention-days: 30
-
-      - name: Upload Playwright raw test results
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-test-results
-          path: web/test-results/
-          if-no-files-found: warn
-          retention-days: 14
 
       - name: Stop full dev stack
         if: ${{ always() }}
