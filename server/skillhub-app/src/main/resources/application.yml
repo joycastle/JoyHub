@@ -257,19 +257,6 @@ joyhub:
       enabled: ${JOYHUB_FEISHU_DEPARTMENT_SYNC_ENABLED:true}
       initial-delay-ms: ${JOYHUB_FEISHU_DEPARTMENT_SYNC_INITIAL_DELAY_MS:30000}
       fixed-delay-ms: ${JOYHUB_FEISHU_DEPARTMENT_SYNC_FIXED_DELAY_MS:21600000}
-  catalog:
-    seed:
-      bingo-frenzy:
-        enabled: ${JOYHUB_CATALOG_SEED_BINGO_FRENZY_ENABLED:false}
-        owner-id: ${JOYHUB_CATALOG_SEED_BINGO_FRENZY_OWNER_ID:local-admin}
-        primary-namespace-slug: ${JOYHUB_CATALOG_SEED_BINGO_FRENZY_PRIMARY_NAMESPACE_SLUG:gestalt}
-        visibility-department-external-id: ${JOYHUB_CATALOG_SEED_BINGO_FRENZY_VISIBILITY_DEPARTMENT_EXTERNAL_ID:od-e7946166f17b6708b5bc0313ed5c474c}
-      bingo-voyage:
-        enabled: ${JOYHUB_CATALOG_SEED_BINGO_VOYAGE_ENABLED:false}
-        owner-id: ${JOYHUB_CATALOG_SEED_BINGO_VOYAGE_OWNER_ID:local-admin}
-        primary-namespace-slug: ${JOYHUB_CATALOG_SEED_BINGO_VOYAGE_PRIMARY_NAMESPACE_SLUG:gestalt}
-        visibility-department-external-id: ${JOYHUB_CATALOG_SEED_BINGO_VOYAGE_VISIBILITY_DEPARTMENT_EXTERNAL_ID:}
-
 management:
   tracing:
     sampling:

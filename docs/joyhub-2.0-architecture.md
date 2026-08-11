@@ -118,12 +118,16 @@ viewer-specific read model and joins.
 Each workstream should avoid editing another workstream's owned directory. Contract changes land
 first, followed by generated OpenAPI types, so frontend branches can rebase on a stable schema.
 
-## 9. Initial import policy
+## 9. Catalog data maintenance policy
 
-The first local seed imports the eight live Bingo Frenzy tools from `192.168.6.105`. Imported
-resources remain normal Catalog entries and can later be transferred to real maintainers. Importers
-must be idempotent and update only entries with their own source key; they must not overwrite
-employee-authored content sharing a similar display name.
+Catalog resources are mutable business data. Maintainers create and update them through the Catalog
+command endpoints or the corresponding Web publishing flow so that validation, authorization, and
+lifecycle rules remain consistent. Application startup must not create, update, publish, or restore
+project-specific Catalog resources from source-code constants or runtime configuration.
+
+When a one-time bulk import is necessary, run it explicitly through an auditable import command that
+reuses the Catalog application service. The import must not remain attached to application startup,
+and later application restarts must preserve employee edits and offline or archived states.
 
 ## 10. Deferred items
 
