@@ -12,6 +12,8 @@ import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
 import { cn } from '@/shared/lib/utils'
 import { APP_SHELL_PAGE_CLASS_NAME } from '@/app/page-shell-style'
+import { ViewModeToggle } from '@/shared/components/view-mode-toggle'
+import { useViewMode } from '@/shared/hooks/use-view-mode'
 
 type SkillSort = 'newest' | 'downloads'
 const SKILL_PAGE_SIZE = 12
@@ -28,6 +30,7 @@ export function HomePage() {
   const [isArrivalGuideVisible, setIsArrivalGuideVisible] = useState(Boolean(onboarding))
   const [tourTarget, setTourTarget] = useState<CenterTourTarget | null>(null)
   const [isSearchPinned, setIsSearchPinned] = useState(false)
+  const [viewMode, setViewMode] = useViewMode('skills')
   const searchDockRef = useRef<HTMLDivElement>(null)
   const { data, isLoading, isError, isFetching } = useSearchSkills({
     q: query,
@@ -155,6 +158,7 @@ export function HomePage() {
         {!isLoading && data ? (
           <span className="ml-auto text-sm text-muted-foreground">{t('skillCenter.resultCount', { count: data.total })}</span>
         ) : null}
+        <ViewModeToggle value={viewMode} onChange={setViewMode} />
       </div>
 
       {isLoading ? <SkeletonList count={6} /> : null}
@@ -170,7 +174,7 @@ export function HomePage() {
           </div>
         </div>
       ) : null}
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+      <div className={cn('grid gap-4', viewMode === 'list' ? 'grid-cols-1 xl:grid-cols-2' : 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3')}>
         {skills.map((skill, index) => (
           <div
             key={skill.id}
@@ -179,7 +183,8 @@ export function HomePage() {
           >
             <SkillCard
               skill={skill}
-              density="list"
+              density={viewMode === 'list' ? 'list' : 'default'}
+              showVersion={viewMode === 'list'}
               onClick={() => navigate({ to: `/space/${skill.namespace}/${encodeURIComponent(skill.slug)}` })}
             />
           </div>

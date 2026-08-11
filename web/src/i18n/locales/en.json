@@ -184,6 +184,10 @@
     "description": "Discover and use internal Agents, Skills, plugins, MCP servers, online tools, and services from one place, each with a clear entry point and documentation.",
     "searchPlaceholder": "Search Agents, Skills, tools, or a task you want to complete",
     "searchHint": "Search by name, scenario, department, or capability type",
+    "commonTools": {
+      "title": "Common tools",
+      "browseAll": "Open Tool Center"
+    },
     "centersEyebrow": "Capability Centers",
     "centersTitle": "Three entry points, one consistent experience",
     "centersDescription": "Browse by capability format, or search the home page for the problem you want to solve.",

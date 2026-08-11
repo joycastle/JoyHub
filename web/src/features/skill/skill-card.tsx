@@ -18,10 +18,11 @@ interface SkillCardProps {
   onClick?: () => void
   highlightStarred?: boolean
   density?: 'default' | 'discovery' | 'list'
+  showVersion?: boolean
 }
 
 /** Reusable, readable Skill summary card used across discovery pages. */
-export function SkillCard({ skill, onClick, highlightStarred = true, density = 'default' }: SkillCardProps) {
+export function SkillCard({ skill, onClick, highlightStarred = true, density = 'default', showVersion = true }: SkillCardProps) {
   const { t } = useTranslation()
   const { isAuthenticated } = useAuth()
   const { data: repositories } = useSkillRepositories()
@@ -101,7 +102,7 @@ export function SkillCard({ skill, onClick, highlightStarred = true, density = '
 
         <div className={cn('mt-auto flex items-center justify-between gap-3 text-xs text-muted-foreground', density === 'discovery' && 'border-t border-border/60 pt-3')}>
           <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
-            {headlineVersion ? (
+            {showVersion && headlineVersion ? (
               <span
                 className="max-w-32 truncate rounded-full bg-secondary/60 px-2.5 py-1 font-mono"
                 title={`v${headlineVersion.version}`}

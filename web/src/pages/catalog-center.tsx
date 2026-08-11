@@ -6,13 +6,17 @@ import type { CatalogCenter, CatalogResourceKind } from '@/api/types'
 import { CatalogResourceCard } from '@/entities/catalog-resource/catalog-resource-card'
 import { CATALOG_RESOURCE_KINDS, catalogKindLabel } from '@/entities/catalog-resource/catalog-resource-kind'
 import { useCatalogResources } from '@/features/catalog/use-catalog-queries'
+import { useCommonTools } from '@/features/catalog/common-tools'
 import { namespaceApi, resourcesApi } from '@/api/client'
 import { CenterFeatureTour, type CenterTourTarget } from '@/features/onboarding/center-feature-tour'
 import { resumePlatformOnboarding } from '@/features/onboarding/onboarding-events'
 import { cn } from '@/shared/lib/utils'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@/shared/ui/select'
 import { APP_SHELL_PAGE_CLASS_NAME } from '@/app/page-shell-style'
+import { ViewModeToggle } from '@/shared/components/view-mode-toggle'
+import { useViewMode } from '@/shared/hooks/use-view-mode'
 
 function CatalogCenterPage({ center, showArrivalGuide }: { center: CatalogCenter; showArrivalGuide: boolean }) {
   const navigate = useNavigate()
@@ -27,6 +31,8 @@ function CatalogCenterPage({ center, showArrivalGuide }: { center: CatalogCenter
   const [isSearchPinned, setIsSearchPinned] = useState(false)
   const searchDockRef = useRef<HTMLFormElement>(null)
   const isAgent = center === 'AGENT'
+  const [viewMode, setViewMode] = useViewMode(`catalog-${center.toLowerCase()}`)
+  const { isCommonTool, recordToolUse, toggleTool } = useCommonTools()
   const { data: departments = [] } = useQuery({ queryKey: ['namespaces', 'mine'], queryFn: () => namespaceApi.listMine() })
   const { data, isLoading, isError } = useCatalogResources({
     center,
@@ -46,6 +52,11 @@ function CatalogCenterPage({ center, showArrivalGuide }: { center: CatalogCenter
     () => Array.from(new Set((allCenterData?.items ?? []).flatMap((resource) => resource.scenarios ?? []))).sort((left, right) => left.localeCompare(right, 'zh-CN')),
     [allCenterData?.items],
   )
+  const selectedKindLabel = kind ? catalogKindLabel(kind) : '全部'
+  const selectedScenarioLabel = scenario || '全部'
+  const selectedDepartmentLabel = departmentId
+    ? departments.find((department) => department.id === departmentId)?.displayName ?? '全部'
+    : '全部'
   const isCatalogHighlighted = tourTarget === 'catalog'
 
   useEffect(() => {
@@ -147,17 +158,24 @@ function CatalogCenterPage({ center, showArrivalGuide }: { center: CatalogCenter
           </button>
           {!isAgent ? <>
             <div className="my-3 border-t" />
-            <p className="px-2 pb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">工具类型</p>
-            {availableKinds.map((item) => (
-              <button key={item} type="button" onClick={() => { setKind(item); setScenario('') }} className={cn('relative block w-full rounded-md px-2.5 py-2 text-left text-sm transition-colors', kind === item ? 'bg-slate-100 font-semibold text-foreground before:absolute before:-left-[22px] before:top-1.5 before:h-6 before:w-1 before:rounded-full before:bg-primary' : 'text-muted-foreground hover:bg-slate-100')}>
-                {catalogKindLabel(item)}
-              </button>
-            ))}
+            <label htmlFor="catalog-kind-filter" className="block px-2 pb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">工具类型</label>
+            <Select value={kind ?? 'ALL'} onValueChange={(value) => { setKind(value === 'ALL' ? undefined : value as CatalogResourceKind); setScenario('') }}>
+              <SelectTrigger id="catalog-kind-filter"><span>工具类型：{selectedKindLabel}</span></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">全部类型</SelectItem>
+                {availableKinds.map((item) => <SelectItem key={item} value={item}>{catalogKindLabel(item)}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </> : null}
           <div className="my-3 border-t" />
-          <p className="px-2 pb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">工作场景</p>
-          <button type="button" onClick={() => setScenario('')} className={cn('relative block w-full rounded-md px-2.5 py-2 text-left text-sm transition-colors', !scenario ? 'bg-slate-100 font-semibold text-foreground before:absolute before:-left-[22px] before:top-1.5 before:h-6 before:w-1 before:rounded-full before:bg-primary' : 'text-muted-foreground hover:bg-slate-100')}>全部场景</button>
-          {scenarios.map((item) => <button key={item} type="button" onClick={() => setScenario(item)} className={cn('relative block w-full truncate rounded-md px-2.5 py-2 text-left text-sm transition-colors', scenario === item ? 'bg-slate-100 font-semibold text-foreground before:absolute before:-left-[22px] before:top-1.5 before:h-6 before:w-1 before:rounded-full before:bg-primary' : 'text-muted-foreground hover:bg-slate-100')}>{item}</button>)}
+          <label htmlFor="catalog-scenario-filter" className="block px-2 pb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">工作场景</label>
+          <Select value={scenario || 'ALL'} onValueChange={(value) => setScenario(value === 'ALL' ? '' : value)}>
+            <SelectTrigger id="catalog-scenario-filter"><span>工作场景：{selectedScenarioLabel}</span></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">全部场景</SelectItem>
+              {scenarios.map((item) => <SelectItem key={item} value={item}>{item}</SelectItem>)}
+            </SelectContent>
+          </Select>
         </aside>
 
         <main className="min-w-0">
@@ -166,19 +184,26 @@ function CatalogCenterPage({ center, showArrivalGuide }: { center: CatalogCenter
             data-onboarding-target="filters"
           >
             <span className="mr-1 text-sm font-medium text-muted-foreground">进一步筛选</span>
-            <select value={scenario} onChange={(event) => setScenario(event.target.value)} className="h-9 rounded-md border border-input bg-white px-3 text-sm">
-              <option value="">适用场景：全部</option>
-              {scenarios.map((item) => <option key={item} value={item}>{item}</option>)}
-            </select>
-            <select value={departmentId?.toString() ?? ''} onChange={(event) => setDepartmentId(event.target.value ? Number(event.target.value) : undefined)} className="h-9 rounded-md border border-input bg-white px-3 text-sm">
-              <option value="">可见范围：全部</option>
-              {departments.map((department) => <option key={department.id} value={department.id}>{department.displayName}</option>)}
-            </select>
+            <Select value={scenario || 'ALL'} onValueChange={(value) => setScenario(value === 'ALL' ? '' : value)}>
+              <SelectTrigger className="w-48"><span>适用场景：{selectedScenarioLabel}</span></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">全部场景</SelectItem>
+                {scenarios.map((item) => <SelectItem key={item} value={item}>{item}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            <Select value={departmentId?.toString() ?? 'ALL'} onValueChange={(value) => setDepartmentId(value === 'ALL' ? undefined : Number(value))}>
+              <SelectTrigger className="w-48"><span>可见范围：{selectedDepartmentLabel}</span></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">全部范围</SelectItem>
+                {departments.map((department) => <SelectItem key={department.id} value={department.id.toString()}>{department.displayName}</SelectItem>)}
+              </SelectContent>
+            </Select>
             {isAgent ? <>
               <span className="ml-2 mr-1 text-sm font-medium text-muted-foreground">排序</span>
               <Button variant={sort === 'recommended' ? 'default' : 'outline'} size="sm" className="rounded-md shadow-none" onClick={() => setSort('recommended')}>推荐</Button>
               <Button variant={sort === 'newest' ? 'default' : 'outline'} size="sm" className="rounded-md shadow-none" onClick={() => setSort('newest')}>最新</Button>
             </> : null}
+            <ViewModeToggle value={viewMode} onChange={setViewMode} className="ml-auto" />
           </div>
 
           {isLoading ? <div className="py-20 text-center text-muted-foreground">正在加载...</div> : null}
@@ -188,7 +213,7 @@ function CatalogCenterPage({ center, showArrivalGuide }: { center: CatalogCenter
               <div className="w-full max-w-md rounded-lg border border-dashed bg-slate-50 p-12 text-center text-muted-foreground"><img src="/joycastle-icon.png" alt="" className="mx-auto mb-4 h-12 w-12 opacity-50" />暂无匹配内容</div>
             </div>
           ) : null}
-          <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
+          <div className={cn('grid gap-3', viewMode === 'list' ? 'grid-cols-1 xl:grid-cols-2' : 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3')}>
             {resources.map((resource, index) => (
               <div
                 key={resource.id}
@@ -197,12 +222,14 @@ function CatalogCenterPage({ center, showArrivalGuide }: { center: CatalogCenter
               >
                 <CatalogResourceCard
                   resource={resource}
-                  variant="list"
+                  variant={viewMode === 'list' ? 'list' : 'default'}
                   onClick={() => navigate({ to: '/catalog/$slug', params: { slug: resource.slug } })}
                   onUse={resource.accessUrl
-                    ? () => window.open(resource.accessUrl, '_blank', 'noopener,noreferrer')
-                    : resource.artifactAvailable ? () => window.open(resourcesApi.downloadUrl(`catalog:${resource.id}`), '_blank', 'noopener,noreferrer') : undefined}
+                    ? () => { if (!isAgent) recordToolUse(resource.id); window.open(resource.accessUrl, '_blank', 'noopener,noreferrer') }
+                    : resource.artifactAvailable ? () => { if (!isAgent) recordToolUse(resource.id); window.open(resourcesApi.downloadUrl(`catalog:${resource.id}`), '_blank', 'noopener,noreferrer') } : undefined}
                   quickActionLabel={resource.accessUrl ? (resource.kind === 'AGENT' ? '在飞书中使用' : '立即使用') : resource.artifactAvailable ? '下载' : undefined}
+                  isCommonTool={!isAgent && isCommonTool(resource.id)}
+                  onToggleCommonTool={!isAgent ? () => toggleTool(resource.id) : undefined}
                 />
               </div>
             ))}

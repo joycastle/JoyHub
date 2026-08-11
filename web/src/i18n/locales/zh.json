@@ -184,6 +184,10 @@
     "description": "在一个入口发现和使用公司内部的 Agent、Skill、插件、MCP、在线工具与服务，每项能力都配有清晰的入口和对应文档。",
     "searchPlaceholder": "搜索 Agent、技能、工具或你想完成的事情",
     "searchHint": "可搜索名称、场景、部门和能力类型",
+    "commonTools": {
+      "title": "常用工具",
+      "browseAll": "进入工具中心"
+    },
     "centersEyebrow": "能力中心",
     "centersTitle": "三种入口，一套统一体验",
     "centersDescription": "先按能力形态进入对应中心，也可以直接从首页搜索你想解决的问题。",

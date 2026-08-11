@@ -1,4 +1,4 @@
-import { ArrowUpRight, Bookmark, Building2, Download, MessageCircle } from 'lucide-react'
+import { ArrowUpRight, Bookmark, BookmarkCheck, BookmarkPlus, Building2, Download, MessageCircle } from 'lucide-react'
 import type { CatalogResourceSummary } from '@/api/types'
 import { Card, CardContent } from '@/shared/ui/card'
 import { catalogKindEmoji, catalogKindLabel } from './catalog-resource-kind'
@@ -9,10 +9,12 @@ interface CatalogResourceCardProps {
   onClick: () => void
   onUse?: () => void
   quickActionLabel?: string
+  isCommonTool?: boolean
+  onToggleCommonTool?: () => void
   variant?: 'default' | 'list'
 }
 
-export function CatalogResourceCard({ resource, onClick, onUse, quickActionLabel, variant = 'default' }: CatalogResourceCardProps) {
+export function CatalogResourceCard({ resource, onClick, onUse, quickActionLabel, isCommonTool, onToggleCommonTool, variant = 'default' }: CatalogResourceCardProps) {
   const { data: stats } = useResourceStats(`catalog:${resource.id}`, variant === 'list', false)
   if (variant === 'list') {
     return <Card role="button" tabIndex={0} className="group h-full cursor-pointer rounded-md border-border shadow-none transition hover:border-primary/50 hover:shadow-sm" onClick={onClick} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') onClick() }}>
@@ -28,7 +30,7 @@ export function CatalogResourceCard({ resource, onClick, onUse, quickActionLabel
         <p className="mt-3 line-clamp-2 text-sm leading-5 text-muted-foreground">{resource.summary}</p>
         <div className="mt-auto flex items-center justify-between gap-3 border-t border-border/60 pt-3 text-xs">
           <div className="flex items-center gap-3 text-muted-foreground">{stats?.downloadCount ? <span className="inline-flex items-center gap-1"><Download className="h-3.5 w-3.5" />{stats.downloadCount}</span> : null}{stats?.favoriteCount ? <span className="inline-flex items-center gap-1"><Bookmark className="h-3.5 w-3.5" />{stats.favoriteCount}</span> : null}</div>
-          <div className="flex shrink-0 items-center gap-3 font-medium text-primary">{onUse ? <button type="button" onClick={(event) => { event.stopPropagation(); onUse() }} className="hover:underline">{quickActionLabel || '立即使用'}</button> : null}<span className="inline-flex items-center gap-1">详情 <ArrowUpRight className="h-3.5 w-3.5" /></span></div>
+          <div className="flex shrink-0 items-center gap-3 font-medium text-primary">{onUse ? <button type="button" onClick={(event) => { event.stopPropagation(); onUse() }} className="hover:underline">{quickActionLabel || '立即使用'}</button> : null}{onToggleCommonTool ? <button type="button" onClick={(event) => { event.stopPropagation(); onToggleCommonTool() }} className="inline-flex items-center gap-1 hover:underline" aria-pressed={isCommonTool}>{isCommonTool ? <BookmarkCheck className="h-3.5 w-3.5" /> : <BookmarkPlus className="h-3.5 w-3.5" />}{isCommonTool ? '已设为常用' : '添加到常用'}</button> : null}<span className="inline-flex items-center gap-1">详情 <ArrowUpRight className="h-3.5 w-3.5" /></span></div>
         </div>
       </CardContent>
     </Card>
@@ -77,7 +79,11 @@ export function CatalogResourceCard({ resource, onClick, onUse, quickActionLabel
             <Building2 className="h-3.5 w-3.5" />
             {resource.department?.name || '全公司'}
           </span>
-          {onUse ? <button type="button" onClick={(event) => { event.stopPropagation(); onUse() }} className="inline-flex items-center gap-1.5 font-medium text-primary hover:underline"><MessageCircle className="h-3.5 w-3.5" />{quickActionLabel || '立即使用'}</button> : <span>{resource.owner?.displayName || resource.owner?.id}</span>}
+          <span>{resource.department?.name || resource.owner?.displayName || resource.owner?.id}</span>
+          <span className="flex items-center gap-3 font-medium text-primary">
+            {onUse ? <button type="button" onClick={(event) => { event.stopPropagation(); onUse() }} className="inline-flex items-center gap-1.5 hover:underline"><MessageCircle className="h-3.5 w-3.5" />{quickActionLabel || '立即使用'}</button> : null}
+            {onToggleCommonTool ? <button type="button" onClick={(event) => { event.stopPropagation(); onToggleCommonTool() }} className="inline-flex items-center gap-1.5 hover:underline" aria-pressed={isCommonTool}>{isCommonTool ? <BookmarkCheck className="h-3.5 w-3.5" /> : <BookmarkPlus className="h-3.5 w-3.5" />}{isCommonTool ? '已设为常用' : '添加到常用'}</button> : null}
+          </span>
         </div>
       </CardContent>
     </Card>

@@ -1,18 +1,19 @@
 import * as React from 'react'
 import * as SelectPrimitive from '@radix-ui/react-select'
-import { Check, ChevronDown, ChevronUp } from 'lucide-react'
+import { ChevronDown, ChevronUp } from 'lucide-react'
 import { cn } from '@/shared/lib/utils'
 
 export const SELECT_TRIGGER_CLASS_NAME = cn(
-  'flex h-11 w-full items-center justify-between gap-2 rounded-lg border border-border/60 bg-secondary/50 px-4 py-2 text-sm text-foreground',
-  'ring-offset-background transition-all duration-200',
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:border-primary/50',
+  'group flex h-9 w-full items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-foreground',
+  'ring-offset-background transition-colors duration-150 hover:border-slate-300 hover:bg-slate-50',
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 focus-visible:border-slate-300',
+  'data-[state=open]:border-slate-300 data-[state=open]:bg-slate-50',
   'disabled:cursor-not-allowed disabled:opacity-50',
   'data-[placeholder]:text-muted-foreground [&>span]:line-clamp-1'
 )
 
 export const SELECT_CONTENT_CLASS_NAME = cn(
-  'z-50 overflow-hidden rounded-lg border border-border bg-popover text-popover-foreground shadow-md',
+  'z-50 overflow-hidden rounded-xl border border-slate-200 bg-popover text-popover-foreground shadow-lg shadow-slate-900/10',
   'data-[state=open]:animate-in data-[state=closed]:animate-out',
   'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
   'data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
@@ -21,8 +22,10 @@ export const SELECT_CONTENT_CLASS_NAME = cn(
 )
 
 export const SELECT_ITEM_CLASS_NAME = cn(
-  'relative flex w-full cursor-pointer select-none items-center rounded-md py-2 pl-8 pr-8 text-sm outline-none',
-  'focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50'
+  'relative flex min-h-11 w-full cursor-pointer select-none items-center py-2.5 pl-10 pr-4 text-sm outline-none',
+  'focus:bg-slate-50 focus:text-foreground data-[state=checked]:bg-slate-100 data-[state=checked]:font-semibold',
+  '[&[data-state=checked]>span]:border-slate-800',
+  'data-[disabled]:pointer-events-none data-[disabled]:opacity-50'
 )
 
 export const SELECT_SCROLL_BUTTON_CLASS_NAME = cn(
@@ -48,7 +51,7 @@ const SelectTrigger = React.forwardRef<
   >
     {children}
     <SelectPrimitive.Icon asChild>
-      <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+      <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-150 group-data-[state=open]:rotate-180" />
     </SelectPrimitive.Icon>
   </SelectPrimitive.Trigger>
 ))
@@ -104,7 +107,7 @@ const SelectContent = React.forwardRef<
       <SelectScrollUpButton />
       <SelectPrimitive.Viewport
         className={cn(
-          'p-1',
+          'p-0',
           position === 'popper'
             && 'h-[var(--radix-select-trigger-height)] min-w-[var(--radix-select-trigger-width)]'
         )}
@@ -140,9 +143,11 @@ const SelectItem = React.forwardRef<
     className={cn(SELECT_ITEM_CLASS_NAME, className)}
     {...props}
   >
-    <span className="absolute left-3 flex h-4 w-4 items-center justify-center">
+    <span className="absolute left-4 flex h-3.5 w-3.5 items-center justify-center rounded-full border-2 border-slate-300">
       <SelectPrimitive.ItemIndicator>
-        <Check className="h-4 w-4" />
+        <span className="flex h-2.5 w-2.5 items-center justify-center rounded-full bg-slate-500">
+          <span className="block h-1 w-1 rounded-full bg-white" />
+        </span>
       </SelectPrimitive.ItemIndicator>
     </span>
     <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>

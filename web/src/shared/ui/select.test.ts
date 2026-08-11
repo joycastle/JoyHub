@@ -8,28 +8,28 @@ import {
 } from './select'
 
 describe('shared select contract', () => {
-  it('keeps the trigger aligned with the existing input styling language', () => {
-    expect(SELECT_TRIGGER_CLASS_NAME).toContain('h-11')
-    expect(SELECT_TRIGGER_CLASS_NAME).toContain('rounded-lg')
-    expect(SELECT_TRIGGER_CLASS_NAME).toContain('border-border/60')
-    expect(SELECT_TRIGGER_CLASS_NAME).toContain('bg-secondary/50')
+  it('uses a restrained product filter trigger style', () => {
+    expect(SELECT_TRIGGER_CLASS_NAME).toContain('h-9')
+    expect(SELECT_TRIGGER_CLASS_NAME).toContain('rounded-xl')
+    expect(SELECT_TRIGGER_CLASS_NAME).toContain('border-slate-200')
+    expect(SELECT_TRIGGER_CLASS_NAME).toContain('bg-white')
     expect(SELECT_TRIGGER_CLASS_NAME).toContain('focus-visible:outline-none')
     expect(SELECT_TRIGGER_CLASS_NAME).toContain('focus-visible:ring-2')
-    expect(SELECT_TRIGGER_CLASS_NAME).toContain('focus-visible:ring-primary/40')
-    expect(SELECT_TRIGGER_CLASS_NAME).toContain('focus-visible:border-primary/50')
+    expect(SELECT_TRIGGER_CLASS_NAME).toContain('focus-visible:ring-slate-300')
+    expect(SELECT_TRIGGER_CLASS_NAME).toContain('data-[state=open]:border-slate-300')
   })
 
   it('uses themed panel and item classes for the floating listbox', () => {
     expect(SELECT_CONTENT_CLASS_NAME).toContain('bg-popover')
     expect(SELECT_CONTENT_CLASS_NAME).toContain('text-popover-foreground')
-    expect(SELECT_ITEM_CLASS_NAME).toContain('focus:bg-accent')
+    expect(SELECT_ITEM_CLASS_NAME).toContain('focus:bg-slate-50')
     expect(SELECT_ITEM_CLASS_NAME).toContain('data-[disabled]:opacity-50')
   })
 
   it('keeps the dropdown and selected items visually discoverable', () => {
-    expect(SELECT_CONTENT_CLASS_NAME).toContain('shadow-md')
-    expect(SELECT_ITEM_CLASS_NAME).toContain('pl-8')
-    expect(SELECT_ITEM_CLASS_NAME).toContain('rounded-md')
+    expect(SELECT_CONTENT_CLASS_NAME).toContain('shadow-lg')
+    expect(SELECT_ITEM_CLASS_NAME).toContain('pl-10')
+    expect(SELECT_ITEM_CLASS_NAME).toContain('data-[state=checked]:bg-slate-100')
   })
 
   it('uses pointer cursors for expanded select interactions', () => {

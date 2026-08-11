@@ -25,9 +25,13 @@ import type { UnifiedResourceSearchItem, UnifiedResourceSearchType } from '@/api
 import { useCopyToClipboard } from '@/shared/lib/clipboard'
 import { normalizeSearchQuery } from '@/shared/lib/search-query'
 import { cn } from '@/shared/lib/utils'
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@/shared/ui/select'
 import { buildInstallCommand, getBaseUrl } from '@/features/skill/install-command'
 import { CenterFeatureTour, type CenterTourTarget } from '@/features/onboarding/center-feature-tour'
 import { resumePlatformOnboarding } from '@/features/onboarding/onboarding-events'
+import { useCommonTools } from '@/features/catalog/common-tools'
+import { ViewModeToggle } from '@/shared/components/view-mode-toggle'
+import { useViewMode } from '@/shared/hooks/use-view-mode'
 
 type DiscoveryMode = 'recommended' | 'downloads' | 'newest'
 type HomeScopeFilter = 'ALL' | 'PUBLIC' | 'DEPARTMENT'
@@ -42,6 +46,12 @@ const DISCOVERY_TITLES: Record<DiscoveryMode, string> = {
   recommended: '为你和所在部门推荐',
   downloads: '下载热榜',
   newest: '最近上新',
+}
+
+const DISCOVERY_FILTER_LABELS: Record<DiscoveryMode, string> = {
+  recommended: '为你推荐',
+  downloads: '下载最多',
+  newest: '最新发布',
 }
 
 const SCENARIOS: Array<{ key: string; query: string; icon: LucideIcon }> = [
@@ -65,7 +75,7 @@ const QUICK_BROWSE_ITEMS: Array<{ to: '/agents' | '/skills' | '/tools'; label: s
   { to: '/tools', label: '工具中心', description: '下载或打开工具', icon: Wrench },
 ]
 
-function RecommendationCard({ resource, onOpen }: { resource: UnifiedResourceSearchItem; onOpen: () => void }) {
+function RecommendationCard({ resource, onOpen, onToolUse }: { resource: UnifiedResourceSearchItem; onOpen: () => void; onToolUse?: (toolId: number) => void }) {
   const catalog = resource.catalogResource
   const skill = resource.skill
   const [copied, copy] = useCopyToClipboard()
@@ -84,6 +94,7 @@ function RecommendationCard({ resource, onOpen }: { resource: UnifiedResourceSea
       ? catalog.kind === 'AGENT' ? '立即使用' : '打开工具'
       : catalog?.artifactAvailable ? '下载' : null
   const handleQuickAction = () => {
+    if (catalog && catalog.kind !== 'AGENT') onToolUse?.(catalog.id)
     if (skill) {
       void copy(buildInstallCommand(skill.namespace, skill.slug, getBaseUrl()))
       return
@@ -153,7 +164,9 @@ export function LandingPage() {
   const [searchSort, setSearchSort] = useState<'relevance' | 'downloads' | 'newest'>('relevance')
   const [isQuickSearchPinned, setIsQuickSearchPinned] = useState(false)
   const [isArrivalGuideVisible, setIsArrivalGuideVisible] = useState(Boolean(onboarding))
+  const { toolIds: commonToolIds, recordToolUse } = useCommonTools()
   const [tourTarget, setTourTarget] = useState<CenterTourTarget | null>(null)
+  const [viewMode, setViewMode] = useViewMode('home')
   const quickSearchRef = useRef<HTMLDivElement>(null)
   const { data: recommendations = [] } = useResourceRecommendations(12)
   const { data: myNamespaces = [] } = useQuery({ queryKey: ['namespaces', 'mine'], queryFn: () => namespaceApi.listMine() })
@@ -166,6 +179,13 @@ export function LandingPage() {
     },
     discoveryMode !== 'recommended',
   )
+  const { data: toolResources } = useUnifiedResourceSearch({
+    q: '',
+    type: 'TOOL',
+    sort: 'downloads',
+    page: 0,
+    size: 100,
+  })
   const { data: scenarioResources } = useUnifiedResourceSearch(
     {
       q: homeScenario,
@@ -205,6 +225,16 @@ export function LandingPage() {
     }
     return true
   })
+  const commonTools = useMemo(() => {
+    const toolsById = new Map((toolResources?.items ?? []).flatMap((resource) => resource.catalogResource ? [[resource.catalogResource.id, resource] as const] : []))
+    return commonToolIds.map((id) => toolsById.get(id)).filter((resource): resource is UnifiedResourceSearchItem => resource != null)
+  }, [commonToolIds, toolResources?.items])
+  const homeScenarioLabel = homeScenario
+    ? t(`joyhubHome.scenarios.${SCENARIOS.find((scenario) => scenario.query === homeScenario)?.key ?? 'content'}`)
+    : '全部'
+  const homeScopeLabel = homeScopeFilter === 'PUBLIC'
+    ? '公司公共库'
+    : homeScopeFilter === 'DEPARTMENT' ? '所在部门' : '全部'
 
   const handleSearch = (query: string) => {
     const normalizedQuery = normalizeSearchQuery(query)
@@ -305,6 +335,37 @@ export function LandingPage() {
         </div>
       </section>
 
+      {!searchQuery ? (
+        <section className="border-b bg-white px-5 py-7 md:px-10" aria-labelledby="common-tools-heading">
+          <div className="mx-auto max-w-7xl">
+            <div className="mb-4 flex items-end justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold text-primary">TOOLS</p>
+                <h2 id="common-tools-heading" className="mt-1 text-2xl font-semibold">{t('joyhubHome.commonTools.title')}</h2>
+              </div>
+              <Link to="/tools" className="shrink-0 text-sm font-medium text-primary hover:underline">
+                {t('joyhubHome.commonTools.browseAll')} <ArrowRight className="inline h-4 w-4" aria-hidden="true" />
+              </Link>
+            </div>
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+              {commonTools.map((resource) => {
+                const catalog = resource.catalogResource
+                if (!catalog) return null
+                return (
+                  <RecommendationCard
+                    key={`COMMON_TOOL:${catalog.id}`}
+                    resource={resource}
+                    onOpen={() => navigate({ to: '/catalog/$slug', params: { slug: catalog.slug } })}
+                    onToolUse={recordToolUse}
+                  />
+                )
+              })}
+              {commonTools.length === 0 ? <div className="rounded-md border border-dashed border-border bg-[#f6f8fa] px-5 py-8 text-sm text-muted-foreground md:col-span-2 xl:col-span-4">暂未添加常用工具。可在工具中心点击“添加到常用工具”，或在同一工具打开、下载 3 次后自动加入。</div> : null}
+            </div>
+          </div>
+        </section>
+      ) : null}
+
       {searchQuery ? (
         <section className="border-b bg-[#f6f8fa] px-5 py-8 md:px-10">
           <div className="mx-auto max-w-7xl space-y-6">
@@ -337,10 +398,10 @@ export function LandingPage() {
                   ))}
                 </div>
               </div>
-              <span className="text-sm text-muted-foreground">{t('search.results', { count: searchResults?.total ?? 0 })}</span>
+              <div className="ml-auto flex items-center gap-3"><span className="text-sm text-muted-foreground">{t('search.results', { count: searchResults?.total ?? 0 })}</span><ViewModeToggle value={viewMode} onChange={setViewMode} /></div>
             </div>
             {searchResults?.items.length ? (
-              <div className="grid gap-3 md:grid-cols-2">
+              <div className={cn('grid gap-3', viewMode === 'list' ? 'grid-cols-1 xl:grid-cols-2' : 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3')}>
                 {searchResults.items.map((resource) => {
                   const catalog = resource.catalogResource
                   const skill = resource.skill
@@ -382,29 +443,38 @@ export function LandingPage() {
           <div>
           <div className="mb-5 flex items-end justify-between gap-4">
             <div><p className="text-sm font-semibold text-primary">DISCOVER</p><h2 className="mt-1 text-2xl font-semibold">{discoveryMode === 'recommended' && !isAuthenticated ? '推荐能力' : DISCOVERY_TITLES[discoveryMode]}</h2></div>
-            <Link to="/search" search={{ q: '', sort: 'relevance', page: 0, starredOnly: false }} className="text-sm font-medium text-primary">浏览全部 →</Link>
+            <div className="flex items-center gap-3"><ViewModeToggle value={viewMode} onChange={setViewMode} /><Link to="/search" search={{ q: '', sort: 'relevance', page: 0, starredOnly: false }} className="text-sm font-medium text-primary">浏览全部 →</Link></div>
           </div>
           <div className={cn('mb-5 flex flex-wrap items-center gap-2 border-b pb-4', tourTarget === 'filters' && 'relative z-50 rounded-md ring-4 ring-primary/50 ring-offset-4')} data-onboarding-target="filters">
             <span className="mr-1 text-sm font-medium text-muted-foreground">进一步筛选</span>
             <label className="sr-only" htmlFor="home-scenario-filter">适用场景</label>
-            <select id="home-scenario-filter" value={homeScenario} onChange={(event) => setHomeScenario(event.target.value)} className="h-9 rounded-md border border-input bg-white px-3 text-sm">
-              <option value="">适用场景：全部</option>
-              {SCENARIOS.map((scenario) => <option key={scenario.key} value={scenario.query}>适用场景：{t(`joyhubHome.scenarios.${scenario.key}`)}</option>)}
-            </select>
+            <Select value={homeScenario || 'ALL'} onValueChange={(value) => setHomeScenario(value === 'ALL' ? '' : value)}>
+              <SelectTrigger id="home-scenario-filter" className="w-48"><span>适用场景：{homeScenarioLabel}</span></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">全部</SelectItem>
+                {SCENARIOS.map((scenario) => <SelectItem key={scenario.key} value={scenario.query}>{t(`joyhubHome.scenarios.${scenario.key}`)}</SelectItem>)}
+              </SelectContent>
+            </Select>
             <label className="sr-only" htmlFor="home-scope-filter">可见范围</label>
-            <select id="home-scope-filter" value={homeScopeFilter} onChange={(event) => setHomeScopeFilter(event.target.value as HomeScopeFilter)} className="h-9 rounded-md border border-input bg-white px-3 text-sm">
-              <option value="ALL">可见范围：全部</option>
-              <option value="PUBLIC">可见范围：公司公共库</option>
-              <option value="DEPARTMENT">可见范围：所在部门</option>
-            </select>
+            <Select value={homeScopeFilter} onValueChange={(value) => setHomeScopeFilter(value as HomeScopeFilter)}>
+              <SelectTrigger id="home-scope-filter" className="w-48"><span>可见范围：{homeScopeLabel}</span></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">全部</SelectItem>
+                <SelectItem value="PUBLIC">公司公共库</SelectItem>
+                <SelectItem value="DEPARTMENT">所在部门</SelectItem>
+              </SelectContent>
+            </Select>
             <label className="sr-only" htmlFor="home-sort-filter">排序</label>
-            <select id="home-sort-filter" value={discoveryMode} onChange={(event) => setDiscoveryMode(event.target.value as DiscoveryMode)} className="h-9 rounded-md border border-input bg-white px-3 text-sm">
-              <option value="recommended">排序：为你推荐</option>
-              <option value="newest">排序：最新发布</option>
-              <option value="downloads">排序：下载最多</option>
-            </select>
+            <Select value={discoveryMode} onValueChange={(value) => setDiscoveryMode(value as DiscoveryMode)}>
+              <SelectTrigger id="home-sort-filter" className="w-48"><span>排序：{DISCOVERY_FILTER_LABELS[discoveryMode]}</span></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="recommended">为你推荐</SelectItem>
+                <SelectItem value="newest">最新发布</SelectItem>
+                <SelectItem value="downloads">下载最多</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-          <div className="grid gap-3 md:grid-cols-2">
+          <div className={cn('grid gap-3', viewMode === 'list' ? 'grid-cols-1 xl:grid-cols-2' : 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3')}>
             {visibleDiscoveryResources.map((resource, index) => {
               const catalog = resource.catalogResource
               const skill = resource.skill

@@ -1,5 +1,5 @@
 import { Link, useNavigate, useParams } from '@tanstack/react-router'
-import { ArrowLeft, Building2, Copy, Download, ExternalLink, Heart, HeartOff, MessageCircle, MoreHorizontal, Pencil, Power, UserRound } from 'lucide-react'
+import { ArrowLeft, BookmarkCheck, BookmarkPlus, Building2, Copy, Download, ExternalLink, Heart, HeartOff, MessageCircle, MoreHorizontal, Pencil, Power, UserRound } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { resourcesApi } from '@/api/client'
 import { catalogKindEmoji, catalogKindLabel } from '@/entities/catalog-resource/catalog-resource-kind'
@@ -15,6 +15,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { useRecordResourceUse, useResourceLifecycleAction, useResourceStats, useToggleResourceFavorite } from '@/shared/hooks/use-resource-queries'
 import { formatCompactCount } from '@/shared/lib/number-format'
 import { useAuth } from '@/features/auth/use-auth'
+import { useCommonTools } from '@/features/catalog/common-tools'
 
 function copyPrompt(prompt: string) {
   void navigator.clipboard.writeText(prompt).then(
@@ -48,6 +49,7 @@ export function CatalogResourcePage() {
   const stats = useResourceStats(resourceId)
   const toggleFavorite = useToggleResourceFavorite()
   const recordUse = useRecordResourceUse()
+  const { isCommonTool, recordToolUse, toggleTool } = useCommonTools()
   const publish = useResourceLifecycleAction('publish')
   const offline = useResourceLifecycleAction('offline')
   const archive = useResourceLifecycleAction('archive')
@@ -79,6 +81,7 @@ export function CatalogResourcePage() {
     recordUse.mutate(resourceId, {
       onError: (error) => toast.error('使用次数统计失败', error instanceof Error ? error.message : '请稍后重试。'),
     })
+    if (resource.kind !== 'AGENT') recordToolUse(resource.id)
   }
 
   const handleLifecycle = async () => {
@@ -190,7 +193,7 @@ export function CatalogResourcePage() {
           </a>
         ) : null}
         {resource.artifactAvailable ? (
-          <a href={resourcesApi.downloadUrl(resourceId)} className={cn(buttonVariants({ variant: 'outline', size: 'lg' }), 'w-full gap-2')}>
+          <a href={resourcesApi.downloadUrl(resourceId)} onClick={handleUse} className={cn(buttonVariants({ variant: 'outline', size: 'lg' }), 'w-full gap-2')}>
             下载 {resource.artifactFilename || '安装包'} <Download className="h-4 w-4" />
           </a>
         ) : null}
@@ -206,6 +209,10 @@ export function CatalogResourcePage() {
           {isFavorited ? <HeartOff className="mr-2 h-4 w-4" /> : <Heart className="mr-2 h-4 w-4" />}
           {isFavorited ? '取消收藏' : '收藏'}
         </Button>
+        {!isAgent ? <Button variant="outline" size="lg" className="w-full" onClick={() => toggleTool(resource.id)} aria-pressed={isCommonTool(resource.id)}>
+          {isCommonTool(resource.id) ? <BookmarkCheck className="mr-2 h-4 w-4" /> : <BookmarkPlus className="mr-2 h-4 w-4" />}
+          {isCommonTool(resource.id) ? '移出常用工具' : '添加到常用工具'}
+        </Button> : null}
       </Card>
 
       {resource.scenarios?.length ? (
