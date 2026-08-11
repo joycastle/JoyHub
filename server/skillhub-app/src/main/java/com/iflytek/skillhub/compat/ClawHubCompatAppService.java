@@ -22,7 +22,9 @@ import com.iflytek.skillhub.domain.skill.service.SkillQueryService;
 import com.iflytek.skillhub.domain.social.SkillStarService;
 import com.iflytek.skillhub.dto.SkillSummaryResponse;
 import com.iflytek.skillhub.observability.RequestIdAccessor;
-import com.iflytek.skillhub.service.SkillSearchAppService;
+import com.iflytek.skillhub.service.UnifiedResourceSearchAppService;
+import com.iflytek.skillhub.dto.UnifiedResourceSearchItemResponse;
+import com.iflytek.skillhub.dto.UnifiedResourceSearchType;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
@@ -42,7 +44,7 @@ public class ClawHubCompatAppService {
     private static final String GLOBAL_NAMESPACE = "global";
 
     private final CanonicalSlugMapper mapper;
-    private final SkillSearchAppService skillSearchAppService;
+    private final UnifiedResourceSearchAppService unifiedResourceSearchAppService;
     private final SkillQueryService skillQueryService;
     private final SkillPublishService skillPublishService;
     private final ZipPackageExtractor zipPackageExtractor;
@@ -53,7 +55,7 @@ public class ClawHubCompatAppService {
     private final RequestIdAccessor requestIdAccessor;
 
     public ClawHubCompatAppService(CanonicalSlugMapper mapper,
-                                   SkillSearchAppService skillSearchAppService,
+                                   UnifiedResourceSearchAppService unifiedResourceSearchAppService,
                                    SkillQueryService skillQueryService,
                                    SkillPublishService skillPublishService,
                                    ZipPackageExtractor zipPackageExtractor,
@@ -63,7 +65,7 @@ public class ClawHubCompatAppService {
                                    SkillStarService skillStarService,
                                    RequestIdAccessor requestIdAccessor) {
         this.mapper = mapper;
-        this.skillSearchAppService = skillSearchAppService;
+        this.unifiedResourceSearchAppService = unifiedResourceSearchAppService;
         this.skillQueryService = skillQueryService;
         this.skillPublishService = skillPublishService;
         this.zipPackageExtractor = zipPackageExtractor;
@@ -79,17 +81,12 @@ public class ClawHubCompatAppService {
                                         int limit,
                                         String userId,
                                         Map<Long, NamespaceRole> userNsRoles) {
-        SkillSearchAppService.SearchResponse response = skillSearchAppService.search(
-                q,
-                null,
-                q == null || q.isBlank() ? "newest" : "relevance",
-                page,
-                limit,
-                userId,
-                userNsRoles
-        );
-
-        List<ClawHubSearchResponse.ClawHubSearchResult> results = response.items().stream()
+        List<ClawHubSearchResponse.ClawHubSearchResult> results = unifiedResourceSearchAppService.search(
+                        q, null, null, q == null || q.isBlank() ? "newest" : "relevance",
+                        UnifiedResourceSearchType.SKILL, false, page, limit, userId, normalizeRoles(userNsRoles), null)
+                .items().stream()
+                .map(UnifiedResourceSearchItemResponse::skill)
+                .filter(java.util.Objects::nonNull)
                 .map(this::toSearchResult)
                 .toList();
 
@@ -196,17 +193,13 @@ public class ClawHubCompatAppService {
                                                String userId,
                                                Map<Long, NamespaceRole> userNsRoles) {
         String sortBy = sort != null ? sort : "newest";
-        SkillSearchAppService.SearchResponse response = skillSearchAppService.search(
-                "",
-                null,
-                sortBy,
-                page,
-                limit,
-                userId,
-                userNsRoles
-        );
+        var response = unifiedResourceSearchAppService.search(
+                "", null, null, sortBy, UnifiedResourceSearchType.SKILL, false,
+                page, limit, userId, normalizeRoles(userNsRoles), null);
 
         List<ClawHubSkillListResponse.SkillListItem> items = response.items().stream()
+                .map(UnifiedResourceSearchItemResponse::skill)
+                .filter(java.util.Objects::nonNull)
                 .map(this::toSkillListItem)
                 .toList();
 

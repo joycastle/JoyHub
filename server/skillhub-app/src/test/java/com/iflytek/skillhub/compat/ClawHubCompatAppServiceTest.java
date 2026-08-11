@@ -16,14 +16,14 @@ import com.iflytek.skillhub.domain.skill.service.SkillPublishService;
 import com.iflytek.skillhub.domain.skill.service.SkillQueryService;
 import com.iflytek.skillhub.domain.social.SkillStarService;
 import com.iflytek.skillhub.observability.RequestIdAccessor;
-import com.iflytek.skillhub.service.SkillSearchAppService;
+import com.iflytek.skillhub.service.UnifiedResourceSearchAppService;
 import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
 class ClawHubCompatAppServiceTest {
 
-    private final SkillSearchAppService skillSearchAppService = mock(SkillSearchAppService.class);
+    private final UnifiedResourceSearchAppService unifiedResourceSearchAppService = mock(UnifiedResourceSearchAppService.class);
     private final SkillQueryService skillQueryService = mock(SkillQueryService.class);
     private final SkillPublishService skillPublishService = mock(SkillPublishService.class);
     private final ZipPackageExtractor zipPackageExtractor = mock(ZipPackageExtractor.class);
@@ -34,7 +34,7 @@ class ClawHubCompatAppServiceTest {
 
     private final ClawHubCompatAppService service = new ClawHubCompatAppService(
             new CanonicalSlugMapper(),
-            skillSearchAppService,
+            unifiedResourceSearchAppService,
             skillQueryService,
             skillPublishService,
             zipPackageExtractor,

@@ -15,6 +15,8 @@ import com.iflytek.skillhub.search.HashingSearchEmbeddingService;
 import com.iflytek.skillhub.search.HybridResourceSearchRanker;
 import com.iflytek.skillhub.search.ResourceSearchQueryInterpreter;
 import com.iflytek.skillhub.search.SearchTextTokenizer;
+import com.iflytek.skillhub.infra.jpa.ResourceSearchDocumentJpaRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
@@ -35,6 +37,8 @@ class UnifiedResourceSearchAppServiceTest {
     private CatalogResourceQueryAppService catalogSearchAppService;
     @Mock
     private ResourceFavoriteAppService favoriteAppService;
+    @Mock
+    private ResourceSearchDocumentJpaRepository searchDocumentRepository;
 
     private UnifiedResourceSearchAppService service;
     private CatalogViewer viewer;
@@ -47,7 +51,9 @@ class UnifiedResourceSearchAppServiceTest {
                 favoriteAppService,
                 new HybridResourceSearchRanker(
                         new HashingSearchEmbeddingService(),
-                        new ResourceSearchQueryInterpreter(new SearchTextTokenizer())));
+                        new ResourceSearchQueryInterpreter(new SearchTextTokenizer())),
+                searchDocumentRepository,
+                new ObjectMapper());
         viewer = new CatalogViewer("user-1", Map.of(), Set.of("USER"));
     }
 

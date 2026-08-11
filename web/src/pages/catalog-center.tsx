@@ -6,6 +6,7 @@ import type { CatalogCenter, CatalogResourceKind } from '@/api/types'
 import { CatalogResourceCard } from '@/entities/catalog-resource/catalog-resource-card'
 import { CATALOG_RESOURCE_KINDS, catalogKindLabel } from '@/entities/catalog-resource/catalog-resource-kind'
 import { useCatalogResources } from '@/features/catalog/use-catalog-queries'
+import { useUnifiedResourceSearch } from '@/features/search/use-unified-resource-search'
 import { useCommonTools } from '@/features/catalog/common-tools'
 import { namespaceApi, resourcesApi } from '@/api/client'
 import { CenterFeatureTour, type CenterTourTarget } from '@/features/onboarding/center-feature-tour'
@@ -36,18 +37,29 @@ function CatalogCenterPage({ center, showArrivalGuide }: { center: CatalogCenter
   const { data: departments = [] } = useQuery({ queryKey: ['namespaces', 'mine'], queryFn: () => namespaceApi.listMine() })
   const { data, isLoading, isError } = useCatalogResources({
     center,
-    q: query,
+    q: query ? undefined : query,
     kind,
     scenario: scenario || undefined,
     departmentId,
     sort: isAgent ? sort : undefined,
     size: 48,
   })
+  const unifiedSearch = useUnifiedResourceSearch({
+    q: query,
+    type: isAgent ? 'AGENT' : 'TOOL',
+    sort: sort === 'newest' ? 'newest' : 'relevance',
+    size: 48,
+  }, query.length > 0)
   const { data: allCenterData } = useCatalogResources({ center, size: 100 })
   const availableKinds = isAgent ? ['AGENT'] as CatalogResourceKind[] : CATALOG_RESOURCE_KINDS.filter((item) => item !== 'AGENT')
   const publishKind: CatalogResourceKind = isAgent ? 'AGENT' : (kind ?? 'ONLINE_TOOL')
   const publishLabel = isAgent ? '发布 Agent' : `发布${kind ? catalogKindLabel(kind) : '工具'}`
-  const resources = useMemo(() => data?.items ?? [], [data?.items])
+  const resources = useMemo(() => {
+    if (!query) return data?.items ?? []
+    return (unifiedSearch.data?.items ?? []).flatMap(item => item.catalogResource ? [item.catalogResource] : [])
+      .filter(resource => !kind || resource.kind === kind)
+      .filter(resource => !scenario || resource.scenarios?.includes(scenario))
+  }, [data?.items, kind, query, scenario, unifiedSearch.data?.items])
   const scenarios = useMemo(
     () => Array.from(new Set((allCenterData?.items ?? []).flatMap((resource) => resource.scenarios ?? []))).sort((left, right) => left.localeCompare(right, 'zh-CN')),
     [allCenterData?.items],
@@ -206,9 +218,9 @@ function CatalogCenterPage({ center, showArrivalGuide }: { center: CatalogCenter
             <ViewModeToggle value={viewMode} onChange={setViewMode} className="ml-auto" />
           </div>
 
-          {isLoading ? <div className="py-20 text-center text-muted-foreground">正在加载...</div> : null}
-          {isError ? <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-5 text-destructive">加载失败，请稍后重试。</div> : null}
-          {!isLoading && !isError && resources.length === 0 ? (
+          {((query ? unifiedSearch.isLoading : isLoading)) ? <div className="py-20 text-center text-muted-foreground">正在加载...</div> : null}
+          {((query ? unifiedSearch.isError : isError)) ? <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-5 text-destructive">加载失败，请稍后重试。</div> : null}
+          {!(query ? unifiedSearch.isLoading : isLoading) && !(query ? unifiedSearch.isError : isError) && resources.length === 0 ? (
             <div className="flex justify-center">
               <div className="w-full max-w-md rounded-lg border border-dashed bg-slate-50 p-12 text-center text-muted-foreground"><img src="/joycastle-icon.png" alt="" className="mx-auto mb-4 h-12 w-12 opacity-50" />暂无匹配内容</div>
             </div>

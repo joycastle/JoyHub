@@ -20,7 +20,10 @@ import com.iflytek.skillhub.domain.user.UserAccount;
 import com.iflytek.skillhub.domain.user.UserAccountRepository;
 import com.iflytek.skillhub.dto.SkillLifecycleVersionResponse;
 import com.iflytek.skillhub.dto.SkillSummaryResponse;
-import com.iflytek.skillhub.service.SkillSearchAppService;
+import com.iflytek.skillhub.service.UnifiedResourceSearchAppService;
+import com.iflytek.skillhub.dto.PageResponse;
+import com.iflytek.skillhub.dto.UnifiedResourceSearchItemResponse;
+import com.iflytek.skillhub.dto.UnifiedResourceSearchType;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
@@ -70,7 +73,7 @@ class ClawHubCompatControllerTest {
     private DeviceAuthService deviceAuthService;
 
     @MockBean
-    private SkillSearchAppService skillSearchAppService;
+    private UnifiedResourceSearchAppService unifiedResourceSearchAppService;
 
     @MockBean
     private SkillQueryService skillQueryService;
@@ -95,9 +98,7 @@ class ClawHubCompatControllerTest {
 
     @Test
     void search_returns_mapped_results() throws Exception {
-        when(skillSearchAppService.search("test", null, "relevance", 0, 20, null, null))
-                .thenReturn(new SkillSearchAppService.SearchResponse(
-                        List.of(new SkillSummaryResponse(
+        SkillSummaryResponse skill = new SkillSummaryResponse(
                                 1L,
                                 "my-skill",
                                 "My Skill",
@@ -114,11 +115,11 @@ class ClawHubCompatControllerTest {
                                 new SkillLifecycleVersionResponse(11L, "1.2.0", "PUBLISHED"),
                                 new SkillLifecycleVersionResponse(11L, "1.2.0", "PUBLISHED"),
                                 null,
-                                "PUBLISHED")),
-                        1,
-                        0,
-                        20
-                ));
+                                "PUBLISHED");
+        when(unifiedResourceSearchAppService.search("test", null, null, "relevance",
+                UnifiedResourceSearchType.SKILL, false, 0, 20, null, java.util.Map.of(), null))
+                .thenReturn(new PageResponse<>(List.of(new UnifiedResourceSearchItemResponse(
+                        "SKILL", "INSTALL", 0.9D, skill, null)), 1, 0, 20));
 
         mockMvc.perform(get("/api/v1/search")
                         .param("q", "test"))
@@ -140,8 +141,9 @@ class ClawHubCompatControllerTest {
         when(userRoleBindingRepository.findByUserId("user-7")).thenReturn(List.of());
         when(namespaceMemberRepository.findByUserId("user-7"))
                 .thenReturn(List.of(new NamespaceMember(9L, "user-7", NamespaceRole.MEMBER)));
-        when(skillSearchAppService.search("token-search", null, "relevance", 0, 20, "user-7", nsRoles))
-                .thenReturn(new SkillSearchAppService.SearchResponse(List.of(), 0, 0, 20));
+        when(unifiedResourceSearchAppService.search("token-search", null, null, "relevance",
+                UnifiedResourceSearchType.SKILL, false, 0, 20, "user-7", nsRoles, null))
+                .thenReturn(new PageResponse<>(List.of(), 0, 0, 20));
 
         mockMvc.perform(get("/api/v1/search")
                         .param("q", "token-search")
@@ -149,7 +151,8 @@ class ClawHubCompatControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.results").isArray());
 
-        verify(skillSearchAppService).search("token-search", null, "relevance", 0, 20, "user-7", nsRoles);
+        verify(unifiedResourceSearchAppService).search("token-search", null, null, "relevance",
+                UnifiedResourceSearchType.SKILL, false, 0, 20, "user-7", nsRoles, null);
         verify(apiTokenService).touchLastUsed(same(token));
     }
 

@@ -13,7 +13,9 @@ import com.iflytek.skillhub.domain.skill.SkillVersion;
 import com.iflytek.skillhub.domain.skill.service.SkillQueryService;
 import com.iflytek.skillhub.domain.user.UserAccountRepository;
 import com.iflytek.skillhub.dto.SkillSummaryResponse;
-import com.iflytek.skillhub.service.SkillSearchAppService;
+import com.iflytek.skillhub.service.UnifiedResourceSearchAppService;
+import com.iflytek.skillhub.dto.UnifiedResourceSearchItemResponse;
+import com.iflytek.skillhub.dto.UnifiedResourceSearchType;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -31,19 +33,19 @@ public class ClawHubRegistryFacade {
     private static final int MAX_LIMIT = 100;
 
     private final CanonicalSlugMapper canonicalSlugMapper;
-    private final SkillSearchAppService skillSearchAppService;
+    private final UnifiedResourceSearchAppService unifiedResourceSearchAppService;
     private final SkillQueryService skillQueryService;
     private final CompatSkillLookupService compatSkillLookupService;
     private final UserAccountRepository userAccountRepository;
 
     public ClawHubRegistryFacade(
             CanonicalSlugMapper canonicalSlugMapper,
-            SkillSearchAppService skillSearchAppService,
+            UnifiedResourceSearchAppService unifiedResourceSearchAppService,
             SkillQueryService skillQueryService,
             CompatSkillLookupService compatSkillLookupService,
             UserAccountRepository userAccountRepository) {
         this.canonicalSlugMapper = canonicalSlugMapper;
-        this.skillSearchAppService = skillSearchAppService;
+        this.unifiedResourceSearchAppService = unifiedResourceSearchAppService;
         this.skillQueryService = skillQueryService;
         this.compatSkillLookupService = compatSkillLookupService;
         this.userAccountRepository = userAccountRepository;
@@ -55,15 +57,13 @@ public class ClawHubRegistryFacade {
             String userId,
             Map<Long, NamespaceRole> userNsRoles) {
         int boundedLimit = clampLimit(limit);
-        List<SkillSummaryResponse> items = skillSearchAppService.search(
-                        keyword,
-                        null,
-                        "relevance",
-                        0,
-                        boundedLimit,
-                        userId,
-                        normalizeRoles(userNsRoles))
-                .items();
+        List<SkillSummaryResponse> items = unifiedResourceSearchAppService.search(
+                        keyword, null, null, "relevance", UnifiedResourceSearchType.SKILL, false,
+                        0, boundedLimit, userId, normalizeRoles(userNsRoles), null)
+                .items().stream()
+                .map(UnifiedResourceSearchItemResponse::skill)
+                .filter(java.util.Objects::nonNull)
+                .toList();
 
         List<ClawHubRegistrySearchItem> results = buildSearchResults(items);
         return new ClawHubRegistrySearchResponse(results);

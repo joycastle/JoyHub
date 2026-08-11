@@ -2,6 +2,7 @@ package com.iflytek.skillhub.controller;
 
 import com.iflytek.skillhub.domain.namespace.NamespaceMemberRepository;
 import com.iflytek.skillhub.service.SkillSearchAppService;
+import com.iflytek.skillhub.service.UnifiedResourceSearchAppService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -32,17 +33,17 @@ class SkillSearchControllerTest {
     private NamespaceMemberRepository namespaceMemberRepository;
 
     @MockBean
-    private SkillSearchAppService skillSearchAppService;
+    private UnifiedResourceSearchAppService unifiedResourceSearchAppService;
 
     @Test
     void searchShouldUseUnifiedEnvelopeAndItemsField() throws Exception {
-        when(skillSearchAppService.search(
+        when(unifiedResourceSearchAppService.searchSkills(
                 eq("review"),
                 eq("global"),
+                eq(null),
                 eq("newest"),
                 eq(0),
                 eq(20),
-                eq(null),
                 any(),
                 any()))
                 .thenReturn(new SkillSearchAppService.SearchResponse(List.of(), 0, 0, 20));
@@ -60,13 +61,13 @@ class SkillSearchControllerTest {
 
     @Test
     void searchShouldPassExplicitSortPageAndSize() throws Exception {
-        when(skillSearchAppService.search(
+        when(unifiedResourceSearchAppService.searchSkills(
+                eq(null),
                 eq(null),
                 eq(null),
                 eq("newest"),
                 eq(0),
                 eq(12),
-                eq(null),
                 any(),
                 any()))
                 .thenReturn(new SkillSearchAppService.SearchResponse(List.of(), 0, 0, 12));
@@ -82,13 +83,13 @@ class SkillSearchControllerTest {
 
     @Test
     void searchShouldPassLabelFilters() throws Exception {
-        when(skillSearchAppService.search(
+        when(unifiedResourceSearchAppService.searchSkills(
                 eq("review"),
                 eq(null),
+                eq(List.of("code-generation", "official")),
                 eq("newest"),
                 eq(0),
                 eq(20),
-                eq(List.of("code-generation", "official")),
                 any(),
                 any()))
                 .thenReturn(new SkillSearchAppService.SearchResponse(List.of(), 0, 0, 20));
@@ -103,13 +104,13 @@ class SkillSearchControllerTest {
 
     @Test
     void searchShouldFallbackToDefaultsForBlankQueryParams() throws Exception {
-        when(skillSearchAppService.search(
+        when(unifiedResourceSearchAppService.searchSkills(
+                eq(null),
                 eq(null),
                 eq(null),
                 eq("newest"),
                 eq(0),
                 eq(20),
-                eq(null),
                 any(),
                 any()))
                 .thenReturn(new SkillSearchAppService.SearchResponse(List.of(), 0, 0, 20));
@@ -125,13 +126,13 @@ class SkillSearchControllerTest {
 
     @Test
     void searchShouldFallbackToDefaultsForInvalidPagination() throws Exception {
-        when(skillSearchAppService.search(
+        when(unifiedResourceSearchAppService.searchSkills(
+                eq(null),
                 eq(null),
                 eq(null),
                 eq("newest"),
                 eq(0),
                 eq(20),
-                eq(null),
                 any(),
                 any()))
                 .thenReturn(new SkillSearchAppService.SearchResponse(List.of(), 0, 0, 20));

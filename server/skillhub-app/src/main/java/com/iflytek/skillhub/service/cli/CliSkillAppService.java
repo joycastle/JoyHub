@@ -14,6 +14,8 @@ import com.iflytek.skillhub.dto.cli.CliResolveResponse;
 import com.iflytek.skillhub.service.AuditRequestContext;
 import com.iflytek.skillhub.service.SkillDeleteAppService;
 import com.iflytek.skillhub.service.SkillSearchAppService;
+import com.iflytek.skillhub.service.UnifiedResourceSearchAppService;
+import com.iflytek.skillhub.dto.UnifiedResourceSearchType;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.HttpHeaders;
@@ -28,19 +30,19 @@ import java.util.Set;
 @Service
 public class CliSkillAppService {
 
-    private final SkillSearchAppService skillSearchAppService;
+    private final UnifiedResourceSearchAppService unifiedResourceSearchAppService;
     private final SkillQueryService skillQueryService;
     private final SkillDownloadService skillDownloadService;
     private final SkillDeleteAppService skillDeleteAppService;
     private final SkillPublishService skillPublishService;
 
     public CliSkillAppService(
-            SkillSearchAppService skillSearchAppService,
+            UnifiedResourceSearchAppService unifiedResourceSearchAppService,
             SkillQueryService skillQueryService,
             SkillDownloadService skillDownloadService,
             SkillDeleteAppService skillDeleteAppService,
             SkillPublishService skillPublishService) {
-        this.skillSearchAppService = skillSearchAppService;
+        this.unifiedResourceSearchAppService = unifiedResourceSearchAppService;
         this.skillQueryService = skillQueryService;
         this.skillDownloadService = skillDownloadService;
         this.skillDeleteAppService = skillDeleteAppService;
@@ -52,20 +54,17 @@ public class CliSkillAppService {
 
     public CliSearchResult search(String q, int limit, String userId, Map<Long, NamespaceRole> userNsRoles) {
         String sort = q == null || q.isBlank() ? "newest" : "relevance";
-        SkillSearchAppService.SearchResponse response = skillSearchAppService.searchInstallableLatest(
-                q, null, sort, 0, limit, userId, userNsRoles
-        );
+        var response = unifiedResourceSearchAppService.search(q, null, null, sort,
+                UnifiedResourceSearchType.SKILL, false, 0, limit, userId,
+                userNsRoles == null ? Map.of() : userNsRoles, null);
 
         List<CliSearchItem> items = response.items().stream()
-                .map(item -> new CliSearchItem(
-                        item.namespace(),
-                        item.slug(),
-                        item.publishedVersion().version(),
-                        item.summary()
-                ))
+                .map(item -> item.skill())
+                .filter(java.util.Objects::nonNull)
+                .map(item -> new CliSearchItem(item.namespace(), item.slug(), item.publishedVersion().version(), item.summary()))
                 .toList();
 
-        return new CliSearchResult(items, response.total(), limit);
+        return new CliSearchResult(items, response.total(), Math.min(Math.max(limit, 1), 100));
     }
 
     public CliResolveResponse resolve(String namespace, String slug, String version, String userId, Map<Long, NamespaceRole> userNsRoles) {

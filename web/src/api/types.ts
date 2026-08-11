@@ -205,6 +205,29 @@ export interface UnifiedResourceSearchItem {
   catalogResource?: CatalogResourceSummary
 }
 
+export interface ResourceSearchDocument {
+  resourceType: 'SKILL' | 'AGENT' | 'TOOL'
+  resourceId: number
+  title: string
+  slug: string
+  summary?: string
+  accessMode: 'INSTALL' | 'OPEN' | 'DOWNLOAD'
+  searchEnabled: boolean
+  generationStatus: 'BASIC' | 'PENDING' | 'READY' | 'FAILED'
+  companyRelevance: 'CORE' | 'SUPPORTING' | 'GENERAL' | 'IRRELEVANT'
+  capabilitiesJson: string
+  scenariosJson: string
+  inputsJson: string
+  outputsJson: string
+  searchTermsJson: string
+  evidenceJson: string
+  profileText: string
+  rawDocumentation: string
+  sourceHash: string
+  generatedAt?: string
+  updatedAt: string
+}
+
 export interface RecommendedResource {
   resource: UnifiedResourceSearchItem
   reason: string

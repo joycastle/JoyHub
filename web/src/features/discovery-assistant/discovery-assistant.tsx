@@ -3,14 +3,13 @@ import type { FormEvent } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { ArrowRight, Bot, Check, ChevronDown, Copy, ExternalLink, FileText, Loader2, MessageSquarePlus, Sparkles, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { useCatalogResources } from '@/features/catalog/use-catalog-queries'
 import { buildInstallCommand, getBaseUrl } from '@/features/skill/install-command'
-import { useSearchSkills } from '@/shared/hooks/use-skill-queries'
+import { useUnifiedResourceSearch } from '@/features/search/use-unified-resource-search'
 import { useCopyToClipboard } from '@/shared/lib/clipboard'
 import { cn } from '@/shared/lib/utils'
 import { Button, buttonVariants } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
-import { buildDiscoveryRecommendation, type DiscoverySuggestion } from './recommendation-engine'
+import type { DiscoverySuggestion } from './recommendation-engine'
 import { useDiscoveryAssistant } from './use-discovery-assistant'
 
 const QUICK_PROMPTS = ['discoveryAssistant.promptAgent', 'discoveryAssistant.promptData', 'discoveryAssistant.promptWriting'] as const
@@ -74,15 +73,20 @@ export function DiscoveryAssistant({ isAuthenticated }: { isAuthenticated: boole
   // anonymous fallback; running both paths for every question duplicated
   // requests and produced a different ranking while the model was thinking.
   const localFallbackEnabled = enabled && !isAuthenticated
-  const skillSearch = useSearchSkills({ q: question, sort: 'relevance', size: 4 }, localFallbackEnabled)
-  const catalogSearch = useCatalogResources({ q: question, size: 4, enabled: localFallbackEnabled })
-  const isLoading = localFallbackEnabled && (skillSearch.isLoading || catalogSearch.isLoading)
-  const recommendation = useMemo(() => buildDiscoveryRecommendation({
-    question,
-    catalog: catalogSearch.data?.items ?? [],
-    skills: skillSearch.data?.items ?? [],
-    language: i18n.language,
-  }), [catalogSearch.data?.items, i18n.language, question, skillSearch.data?.items])
+  const anonymousSearch = useUnifiedResourceSearch({ q: question, type: 'ALL', sort: 'relevance', size: 4 }, localFallbackEnabled)
+  const isLoading = localFallbackEnabled && anonymousSearch.isLoading
+  const recommendation = useMemo(() => ({
+    suggestions: (anonymousSearch.data?.items ?? []).flatMap((item): DiscoverySuggestion[] => {
+      if (item.skill) return [{ type: 'skill', id: item.skill.id, title: item.skill.localizedDisplayName ?? item.skill.displayName,
+        description: item.skill.localizedSummary ?? item.skill.summary ?? '', namespace: item.skill.namespace, slug: item.skill.slug }]
+      if (item.catalogResource) return [{ type: 'catalog', id: item.catalogResource.id, title: item.catalogResource.name,
+        description: item.catalogResource.summary, kind: item.catalogResource.kind, slug: item.catalogResource.slug,
+        accessUrl: item.catalogResource.accessUrl }]
+      return []
+    }),
+    summary: (anonymousSearch.data?.items ?? []).length > 0 ? '已按统一能力搜索为你找到可用资源。' : '暂未找到匹配的可用资源。',
+    followUps: [] as string[],
+  }), [anonymousSearch.data?.items])
   const aiSuggestions = useMemo(
     () => toDiscoverySuggestions(assistant.data?.suggestions ?? []),
     [assistant.data?.suggestions],

@@ -1,5 +1,7 @@
 package com.iflytek.skillhub.service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.iflytek.skillhub.dto.CatalogResourceSummaryResponse;
 import com.iflytek.skillhub.dto.PageResponse;
 import com.iflytek.skillhub.dto.SkillSummaryResponse;
@@ -8,6 +10,8 @@ import com.iflytek.skillhub.dto.UnifiedResourceSearchType;
 import com.iflytek.skillhub.domain.namespace.NamespaceRole;
 import com.iflytek.skillhub.search.HybridResourceSearchRanker;
 import com.iflytek.skillhub.search.ResourceSearchDocument;
+import com.iflytek.skillhub.infra.jpa.ResourceSearchDocumentEntity;
+import com.iflytek.skillhub.infra.jpa.ResourceSearchDocumentJpaRepository;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -30,15 +34,21 @@ public class UnifiedResourceSearchAppService {
     private final CatalogResourceQueryAppService catalogSearchAppService;
     private final ResourceFavoriteAppService favoriteAppService;
     private final HybridResourceSearchRanker searchRanker;
+    private final ResourceSearchDocumentJpaRepository searchDocumentRepository;
+    private final ObjectMapper objectMapper;
 
     public UnifiedResourceSearchAppService(SkillSearchAppService skillSearchAppService,
                                            CatalogResourceQueryAppService catalogSearchAppService,
                                            ResourceFavoriteAppService favoriteAppService,
-                                           HybridResourceSearchRanker searchRanker) {
+                                           HybridResourceSearchRanker searchRanker,
+                                           ResourceSearchDocumentJpaRepository searchDocumentRepository,
+                                           ObjectMapper objectMapper) {
         this.skillSearchAppService = skillSearchAppService;
         this.catalogSearchAppService = catalogSearchAppService;
         this.favoriteAppService = favoriteAppService;
         this.searchRanker = searchRanker;
+        this.searchDocumentRepository = searchDocumentRepository;
+        this.objectMapper = objectMapper;
     }
 
     @Transactional(readOnly = true)
@@ -54,18 +64,79 @@ public class UnifiedResourceSearchAppService {
             String userId,
             Map<Long, NamespaceRole> namespaceRoles,
             CatalogViewer catalogViewer) {
+        return search(query, namespace, label, sort, type, starredOnly, page, size, userId, namespaceRoles,
+                catalogViewer, Set.of());
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<UnifiedResourceSearchItemResponse> search(
+            String query,
+            String namespace,
+            String label,
+            String sort,
+            UnifiedResourceSearchType type,
+            boolean starredOnly,
+            int page,
+            int size,
+            String userId,
+            Map<Long, NamespaceRole> namespaceRoles,
+            CatalogViewer catalogViewer,
+            Set<String> accessModes) {
+        List<String> labels = label == null || label.isBlank() ? List.of() : List.of(label);
+        return searchInternal(query, namespace, labels, sort, type, starredOnly, page, size, userId, namespaceRoles,
+                catalogViewer, accessModes);
+    }
+
+    /**
+     * Keeps the established Skill-only HTTP contract while routing its candidates and ranking
+     * through the unified resource search pipeline.
+     */
+    @Transactional(readOnly = true)
+    public SkillSearchAppService.SearchResponse searchSkills(
+            String query,
+            String namespace,
+            List<String> labels,
+            String sort,
+            int page,
+            int size,
+            String userId,
+            Map<Long, NamespaceRole> namespaceRoles) {
+        PageResponse<UnifiedResourceSearchItemResponse> response = searchInternal(
+                query, namespace, labels == null ? List.of() : labels, sort, UnifiedResourceSearchType.SKILL,
+                false, page, size, userId, namespaceRoles, null, Set.of());
+        return new SkillSearchAppService.SearchResponse(response.items().stream()
+                .map(UnifiedResourceSearchItemResponse::skill)
+                .filter(java.util.Objects::nonNull)
+                .toList(), response.total(), response.page(), response.size());
+    }
+
+    private PageResponse<UnifiedResourceSearchItemResponse> searchInternal(
+            String query,
+            String namespace,
+            List<String> labels,
+            String sort,
+            UnifiedResourceSearchType type,
+            boolean starredOnly,
+            int page,
+            int size,
+            String userId,
+            Map<Long, NamespaceRole> namespaceRoles,
+            CatalogViewer catalogViewer,
+            Set<String> accessModes) {
         UnifiedResourceSearchType scope = type == null ? UnifiedResourceSearchType.ALL : type;
+        List<String> normalizedLabels = labels == null ? List.of() : labels.stream()
+                .filter(java.util.Objects::nonNull).map(String::trim).filter(value -> !value.isBlank()).toList();
         List<Candidate> candidates = new ArrayList<>();
+        Map<String, ResourceSearchDocument> indexedDocuments = indexedDocuments();
 
         if (scope == UnifiedResourceSearchType.ALL || scope == UnifiedResourceSearchType.SKILL) {
-            List<String> labels = label == null || label.isBlank() ? List.of() : List.of(label);
             SkillSearchAppService.SearchResponse skills = skillSearchAppService.searchInstallableLatest(
-                    null, namespace, "newest", 0, MAX_SKILL_CANDIDATES, labels, userId, namespaceRoles);
-            skills.items().forEach(skill -> candidates.add(skillCandidate(skill)));
+                    null, namespace, "newest", 0, MAX_SKILL_CANDIDATES, normalizedLabels, userId, namespaceRoles);
+            skills.items().forEach(skill -> candidates.add(skillCandidate(skill, indexedDocuments)));
         }
 
         boolean skillSpecificFilter = (namespace != null && !namespace.isBlank())
-                || (label != null && !label.isBlank());
+                || !normalizedLabels.isEmpty();
         if (!skillSpecificFilter
                 && catalogViewer != null
                 && scope != UnifiedResourceSearchType.SKILL) {
@@ -75,12 +146,17 @@ public class UnifiedResourceSearchAppService {
             PageResponse<CatalogResourceSummaryResponse> catalog = catalogSearchAppService.search(
                     null, center, null, null, null, null, catalogViewer,
                     PageRequest.of(0, MAX_CATALOG_CANDIDATES));
-            catalog.items().forEach(resource -> candidates.add(catalogCandidate(resource)));
+            catalog.items().forEach(resource -> candidates.add(catalogCandidate(resource, indexedDocuments)));
         }
 
         if (starredOnly) {
             Set<String> favorites = favoriteAppService.findFavoriteResourceIds(userId);
             candidates.removeIf(candidate -> !favorites.contains(favoriteKey(candidate)));
+        }
+        if (accessModes != null && !accessModes.isEmpty()) {
+            Set<String> normalizedAccessModes = accessModes.stream().filter(java.util.Objects::nonNull)
+                    .map(value -> value.trim().toUpperCase(Locale.ROOT)).collect(java.util.stream.Collectors.toSet());
+            candidates.removeIf(candidate -> !normalizedAccessModes.contains(candidate.document().accessMode()));
         }
 
         List<RankedCandidate> ranked = new ArrayList<>(rank(query, scope, candidates));
@@ -138,7 +214,12 @@ public class UnifiedResourceSearchAppService {
         return updatedAt != null ? updatedAt : Instant.EPOCH;
     }
 
-    private Candidate skillCandidate(SkillSummaryResponse skill) {
+    private Candidate skillCandidate(SkillSummaryResponse skill,
+                                     Map<String, ResourceSearchDocument> indexedDocuments) {
+        ResourceSearchDocument indexed = indexedDocuments.get("SKILL:" + skill.id());
+        if (indexed != null) {
+            return new Candidate(indexed, skill, null);
+        }
         String title = preferred(skill.localizedDisplayName(), skill.displayName());
         String summary = preferred(skill.localizedSummary(), skill.summary());
         ResourceSearchDocument document = new ResourceSearchDocument(
@@ -148,8 +229,13 @@ public class UnifiedResourceSearchAppService {
         return new Candidate(document, skill, null);
     }
 
-    private Candidate catalogCandidate(CatalogResourceSummaryResponse resource) {
+    private Candidate catalogCandidate(CatalogResourceSummaryResponse resource,
+                                       Map<String, ResourceSearchDocument> indexedDocuments) {
         String resourceType = "AGENT".equals(resource.kind()) ? "AGENT" : "TOOL";
+        ResourceSearchDocument indexed = indexedDocuments.get(resourceType + ":" + resource.id());
+        if (indexed != null) {
+            return new Candidate(indexed, null, resource);
+        }
         String accessMode = resource.accessUrl() != null && !resource.accessUrl().isBlank()
                 ? "OPEN"
                 : resource.artifactAvailable() ? "DOWNLOAD" : "OPEN";
@@ -169,6 +255,40 @@ public class UnifiedResourceSearchAppService {
 
     private String key(ResourceSearchDocument document) {
         return document.resourceType() + ":" + document.id();
+    }
+
+    /**
+     * The projection is the sole ranking input.  The temporary per-resource fallback keeps a
+     * freshly published resource discoverable while its committed index event is still queued.
+     */
+    private Map<String, ResourceSearchDocument> indexedDocuments() {
+        Map<String, ResourceSearchDocument> result = new LinkedHashMap<>();
+        for (ResourceSearchDocumentEntity entity : searchDocumentRepository.findBySearchEnabledTrue()) {
+            ResourceSearchDocument document = new ResourceSearchDocument(
+                    entity.getResourceId().toString(), entity.getResourceType(), entity.getTitle(), entity.getSlug(),
+                    entity.getSummary(), merge(jsonList(entity.getScenariosJson()), jsonList(entity.getInputsJson()),
+                    jsonList(entity.getOutputsJson())), merge(jsonList(entity.getCapabilitiesJson()),
+                    jsonList(entity.getSearchTermsJson())),
+                    entity.getProfileText() + "\n" + entity.getRawDocumentation(), entity.getAccessMode(),
+                    entity.getSemanticVector(), 0D);
+            result.put(key(document), document);
+        }
+        return result;
+    }
+
+    private List<String> jsonList(String value) {
+        try {
+            return objectMapper.readValue(value == null || value.isBlank() ? "[]" : value,
+                    new TypeReference<List<String>>() { });
+        } catch (Exception ignored) {
+            return List.of();
+        }
+    }
+
+    @SafeVarargs
+    private final List<String> merge(List<String>... lists) {
+        return java.util.Arrays.stream(lists).flatMap(List::stream).filter(value -> value != null && !value.isBlank())
+                .distinct().toList();
     }
 
     private String favoriteKey(Candidate candidate) {

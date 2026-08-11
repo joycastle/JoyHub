@@ -107,11 +107,11 @@ class ResourceControllerTest {
                 new PageResponse<>(List.of(), 0, 0, 12);
         given(unifiedResourceSearchAppService.search(
                 "生成报告", null, null, "relevance", UnifiedResourceSearchType.ALL,
-                false, 0, 12, null, java.util.Map.of(), null)).willReturn(page);
+                false, 0, 12, null, java.util.Map.of(), null, java.util.Set.of())).willReturn(page);
 
         var response = controller.search(
                 "生成报告", null, null, "relevance", UnifiedResourceSearchType.ALL,
-                false, 0, 12, null, null);
+                null, false, 0, 12, null, null);
 
         assertThat(response.data()).isEqualTo(page);
     }

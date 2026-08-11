@@ -8,6 +8,7 @@ export interface UnifiedResourceSearchParams {
   label?: string
   sort?: string
   type?: UnifiedResourceSearchType
+  accessMode?: Array<'INSTALL' | 'OPEN' | 'DOWNLOAD'>
   starredOnly?: boolean
   page?: number
   size?: number

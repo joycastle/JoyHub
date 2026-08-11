@@ -34,19 +34,22 @@ public class CatalogResourceCommandAppService {
     private final SkillRepository skillRepository;
     private final UserAccountRepository userAccountRepository;
     private final CatalogResourceProjectionAssembler assembler;
+    private final ResourceSearchDocumentSyncService searchDocumentSyncService;
 
     public CatalogResourceCommandAppService(CatalogResourceService resourceService,
                                             CatalogResourceRepository resourceRepository,
                                             NamespaceRepository namespaceRepository,
                                             SkillRepository skillRepository,
                                             UserAccountRepository userAccountRepository,
-                                            CatalogResourceProjectionAssembler assembler) {
+                                            CatalogResourceProjectionAssembler assembler,
+                                            ResourceSearchDocumentSyncService searchDocumentSyncService) {
         this.resourceService = resourceService;
         this.resourceRepository = resourceRepository;
         this.namespaceRepository = namespaceRepository;
         this.skillRepository = skillRepository;
         this.userAccountRepository = userAccountRepository;
         this.assembler = assembler;
+        this.searchDocumentSyncService = searchDocumentSyncService;
     }
 
     @Transactional
@@ -61,9 +64,11 @@ public class CatalogResourceCommandAppService {
             if (request.publish()) {
                 resumed = resourceService.publish(existing.getSlug(), viewer.userId(), viewer.superAdmin());
             }
+            searchDocumentSyncService.synchronizeCatalog(resumed);
             return assembler.detail(resumed, viewer);
         }
         CatalogResource resource = resourceService.create(draft, viewer.userId(), request.publish());
+        searchDocumentSyncService.synchronizeCatalog(resource);
         return assembler.detail(resource, viewer);
     }
 
@@ -83,40 +88,37 @@ public class CatalogResourceCommandAppService {
         if (request.publish()) {
             resource = resourceService.publish(slug, viewer.userId(), viewer.superAdmin());
         }
+        searchDocumentSyncService.synchronizeCatalog(resource);
         return assembler.detail(resource, viewer);
     }
 
     @Transactional
     public CatalogResourceDetailResponse publish(String slug, CatalogViewer viewer) {
         assertPublishTargetAccess(slug, viewer);
-        return assembler.detail(resourceService.publish(
-                slug,
-                viewer.userId(),
-                viewer.superAdmin()), viewer);
+        CatalogResource resource = resourceService.publish(slug, viewer.userId(), viewer.superAdmin());
+        searchDocumentSyncService.synchronizeCatalog(resource);
+        return assembler.detail(resource, viewer);
     }
 
     @Transactional
     public CatalogResourceDetailResponse takeOffline(String slug, CatalogViewer viewer) {
-        return assembler.detail(resourceService.takeOffline(
-                slug,
-                viewer.userId(),
-                viewer.superAdmin()), viewer);
+        CatalogResource resource = resourceService.takeOffline(slug, viewer.userId(), viewer.superAdmin());
+        searchDocumentSyncService.synchronizeCatalog(resource);
+        return assembler.detail(resource, viewer);
     }
 
     @Transactional
     public CatalogResourceDetailResponse archive(String slug, CatalogViewer viewer) {
-        return assembler.detail(resourceService.archive(
-                slug,
-                viewer.userId(),
-                viewer.superAdmin()), viewer);
+        CatalogResource resource = resourceService.archive(slug, viewer.userId(), viewer.superAdmin());
+        searchDocumentSyncService.synchronizeCatalog(resource);
+        return assembler.detail(resource, viewer);
     }
 
     @Transactional
     public CatalogResourceDetailResponse unarchive(String slug, CatalogViewer viewer) {
-        return assembler.detail(resourceService.unarchive(
-                slug,
-                viewer.userId(),
-                viewer.superAdmin()), viewer);
+        CatalogResource resource = resourceService.unarchive(slug, viewer.userId(), viewer.superAdmin());
+        searchDocumentSyncService.synchronizeCatalog(resource);
+        return assembler.detail(resource, viewer);
     }
 
     @Transactional
@@ -133,6 +135,7 @@ public class CatalogResourceCommandAppService {
                 viewer.userId(),
                 viewer.superAdmin()
         );
+        searchDocumentSyncService.synchronizeCatalog(resource);
         return assembler.detail(resource, new CatalogViewer(
                 newOwnerId,
                 viewer.namespaceRoles(),

@@ -5,7 +5,10 @@ import com.iflytek.skillhub.domain.skill.service.SkillQueryService;
 import com.iflytek.skillhub.domain.user.UserAccountRepository;
 import com.iflytek.skillhub.dto.SkillLifecycleVersionResponse;
 import com.iflytek.skillhub.dto.SkillSummaryResponse;
-import com.iflytek.skillhub.service.SkillSearchAppService;
+import com.iflytek.skillhub.service.UnifiedResourceSearchAppService;
+import com.iflytek.skillhub.dto.PageResponse;
+import com.iflytek.skillhub.dto.UnifiedResourceSearchItemResponse;
+import com.iflytek.skillhub.dto.UnifiedResourceSearchType;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -22,23 +25,21 @@ class ClawHubRegistryFacadeTest {
     @Test
     void search_mapsInstantToEpochMillis() {
         CanonicalSlugMapper canonicalSlugMapper = new CanonicalSlugMapper();
-        SkillSearchAppService skillSearchAppService = mock(SkillSearchAppService.class);
+        UnifiedResourceSearchAppService unifiedResourceSearchAppService = mock(UnifiedResourceSearchAppService.class);
         SkillQueryService skillQueryService = mock(SkillQueryService.class);
         CompatSkillLookupService compatSkillLookupService = mock(CompatSkillLookupService.class);
         UserAccountRepository userAccountRepository = mock(UserAccountRepository.class);
 
         ClawHubRegistryFacade facade = new ClawHubRegistryFacade(
                 canonicalSlugMapper,
-                skillSearchAppService,
+                unifiedResourceSearchAppService,
                 skillQueryService,
                 compatSkillLookupService,
                 userAccountRepository
         );
 
         Instant updatedAt = Instant.parse("2026-03-18T09:00:00Z");
-        when(skillSearchAppService.search("agent", null, "relevance", 0, 20, null, Map.of()))
-                .thenReturn(new SkillSearchAppService.SearchResponse(
-                        List.of(new SkillSummaryResponse(
+        SkillSummaryResponse skill = new SkillSummaryResponse(
                                 1L,
                                 "time-skill",
                                 "Time Skill",
@@ -56,11 +57,11 @@ class ClawHubRegistryFacadeTest {
                                 new SkillLifecycleVersionResponse(11L, "1.0.0", "PUBLISHED"),
                                 null,
                                 "PUBLISHED"
-                        )),
-                        1,
-                        0,
-                        20
-                ));
+                        );
+        when(unifiedResourceSearchAppService.search("agent", null, null, "relevance",
+                UnifiedResourceSearchType.SKILL, false, 0, 20, null, Map.of(), null))
+                .thenReturn(new PageResponse<>(List.of(new UnifiedResourceSearchItemResponse(
+                        "SKILL", "INSTALL", 0.9D, skill, null)), 1, 0, 20));
 
         ClawHubRegistrySearchResponse result = facade.search("agent", 20, null, Map.of());
 

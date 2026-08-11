@@ -1795,6 +1795,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/search/documents/{resourceType}/{resourceId}/regenerate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["regenerate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/labels": {
         parameters: {
             query?: never;
@@ -3171,6 +3187,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/search/documents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["documents"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/search/documents/{resourceType}/{resourceId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["document"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/audit-logs": {
         parameters: {
             query?: never;
@@ -4125,6 +4173,40 @@ export interface components {
             timestamp?: string;
             requestId?: string;
         };
+        ApiResponseResourceSearchDocumentResponse: {
+            /** Format: int32 */
+            code?: number;
+            msg?: string;
+            data?: components["schemas"]["ResourceSearchDocumentResponse"];
+            /** Format: date-time */
+            timestamp?: string;
+            requestId?: string;
+        };
+        ResourceSearchDocumentResponse: {
+            resourceType?: string;
+            /** Format: int64 */
+            resourceId?: number;
+            title?: string;
+            slug?: string;
+            summary?: string;
+            accessMode?: string;
+            searchEnabled?: boolean;
+            generationStatus?: string;
+            companyRelevance?: string;
+            capabilitiesJson?: string;
+            scenariosJson?: string;
+            inputsJson?: string;
+            outputsJson?: string;
+            searchTermsJson?: string;
+            evidenceJson?: string;
+            profileText?: string;
+            rawDocumentation?: string;
+            sourceHash?: string;
+            /** Format: date-time */
+            generatedAt?: string;
+            /** Format: date-time */
+            updatedAt?: string;
+        };
         AdminLabelCreateRequest: {
             slug: string;
             /** @enum {string} */
@@ -5047,6 +5129,24 @@ export interface components {
         };
         PageResponseAdminUserSummaryResponse: {
             items?: components["schemas"]["AdminUserSummaryResponse"][];
+            /** Format: int64 */
+            total?: number;
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+        };
+        ApiResponsePageResponseResourceSearchDocumentResponse: {
+            /** Format: int32 */
+            code?: number;
+            msg?: string;
+            data?: components["schemas"]["PageResponseResourceSearchDocumentResponse"];
+            /** Format: date-time */
+            timestamp?: string;
+            requestId?: string;
+        };
+        PageResponseResourceSearchDocumentResponse: {
+            items?: components["schemas"]["ResourceSearchDocumentResponse"][];
             /** Format: int64 */
             total?: number;
             /** Format: int32 */
@@ -8763,6 +8863,29 @@ export interface operations {
             };
         };
     };
+    regenerate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                resourceType: string;
+                resourceId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseResourceSearchDocumentResponse"];
+                };
+            };
+        };
+    };
     listLabels_2: {
         parameters: {
             query?: never;
@@ -9890,6 +10013,7 @@ export interface operations {
                 label?: string;
                 sort?: string;
                 type?: "ALL" | "AGENT" | "TOOL" | "SKILL";
+                accessMode?: string[];
                 starredOnly?: boolean;
                 page?: number;
                 size?: number;
@@ -9919,6 +10043,7 @@ export interface operations {
                 label?: string;
                 sort?: string;
                 type?: "ALL" | "AGENT" | "TOOL" | "SKILL";
+                accessMode?: string[];
                 starredOnly?: boolean;
                 page?: number;
                 size?: number;
@@ -10915,6 +11040,54 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ApiResponsePageResponseAdminUserSummaryResponse"];
+                };
+            };
+        };
+    };
+    documents: {
+        parameters: {
+            query?: {
+                resourceType?: string;
+                generationStatus?: string;
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponsePageResponseResourceSearchDocumentResponse"];
+                };
+            };
+        };
+    };
+    document: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                resourceType: string;
+                resourceId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseResourceSearchDocumentResponse"];
                 };
             };
         };

@@ -156,13 +156,11 @@ public class HybridResourceSearchRanker {
         boolean strongLexicalMatch = phraseMatch
                 || (intent.terms().size() == 1 && termCoverage == 1D)
                 || (intent.terms().size() > 1 && termCoverage >= 0.66D);
-        double typeBoost = intent.resourceTypes().isEmpty() ? 0D : 1.4D;
-        double accessBoost = intent.accessModes().isEmpty() ? 0D : 0.8D;
         double normalizedLexical = Math.min(lexical / 6D, 1D);
-        double score = normalizedLexical * 0.35D
+        // Type and access are hard filters.  Ranking follows the shared 55/30/10/5 policy.
+        double score = normalizedLexical * 0.55D
                 + semantic * 0.30D
-                + typeBoost * 0.20D
-                + accessBoost * 0.10D
+                + termCoverage * 0.10D
                 + Math.min(Math.max(document.qualityScore(), 0D), 1D) * 0.05D;
         return new RankedResource(document, score, semantic, lexical, strongLexicalMatch);
     }

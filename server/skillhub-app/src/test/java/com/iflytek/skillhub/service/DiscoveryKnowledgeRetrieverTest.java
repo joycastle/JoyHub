@@ -6,14 +6,12 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.iflytek.skillhub.auth.rbac.PlatformPrincipal;
-import com.iflytek.skillhub.catalog.domain.CatalogResourceRepository;
 import com.iflytek.skillhub.domain.namespace.NamespaceRole;
 import com.iflytek.skillhub.dto.PageResponse;
 import com.iflytek.skillhub.dto.SkillSummaryResponse;
 import com.iflytek.skillhub.dto.UnifiedResourceSearchItemResponse;
 import com.iflytek.skillhub.dto.UnifiedResourceSearchType;
-import com.iflytek.skillhub.infra.jpa.SkillSearchDocumentJpaRepository;
-import com.iflytek.skillhub.search.HashingSearchEmbeddingService;
+import com.iflytek.skillhub.infra.jpa.ResourceSearchDocumentJpaRepository;
 import com.iflytek.skillhub.search.SearchTextTokenizer;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -41,22 +39,9 @@ class DiscoveryKnowledgeRetrieverTest {
     }
 
     @Test
-    void splitsLongDocumentationIntoBoundedChunksWithSmallOverlap() {
-        String document = "# 使用方法\n" + "数据分析工具支持 SQL 查询和经营报表。 ".repeat(80);
-
-        assertThat(DiscoveryKnowledgeRetriever.chunk(document))
-                .isNotEmpty()
-                .allSatisfy(chunk -> assertThat(chunk.length()).isLessThanOrEqualTo(720));
-        assertThat(DiscoveryKnowledgeRetriever.chunk(document).stream()
-                .mapToInt(String::length)
-                .sum()).isGreaterThan(720);
-    }
-
-    @Test
     void retrievesAiCandidatesFromTheUnifiedResourceSearchPool() {
-        CatalogResourceRepository catalogRepository = mock(CatalogResourceRepository.class);
         UnifiedResourceSearchAppService unifiedSearch = mock(UnifiedResourceSearchAppService.class);
-        SkillSearchDocumentJpaRepository skillDocuments = mock(SkillSearchDocumentJpaRepository.class);
+        ResourceSearchDocumentJpaRepository documents = mock(ResourceSearchDocumentJpaRepository.class);
         SkillSummaryResponse reportSkill = new SkillSummaryResponse(
                 7L, "report-writer", "Report Writer", "Generate reports",
                 "报告生成", "生成多格式报告", "PUBLIC", "ACTIVE",
@@ -69,14 +54,13 @@ class DiscoveryKnowledgeRetrieverTest {
         CatalogViewer viewer = new CatalogViewer("user-1", roles, Set.of("USER"));
         when(unifiedSearch.search(
                 "生成报告", null, null, "relevance", UnifiedResourceSearchType.ALL, false,
-                0, 100, "user-1", roles, viewer))
+                0, 24, "user-1", roles, viewer, Set.of()))
                 .thenReturn(new PageResponse<>(List.of(
                         new UnifiedResourceSearchItemResponse(
                                 "SKILL", "INSTALL", 0.9D, reportSkill, null)),
-                        1, 0, 100));
+                        1, 0, 24));
         DiscoveryKnowledgeRetriever retriever = new DiscoveryKnowledgeRetriever(
-                catalogRepository, unifiedSearch, skillDocuments,
-                new HashingSearchEmbeddingService(), new SearchTextTokenizer());
+                unifiedSearch, documents, new SearchTextTokenizer());
 
         var results = retriever.retrieve(List.of("生成报告"), principal, roles, "zh-CN");
 
@@ -87,36 +71,44 @@ class DiscoveryKnowledgeRetrieverTest {
         });
         verify(unifiedSearch).search(
                 "生成报告", null, null, "relevance", UnifiedResourceSearchType.ALL, false,
-                0, 100, "user-1", roles, viewer);
+                0, 24, "user-1", roles, viewer, Set.of());
     }
 
     @Test
-    void expandsCompoundGoalThroughTheSameUnifiedSearchPool() {
-        CatalogResourceRepository catalogRepository = mock(CatalogResourceRepository.class);
+    void sendsEachRequestedQueryThroughTheSameUnifiedSearchPool() {
         UnifiedResourceSearchAppService unifiedSearch = mock(UnifiedResourceSearchAppService.class);
-        SkillSearchDocumentJpaRepository skillDocuments = mock(SkillSearchDocumentJpaRepository.class);
+        ResourceSearchDocumentJpaRepository documents = mock(ResourceSearchDocumentJpaRepository.class);
         PlatformPrincipal principal = new PlatformPrincipal(
                 "user-1", "User", "user@example.com", null, "feishu", Set.of("USER"));
         CatalogViewer viewer = new CatalogViewer("user-1", Map.of(), Set.of("USER"));
-        for (String query : List.of(
-                "我想生成一个有视频素材的报告", "生成 报告", "视频 素材")) {
-            when(unifiedSearch.search(
-                    query, null, null, "relevance", UnifiedResourceSearchType.ALL, false,
-                    0, 100, "user-1", Map.of(), viewer))
-                    .thenReturn(new PageResponse<>(List.of(), 0, 0, 100));
-        }
+        when(unifiedSearch.search("我想生成一个有视频素材的报告", null, null, "relevance",
+                UnifiedResourceSearchType.ALL, false, 0, 24, "user-1", Map.of(), viewer, Set.of()))
+                .thenReturn(new PageResponse<>(List.of(), 0, 0, 24));
         DiscoveryKnowledgeRetriever retriever = new DiscoveryKnowledgeRetriever(
-                catalogRepository, unifiedSearch, skillDocuments,
-                new HashingSearchEmbeddingService(), new SearchTextTokenizer());
+                unifiedSearch, documents, new SearchTextTokenizer());
 
         retriever.retrieve(
                 List.of("我想生成一个有视频素材的报告"), principal, Map.of(), "zh-CN");
 
-        for (String query : List.of(
-                "我想生成一个有视频素材的报告", "生成 报告", "视频 素材")) {
-            verify(unifiedSearch).search(
-                    query, null, null, "relevance", UnifiedResourceSearchType.ALL, false,
-                    0, 100, "user-1", Map.of(), viewer);
-        }
+        verify(unifiedSearch).search("我想生成一个有视频素材的报告", null, null, "relevance",
+                UnifiedResourceSearchType.ALL, false, 0, 24, "user-1", Map.of(), viewer, Set.of());
+    }
+
+    @Test
+    void extractsResourceTypeAndAccessModeBeforeUsingUnifiedSearch() {
+        UnifiedResourceSearchAppService unifiedSearch = mock(UnifiedResourceSearchAppService.class);
+        ResourceSearchDocumentJpaRepository documents = mock(ResourceSearchDocumentJpaRepository.class);
+        PlatformPrincipal principal = new PlatformPrincipal(
+                "user-1", "User", "user@example.com", null, "feishu", Set.of("USER"));
+        CatalogViewer viewer = new CatalogViewer("user-1", Map.of(), Set.of("USER"));
+        when(unifiedSearch.search("找一个可安装的Skill", null, null, "relevance",
+                UnifiedResourceSearchType.SKILL, false, 0, 24, "user-1", Map.of(), viewer, Set.of("INSTALL")))
+                .thenReturn(new PageResponse<>(List.of(), 0, 0, 24));
+
+        new DiscoveryKnowledgeRetriever(unifiedSearch, documents, new SearchTextTokenizer())
+                .retrieve(List.of("找一个可安装的Skill"), principal, Map.of(), "zh-CN");
+
+        verify(unifiedSearch).search("找一个可安装的Skill", null, null, "relevance",
+                UnifiedResourceSearchType.SKILL, false, 0, 24, "user-1", Map.of(), viewer, Set.of("INSTALL"));
     }
 }

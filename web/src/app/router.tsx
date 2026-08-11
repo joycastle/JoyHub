@@ -122,6 +122,16 @@ const AdminLabelsPage = createRoleProtectedRouteComponent(
   'AdminLabelsPage',
   ['SUPER_ADMIN'],
 )
+const AdminSearchProfilesPage = createRoleProtectedRouteComponent(
+  () => import('@/pages/admin/search-profiles'),
+  'AdminSearchProfilesPage',
+  ['SUPER_ADMIN'],
+)
+const AdminSearchProfileDocumentPage = createRoleProtectedRouteComponent(
+  () => import('@/pages/admin/search-profile-document'),
+  'AdminSearchProfileDocumentPage',
+  ['SUPER_ADMIN'],
+)
 
 function DefaultNotFound() {
   return (
@@ -448,6 +458,18 @@ const adminLabelsRoute = createRoute({
   beforeLoad: requireAuth,
   component: AdminLabelsPage,
 })
+const adminSearchProfilesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: 'admin/search-profiles',
+  beforeLoad: requireAuth,
+  component: AdminSearchProfilesPage,
+})
+const adminSearchProfileDocumentRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: 'admin/search-profiles/$resourceType/$resourceId',
+  beforeLoad: requireAuth,
+  component: AdminSearchProfileDocumentPage,
+})
 
 const routeTree = rootRoute.addChildren([
   landingRoute,
@@ -483,6 +505,8 @@ const routeTree = rootRoute.addChildren([
   adminUsersRoute,
   adminAuditLogRoute,
   adminLabelsRoute,
+  adminSearchProfilesRoute,
+  adminSearchProfileDocumentRoute,
 ])
 
 export const router = createRouter({

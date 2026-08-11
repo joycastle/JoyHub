@@ -53,6 +53,7 @@ import type {
   DiscoveryAssistRequest,
   DiscoveryAssistResponse,
   ResourceSummary,
+  ResourceSearchDocument,
   PublishTarget,
   ResourceStats,
   UnifiedResourceSearchItem,
@@ -749,6 +750,7 @@ export const resourcesApi = {
     label?: string
     sort?: string
     type?: UnifiedResourceSearchType
+    accessMode?: Array<'INSTALL' | 'OPEN' | 'DOWNLOAD'>
     starredOnly?: boolean
     page?: number
     size?: number
@@ -763,6 +765,7 @@ export const resourcesApi = {
     if (params.q?.trim()) query.set('q', params.q.trim())
     if (params.namespace?.trim()) query.set('namespace', params.namespace.trim())
     if (params.label?.trim()) query.set('label', params.label.trim())
+    params.accessMode?.forEach(mode => query.append('accessMode', mode))
     return fetchJson<PagedResponse<UnifiedResourceSearchItem>>(
       `${WEB_API_PREFIX}/resources/search?${query.toString()}`,
     )
@@ -1366,6 +1369,27 @@ export const skillDocumentationApi = {
 }
 
 export const adminApi = {
+  async getResourceSearchDocuments(params: { resourceType?: string; generationStatus?: string; page?: number; size?: number } = {}) {
+    const query = new URLSearchParams({ page: String(params.page ?? 0), size: String(params.size ?? 20) })
+    if (params.resourceType) query.set('resourceType', params.resourceType)
+    if (params.generationStatus) query.set('generationStatus', params.generationStatus)
+    return fetchJson<{ items: ResourceSearchDocument[]; total: number; page: number; size: number }>(
+      `/api/v1/admin/search/documents?${query.toString()}`,
+    )
+  },
+
+  async getResourceSearchDocument(resourceType: string, resourceId: number): Promise<ResourceSearchDocument> {
+    return fetchJson<ResourceSearchDocument>(
+      `/api/v1/admin/search/documents/${encodeURIComponent(resourceType)}/${resourceId}`,
+    )
+  },
+
+  async regenerateResourceSearchDocument(resourceType: string, resourceId: number): Promise<ResourceSearchDocument> {
+    return fetchJson<ResourceSearchDocument>(
+      `/api/v1/admin/search/documents/${encodeURIComponent(resourceType)}/${resourceId}/regenerate`,
+      { method: 'POST', headers: await ensureCsrfHeaders() },
+    )
+  },
   async getUsers(params: { search?: string; status?: string; page?: number; size?: number }) {
     const searchParams = new URLSearchParams()
     if (params.search) searchParams.set('search', params.search)

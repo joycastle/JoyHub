@@ -6,6 +6,7 @@ import com.iflytek.skillhub.dto.ApiResponse;
 import com.iflytek.skillhub.dto.ApiResponseFactory;
 import com.iflytek.skillhub.ratelimit.RateLimit;
 import com.iflytek.skillhub.service.SkillSearchAppService;
+import com.iflytek.skillhub.service.UnifiedResourceSearchAppService;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,12 +27,12 @@ public class SkillSearchController extends BaseApiController {
     private static final int DEFAULT_PAGE = 0;
     private static final int DEFAULT_SIZE = 20;
 
-    private final SkillSearchAppService skillSearchAppService;
+    private final UnifiedResourceSearchAppService unifiedResourceSearchAppService;
 
-    public SkillSearchController(SkillSearchAppService skillSearchAppService,
+    public SkillSearchController(UnifiedResourceSearchAppService unifiedResourceSearchAppService,
                                  ApiResponseFactory responseFactory) {
         super(responseFactory);
-        this.skillSearchAppService = skillSearchAppService;
+        this.unifiedResourceSearchAppService = unifiedResourceSearchAppService;
     }
 
     @GetMapping
@@ -49,13 +50,13 @@ public class SkillSearchController extends BaseApiController {
             @RequestAttribute(value = "userId", required = false) String userId,
             @RequestAttribute(value = "userNsRoles", required = false) Map<Long, NamespaceRole> userNsRoles) {
 
-        SkillSearchAppService.SearchResponse response = skillSearchAppService.search(
+        SkillSearchAppService.SearchResponse response = unifiedResourceSearchAppService.searchSkills(
                 q,
                 namespace,
+                labels,
                 normalizeSort(sort),
                 parseNonNegativeInt(page, DEFAULT_PAGE),
                 parsePositiveInt(size, DEFAULT_SIZE),
-                labels,
                 userId,
                 userNsRoles
         );

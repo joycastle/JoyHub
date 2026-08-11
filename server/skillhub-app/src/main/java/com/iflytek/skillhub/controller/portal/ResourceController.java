@@ -29,6 +29,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.List;
 import java.util.Set;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.ContentDisposition;
@@ -112,6 +113,7 @@ public class ResourceController extends BaseApiController {
             @RequestParam(required = false) String label,
             @RequestParam(defaultValue = "relevance") String sort,
             @RequestParam(defaultValue = "ALL") UnifiedResourceSearchType type,
+            @RequestParam(required = false) List<String> accessMode,
             @RequestParam(defaultValue = "false") boolean starredOnly,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "12") int size,
@@ -123,7 +125,8 @@ public class ResourceController extends BaseApiController {
                 principal.userId(), roles,
                 principal.platformRoles() != null ? principal.platformRoles() : Set.of());
         return ok("response.success.read", unifiedResourceSearchAppService.search(
-                q, namespace, label, sort, type, starredOnly, page, size, userId, roles, catalogViewer));
+                q, namespace, label, sort, type, starredOnly, page, size, userId, roles, catalogViewer,
+                accessMode == null ? Set.of() : new java.util.HashSet<>(accessMode)));
     }
 
     @GetMapping("/mine")

@@ -159,6 +159,11 @@ export function UserMenu({ user, triggerClassName }: UserMenuProps) {
                 {t('user.menu.labels')}
               </Link>
             ) : null}
+            {isSuperAdmin ? (
+              <Link to="/admin/search-profiles" className={menuItemClassName} onClick={closeMenu}>
+                搜索画像管理
+              </Link>
+            ) : null}
             {isAuditor ? (
               <Link to="/admin/audit-log" className={menuItemClassName} onClick={closeMenu}>
                 {t('user.menu.auditLog')}
