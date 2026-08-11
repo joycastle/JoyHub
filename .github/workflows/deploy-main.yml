@@ -50,6 +50,9 @@ jobs:
       - name: Run backend tests
         run: make test-backend-app
 
+      - name: Install frontend dependencies
+        run: make web-install-ci
+
       - name: Run frontend checks
         run: |
           make typecheck-web

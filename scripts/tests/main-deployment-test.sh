@@ -28,6 +28,7 @@ grep -Fq 'platforms: linux/arm64' "${workflow}" || fail "Production images must 
 grep -Fq 'persist-credentials: false' "${workflow}" || fail "Checkout credentials must not persist"
 grep -Fq 'PROD_SSH_KNOWN_HOSTS' "${workflow}" || fail "Pinned SSH host keys are required"
 grep -Fq 'joyhub-deployment-runner' "${workflow}" || fail "Runner image must deploy with the application"
+grep -Fq 'make web-install-ci' "${workflow}" || fail "Frontend dependencies must be installed before checks"
 
 grep -Fq 'StrictHostKeyChecking=yes' "${client}" || fail "SSH host verification must be strict"
 ! grep -Fq 'StrictHostKeyChecking=accept-new' "${client}" || fail "TOFU host verification is not allowed"
