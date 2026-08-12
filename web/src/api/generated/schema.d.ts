@@ -164,6 +164,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/resources/{resourceType}/{resourceId}/category": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set or reset the shared resource category */
+        put: operations["updateCategory"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/web/resources/{resourceType}/{resourceId}/category": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Set or reset the shared resource category */
+        put: operations["updateCategory_1"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/resources/{resourceId}/favorite": {
         parameters: {
             query?: never;
@@ -3560,6 +3594,25 @@ export interface components {
             type?: string;
             displayName?: string;
         };
+        ResourceCategoryUpdateRequest: {
+            categoryCode?: string;
+        };
+        ApiResponseResourceCategoryResponse: {
+            /** Format: int32 */
+            code?: number;
+            msg?: string;
+            data?: components["schemas"]["ResourceCategoryResponse"];
+            /** Format: date-time */
+            timestamp?: string;
+            requestId?: string;
+        };
+        ResourceCategoryResponse: {
+            resourceType?: string;
+            /** Format: int64 */
+            resourceId?: number;
+            categoryCode?: string;
+            categorySource?: string;
+        };
         ApiResponseBoolean: {
             /** Format: int32 */
             code?: number;
@@ -3687,6 +3740,7 @@ export interface components {
             tags?: string[];
             relatedResourceIds?: number[];
             relatedSkillIds?: number[];
+            categoryCode?: string;
             publish?: boolean;
         };
         ApiResponseCatalogResourceDetailResponse: {
@@ -3753,6 +3807,8 @@ export interface components {
             updatedAt?: string;
             /** Format: date-time */
             publishedAt?: string;
+            categoryCode?: string;
+            categorySource?: string;
         };
         CatalogResourceSummaryResponse: {
             /** Format: int64 */
@@ -4206,6 +4262,8 @@ export interface components {
             generatedAt?: string;
             /** Format: date-time */
             updatedAt?: string;
+            categoryCode?: string;
+            categorySource?: string;
         };
         AdminLabelCreateRequest: {
             slug: string;
@@ -4621,6 +4679,7 @@ export interface components {
             relevanceScore?: number;
             skill?: components["schemas"]["SkillSummaryResponse"];
             catalogResource?: components["schemas"]["CatalogResourceSummaryResponse"];
+            categoryCode?: string;
         };
         ApiResponseListRecommendedResourceResponse: {
             /** Format: int32 */
@@ -5887,6 +5946,60 @@ export interface operations {
             };
         };
     };
+    updateCategory: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                resourceType: string;
+                resourceId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResourceCategoryUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseResourceCategoryResponse"];
+                };
+            };
+        };
+    };
+    updateCategory_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                resourceType: string;
+                resourceId: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ResourceCategoryUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseResourceCategoryResponse"];
+                };
+            };
+        };
+    };
     favoriteState: {
         parameters: {
             query?: never;
@@ -6979,6 +7092,7 @@ export interface operations {
                 files: string[];
                 visibility: string;
                 confirmWarnings?: boolean;
+                categoryCode?: string;
             };
             header?: never;
             path: {
@@ -7005,6 +7119,7 @@ export interface operations {
                 files: string[];
                 visibility: string;
                 confirmWarnings?: boolean;
+                categoryCode?: string;
             };
             header?: never;
             path: {
@@ -7030,6 +7145,7 @@ export interface operations {
             query: {
                 visibility: string;
                 confirmWarnings?: boolean;
+                categoryCode?: string;
             };
             header?: never;
             path: {
@@ -7062,6 +7178,7 @@ export interface operations {
             query: {
                 visibility: string;
                 confirmWarnings?: boolean;
+                categoryCode?: string;
             };
             header?: never;
             path: {
@@ -10011,6 +10128,7 @@ export interface operations {
                 q?: string;
                 namespace?: string;
                 label?: string;
+                categoryCode?: string;
                 sort?: string;
                 type?: "ALL" | "AGENT" | "TOOL" | "SKILL";
                 accessMode?: string[];
@@ -10041,6 +10159,7 @@ export interface operations {
                 q?: string;
                 namespace?: string;
                 label?: string;
+                categoryCode?: string;
                 sort?: string;
                 type?: "ALL" | "AGENT" | "TOOL" | "SKILL";
                 accessMode?: string[];

@@ -23,5 +23,7 @@ public record ResourceSearchDocumentResponse(
         String rawDocumentation,
         String sourceHash,
         Instant generatedAt,
-        Instant updatedAt
+        Instant updatedAt,
+        String categoryCode,
+        String categorySource
 ) { }

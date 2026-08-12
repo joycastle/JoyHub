@@ -2,6 +2,8 @@ package com.iflytek.skillhub.infra.jpa;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -34,6 +36,10 @@ public class ResourceSearchDocumentEntity {
     @Column(nullable = false, length = 32) private String visibility;
     @Column(nullable = false, length = 32) private String status;
     @Column(name = "company_relevance", nullable = false, length = 16) private String companyRelevance = "GENERAL";
+    @Enumerated(EnumType.STRING)
+    @Column(name = "category_code", nullable = false, length = 32) private ResourceCategoryCode categoryCode = ResourceCategoryCode.OTHER;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "category_source", nullable = false, length = 16) private ResourceCategorySource categorySource = ResourceCategorySource.AI;
     @Column(name = "search_enabled", nullable = false) private boolean searchEnabled = true;
     @Column(name = "profile_text", nullable = false, columnDefinition = "TEXT") private String profileText = "";
     @Column(name = "raw_documentation", nullable = false, columnDefinition = "TEXT") private String rawDocumentation = "";
@@ -97,7 +103,8 @@ public class ResourceSearchDocumentEntity {
     public void applyGeneratedProfile(String capabilitiesJson, String scenariosJson, String inputsJson,
                                       String outputsJson, String searchTermsJson, String evidenceJson,
                                       String companyRelevance, String profileText, String generatorModel,
-                                      String promptVersion, String semanticVector) {
+                                      String promptVersion, String semanticVector,
+                                      ResourceCategoryCode generatedCategory) {
         this.capabilitiesJson = capabilitiesJson;
         this.scenariosJson = scenariosJson;
         this.inputsJson = inputsJson;
@@ -105,6 +112,7 @@ public class ResourceSearchDocumentEntity {
         this.searchTermsJson = searchTermsJson;
         this.evidenceJson = evidenceJson;
         this.companyRelevance = companyRelevance;
+        applyAiCategory(generatedCategory);
         this.profileText = profileText;
         this.generatorModel = generatorModel;
         this.promptVersion = promptVersion;
@@ -121,6 +129,27 @@ public class ResourceSearchDocumentEntity {
         this.generationStatus = "PENDING";
         this.semanticVector = null;
         this.generatedAt = null;
+    }
+
+    /** Records a human-selected category; subsequent AI generations must preserve it. */
+    public void setAuthorCategory(ResourceCategoryCode category) {
+        this.categoryCode = category == null ? ResourceCategoryCode.OTHER : category;
+        this.categorySource = ResourceCategorySource.AUTHOR;
+    }
+
+    /** Returns ownership of category selection to AI and queues a fresh profile generation. */
+    public void useAiCategory() {
+        this.categoryCode = ResourceCategoryCode.OTHER;
+        this.categorySource = ResourceCategorySource.AI;
+        requestRegeneration();
+    }
+
+    /** Applies an AI category only while the document is not human-owned. */
+    public void applyAiCategory(ResourceCategoryCode generatedCategory) {
+        if (categorySource != ResourceCategorySource.AUTHOR) {
+            this.categoryCode = generatedCategory == null ? ResourceCategoryCode.OTHER : generatedCategory;
+            this.categorySource = ResourceCategorySource.AI;
+        }
     }
 
     public Long getResourceId() { return resourceId; }
@@ -140,6 +169,8 @@ public class ResourceSearchDocumentEntity {
     public boolean isSearchEnabled() { return searchEnabled; }
     public String getGenerationStatus() { return generationStatus; }
     public String getCompanyRelevance() { return companyRelevance; }
+    public ResourceCategoryCode getCategoryCode() { return categoryCode; }
+    public ResourceCategorySource getCategorySource() { return categorySource; }
     public String getEvidenceJson() { return evidenceJson; }
     public String getSourceHash() { return sourceHash; }
     public Instant getGeneratedAt() { return generatedAt; }

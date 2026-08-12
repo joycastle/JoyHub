@@ -58,6 +58,7 @@ public class ResourceSearchProfileAdminAppService {
                 document.getGenerationStatus(), document.getCompanyRelevance(), document.getCapabilitiesJson(),
                 document.getScenariosJson(), document.getInputsJson(), document.getOutputsJson(),
                 document.getSearchTermsJson(), document.getEvidenceJson(), document.getProfileText(),
-                document.getRawDocumentation(), document.getSourceHash(), document.getGeneratedAt(), document.getUpdatedAt());
+                document.getRawDocumentation(), document.getSourceHash(), document.getGeneratedAt(), document.getUpdatedAt(),
+                document.getCategoryCode().name(), document.getCategorySource().name());
     }
 }

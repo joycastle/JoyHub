@@ -32,6 +32,22 @@
     "saveAndDeploy": "Save and publish new version",
     "saveResource": "Save and deploy"
   },
+  "resourceCategory": {
+    "label": "Work scenario",
+    "aiOption": "AI auto-classify",
+    "aiHint": "After publishing, AI will generate the category from the documentation.",
+    "options": {
+      "GAME_DEV_QA": "Game development & QA",
+      "UA_MONETIZATION": "User acquisition & monetization",
+      "CREATIVE_MEDIA": "Creative, art & media",
+      "DATA_ANALYTICS": "Data analysis & reporting",
+      "COLLAB_PRODUCTIVITY": "Collaboration & project management",
+      "AI_ENGINEERING": "AI & engineering infrastructure",
+      "INTEGRATION_AUTOMATION": "Automation & external integrations",
+      "GENERAL_KNOWLEDGE": "General knowledge & personal productivity",
+      "OTHER": "Other"
+    }
+  },
   "catalogDetail": {
     "moreActions": "More actions",
     "edit": "Edit content",

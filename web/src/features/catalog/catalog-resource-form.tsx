@@ -12,6 +12,7 @@ import { Input } from '@/shared/ui/input'
 import { Label } from '@/shared/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select'
 import { Textarea } from '@/shared/ui/textarea'
+import { RESOURCE_CATEGORY_OPTIONS, isResourceCategoryCode, resourceCategoryLabel, type ResourceCategoryCode } from '@/shared/lib/resource-category'
 
 interface CatalogResourceFormProps {
   onCreated: (slug: string) => void
@@ -55,6 +56,11 @@ export function CatalogResourceForm({ onCreated, initialKind, resource }: Catalo
   const [primaryDepartmentId, setPrimaryDepartmentId] = useState<number | undefined>(() => resource?.department?.id)
   const [documentation, setDocumentation] = useState(() => resource?.documentation ?? '')
   const [summary, setSummary] = useState(() => resource?.summary ?? '')
+  const [categoryCode, setCategoryCode] = useState<ResourceCategoryCode | undefined>(() =>
+    resource?.categorySource === 'AUTHOR' && isResourceCategoryCode(resource.categoryCode)
+      ? resource.categoryCode
+      : undefined,
+  )
   const [isExtractingDocument, setIsExtractingDocument] = useState(false)
   const [isGeneratingDocumentation, setIsGeneratingDocumentation] = useState(false)
   const [documentationGenerationError, setDocumentationGenerationError] = useState('')
@@ -130,7 +136,7 @@ export function CatalogResourceForm({ onCreated, initialKind, resource }: Catalo
         maintenanceStatus: resource?.maintenanceStatus ?? 'ACTIVE',
         visibilityScope: visibility,
         visibleDepartmentIds: visibility === 'DEPARTMENTS' ? selectedDepartments : [],
-        scenarios: split(form.get('scenarios')),
+        categoryCode: categoryCode ?? null,
         tags: split(form.get('tags')),
         relatedResourceIds: [],
         relatedSkillIds,
@@ -196,7 +202,7 @@ export function CatalogResourceForm({ onCreated, initialKind, resource }: Catalo
     const values = new FormData(form)
     const name = String(values.get('name') ?? '').trim()
     const summary = String(values.get('summary') ?? '').trim()
-    const scenarios = String(values.get('scenarios') ?? '').split(',').map((item) => item.trim()).filter(Boolean)
+    const scenarios = categoryCode ? [categoryCode] : []
     if (!name || !summary) {
       setDocumentationGenerationError('请先填写 Agent 名称和简介，再生成使用说明。')
       return
@@ -267,7 +273,17 @@ export function CatalogResourceForm({ onCreated, initialKind, resource }: Catalo
           {isManagedStatic ? <p className="mt-2 text-xs text-muted-foreground">{t('catalogPublish.accessUrlHint')}</p> : null}
         </div>
         {!isAgent ? <div><Label htmlFor="version">版本{isManagedStatic ? ' *' : ''}</Label><Input className="mt-2" id="version" name="version" placeholder="1.0.0" required={isManagedStatic} readOnly={isManagedStatic && isEditing && !artifact} defaultValue={resource?.version ?? ''} />{isManagedStatic && isEditing && !artifact ? <p className="mt-2 text-xs text-muted-foreground">{t('catalogPublish.versionWithArtifactHint')}</p> : null}</div> : <div><Label>当前发布方式</Label><div className={`${FIELD_CLASS} text-muted-foreground`}>飞书机器人</div></div>}
-        <div><Label htmlFor="scenarios">适用场景 {isAgent ? '*' : ''}</Label><Input className="mt-2" id="scenarios" name="scenarios" required={isAgent} placeholder="研发提效, 美术资产处理" defaultValue={resource?.scenarios?.join(', ') ?? ''} /></div>
+        <div>
+          <Label htmlFor="categoryCode">适用场景</Label>
+          <Select value={categoryCode ?? '__ai__'} onValueChange={(value) => setCategoryCode(value === '__ai__' ? undefined : value as ResourceCategoryCode)}>
+            <SelectTrigger id="categoryCode" className="mt-2"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__ai__">{t('resourceCategory.aiOption')}</SelectItem>
+              {RESOURCE_CATEGORY_OPTIONS.map((option) => <SelectItem key={option.code} value={option.code}>{resourceCategoryLabel(t, option.code)}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <p className="mt-2 text-xs text-muted-foreground">{t('resourceCategory.aiHint')}</p>
+        </div>
         <div><Label htmlFor="tags">标签</Label><Input className="mt-2" id="tags" name="tags" placeholder="预览, 内部工具" defaultValue={resource?.tags?.join(', ') ?? ''} /></div>
       </section>
 

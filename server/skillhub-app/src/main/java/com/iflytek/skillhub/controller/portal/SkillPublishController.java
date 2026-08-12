@@ -16,6 +16,8 @@ import com.iflytek.skillhub.dto.PublishResponse;
 import com.iflytek.skillhub.metrics.SkillHubMetrics;
 import com.iflytek.skillhub.ratelimit.RateLimit;
 import com.iflytek.skillhub.service.SkillVisibilityScopeResolver;
+import com.iflytek.skillhub.service.ResourceCategoryAppService;
+import com.iflytek.skillhub.service.CatalogViewer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
@@ -50,19 +52,22 @@ public class SkillPublishController extends BaseApiController {
     private final SkillHubMetrics skillHubMetrics;
     private final SkillVisibilityScopeResolver visibilityScopeResolver;
     private final MessageSource messageSource;
+    private final ResourceCategoryAppService resourceCategoryAppService;
 
     public SkillPublishController(SkillPublishService skillPublishService,
                                   SkillPackageArchiveExtractor skillPackageArchiveExtractor,
                                   ApiResponseFactory responseFactory,
                                   SkillHubMetrics skillHubMetrics,
                                   SkillVisibilityScopeResolver visibilityScopeResolver,
-                                  MessageSource messageSource) {
+                                  MessageSource messageSource,
+                                  ResourceCategoryAppService resourceCategoryAppService) {
         super(responseFactory);
         this.skillPublishService = skillPublishService;
         this.skillPackageArchiveExtractor = skillPackageArchiveExtractor;
         this.skillHubMetrics = skillHubMetrics;
         this.visibilityScopeResolver = visibilityScopeResolver;
         this.messageSource = messageSource;
+        this.resourceCategoryAppService = resourceCategoryAppService;
     }
 
     /**
@@ -76,8 +81,10 @@ public class SkillPublishController extends BaseApiController {
             @RequestParam("file") MultipartFile file,
             @RequestParam("visibility") String visibility,
             @RequestParam(value = "confirmWarnings", defaultValue = "false") boolean confirmWarnings,
+            @RequestParam(value = "categoryCode", required = false) String categoryCode,
             @AuthenticationPrincipal PlatformPrincipal principal) throws IOException {
 
+        resourceCategoryAppService.validateRequestedCategory(categoryCode);
         SkillVisibility skillVisibility = visibilityScopeResolver.resolve(visibility);
         PublishResponse response = publishSingleFile(
                 namespace,
@@ -85,7 +92,8 @@ public class SkillPublishController extends BaseApiController {
                 skillVisibility,
                 confirmWarnings,
                 principal.userId(),
-                principal.platformRoles()
+                principal.platformRoles(),
+                categoryCode
         );
 
         return ok("response.success.published", response);
@@ -102,8 +110,10 @@ public class SkillPublishController extends BaseApiController {
             @RequestParam("files") MultipartFile[] files,
             @RequestParam("visibility") String visibility,
             @RequestParam(value = "confirmWarnings", defaultValue = "false") boolean confirmWarnings,
+            @RequestParam(value = "categoryCode", required = false) String categoryCode,
             @AuthenticationPrincipal PlatformPrincipal principal) {
 
+        resourceCategoryAppService.validateRequestedCategory(categoryCode);
         SkillVisibility skillVisibility = visibilityScopeResolver.resolve(visibility);
         List<MultipartFile> uploadFiles = files == null
                 ? List.of()
@@ -127,7 +137,8 @@ public class SkillPublishController extends BaseApiController {
                     skillVisibility,
                     confirmWarnings,
                     principal.userId(),
-                    principal.platformRoles()
+                    principal.platformRoles(),
+                    categoryCode
             );
             items.add(item);
             if (item.success()) {
@@ -157,7 +168,8 @@ public class SkillPublishController extends BaseApiController {
             SkillVisibility skillVisibility,
             boolean confirmWarnings,
             String publisherId,
-            Set<String> platformRoles) throws IOException {
+            Set<String> platformRoles,
+            String categoryCode) throws IOException {
 
         ExtractedPackage extractedPackage = extractPackage(file);
 
@@ -178,6 +190,7 @@ public class SkillPublishController extends BaseApiController {
 
         PublishResponse response = toPublishResponse(namespace, publishResult);
         skillHubMetrics.incrementSkillPublish(namespace, publishResult.version().getStatus().name());
+        applyAuthorCategoryWhenPresent(publishResult.skillId(), categoryCode, publisherId, platformRoles);
         return response;
     }
 
@@ -187,7 +200,8 @@ public class SkillPublishController extends BaseApiController {
             SkillVisibility skillVisibility,
             boolean confirmWarnings,
             String publisherId,
-            Set<String> platformRoles) {
+            Set<String> platformRoles,
+            String categoryCode) {
 
         String filename = file.getOriginalFilename() == null || file.getOriginalFilename().isBlank()
                 ? "unknown.zip"
@@ -218,6 +232,7 @@ public class SkillPublishController extends BaseApiController {
                     confirmWarnings
             );
             skillHubMetrics.incrementSkillPublish(namespace, publishResult.version().getStatus().name());
+            applyAuthorCategoryWhenPresent(publishResult.skillId(), categoryCode, publisherId, platformRoles);
 
             return new BatchPublishItemResult(
                     filename,
@@ -276,6 +291,15 @@ public class SkillPublishController extends BaseApiController {
                     file.getOriginalFilename(), file.getSize(), e.getMessage());
             throw new DomainBadRequestException("error.skill.publish.package.invalid", e.getMessage());
         }
+    }
+
+    private void applyAuthorCategoryWhenPresent(Long skillId, String categoryCode, String publisherId,
+                                                Set<String> platformRoles) {
+        if (categoryCode == null || categoryCode.isBlank()) {
+            return;
+        }
+        resourceCategoryAppService.update("SKILL", skillId, categoryCode,
+                new CatalogViewer(publisherId, java.util.Map.of(), platformRoles));
     }
 
     private PublishResponse toPublishResponse(String namespace, SkillPublishService.PublishResult publishResult) {

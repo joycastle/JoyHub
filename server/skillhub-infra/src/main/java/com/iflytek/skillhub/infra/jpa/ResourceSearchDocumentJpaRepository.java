@@ -12,7 +12,8 @@ import org.springframework.stereotype.Repository;
 public interface ResourceSearchDocumentJpaRepository extends JpaRepository<ResourceSearchDocumentEntity, Long> {
     List<ResourceSearchDocumentEntity> findBySearchEnabledTrue();
     Optional<ResourceSearchDocumentEntity> findByResourceTypeAndResourceId(String resourceType, Long resourceId);
-    List<ResourceSearchDocumentEntity> findTop20ByGenerationStatusOrderByUpdatedAtAsc(String generationStatus);
+    List<ResourceSearchDocumentEntity> findTop20ByGenerationStatusAndSearchEnabledTrueOrderByUpdatedAtAsc(
+            String generationStatus);
     Page<ResourceSearchDocumentEntity> findByResourceType(String resourceType, Pageable pageable);
     Page<ResourceSearchDocumentEntity> findByGenerationStatus(String generationStatus, Pageable pageable);
     Page<ResourceSearchDocumentEntity> findByResourceTypeAndGenerationStatus(String resourceType, String generationStatus,

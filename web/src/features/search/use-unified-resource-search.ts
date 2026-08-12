@@ -1,11 +1,13 @@
 import { useQuery } from '@tanstack/react-query'
 import { resourcesApi } from '@/api/client'
 import type { UnifiedResourceSearchType } from '@/api/types'
+import type { ResourceCategoryCode } from '@/shared/lib/resource-category'
 
 export interface UnifiedResourceSearchParams {
   q?: string
   namespace?: string
   label?: string
+  categoryCode?: ResourceCategoryCode | string
   sort?: string
   type?: UnifiedResourceSearchType
   accessMode?: Array<'INSTALL' | 'OPEN' | 'DOWNLOAD'>

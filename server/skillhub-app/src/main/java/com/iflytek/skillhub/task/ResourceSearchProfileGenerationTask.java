@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.iflytek.skillhub.config.DiscoveryAiProperties;
 import com.iflytek.skillhub.infra.jpa.ResourceSearchDocumentEntity;
 import com.iflytek.skillhub.infra.jpa.ResourceSearchDocumentJpaRepository;
+import com.iflytek.skillhub.infra.jpa.ResourceCategoryCode;
 import com.iflytek.skillhub.service.OpenAiResponsesClient;
 import com.iflytek.skillhub.service.ResourceSearchProfile;
 import com.iflytek.skillhub.search.SearchEmbeddingService;
@@ -18,7 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 /** Generates bounded evidence-backed search profiles after publishing has completed. */
 @Component
 public class ResourceSearchProfileGenerationTask {
-    private static final String PROMPT_VERSION = "resource-profile-v1";
+    private static final String PROMPT_VERSION = "resource-profile-v2-category";
     private static final Logger log = LoggerFactory.getLogger(ResourceSearchProfileGenerationTask.class);
     private final DiscoveryAiProperties properties;
     private final ResourceSearchDocumentJpaRepository repository;
@@ -41,7 +42,7 @@ public class ResourceSearchProfileGenerationTask {
     @Transactional
     public void generatePendingProfiles() {
         if (!properties.isEnabled()) return;
-        repository.findTop20ByGenerationStatusOrderByUpdatedAtAsc("PENDING").forEach(document -> {
+        repository.findTop20ByGenerationStatusAndSearchEnabledTrueOrderByUpdatedAtAsc("PENDING").forEach(document -> {
             try {
                 generate(document);
             } catch (RuntimeException exception) {
@@ -68,7 +69,8 @@ public class ResourceSearchProfileGenerationTask {
                     objectMapper.writeValueAsString(generated.scenarios()), objectMapper.writeValueAsString(generated.inputs()),
                     objectMapper.writeValueAsString(generated.outputs()), objectMapper.writeValueAsString(generated.searchTerms()),
                     objectMapper.writeValueAsString(verified), relevance(generated.companyRelevance()),
-                    profileText, properties.getModel(), PROMPT_VERSION, embeddingService.embed(profileText));
+                    profileText, properties.getModel(), PROMPT_VERSION, embeddingService.embed(profileText),
+                    generated.categoryCode() == null ? ResourceCategoryCode.OTHER : generated.categoryCode());
             repository.save(document);
         } catch (Exception exception) {
             throw new IllegalStateException("Could not serialize generated resource profile", exception);

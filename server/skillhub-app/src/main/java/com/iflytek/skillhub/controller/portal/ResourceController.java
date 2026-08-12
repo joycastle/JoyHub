@@ -8,6 +8,8 @@ import com.iflytek.skillhub.dto.PageResponse;
 import com.iflytek.skillhub.dto.ResourceActionResponse;
 import com.iflytek.skillhub.dto.ResourceSummaryResponse;
 import com.iflytek.skillhub.dto.ResourceStatsResponse;
+import com.iflytek.skillhub.dto.ResourceCategoryResponse;
+import com.iflytek.skillhub.dto.ResourceCategoryUpdateRequest;
 import com.iflytek.skillhub.dto.RecommendedResourceResponse;
 import com.iflytek.skillhub.dto.PublishTargetResponse;
 import com.iflytek.skillhub.dto.UnifiedResourceSearchItemResponse;
@@ -24,6 +26,7 @@ import com.iflytek.skillhub.service.ResourceStatsAppService;
 import com.iflytek.skillhub.service.ResourceRecommendationAppService;
 import com.iflytek.skillhub.service.PublishTargetQueryAppService;
 import com.iflytek.skillhub.service.UnifiedResourceSearchAppService;
+import com.iflytek.skillhub.service.ResourceCategoryAppService;
 import jakarta.servlet.http.HttpServletRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -45,6 +48,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 /** Unified resource workspace endpoint for Skills and static Catalog resources. */
@@ -60,6 +64,7 @@ public class ResourceController extends BaseApiController {
     private final UnifiedResourceSearchAppService unifiedResourceSearchAppService;
     private final ResourceRecommendationAppService recommendationAppService;
     private final PublishTargetQueryAppService publishTargetQueryAppService;
+    private final ResourceCategoryAppService resourceCategoryAppService;
 
     public ResourceController(ResourceAppService resourceAppService,
                               ResourceLifecycleAppService resourceLifecycleAppService,
@@ -69,6 +74,7 @@ public class ResourceController extends BaseApiController {
                               UnifiedResourceSearchAppService unifiedResourceSearchAppService,
                               ResourceRecommendationAppService recommendationAppService,
                               PublishTargetQueryAppService publishTargetQueryAppService,
+                              ResourceCategoryAppService resourceCategoryAppService,
                               ApiResponseFactory responseFactory) {
         super(responseFactory);
         this.resourceAppService = resourceAppService;
@@ -79,6 +85,7 @@ public class ResourceController extends BaseApiController {
         this.unifiedResourceSearchAppService = unifiedResourceSearchAppService;
         this.recommendationAppService = recommendationAppService;
         this.publishTargetQueryAppService = publishTargetQueryAppService;
+        this.resourceCategoryAppService = resourceCategoryAppService;
     }
 
     @GetMapping("/publish-targets")
@@ -111,6 +118,7 @@ public class ResourceController extends BaseApiController {
             @RequestParam(required = false) String q,
             @RequestParam(required = false) String namespace,
             @RequestParam(required = false) String label,
+            @RequestParam(required = false) String categoryCode,
             @RequestParam(defaultValue = "relevance") String sort,
             @RequestParam(defaultValue = "ALL") UnifiedResourceSearchType type,
             @RequestParam(required = false) List<String> accessMode,
@@ -125,8 +133,45 @@ public class ResourceController extends BaseApiController {
                 principal.userId(), roles,
                 principal.platformRoles() != null ? principal.platformRoles() : Set.of());
         return ok("response.success.read", unifiedResourceSearchAppService.search(
+                q, namespace, label, categoryCode, sort, type, starredOnly, page, size, userId, roles, catalogViewer,
+                accessMode == null ? Set.of() : new java.util.HashSet<>(accessMode)));
+    }
+
+    /** Source-compatible overload retained for direct callers that predate category filtering. */
+    public ApiResponse<PageResponse<UnifiedResourceSearchItemResponse>> search(
+            String q,
+            String namespace,
+            String label,
+            String sort,
+            UnifiedResourceSearchType type,
+            List<String> accessMode,
+            boolean starredOnly,
+            int page,
+            int size,
+            PlatformPrincipal principal,
+            Map<Long, NamespaceRole> namespaceRoles) {
+        Map<Long, NamespaceRole> roles = namespaceRoles != null ? namespaceRoles : Map.of();
+        String userId = principal != null ? principal.userId() : null;
+        CatalogViewer catalogViewer = principal == null ? null : new CatalogViewer(
+                principal.userId(), roles,
+                principal.platformRoles() != null ? principal.platformRoles() : Set.of());
+        return ok("response.success.read", unifiedResourceSearchAppService.search(
                 q, namespace, label, sort, type, starredOnly, page, size, userId, roles, catalogViewer,
                 accessMode == null ? Set.of() : new java.util.HashSet<>(accessMode)));
+    }
+
+    @PutMapping("/{resourceType}/{resourceId}/category")
+    @Operation(summary = "Set or reset the shared resource category")
+    public ApiResponse<ResourceCategoryResponse> updateCategory(
+            @PathVariable String resourceType,
+            @PathVariable Long resourceId,
+            @RequestBody ResourceCategoryUpdateRequest request,
+            @AuthenticationPrincipal PlatformPrincipal principal,
+            @RequestAttribute(value = "userNsRoles", required = false) Map<Long, NamespaceRole> namespaceRoles) {
+        CatalogViewer viewer = principal == null ? null : new CatalogViewer(principal.userId(),
+                namespaceRoles != null ? namespaceRoles : Map.of(), platformRoles(principal));
+        return ok("response.success.updated", resourceCategoryAppService.update(resourceType, resourceId,
+                request == null ? null : request.categoryCode(), viewer));
     }
 
     @GetMapping("/mine")

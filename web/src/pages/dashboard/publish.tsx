@@ -29,6 +29,7 @@ import { DashboardPageHeader } from '@/shared/components/dashboard-page-header'
 import { toast } from '@/shared/lib/toast'
 import { ApiError } from '@/api/client'
 import type { BatchPublishItemResult } from '@/api/types'
+import { RESOURCE_CATEGORY_OPTIONS, resourceCategoryLabel, type ResourceCategoryCode } from '@/shared/lib/resource-category'
 
 const EMPTY_REPOSITORY_VALUE = '__select_repository__'
 const MAX_BATCH_FILES = 20
@@ -59,6 +60,7 @@ export function PublishPage() {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const [repositorySlug, setRepositorySlug] = useState<string>(prefill.namespace)
   const [visibility, setVisibility] = useState<string>(prefill.visibility)
+  const [categoryCode, setCategoryCode] = useState<ResourceCategoryCode | undefined>()
   const [warningDialogOpen, setWarningDialogOpen] = useState(false)
   const [precheckWarnings, setPrecheckWarnings] = useState<string[]>([])
   const [batchResults, setBatchResults] = useState<BatchPublishItemResult[] | null>(null)
@@ -121,6 +123,7 @@ export function PublishPage() {
         namespace: repositorySlug,
         file,
         visibility,
+        categoryCode,
         confirmWarnings,
       })
       setPrecheckWarnings([])
@@ -147,6 +150,7 @@ export function PublishPage() {
         namespace: repositorySlug,
         files: selectedFiles,
         visibility,
+        categoryCode,
         confirmWarnings,
       })
 
@@ -290,6 +294,18 @@ export function PublishPage() {
               </SelectContent>
             </Select>
           )}
+        </div>
+
+        <div className="space-y-3">
+          <Label htmlFor="publish-category" className="text-sm font-semibold font-heading">{t('resourceCategory.label')}</Label>
+          <Select value={categoryCode ?? '__ai__'} onValueChange={(value) => setCategoryCode(value === '__ai__' ? undefined : value as ResourceCategoryCode)}>
+            <SelectTrigger id="publish-category"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__ai__">{t('resourceCategory.aiOption')}</SelectItem>
+              {RESOURCE_CATEGORY_OPTIONS.map((option) => <SelectItem key={option.code} value={option.code}>{resourceCategoryLabel(t, option.code)}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">{t('resourceCategory.aiHint')}</p>
         </div>
 
         <div className="space-y-3">

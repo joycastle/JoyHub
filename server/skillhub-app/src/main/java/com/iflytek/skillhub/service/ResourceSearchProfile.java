@@ -1,5 +1,6 @@
 package com.iflytek.skillhub.service;
 
+import com.iflytek.skillhub.infra.jpa.ResourceCategoryCode;
 import java.util.List;
 
 /** AI-produced fields for a resource search document, before evidence validation. */
@@ -9,7 +10,8 @@ public record ResourceSearchProfile(
         List<String> inputs,
         List<String> outputs,
         List<String> searchTerms,
-        String companyRelevance
+        String companyRelevance,
+        ResourceCategoryCode categoryCode
 ) {
     public record Capability(String value, String evidence, double confidence) { }
 }

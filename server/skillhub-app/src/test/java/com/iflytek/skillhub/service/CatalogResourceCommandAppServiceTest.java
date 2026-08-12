@@ -36,7 +36,8 @@ class CatalogResourceCommandAppServiceTest {
                 mock(SkillRepository.class),
                 mock(UserAccountRepository.class),
                 mock(CatalogResourceProjectionAssembler.class),
-                mock(ResourceSearchDocumentSyncService.class));
+                mock(ResourceSearchDocumentSyncService.class),
+                mock(ResourceCategoryAppService.class));
     }
 
     @Test

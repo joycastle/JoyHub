@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { catalogApi } from '@/api/client'
 import type { CatalogCenter, CatalogResourceKind, CatalogResourceRequest } from '@/api/types'
+import type { ResourceCategoryCode } from '@/shared/lib/resource-category'
 
 export const catalogKeys = {
   all: ['catalog'] as const,
@@ -47,6 +48,7 @@ export function useCatalogResources(params: {
   center?: CatalogCenter
   kind?: CatalogResourceKind
   scenario?: string
+  categoryCode?: ResourceCategoryCode | string
   departmentId?: number
   sort?: 'recommended' | 'newest'
   page?: number

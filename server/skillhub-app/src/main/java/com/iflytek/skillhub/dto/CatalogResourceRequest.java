@@ -30,6 +30,19 @@ public record CatalogResourceRequest(
         Set<String> tags,
         Set<Long> relatedResourceIds,
         Set<Long> relatedSkillIds,
+        String categoryCode,
         boolean publish
 ) {
+    public CatalogResourceRequest(
+            String slug, String name, String summary, CatalogResourceKind kind, String icon, String accessUrl,
+            String documentation, String version, String agentUsageBoundary, String agentInputGuide,
+            String agentOutputGuide, String agentSupportContact, Set<@Size(max = 1000) String> agentExamplePrompts,
+            Long primaryDepartmentId, CatalogMaintenanceStatus maintenanceStatus,
+            CatalogVisibilityScope visibilityScope, Set<Long> visibleDepartmentIds, Set<String> scenarios,
+            Set<String> tags, Set<Long> relatedResourceIds, Set<Long> relatedSkillIds, boolean publish) {
+        this(slug, name, summary, kind, icon, accessUrl, documentation, version, agentUsageBoundary,
+                agentInputGuide, agentOutputGuide, agentSupportContact, agentExamplePrompts, primaryDepartmentId,
+                maintenanceStatus, visibilityScope, visibleDepartmentIds, scenarios, tags, relatedResourceIds,
+                relatedSkillIds, null, publish);
+    }
 }

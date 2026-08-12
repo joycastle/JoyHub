@@ -15,6 +15,9 @@ import com.iflytek.skillhub.dto.CatalogOwnerResponse;
 import com.iflytek.skillhub.dto.CatalogRelatedSkillResponse;
 import com.iflytek.skillhub.dto.CatalogResourceDetailResponse;
 import com.iflytek.skillhub.dto.CatalogResourceSummaryResponse;
+import com.iflytek.skillhub.infra.jpa.ResourceCategoryCode;
+import com.iflytek.skillhub.infra.jpa.ResourceCategorySource;
+import com.iflytek.skillhub.infra.jpa.ResourceSearchDocumentJpaRepository;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -34,19 +37,22 @@ public class CatalogResourceProjectionAssembler {
     private final SkillRepository skillRepository;
     private final VisibilityChecker skillVisibilityChecker;
     private final UserAccountRepository userAccountRepository;
+    private final ResourceSearchDocumentJpaRepository searchDocumentRepository;
 
     public CatalogResourceProjectionAssembler(CatalogResourceRepository catalogRepository,
                                               CatalogResourcePolicy catalogPolicy,
                                               NamespaceRepository namespaceRepository,
                                               SkillRepository skillRepository,
                                               VisibilityChecker skillVisibilityChecker,
-                                              UserAccountRepository userAccountRepository) {
+                                              UserAccountRepository userAccountRepository,
+                                              ResourceSearchDocumentJpaRepository searchDocumentRepository) {
         this.catalogRepository = catalogRepository;
         this.catalogPolicy = catalogPolicy;
         this.namespaceRepository = namespaceRepository;
         this.skillRepository = skillRepository;
         this.skillVisibilityChecker = skillVisibilityChecker;
         this.userAccountRepository = userAccountRepository;
+        this.searchDocumentRepository = searchDocumentRepository;
     }
 
     public List<CatalogResourceSummaryResponse> summaries(List<CatalogResource> resources) {
@@ -76,6 +82,7 @@ public class CatalogResourceProjectionAssembler {
                 .map(this::department)
                 .sorted(Comparator.comparing(CatalogDepartmentResponse::name))
                 .toList();
+        CategoryProjection category = category(resource);
 
         return new CatalogResourceDetailResponse(
                 resource.getId(),
@@ -108,7 +115,9 @@ public class CatalogResourceProjectionAssembler {
                 catalogPolicy.canManage(resource, viewer.userId(), viewer.superAdmin()),
                 resource.getCreatedAt(),
                 resource.getUpdatedAt(),
-                resource.getPublishedAt()
+                resource.getPublishedAt(),
+                category.code(),
+                category.source()
         );
     }
 
@@ -169,6 +178,18 @@ public class CatalogResourceProjectionAssembler {
         );
     }
 
+    private CategoryProjection category(CatalogResource resource) {
+        String resourceType = resource.getKind() == com.iflytek.skillhub.catalog.domain.CatalogResourceKind.AGENT
+                ? "AGENT" : "TOOL";
+        return searchDocumentRepository.findByResourceTypeAndResourceId(resourceType, resource.getId())
+                .map(document -> new CategoryProjection(
+                        document.getCategoryCode() == null
+                                ? ResourceCategoryCode.OTHER.name() : document.getCategoryCode().name(),
+                        document.getCategorySource() == null
+                                ? ResourceCategorySource.AI.name() : document.getCategorySource().name()))
+                .orElse(new CategoryProjection(ResourceCategoryCode.OTHER.name(), ResourceCategorySource.AI.name()));
+    }
+
     private ProjectionContext contextFor(List<CatalogResource> resources) {
         List<Long> namespaceIds = resources.stream()
                 .flatMap(resource -> {
@@ -201,5 +222,8 @@ public class CatalogResourceProjectionAssembler {
     }
 
     private record ProjectionContext(Map<Long, Namespace> namespaces, Map<String, UserAccount> users) {
+    }
+
+    private record CategoryProjection(String code, String source) {
     }
 }

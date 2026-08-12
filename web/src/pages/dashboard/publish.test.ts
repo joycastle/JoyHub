@@ -89,7 +89,8 @@ describe('PublishPage', () => {
     renderToStaticMarkup(createElement(PublishPage))
 
     expect(selectRecords[0]?.value).toBe('team-ai')
-    expect(selectRecords[1]?.value).toBe('PRIVATE')
+    expect(selectRecords[1]?.value).toBe('__ai__')
+    expect(selectRecords[2]?.value).toBe('PRIVATE')
   })
 
   it('falls back to public visibility when search params are missing', () => {
@@ -98,7 +99,8 @@ describe('PublishPage', () => {
     renderToStaticMarkup(createElement(PublishPage))
 
     expect(selectRecords[0]?.value).toBe('__select_repository__')
-    expect(selectRecords[1]?.value).toBe('WAREHOUSE')
+    expect(selectRecords[1]?.value).toBe('__ai__')
+    expect(selectRecords[2]?.value).toBe('WAREHOUSE')
   })
 
   it('exports a named component function', () => {

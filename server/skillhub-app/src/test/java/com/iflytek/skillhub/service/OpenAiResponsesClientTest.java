@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.iflytek.skillhub.infra.jpa.ResourceCategoryCode;
 import org.junit.jupiter.api.Test;
 
 class OpenAiResponsesClientTest {
@@ -122,5 +123,24 @@ class OpenAiResponsesClientTest {
         assertThat(answer.selections().getFirst().resources())
                 .extracting(DiscoveryAiClient.ResourceRef::id)
                 .containsExactly(1L, 2L, 3L, 4L);
+    }
+
+    @Test
+    void parsesEverySearchProfileCategoryCode() {
+        for (ResourceCategoryCode expected : ResourceCategoryCode.values()) {
+            ResourceSearchProfile profile = OpenAiResponsesClient.parseSearchProfile(new ObjectMapper(),
+                    "{\"categoryCode\":\"" + expected.name().toLowerCase() + "\"}");
+
+            assertThat(profile.categoryCode()).isEqualTo(expected);
+        }
+    }
+
+    @Test
+    void fallsBackToOtherForMissingOrUnknownSearchProfileCategory() {
+        assertThat(OpenAiResponsesClient.parseSearchProfile(new ObjectMapper(), "{}").categoryCode())
+                .isEqualTo(ResourceCategoryCode.OTHER);
+        assertThat(OpenAiResponsesClient.parseSearchProfile(new ObjectMapper(),
+                "{\"categoryCode\":\"made_up\"}").categoryCode())
+                .isEqualTo(ResourceCategoryCode.OTHER);
     }
 }

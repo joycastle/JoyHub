@@ -13,6 +13,7 @@ import com.iflytek.skillhub.domain.user.UserAccount;
 import com.iflytek.skillhub.domain.user.UserAccountRepository;
 import com.iflytek.skillhub.infra.jpa.SkillSearchDocumentEntity;
 import com.iflytek.skillhub.infra.jpa.SkillSearchDocumentJpaRepository;
+import com.iflytek.skillhub.service.ResourceSearchDocumentSyncService;
 import java.time.Instant;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,6 +46,7 @@ class CliRestrictedReadAuthorizationIntegrationTest {
     @Autowired SkillRepository skillRepository;
     @Autowired SkillVersionRepository skillVersionRepository;
     @Autowired SkillSearchDocumentJpaRepository skillSearchDocumentRepository;
+    @Autowired ResourceSearchDocumentSyncService resourceSearchDocumentSyncService;
 
     private String namespaceSlug;
     private String skillSlug;
@@ -121,6 +123,8 @@ class CliRestrictedReadAuthorizationIntegrationTest {
                 "",
                 SkillVisibility.PUBLIC.name(),
                 publicSkill.getStatus().name()));
+        resourceSearchDocumentSyncService.synchronizeSkill(skill);
+        resourceSearchDocumentSyncService.synchronizeSkill(publicSkill);
     }
 
     @Test

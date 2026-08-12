@@ -35,6 +35,7 @@ public class CatalogResourceCommandAppService {
     private final UserAccountRepository userAccountRepository;
     private final CatalogResourceProjectionAssembler assembler;
     private final ResourceSearchDocumentSyncService searchDocumentSyncService;
+    private final ResourceCategoryAppService resourceCategoryAppService;
 
     public CatalogResourceCommandAppService(CatalogResourceService resourceService,
                                             CatalogResourceRepository resourceRepository,
@@ -42,7 +43,8 @@ public class CatalogResourceCommandAppService {
                                             SkillRepository skillRepository,
                                             UserAccountRepository userAccountRepository,
                                             CatalogResourceProjectionAssembler assembler,
-                                            ResourceSearchDocumentSyncService searchDocumentSyncService) {
+                                            ResourceSearchDocumentSyncService searchDocumentSyncService,
+                                            ResourceCategoryAppService resourceCategoryAppService) {
         this.resourceService = resourceService;
         this.resourceRepository = resourceRepository;
         this.namespaceRepository = namespaceRepository;
@@ -50,10 +52,12 @@ public class CatalogResourceCommandAppService {
         this.userAccountRepository = userAccountRepository;
         this.assembler = assembler;
         this.searchDocumentSyncService = searchDocumentSyncService;
+        this.resourceCategoryAppService = resourceCategoryAppService;
     }
 
     @Transactional
     public CatalogResourceDetailResponse create(CatalogResourceRequest request, CatalogViewer viewer) {
+        resourceCategoryAppService.validateRequestedCategory(request.categoryCode());
         CatalogResourceDraft draft = validateAndMap(request, null, null, viewer);
         CatalogResource existing = resourceRepository.findBySlug(draft.slug()).orElse(null);
         if (existing != null
@@ -65,10 +69,14 @@ public class CatalogResourceCommandAppService {
                 resumed = resourceService.publish(existing.getSlug(), viewer.userId(), viewer.superAdmin());
             }
             searchDocumentSyncService.synchronizeCatalog(resumed);
+            resourceCategoryAppService.update("AGENT".equals(resumed.getKind().name()) ? "AGENT" : "TOOL",
+                    resumed.getId(), request.categoryCode(), viewer);
             return assembler.detail(resumed, viewer);
         }
         CatalogResource resource = resourceService.create(draft, viewer.userId(), request.publish());
         searchDocumentSyncService.synchronizeCatalog(resource);
+        resourceCategoryAppService.update("AGENT".equals(resource.getKind().name()) ? "AGENT" : "TOOL",
+                resource.getId(), request.categoryCode(), viewer);
         return assembler.detail(resource, viewer);
     }
 
@@ -77,6 +85,7 @@ public class CatalogResourceCommandAppService {
             String slug,
             CatalogResourceRequest request,
             CatalogViewer viewer) {
+        resourceCategoryAppService.validateRequestedCategory(request.categoryCode());
         CatalogResource existing = resourceService.requireBySlug(slug);
         CatalogResourceDraft draft = validateAndMap(request, existing.getId(), existing.getSlug(), viewer);
         CatalogResource resource = resourceService.update(
@@ -89,6 +98,8 @@ public class CatalogResourceCommandAppService {
             resource = resourceService.publish(slug, viewer.userId(), viewer.superAdmin());
         }
         searchDocumentSyncService.synchronizeCatalog(resource);
+        resourceCategoryAppService.update("AGENT".equals(resource.getKind().name()) ? "AGENT" : "TOOL",
+                resource.getId(), request.categoryCode(), viewer);
         return assembler.detail(resource, viewer);
     }
 

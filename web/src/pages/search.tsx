@@ -3,6 +3,7 @@ import { useNavigate, useSearch } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { Bot, Boxes, Loader2, Puzzle, Sparkles, Wrench } from 'lucide-react'
 import type { UnifiedResourceSearchType } from '@/api/types'
+import { RESOURCE_CATEGORY_OPTIONS, resourceCategoryLabel, type ResourceCategoryCode } from '@/shared/lib/resource-category'
 import { useAuth } from '@/features/auth/use-auth'
 import { SearchBar } from '@/features/search/search-bar'
 import { SkillCard } from '@/features/skill/skill-card'
@@ -25,14 +26,6 @@ const RESOURCE_TYPES: Array<{ type: SearchResourceType; labelKey: string; icon: 
   { type: 'TOOL', labelKey: 'search.types.tool', icon: Wrench },
   { type: 'SKILL', labelKey: 'search.types.skill', icon: Puzzle },
 ]
-
-const SCENARIO_QUERIES = [
-  { labelKey: 'search.scenarios.writing', query: '文档 内容 总结' },
-  { labelKey: 'search.scenarios.data', query: '数据 分析 报表' },
-  { labelKey: 'search.scenarios.development', query: '研发 代码 测试' },
-  { labelKey: 'search.scenarios.project', query: '项目 管理 协作' },
-  { labelKey: 'search.scenarios.design', query: '设计 美术 素材' },
-] as const
 
 function blurActiveElement() {
   if (typeof document === 'undefined' || typeof HTMLElement === 'undefined') {
@@ -80,6 +73,7 @@ export function SearchPage() {
   const q = normalizeSearchQuery(searchParams.q || '')
   const namespace = (searchParams.namespace || '').replace(/^@/, '')
   const selectedLabel = searchParams.label || ''
+  const categoryCode = searchParams.categoryCode || ''
   const sort = searchParams.sort || 'newest'
   const page = searchParams.page ?? 0
   const starredOnly = searchParams.starredOnly ?? false
@@ -109,6 +103,7 @@ export function SearchPage() {
     q,
     namespace: namespace || undefined,
     label: selectedLabel || undefined,
+    categoryCode: categoryCode || undefined,
     sort,
     type: resourceType,
     starredOnly,
@@ -126,44 +121,44 @@ export function SearchPage() {
 
     if (!parsedInput.query && !parsedInput.namespace) {
       startTransition(() => {
-        navigate({ to: '/search', search: { q: '', namespace: '', label: selectedLabel, sort, page: 0, starredOnly, type: resourceType }, replace: page === 0 })
+        navigate({ to: '/search', search: { q: '', namespace: '', label: selectedLabel, categoryCode, sort, page: 0, starredOnly, type: resourceType }, replace: page === 0 })
       })
       return
     }
 
     const timeoutId = window.setTimeout(() => {
       startTransition(() => {
-        navigate({ to: '/search', search: { q: parsedInput.query, namespace: parsedInput.namespace, label: selectedLabel, sort, page: 0, starredOnly, type: resourceType }, replace: true })
+        navigate({ to: '/search', search: { q: parsedInput.query, namespace: parsedInput.namespace, label: selectedLabel, categoryCode, sort, page: 0, starredOnly, type: resourceType }, replace: true })
       })
     }, 250)
 
     return () => window.clearTimeout(timeoutId)
-  }, [navigate, namespace, page, q, queryInput, resourceType, selectedLabel, sort, starredOnly])
+  }, [categoryCode, navigate, namespace, page, q, queryInput, resourceType, selectedLabel, sort, starredOnly])
 
   const handleSearch = (query: string) => {
     const parsedInput = parseNamespaceSearchInput(query)
     setQueryInput(query)
     startTransition(() => {
-      navigate({ to: '/search', search: { q: parsedInput.query, namespace: parsedInput.namespace, label: selectedLabel, sort, page: 0, starredOnly, type: resourceType }, replace: true })
+      navigate({ to: '/search', search: { q: parsedInput.query, namespace: parsedInput.namespace, label: selectedLabel, categoryCode, sort, page: 0, starredOnly, type: resourceType }, replace: true })
     })
   }
 
   const handleSortChange = (newSort: string) => {
-    navigate({ to: '/search', search: { q, namespace, label: selectedLabel, sort: newSort, page: 0, starredOnly, type: resourceType } })
+    navigate({ to: '/search', search: { q, namespace, label: selectedLabel, categoryCode, sort: newSort, page: 0, starredOnly, type: resourceType } })
   }
 
   const handlePageChange = (newPage: number) => {
     blurActiveElement()
-    navigate({ to: '/search', search: { q, namespace, label: selectedLabel, sort, page: newPage, starredOnly, type: resourceType } })
+    navigate({ to: '/search', search: { q, namespace, label: selectedLabel, categoryCode, sort, page: newPage, starredOnly, type: resourceType } })
   }
 
   const handleLabelToggle = (label: string) => {
     const nextLabel = selectedLabel === label ? '' : label
-    navigate({ to: '/search', search: { q, namespace, label: nextLabel, sort, page: 0, starredOnly, type: resourceType } })
+    navigate({ to: '/search', search: { q, namespace, label: nextLabel, categoryCode, sort, page: 0, starredOnly, type: resourceType } })
   }
 
   const handleNamespaceClear = () => {
-    navigate({ to: '/search', search: { q, namespace: '', label: selectedLabel, sort, page: 0, starredOnly, type: resourceType } })
+    navigate({ to: '/search', search: { q, namespace: '', label: selectedLabel, categoryCode, sort, page: 0, starredOnly, type: resourceType } })
   }
 
   const handleStarredToggle = () => {
@@ -177,16 +172,15 @@ export function SearchPage() {
       return
     }
 
-    navigate({ to: '/search', search: { q, namespace, label: selectedLabel, sort, page: 0, starredOnly: !starredOnly, type: resourceType } })
+    navigate({ to: '/search', search: { q, namespace, label: selectedLabel, categoryCode, sort, page: 0, starredOnly: !starredOnly, type: resourceType } })
   }
 
   const handleResourceTypeChange = (type: SearchResourceType) => {
-    navigate({ to: '/search', search: { q, namespace, label: selectedLabel, sort, page: 0, starredOnly, type } })
+    navigate({ to: '/search', search: { q, namespace, label: selectedLabel, categoryCode, sort, page: 0, starredOnly, type } })
   }
 
-  const handleScenarioSearch = (query: string) => {
-    setQueryInput(query)
-    navigate({ to: '/search', search: { q: query, namespace: '', label: '', sort: 'relevance', page: 0, starredOnly: false, type: resourceType } })
+  const handleScenarioSearch = (nextCategoryCode: ResourceCategoryCode) => {
+    navigate({ to: '/search', search: { q, namespace, label: selectedLabel, categoryCode: nextCategoryCode, sort: 'relevance', page: 0, starredOnly: false, type: resourceType } })
   }
 
   const handleSkillClick = (namespace: string, slug: string) => {
@@ -221,9 +215,9 @@ export function SearchPage() {
         </div>
         <div className="mx-auto mt-5 flex max-w-3xl flex-wrap items-center justify-center gap-2">
           <span className="text-xs font-medium text-muted-foreground">{t('search.scenarios.label')}</span>
-          {SCENARIO_QUERIES.map((scenario) => (
-            <Button key={scenario.labelKey} type="button" variant="ghost" size="sm" onClick={() => handleScenarioSearch(scenario.query)}>
-              {t(scenario.labelKey)}
+          {RESOURCE_CATEGORY_OPTIONS.map((scenario) => (
+            <Button key={scenario.code} type="button" variant={categoryCode === scenario.code ? 'default' : 'ghost'} size="sm" onClick={() => handleScenarioSearch(scenario.code)}>
+              {resourceCategoryLabel(t, scenario.code)}
             </Button>
           ))}
         </div>
@@ -301,6 +295,7 @@ export function SearchPage() {
               {label.displayName}
             </Button>
           ))}
+          {categoryCode ? <Button variant="default" size="sm" onClick={() => navigate({ to: '/search', search: { q, namespace, label: selectedLabel, categoryCode: '', sort, page: 0, starredOnly, type: resourceType } })}>{resourceCategoryLabel(t, categoryCode)}</Button> : null}
           {namespace ? (
             <Button
               variant="default"

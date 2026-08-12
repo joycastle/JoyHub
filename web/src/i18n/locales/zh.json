@@ -32,6 +32,22 @@
     "saveAndDeploy": "保存并发布新版本",
     "saveResource": "保存并上线"
   },
+  "resourceCategory": {
+    "label": "使用场景",
+    "aiOption": "AI 自动分类",
+    "aiHint": "发布后由 AI 根据文档自动生成。",
+    "options": {
+      "GAME_DEV_QA": "游戏研发与测试",
+      "UA_MONETIZATION": "市场投放与商业化",
+      "CREATIVE_MEDIA": "创意美术与音视频",
+      "DATA_ANALYTICS": "数据分析与报告",
+      "COLLAB_PRODUCTIVITY": "协作办公与项目管理",
+      "AI_ENGINEERING": "AI 与工程基础设施",
+      "INTEGRATION_AUTOMATION": "自动化与外部系统集成",
+      "GENERAL_KNOWLEDGE": "通用知识与个人效率",
+      "OTHER": "其他"
+    }
+  },
   "catalogDetail": {
     "moreActions": "更多操作",
     "edit": "编辑内容",

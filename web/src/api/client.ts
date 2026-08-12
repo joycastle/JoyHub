@@ -60,6 +60,7 @@ import type {
   RecommendedResource,
   UnifiedResourceSearchType,
 } from './types'
+import type { ResourceCategoryCode } from '@/shared/lib/resource-category'
 import { ApiError } from '@/shared/lib/api-error'
 import i18n from '@/i18n/config'
 
@@ -650,6 +651,7 @@ export const catalogApi = {
     center?: CatalogCenter
     kind?: CatalogResourceKind
     scenario?: string
+    categoryCode?: ResourceCategoryCode | string
     departmentId?: number
     sort?: 'recommended' | 'newest'
     page?: number
@@ -660,6 +662,7 @@ export const catalogApi = {
     if (params.center) query.set('center', params.center)
     if (params.kind) query.set('kind', params.kind)
     if (params.scenario?.trim()) query.set('scenario', params.scenario.trim())
+    if (params.categoryCode?.trim()) query.set('categoryCode', params.categoryCode.trim())
     if (params.departmentId !== undefined) query.set('departmentId', String(params.departmentId))
     if (params.sort) query.set('sort', params.sort)
     query.set('page', String(params.page ?? 0))
@@ -748,6 +751,7 @@ export const resourcesApi = {
     q?: string
     namespace?: string
     label?: string
+    categoryCode?: ResourceCategoryCode | string
     sort?: string
     type?: UnifiedResourceSearchType
     accessMode?: Array<'INSTALL' | 'OPEN' | 'DOWNLOAD'>
@@ -765,6 +769,7 @@ export const resourcesApi = {
     if (params.q?.trim()) query.set('q', params.q.trim())
     if (params.namespace?.trim()) query.set('namespace', params.namespace.trim())
     if (params.label?.trim()) query.set('label', params.label.trim())
+    if (params.categoryCode?.trim()) query.set('categoryCode', params.categoryCode.trim())
     params.accessMode?.forEach(mode => query.append('accessMode', mode))
     return fetchJson<PagedResponse<UnifiedResourceSearchItem>>(
       `${WEB_API_PREFIX}/resources/search?${query.toString()}`,
@@ -807,6 +812,14 @@ export const resourcesApi = {
     return fetchJson(`${WEB_API_PREFIX}/resources/${encodeURIComponent(resourceId)}/offline`, {
       method: 'POST',
       headers: await ensureCsrfHeaders(),
+    })
+  },
+
+  async updateCategory(resourceType: 'SKILL' | 'AGENT' | 'TOOL', resourceId: string, categoryCode: ResourceCategoryCode | null): Promise<void> {
+    await fetchJson<void>(`${WEB_API_PREFIX}/resources/${encodeURIComponent(resourceType)}/${encodeURIComponent(resourceId)}/category`, {
+      method: 'PUT',
+      headers: await ensureCsrfHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify({ categoryCode }),
     })
   },
 

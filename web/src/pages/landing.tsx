@@ -22,6 +22,7 @@ import { useResourceRecommendations, useUnifiedResourceSearch } from '@/features
 import { useAuth } from '@/features/auth/use-auth'
 import { namespaceApi, resourcesApi } from '@/api/client'
 import type { UnifiedResourceSearchItem, UnifiedResourceSearchType } from '@/api/types'
+import { RESOURCE_CATEGORY_OPTIONS, resourceCategoryLabel, type ResourceCategoryCode } from '@/shared/lib/resource-category'
 import { useCopyToClipboard } from '@/shared/lib/clipboard'
 import { normalizeSearchQuery } from '@/shared/lib/search-query'
 import { cn } from '@/shared/lib/utils'
@@ -54,12 +55,12 @@ const DISCOVERY_FILTER_LABELS: Record<DiscoveryMode, string> = {
   newest: '最新发布',
 }
 
-const SCENARIOS: Array<{ key: string; query: string; icon: LucideIcon }> = [
-  { key: 'content', query: '内容生产', icon: Sparkles },
-  { key: 'data', query: '数据分析', icon: Database },
-  { key: 'project', query: '项目管理', icon: Briefcase },
-  { key: 'development', query: '研发提效', icon: Code2 },
-  { key: 'art', query: '美术资产处理', icon: Palette },
+const SCENARIOS: Array<{ code: ResourceCategoryCode; icon: LucideIcon }> = [
+  { code: 'CREATIVE_MEDIA', icon: Palette },
+  { code: 'DATA_ANALYTICS', icon: Database },
+  { code: 'COLLAB_PRODUCTIVITY', icon: Briefcase },
+  { code: 'GAME_DEV_QA', icon: Code2 },
+  { code: 'UA_MONETIZATION', icon: Sparkles },
 ]
 
 const RESOURCE_TYPES: Array<{ type: UnifiedResourceSearchType; labelKey: string; icon: LucideIcon }> = [
@@ -156,7 +157,7 @@ export function LandingPage() {
   const { isAuthenticated } = useAuth()
   const [discoveryMode, setDiscoveryMode] = useState<DiscoveryMode>('recommended')
   const [homeResourceType, setHomeResourceType] = useState<UnifiedResourceSearchType>('ALL')
-  const [homeScenario, setHomeScenario] = useState('')
+  const [homeScenario, setHomeScenario] = useState<ResourceCategoryCode | undefined>()
   const [homeScopeFilter, setHomeScopeFilter] = useState<HomeScopeFilter>('ALL')
   const [searchInput, setSearchInput] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
@@ -173,6 +174,7 @@ export function LandingPage() {
   const { data: rankedResources } = useUnifiedResourceSearch(
     {
       q: '',
+      categoryCode: homeScenario,
       sort: discoveryMode === 'downloads' ? 'downloads' : 'newest',
       page: 0,
       size: 12,
@@ -188,7 +190,8 @@ export function LandingPage() {
   })
   const { data: scenarioResources } = useUnifiedResourceSearch(
     {
-      q: homeScenario,
+      q: '',
+      categoryCode: homeScenario,
       sort: discoveryMode === 'downloads' ? 'downloads' : discoveryMode === 'newest' ? 'newest' : 'relevance',
       page: 0,
       size: 24,
@@ -215,7 +218,6 @@ export function LandingPage() {
   )
   const visibleDiscoveryResources = discoveryResources.filter((resource) => {
     if (homeResourceType !== 'ALL' && resource.resourceType !== homeResourceType) return false
-    if (homeScenario && !resource.catalogResource?.scenarios?.includes(homeScenario)) return false
     if (homeScopeFilter === 'PUBLIC') {
       return resource.skill?.namespace === 'global' || resource.catalogResource?.department == null
     }
@@ -230,7 +232,7 @@ export function LandingPage() {
     return commonToolIds.map((id) => toolsById.get(id)).filter((resource): resource is UnifiedResourceSearchItem => resource != null)
   }, [commonToolIds, toolResources?.items])
   const homeScenarioLabel = homeScenario
-    ? t(`joyhubHome.scenarios.${SCENARIOS.find((scenario) => scenario.query === homeScenario)?.key ?? 'content'}`)
+    ? resourceCategoryLabel(t, homeScenario)
     : '全部'
   const homeScopeLabel = homeScopeFilter === 'PUBLIC'
     ? '公司公共库'
@@ -243,8 +245,9 @@ export function LandingPage() {
     setSearchSort('relevance')
   }
 
-  const searchScenario = (query: string) => {
-    handleSearch(query)
+  const searchScenario = (categoryCode: ResourceCategoryCode) => {
+    setHomeScenario(categoryCode)
+    setSearchQuery('')
   }
 
   useEffect(() => {
@@ -293,13 +296,13 @@ export function LandingPage() {
                     const Icon = scenario.icon
                     return (
                       <button
-                        key={scenario.key}
+                        key={scenario.code}
                         type="button"
-                        onClick={() => searchScenario(scenario.query)}
+                        onClick={() => searchScenario(scenario.code)}
                         className="group inline-flex shrink-0 items-center gap-2 rounded-md border border-border bg-white px-3 py-2 text-sm font-medium transition-colors hover:border-primary/50 hover:text-primary"
                       >
                         <Icon className="h-4 w-4 text-primary" />
-                        <span>{t(`joyhubHome.scenarios.${scenario.key}`)}</span>
+                        <span>{resourceCategoryLabel(t, scenario.code)}</span>
                         <ArrowRight className="h-3.5 w-3.5 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
                       </button>
                     )
@@ -329,7 +332,7 @@ export function LandingPage() {
           <div className="hidden items-center gap-2 lg:flex">
             {SCENARIOS.map((scenario) => {
               const Icon = scenario.icon
-              return <button key={scenario.key} type="button" onClick={() => searchScenario(scenario.query)} className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md border border-border bg-white px-2.5 py-2 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary"><Icon className="h-3.5 w-3.5" />{t(`joyhubHome.scenarios.${scenario.key}`)}</button>
+              return <button key={scenario.code} type="button" onClick={() => searchScenario(scenario.code)} className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md border border-border bg-white px-2.5 py-2 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary"><Icon className="h-3.5 w-3.5" />{resourceCategoryLabel(t, scenario.code)}</button>
             })}
           </div>
         </div>
@@ -448,11 +451,11 @@ export function LandingPage() {
           <div className={cn('mb-5 flex flex-wrap items-center gap-2 border-b pb-4', tourTarget === 'filters' && 'relative z-50 rounded-md ring-4 ring-primary/50 ring-offset-4')} data-onboarding-target="filters">
             <span className="mr-1 text-sm font-medium text-muted-foreground">进一步筛选</span>
             <label className="sr-only" htmlFor="home-scenario-filter">适用场景</label>
-            <Select value={homeScenario || 'ALL'} onValueChange={(value) => setHomeScenario(value === 'ALL' ? '' : value)}>
+            <Select value={homeScenario || 'ALL'} onValueChange={(value) => setHomeScenario(value === 'ALL' ? undefined : value as ResourceCategoryCode)}>
               <SelectTrigger id="home-scenario-filter" className="w-48"><span>适用场景：{homeScenarioLabel}</span></SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">全部</SelectItem>
-                {SCENARIOS.map((scenario) => <SelectItem key={scenario.key} value={scenario.query}>{t(`joyhubHome.scenarios.${scenario.key}`)}</SelectItem>)}
+                {RESOURCE_CATEGORY_OPTIONS.map((scenario) => <SelectItem key={scenario.code} value={scenario.code}>{resourceCategoryLabel(t, scenario.code)}</SelectItem>)}
               </SelectContent>
             </Select>
             <label className="sr-only" htmlFor="home-scope-filter">可见范围</label>

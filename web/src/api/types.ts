@@ -1,4 +1,5 @@
 import type { components } from './generated/schema'
+import type { ResourceCategoryCode } from '@/shared/lib/resource-category'
 
 export type User = Omit<components['schemas']['AuthMeResponse'], 'userId' | 'displayName' | 'platformRoles'> & {
   userId: string
@@ -193,6 +194,8 @@ export type CatalogResourceSummary = Omit<
   status?: CatalogResourceStatus
   maintenanceStatus?: CatalogMaintenanceStatus
   visibilityScope?: CatalogVisibilityScope
+  categoryCode?: ResourceCategoryCode | string | null
+  categorySource?: 'AUTHOR' | 'AI' | string | null
 }
 
 export type UnifiedResourceSearchType = 'ALL' | 'AGENT' | 'TOOL' | 'SKILL'
@@ -201,6 +204,7 @@ export interface UnifiedResourceSearchItem {
   resourceType: Exclude<UnifiedResourceSearchType, 'ALL'>
   accessMode: 'INSTALL' | 'OPEN' | 'DOWNLOAD' | string
   relevanceScore: number
+  categoryCode?: ResourceCategoryCode | string | null
   skill?: SkillSummary
   catalogResource?: CatalogResourceSummary
 }
@@ -224,6 +228,8 @@ export interface ResourceSearchDocument {
   profileText: string
   rawDocumentation: string
   sourceHash: string
+  categoryCode: ResourceCategoryCode | string
+  categorySource: 'AUTHOR' | 'AI' | string
   generatedAt?: string
   updatedAt: string
 }
@@ -260,12 +266,13 @@ export type CatalogResourceDetail = Omit<
 
 // Keep the hand-written facade forward-compatible while the checked-in OpenAPI schema catches up
 // with the catalog agent profile fields introduced by the backend.
-export type CatalogResourceRequest = components['schemas']['CatalogResourceRequest'] & {
+export type CatalogResourceRequest = Omit<components['schemas']['CatalogResourceRequest'], 'categoryCode'> & {
   agentUsageBoundary?: string
   agentInputGuide?: string
   agentOutputGuide?: string
   agentSupportContact?: string
   agentExamplePrompts?: string[]
+  categoryCode?: ResourceCategoryCode | null
 }
 
 export type DiscoveryAssistRequest = components['schemas']['DiscoveryAssistRequest']
@@ -524,6 +531,7 @@ export interface SearchParams {
   page?: number
   size?: number
   starredOnly?: boolean
+  categoryCode?: ResourceCategoryCode | string
 }
 
 export interface PagedResponse<T> {

@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate, useSearch } from '@tanstack/react-router'
+import { useTranslation } from 'react-i18next'
 import { Plus, Search } from 'lucide-react'
 import type { CatalogCenter, CatalogResourceKind } from '@/api/types'
+import { RESOURCE_CATEGORY_OPTIONS, resourceCategoryLabel, type ResourceCategoryCode } from '@/shared/lib/resource-category'
 import { CatalogResourceCard } from '@/entities/catalog-resource/catalog-resource-card'
 import { CATALOG_RESOURCE_KINDS, catalogKindLabel } from '@/entities/catalog-resource/catalog-resource-kind'
 import { useCatalogResources } from '@/features/catalog/use-catalog-queries'
@@ -20,11 +22,12 @@ import { ViewModeToggle } from '@/shared/components/view-mode-toggle'
 import { useViewMode } from '@/shared/hooks/use-view-mode'
 
 function CatalogCenterPage({ center, showArrivalGuide }: { center: CatalogCenter; showArrivalGuide: boolean }) {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [queryInput, setQueryInput] = useState('')
   const [query, setQuery] = useState('')
   const [kind, setKind] = useState<CatalogResourceKind | undefined>()
-  const [scenario, setScenario] = useState('')
+  const [categoryCode, setCategoryCode] = useState<ResourceCategoryCode | undefined>()
   const [departmentId, setDepartmentId] = useState<number | undefined>()
   const [sort, setSort] = useState<'recommended' | 'newest'>('recommended')
   const [isArrivalGuideVisible, setIsArrivalGuideVisible] = useState(showArrivalGuide)
@@ -39,33 +42,30 @@ function CatalogCenterPage({ center, showArrivalGuide }: { center: CatalogCenter
     center,
     q: query ? undefined : query,
     kind,
-    scenario: scenario || undefined,
+    categoryCode: undefined,
     departmentId,
     sort: isAgent ? sort : undefined,
     size: 48,
   })
+  const useUnifiedFilter = query.length > 0 || categoryCode !== undefined
   const unifiedSearch = useUnifiedResourceSearch({
     q: query,
     type: isAgent ? 'AGENT' : 'TOOL',
+    categoryCode,
     sort: sort === 'newest' ? 'newest' : 'relevance',
     size: 48,
-  }, query.length > 0)
-  const { data: allCenterData } = useCatalogResources({ center, size: 100 })
+  }, useUnifiedFilter)
   const availableKinds = isAgent ? ['AGENT'] as CatalogResourceKind[] : CATALOG_RESOURCE_KINDS.filter((item) => item !== 'AGENT')
   const publishKind: CatalogResourceKind = isAgent ? 'AGENT' : (kind ?? 'ONLINE_TOOL')
   const publishLabel = isAgent ? '发布 Agent' : `发布${kind ? catalogKindLabel(kind) : '工具'}`
   const resources = useMemo(() => {
-    if (!query) return data?.items ?? []
+    if (!useUnifiedFilter) return data?.items ?? []
     return (unifiedSearch.data?.items ?? []).flatMap(item => item.catalogResource ? [item.catalogResource] : [])
       .filter(resource => !kind || resource.kind === kind)
-      .filter(resource => !scenario || resource.scenarios?.includes(scenario))
-  }, [data?.items, kind, query, scenario, unifiedSearch.data?.items])
-  const scenarios = useMemo(
-    () => Array.from(new Set((allCenterData?.items ?? []).flatMap((resource) => resource.scenarios ?? []))).sort((left, right) => left.localeCompare(right, 'zh-CN')),
-    [allCenterData?.items],
-  )
+      .filter(resource => departmentId === undefined || resource.department?.id === departmentId)
+  }, [data?.items, departmentId, kind, unifiedSearch.data?.items, useUnifiedFilter])
   const selectedKindLabel = kind ? catalogKindLabel(kind) : '全部'
-  const selectedScenarioLabel = scenario || '全部'
+  const selectedScenarioLabel = categoryCode ? resourceCategoryLabel(t, categoryCode) : '全部'
   const selectedDepartmentLabel = departmentId
     ? departments.find((department) => department.id === departmentId)?.displayName ?? '全部'
     : '全部'
@@ -163,15 +163,15 @@ function CatalogCenterPage({ center, showArrivalGuide }: { center: CatalogCenter
           <p className="px-2 pb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{isAgent ? '浏览 Agent' : '浏览工具'}</p>
           <button
             type="button"
-            onClick={() => { setKind(undefined); setScenario('') }}
-            className={cn('relative block w-full rounded-md px-2.5 py-2 text-left text-sm font-medium transition-colors', kind === undefined && !scenario ? 'bg-slate-100 text-foreground before:absolute before:-left-[22px] before:top-1.5 before:h-6 before:w-1 before:rounded-full before:bg-primary' : 'text-muted-foreground hover:bg-slate-100')}
+            onClick={() => { setKind(undefined); setCategoryCode(undefined) }}
+            className={cn('relative block w-full rounded-md px-2.5 py-2 text-left text-sm font-medium transition-colors', kind === undefined && !categoryCode ? 'bg-slate-100 text-foreground before:absolute before:-left-[22px] before:top-1.5 before:h-6 before:w-1 before:rounded-full before:bg-primary' : 'text-muted-foreground hover:bg-slate-100')}
           >
             {isAgent ? '全部 Agent' : '全部工具'}
           </button>
           {!isAgent ? <>
             <div className="my-3 border-t" />
             <label htmlFor="catalog-kind-filter" className="block px-2 pb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">工具类型</label>
-            <Select value={kind ?? 'ALL'} onValueChange={(value) => { setKind(value === 'ALL' ? undefined : value as CatalogResourceKind); setScenario('') }}>
+            <Select value={kind ?? 'ALL'} onValueChange={(value) => { setKind(value === 'ALL' ? undefined : value as CatalogResourceKind); setCategoryCode(undefined) }}>
               <SelectTrigger id="catalog-kind-filter"><span>工具类型：{selectedKindLabel}</span></SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">全部类型</SelectItem>
@@ -181,11 +181,11 @@ function CatalogCenterPage({ center, showArrivalGuide }: { center: CatalogCenter
           </> : null}
           <div className="my-3 border-t" />
           <label htmlFor="catalog-scenario-filter" className="block px-2 pb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">工作场景</label>
-          <Select value={scenario || 'ALL'} onValueChange={(value) => setScenario(value === 'ALL' ? '' : value)}>
+          <Select value={categoryCode ?? 'ALL'} onValueChange={(value) => setCategoryCode(value === 'ALL' ? undefined : value as ResourceCategoryCode)}>
             <SelectTrigger id="catalog-scenario-filter"><span>工作场景：{selectedScenarioLabel}</span></SelectTrigger>
             <SelectContent>
               <SelectItem value="ALL">全部场景</SelectItem>
-              {scenarios.map((item) => <SelectItem key={item} value={item}>{item}</SelectItem>)}
+              {RESOURCE_CATEGORY_OPTIONS.map((item) => <SelectItem key={item.code} value={item.code}>{resourceCategoryLabel(t, item.code)}</SelectItem>)}
             </SelectContent>
           </Select>
         </aside>
@@ -196,11 +196,11 @@ function CatalogCenterPage({ center, showArrivalGuide }: { center: CatalogCenter
             data-onboarding-target="filters"
           >
             <span className="mr-1 text-sm font-medium text-muted-foreground">进一步筛选</span>
-            <Select value={scenario || 'ALL'} onValueChange={(value) => setScenario(value === 'ALL' ? '' : value)}>
+            <Select value={categoryCode ?? 'ALL'} onValueChange={(value) => setCategoryCode(value === 'ALL' ? undefined : value as ResourceCategoryCode)}>
               <SelectTrigger className="w-48"><span>适用场景：{selectedScenarioLabel}</span></SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">全部场景</SelectItem>
-                {scenarios.map((item) => <SelectItem key={item} value={item}>{item}</SelectItem>)}
+                {RESOURCE_CATEGORY_OPTIONS.map((item) => <SelectItem key={item.code} value={item.code}>{resourceCategoryLabel(t, item.code)}</SelectItem>)}
               </SelectContent>
             </Select>
             <Select value={departmentId?.toString() ?? 'ALL'} onValueChange={(value) => setDepartmentId(value === 'ALL' ? undefined : Number(value))}>

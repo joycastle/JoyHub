@@ -9,6 +9,14 @@ public record UnifiedResourceSearchItemResponse(
         String accessMode,
         double relevanceScore,
         SkillSummaryResponse skill,
-        CatalogResourceSummaryResponse catalogResource
+        CatalogResourceSummaryResponse catalogResource,
+        String categoryCode
 ) {
+    public UnifiedResourceSearchItemResponse(String resourceType,
+                                             String accessMode,
+                                             double relevanceScore,
+                                             SkillSummaryResponse skill,
+                                             CatalogResourceSummaryResponse catalogResource) {
+        this(resourceType, accessMode, relevanceScore, skill, catalogResource, "OTHER");
+    }
 }

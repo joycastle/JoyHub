@@ -21,6 +21,7 @@ import com.iflytek.skillhub.domain.skill.SkillVersionStatus;
 import com.iflytek.skillhub.domain.skill.SkillVisibility;
 import com.iflytek.skillhub.domain.skill.service.SkillPublishService;
 import com.iflytek.skillhub.metrics.SkillHubMetrics;
+import com.iflytek.skillhub.service.ResourceCategoryAppService;
 import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -60,6 +61,9 @@ class SkillPublishControllerTest {
 
     @MockBean
     private SkillHubMetrics skillHubMetrics;
+
+    @MockBean
+    private ResourceCategoryAppService resourceCategoryAppService;
 
     @Test
     void publish_recordsMetricsAfterSuccess() throws Exception {

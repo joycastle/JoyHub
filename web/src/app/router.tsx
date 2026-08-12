@@ -237,7 +237,7 @@ const searchRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: 'search',
   component: SearchPage,
-  validateSearch: (search: Record<string, unknown>): { q: string; namespace?: string; label?: string; sort: string; page: number; starredOnly: boolean; type?: 'ALL' | 'AGENT' | 'TOOL' | 'SKILL'; onboarding?: boolean } => {
+  validateSearch: (search: Record<string, unknown>): { q: string; namespace?: string; label?: string; categoryCode?: string; sort: string; page: number; starredOnly: boolean; type?: 'ALL' | 'AGENT' | 'TOOL' | 'SKILL'; onboarding?: boolean } => {
     const resourceType = typeof search.type === 'string' && ['ALL', 'AGENT', 'TOOL', 'SKILL'].includes(search.type)
       ? search.type as 'ALL' | 'AGENT' | 'TOOL' | 'SKILL'
       : undefined
@@ -245,6 +245,7 @@ const searchRoute = createRoute({
       q: normalizeSearchQuery(typeof search.q === 'string' ? search.q : ''),
       namespace: typeof search.namespace === 'string' && search.namespace ? search.namespace.replace(/^@/, '') : undefined,
       label: typeof search.label === 'string' && search.label ? search.label : undefined,
+      categoryCode: typeof search.categoryCode === 'string' && search.categoryCode ? search.categoryCode : undefined,
       sort: (search.sort as string) || 'newest',
       page: Number(search.page) || 0,
       starredOnly: search.starredOnly === true || search.starredOnly === 'true',
