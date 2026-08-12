@@ -215,6 +215,9 @@ export function SearchPage() {
         </div>
         <div className="mx-auto mt-5 flex max-w-3xl flex-wrap items-center justify-center gap-2">
           <span className="text-xs font-medium text-muted-foreground">{t('search.scenarios.label')}</span>
+          <Button type="button" variant={!categoryCode ? 'default' : 'ghost'} size="sm" onClick={() => navigate({ to: '/search', search: { q, namespace, label: selectedLabel, categoryCode: '', sort, page: 0, starredOnly: false, type: resourceType } })}>
+            {t('resourceCategory.allOption')}
+          </Button>
           {RESOURCE_CATEGORY_OPTIONS.map((scenario) => (
             <Button key={scenario.code} type="button" variant={categoryCode === scenario.code ? 'default' : 'ghost'} size="sm" onClick={() => handleScenarioSearch(scenario.code)}>
               {resourceCategoryLabel(t, scenario.code)}
@@ -295,7 +298,6 @@ export function SearchPage() {
               {label.displayName}
             </Button>
           ))}
-          {categoryCode ? <Button variant="default" size="sm" onClick={() => navigate({ to: '/search', search: { q, namespace, label: selectedLabel, categoryCode: '', sort, page: 0, starredOnly, type: resourceType } })}>{resourceCategoryLabel(t, categoryCode)}</Button> : null}
           {namespace ? (
             <Button
               variant="default"

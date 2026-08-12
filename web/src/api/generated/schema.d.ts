@@ -9229,6 +9229,7 @@ export interface operations {
                 q?: string;
                 namespace?: string;
                 label?: string[];
+                categoryCode?: string;
                 sort?: string;
                 page?: number;
                 size?: number;

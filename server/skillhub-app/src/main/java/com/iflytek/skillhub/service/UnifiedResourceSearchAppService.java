@@ -117,13 +117,15 @@ public class UnifiedResourceSearchAppService {
             String query,
             String namespace,
             List<String> labels,
+            String categoryCode,
             String sort,
             int page,
             int size,
             String userId,
             Map<Long, NamespaceRole> namespaceRoles) {
         PageResponse<UnifiedResourceSearchItemResponse> response = searchInternal(
-                query, namespace, labels == null ? List.of() : labels, null, sort, UnifiedResourceSearchType.SKILL,
+                query, namespace, labels == null ? List.of() : labels, categoryCode, sort,
+                UnifiedResourceSearchType.SKILL,
                 false, page, size, userId, namespaceRoles, null, Set.of());
         return new SkillSearchAppService.SearchResponse(response.items().stream()
                 .map(UnifiedResourceSearchItemResponse::skill)

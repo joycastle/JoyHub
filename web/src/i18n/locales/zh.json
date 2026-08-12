@@ -34,6 +34,7 @@
   },
   "resourceCategory": {
     "label": "使用场景",
+    "allOption": "全部场景",
     "aiOption": "AI 自动分类",
     "aiHint": "发布后由 AI 根据文档自动生成。",
     "options": {

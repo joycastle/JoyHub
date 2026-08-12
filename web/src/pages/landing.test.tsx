@@ -76,4 +76,10 @@ describe('LandingPage', () => {
     expect(html).toContain('JOYHUB MARKETPLACE')
     expect(html).toContain('DISCOVER')
   })
+
+  it('renders an explicit all-scenarios shortcut', () => {
+    const html = renderToStaticMarkup(<LandingPage />)
+
+    expect(html).toContain('resourceCategory.allOption')
+  })
 })

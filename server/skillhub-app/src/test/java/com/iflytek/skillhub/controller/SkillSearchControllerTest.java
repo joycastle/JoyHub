@@ -41,6 +41,7 @@ class SkillSearchControllerTest {
                 eq("review"),
                 eq("global"),
                 eq(null),
+                eq(null),
                 eq("newest"),
                 eq(0),
                 eq(20),
@@ -62,6 +63,7 @@ class SkillSearchControllerTest {
     @Test
     void searchShouldPassExplicitSortPageAndSize() throws Exception {
         when(unifiedResourceSearchAppService.searchSkills(
+                eq(null),
                 eq(null),
                 eq(null),
                 eq(null),
@@ -87,6 +89,7 @@ class SkillSearchControllerTest {
                 eq("review"),
                 eq(null),
                 eq(List.of("code-generation", "official")),
+                eq(null),
                 eq("newest"),
                 eq(0),
                 eq(20),
@@ -105,6 +108,7 @@ class SkillSearchControllerTest {
     @Test
     void searchShouldFallbackToDefaultsForBlankQueryParams() throws Exception {
         when(unifiedResourceSearchAppService.searchSkills(
+                eq(null),
                 eq(null),
                 eq(null),
                 eq(null),
@@ -130,6 +134,7 @@ class SkillSearchControllerTest {
                 eq(null),
                 eq(null),
                 eq(null),
+                eq(null),
                 eq("newest"),
                 eq(0),
                 eq(20),
@@ -143,5 +148,25 @@ class SkillSearchControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.page").value(0))
                 .andExpect(jsonPath("$.data.size").value(20));
+    }
+
+    @Test
+    void searchShouldPassCategoryFilter() throws Exception {
+        when(unifiedResourceSearchAppService.searchSkills(
+                eq(null),
+                eq(null),
+                eq(null),
+                eq("GAME_DEV_QA"),
+                eq("newest"),
+                eq(0),
+                eq(20),
+                any(),
+                any()))
+                .thenReturn(new SkillSearchAppService.SearchResponse(List.of(), 0, 0, 20));
+
+        mockMvc.perform(get("/api/web/skills")
+                        .param("categoryCode", "GAME_DEV_QA"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.items").isArray());
     }
 }

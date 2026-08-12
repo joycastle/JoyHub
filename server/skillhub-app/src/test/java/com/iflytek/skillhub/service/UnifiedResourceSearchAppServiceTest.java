@@ -16,6 +16,8 @@ import com.iflytek.skillhub.search.HybridResourceSearchRanker;
 import com.iflytek.skillhub.search.ResourceSearchQueryInterpreter;
 import com.iflytek.skillhub.search.SearchTextTokenizer;
 import com.iflytek.skillhub.infra.jpa.ResourceSearchDocumentJpaRepository;
+import com.iflytek.skillhub.infra.jpa.ResourceCategoryCode;
+import com.iflytek.skillhub.infra.jpa.ResourceSearchDocumentEntity;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -150,6 +152,45 @@ class UnifiedResourceSearchAppServiceTest {
                         ? item.skill().slug()
                         : item.catalogResource().slug()))
                 .containsExactlyInAnyOrder("SKILL:html-report", "AGENT:wangzong");
+    }
+
+    @Test
+    void searchSkillsAppliesCategoryFilterToSkillProjection() {
+        ResourceSearchDocumentEntity document = ResourceSearchDocumentEntity.basic(
+                "SKILL", 1L, null, "user-1", "每周HTML报告生成", "html-report", "生成报告。",
+                "[]", "INSTALL", "PUBLIC", "PUBLISHED", "生成报告。", "source-hash");
+        document.setAuthorCategory(ResourceCategoryCode.GAME_DEV_QA);
+        given(searchDocumentRepository.findBySearchEnabledTrue()).willReturn(List.of(document));
+        given(skillSearchAppService.searchInstallableLatest(
+                null, null, "newest", 0, 500, List.of(), "user-1", Map.of()))
+                .willReturn(new SkillSearchAppService.SearchResponse(
+                        List.of(skill(1L, "html-report", "每周HTML报告生成", "生成报告。")), 1, 0, 500));
+
+        var result = service.searchSkills(
+                null, null, List.of(), "GAME_DEV_QA", "newest", 0, 12, "user-1", Map.of());
+
+        assertThat(result.items()).singleElement().extracting(SkillSummaryResponse::slug)
+                .isEqualTo("html-report");
+        assertThat(result.total()).isEqualTo(1);
+    }
+
+    @Test
+    void searchSkillsExcludesSkillsOutsideCategoryFilter() {
+        ResourceSearchDocumentEntity document = ResourceSearchDocumentEntity.basic(
+                "SKILL", 1L, null, "user-1", "每周HTML报告生成", "html-report", "生成报告。",
+                "[]", "INSTALL", "PUBLIC", "PUBLISHED", "生成报告。", "source-hash");
+        document.setAuthorCategory(ResourceCategoryCode.OTHER);
+        given(searchDocumentRepository.findBySearchEnabledTrue()).willReturn(List.of(document));
+        given(skillSearchAppService.searchInstallableLatest(
+                null, null, "newest", 0, 500, List.of(), "user-1", Map.of()))
+                .willReturn(new SkillSearchAppService.SearchResponse(
+                        List.of(skill(1L, "html-report", "每周HTML报告生成", "生成报告。")), 1, 0, 500));
+
+        var result = service.searchSkills(
+                null, null, List.of(), "GAME_DEV_QA", "newest", 0, 12, "user-1", Map.of());
+
+        assertThat(result.items()).isEmpty();
+        assertThat(result.total()).isZero();
     }
 
     private SkillSummaryResponse skill(Long id, String slug, String name, String summary) {

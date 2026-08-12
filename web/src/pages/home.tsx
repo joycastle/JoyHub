@@ -6,7 +6,9 @@ import { CenterFeatureTour, type CenterTourTarget } from '@/features/onboarding/
 import { resumePlatformOnboarding } from '@/features/onboarding/onboarding-events'
 import { SkillCard } from '@/features/skill/skill-card'
 import { SkeletonList } from '@/shared/components/skeleton-loader'
-import { useSearchSkills } from '@/shared/hooks/use-skill-queries'
+import { useUnifiedResourceSearch } from '@/features/search/use-unified-resource-search'
+import type { ResourceCategoryCode } from '@/shared/lib/resource-category'
+import { ResourceCategorySelect } from '@/shared/components/resource-category-select'
 import { normalizeSearchQuery } from '@/shared/lib/search-query'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
@@ -32,12 +34,16 @@ export function HomePage() {
   const [isSearchPinned, setIsSearchPinned] = useState(false)
   const [viewMode, setViewMode] = useViewMode('skills')
   const searchDockRef = useRef<HTMLDivElement>(null)
-  const { data, isLoading, isError, isFetching } = useSearchSkills({
+  const [categoryCode, setCategoryCode] = useState<ResourceCategoryCode | undefined>()
+  const { data: unifiedData, isLoading, isError, isFetching } = useUnifiedResourceSearch({
     q: query,
+    type: 'SKILL',
+    categoryCode,
     sort,
     page,
     size: SKILL_PAGE_SIZE,
   })
+  const data = unifiedData
   const pageCount = data ? Math.max(Math.ceil(data.total / data.size), 1) : 1
 
   const handleSearch = (value: string) => {
@@ -45,7 +51,7 @@ export function HomePage() {
     setQuery(normalizeSearchQuery(value))
     setPage(0)
   }
-  const skills = data?.items ?? []
+  const skills = (data?.items ?? []).flatMap((item) => item.skill ? [item.skill] : [])
   const isCatalogHighlighted = tourTarget === 'catalog'
 
   useEffect(() => {
@@ -155,6 +161,7 @@ export function HomePage() {
         <Button variant={sort === 'downloads' ? 'default' : 'outline'} size="sm" className="rounded-md shadow-none" onClick={() => { setSort('downloads'); setPage(0) }}>
           {t('skillCenter.popular')}
         </Button>
+        <ResourceCategorySelect value={categoryCode} onChange={(value) => { setCategoryCode(value); setPage(0) }} className="w-48" triggerPrefix={`${t('resourceCategory.label')}：`} />
         {!isLoading && data ? (
           <span className="ml-auto text-sm text-muted-foreground">{t('skillCenter.resultCount', { count: data.total })}</span>
         ) : null}

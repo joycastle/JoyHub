@@ -22,7 +22,8 @@ import { useResourceRecommendations, useUnifiedResourceSearch } from '@/features
 import { useAuth } from '@/features/auth/use-auth'
 import { namespaceApi, resourcesApi } from '@/api/client'
 import type { UnifiedResourceSearchItem, UnifiedResourceSearchType } from '@/api/types'
-import { RESOURCE_CATEGORY_OPTIONS, resourceCategoryLabel, type ResourceCategoryCode } from '@/shared/lib/resource-category'
+import { resourceCategoryLabel, type ResourceCategoryCode } from '@/shared/lib/resource-category'
+import { ResourceCategorySelect } from '@/shared/components/resource-category-select'
 import { useCopyToClipboard } from '@/shared/lib/clipboard'
 import { normalizeSearchQuery } from '@/shared/lib/search-query'
 import { cn } from '@/shared/lib/utils'
@@ -231,9 +232,6 @@ export function LandingPage() {
     const toolsById = new Map((toolResources?.items ?? []).flatMap((resource) => resource.catalogResource ? [[resource.catalogResource.id, resource] as const] : []))
     return commonToolIds.map((id) => toolsById.get(id)).filter((resource): resource is UnifiedResourceSearchItem => resource != null)
   }, [commonToolIds, toolResources?.items])
-  const homeScenarioLabel = homeScenario
-    ? resourceCategoryLabel(t, homeScenario)
-    : '全部'
   const homeScopeLabel = homeScopeFilter === 'PUBLIC'
     ? '公司公共库'
     : homeScopeFilter === 'DEPARTMENT' ? '所在部门' : '全部'
@@ -292,6 +290,13 @@ export function LandingPage() {
                 </div>
                 <div className="mt-4 flex max-w-6xl flex-nowrap items-center gap-2 overflow-x-auto pb-1">
                   <span className="shrink-0 text-xs font-medium text-muted-foreground">{t('search.scenarios.label')}</span>
+                  <button
+                    type="button"
+                    onClick={() => { setHomeScenario(undefined); setSearchQuery('') }}
+                    className={cn('inline-flex shrink-0 items-center gap-2 rounded-md border bg-white px-3 py-2 text-sm font-medium transition-colors', !homeScenario ? 'border-primary text-primary' : 'border-border hover:border-primary/50 hover:text-primary')}
+                  >
+                    {t('resourceCategory.allOption')}
+                  </button>
                   {SCENARIOS.map((scenario) => {
                     const Icon = scenario.icon
                     return (
@@ -330,6 +335,9 @@ export function LandingPage() {
         <div className="mx-auto flex max-w-7xl items-center gap-4 px-5 py-3 md:px-10">
           <div className="min-w-0 flex-1"><SearchBar value={searchInput} placeholder={t('search.placeholder')} isSearching={isSearching} onChange={setSearchInput} onSearch={handleSearch} /></div>
           <div className="hidden items-center gap-2 lg:flex">
+            <button type="button" onClick={() => { setHomeScenario(undefined); setSearchQuery('') }} className={cn('inline-flex items-center gap-1.5 whitespace-nowrap rounded-md border bg-white px-2.5 py-2 text-xs font-medium transition-colors', !homeScenario ? 'border-primary text-primary' : 'border-border text-muted-foreground hover:border-primary/50 hover:text-primary')}>
+              {t('resourceCategory.allOption')}
+            </button>
             {SCENARIOS.map((scenario) => {
               const Icon = scenario.icon
               return <button key={scenario.code} type="button" onClick={() => searchScenario(scenario.code)} className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md border border-border bg-white px-2.5 py-2 text-xs font-medium text-muted-foreground transition-colors hover:border-primary/50 hover:text-primary"><Icon className="h-3.5 w-3.5" />{resourceCategoryLabel(t, scenario.code)}</button>
@@ -450,14 +458,8 @@ export function LandingPage() {
           </div>
           <div className={cn('mb-5 flex flex-wrap items-center gap-2 border-b pb-4', tourTarget === 'filters' && 'relative z-50 rounded-md ring-4 ring-primary/50 ring-offset-4')} data-onboarding-target="filters">
             <span className="mr-1 text-sm font-medium text-muted-foreground">进一步筛选</span>
-            <label className="sr-only" htmlFor="home-scenario-filter">适用场景</label>
-            <Select value={homeScenario || 'ALL'} onValueChange={(value) => setHomeScenario(value === 'ALL' ? undefined : value as ResourceCategoryCode)}>
-              <SelectTrigger id="home-scenario-filter" className="w-48"><span>适用场景：{homeScenarioLabel}</span></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">全部</SelectItem>
-                {RESOURCE_CATEGORY_OPTIONS.map((scenario) => <SelectItem key={scenario.code} value={scenario.code}>{resourceCategoryLabel(t, scenario.code)}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <label className="sr-only" htmlFor="home-scenario-filter">使用场景</label>
+            <ResourceCategorySelect id="home-scenario-filter" value={homeScenario} onChange={setHomeScenario} className="w-48" triggerPrefix="使用场景：" />
             <label className="sr-only" htmlFor="home-scope-filter">可见范围</label>
             <Select value={homeScopeFilter} onValueChange={(value) => setHomeScopeFilter(value as HomeScopeFilter)}>
               <SelectTrigger id="home-scope-filter" className="w-48"><span>可见范围：{homeScopeLabel}</span></SelectTrigger>

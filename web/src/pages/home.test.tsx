@@ -31,10 +31,12 @@ vi.mock('@/shared/components/brand-mark', () => ({
   BrandMark: () => null,
 }))
 
-vi.mock('@/shared/hooks/use-skill-queries', () => ({
-  useSearchSkills: () => ({
-    data: { items: [] },
+vi.mock('@/features/search/use-unified-resource-search', () => ({
+  useUnifiedResourceSearch: () => ({
+    data: { items: [], total: 0, page: 0, size: 12 },
     isLoading: false,
+    isError: false,
+    isFetching: false,
   }),
 }))
 

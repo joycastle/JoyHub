@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate, useSearch } from '@tanstack/react-router'
-import { useTranslation } from 'react-i18next'
 import { Plus, Search } from 'lucide-react'
 import type { CatalogCenter, CatalogResourceKind } from '@/api/types'
-import { RESOURCE_CATEGORY_OPTIONS, resourceCategoryLabel, type ResourceCategoryCode } from '@/shared/lib/resource-category'
+import type { ResourceCategoryCode } from '@/shared/lib/resource-category'
+import { ResourceCategorySelect } from '@/shared/components/resource-category-select'
 import { CatalogResourceCard } from '@/entities/catalog-resource/catalog-resource-card'
 import { CATALOG_RESOURCE_KINDS, catalogKindLabel } from '@/entities/catalog-resource/catalog-resource-kind'
 import { useCatalogResources } from '@/features/catalog/use-catalog-queries'
@@ -22,7 +22,6 @@ import { ViewModeToggle } from '@/shared/components/view-mode-toggle'
 import { useViewMode } from '@/shared/hooks/use-view-mode'
 
 function CatalogCenterPage({ center, showArrivalGuide }: { center: CatalogCenter; showArrivalGuide: boolean }) {
-  const { t } = useTranslation()
   const navigate = useNavigate()
   const [queryInput, setQueryInput] = useState('')
   const [query, setQuery] = useState('')
@@ -65,7 +64,6 @@ function CatalogCenterPage({ center, showArrivalGuide }: { center: CatalogCenter
       .filter(resource => departmentId === undefined || resource.department?.id === departmentId)
   }, [data?.items, departmentId, kind, unifiedSearch.data?.items, useUnifiedFilter])
   const selectedKindLabel = kind ? catalogKindLabel(kind) : '全部'
-  const selectedScenarioLabel = categoryCode ? resourceCategoryLabel(t, categoryCode) : '全部'
   const selectedDepartmentLabel = departmentId
     ? departments.find((department) => department.id === departmentId)?.displayName ?? '全部'
     : '全部'
@@ -179,15 +177,6 @@ function CatalogCenterPage({ center, showArrivalGuide }: { center: CatalogCenter
               </SelectContent>
             </Select>
           </> : null}
-          <div className="my-3 border-t" />
-          <label htmlFor="catalog-scenario-filter" className="block px-2 pb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">工作场景</label>
-          <Select value={categoryCode ?? 'ALL'} onValueChange={(value) => setCategoryCode(value === 'ALL' ? undefined : value as ResourceCategoryCode)}>
-            <SelectTrigger id="catalog-scenario-filter"><span>工作场景：{selectedScenarioLabel}</span></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL">全部场景</SelectItem>
-              {RESOURCE_CATEGORY_OPTIONS.map((item) => <SelectItem key={item.code} value={item.code}>{resourceCategoryLabel(t, item.code)}</SelectItem>)}
-            </SelectContent>
-          </Select>
         </aside>
 
         <main className="min-w-0">
@@ -196,13 +185,7 @@ function CatalogCenterPage({ center, showArrivalGuide }: { center: CatalogCenter
             data-onboarding-target="filters"
           >
             <span className="mr-1 text-sm font-medium text-muted-foreground">进一步筛选</span>
-            <Select value={categoryCode ?? 'ALL'} onValueChange={(value) => setCategoryCode(value === 'ALL' ? undefined : value as ResourceCategoryCode)}>
-              <SelectTrigger className="w-48"><span>适用场景：{selectedScenarioLabel}</span></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">全部场景</SelectItem>
-                {RESOURCE_CATEGORY_OPTIONS.map((item) => <SelectItem key={item.code} value={item.code}>{resourceCategoryLabel(t, item.code)}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <ResourceCategorySelect value={categoryCode} onChange={setCategoryCode} className="w-48" triggerPrefix="使用场景：" />
             <Select value={departmentId?.toString() ?? 'ALL'} onValueChange={(value) => setDepartmentId(value === 'ALL' ? undefined : Number(value))}>
               <SelectTrigger className="w-48"><span>可见范围：{selectedDepartmentLabel}</span></SelectTrigger>
               <SelectContent>
@@ -218,9 +201,9 @@ function CatalogCenterPage({ center, showArrivalGuide }: { center: CatalogCenter
             <ViewModeToggle value={viewMode} onChange={setViewMode} className="ml-auto" />
           </div>
 
-          {((query ? unifiedSearch.isLoading : isLoading)) ? <div className="py-20 text-center text-muted-foreground">正在加载...</div> : null}
-          {((query ? unifiedSearch.isError : isError)) ? <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-5 text-destructive">加载失败，请稍后重试。</div> : null}
-          {!(query ? unifiedSearch.isLoading : isLoading) && !(query ? unifiedSearch.isError : isError) && resources.length === 0 ? (
+          {(useUnifiedFilter ? unifiedSearch.isLoading : isLoading) ? <div className="py-20 text-center text-muted-foreground">正在加载...</div> : null}
+          {(useUnifiedFilter ? unifiedSearch.isError : isError) ? <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-5 text-destructive">加载失败，请稍后重试。</div> : null}
+          {!(useUnifiedFilter ? unifiedSearch.isLoading : isLoading) && !(useUnifiedFilter ? unifiedSearch.isError : isError) && resources.length === 0 ? (
             <div className="flex justify-center">
               <div className="w-full max-w-md rounded-lg border border-dashed bg-slate-50 p-12 text-center text-muted-foreground"><img src="/joycastle-icon.png" alt="" className="mx-auto mb-4 h-12 w-12 opacity-50" />暂无匹配内容</div>
             </div>
