@@ -12,6 +12,7 @@ public record ResourceSearchDocument(
     String title,
     String slug,
     String summary,
+    String categoryCode, // 唯一“使用场景”分类
     List<String> scenarios,
     List<String> tags,
     String documentation,
@@ -44,6 +45,22 @@ resourceType + accessMode + relevanceScore + (skill | catalogResource)
 ```
 
 其中载荷保持原业务摘要结构，避免搜索接口反向污染 Skill 或 Catalog 的生命周期模型。
+
+### 0.1 唯一使用场景分类
+
+Skill、Agent、Tool 共用一个受控的 `categoryCode` 字段，前端统一显示为“使用场景”。分类池固定为
+`GAME_DEV_QA`、`UA_MONETIZATION`、`CREATIVE_MEDIA`、`DATA_ANALYTICS`、
+`COLLAB_PRODUCTIVITY`、`AI_ENGINEERING`、`INTEGRATION_AUTOMATION`、
+`GENERAL_KNOWLEDGE` 和 `OTHER`。资源类型仍由 `resourceType` 表示，不得再创建第二套场景分类。
+
+发布者创建资源时可以直接选择分类；选择后以人工结果为准，后续 AI 画像生成不得覆盖。发布者未选择时，
+资源发布不被阻塞，搜索画像任务在发布后异步从固定分类池中选择一个值；无法可靠判断时使用 `OTHER`。
+已有资源升级后统一排队重新生成分类，生成完成前仍可搜索，并暂时归入 `OTHER`。
+
+`categoryCode` 是结构化硬过滤条件：`GET /api/web/resources/search?categoryCode=...` 先按权限和生命周期
+过滤，再按分类筛选候选，最后才进入相关性排序。分类不得作为关键词查询，也不得依赖全文搜索分数、自由
+`scenarios` 或 Skill 专用 label 模拟。AI 画像仍可生成自由的场景词和搜索词用于召回，但这些字段不能改变
+前端唯一的“使用场景”筛选值。
 
 AI 能力顾问不得重新读取 Skill 与 Catalog 后分别召回、排序和合并。它可以把用户需求拆成
 多个检索表达，但每个表达都必须调用与 Web 搜索相同的 `UnifiedResourceSearchAppService`，
