@@ -4,6 +4,7 @@ import { Loader2, Search, X } from 'lucide-react'
 import { MAX_SEARCH_INPUT_LENGTH } from '@/shared/lib/search-query'
 import { Input } from '@/shared/ui/input'
 import { Button } from '@/shared/ui/button'
+import { cn } from '@/shared/lib/utils'
 
 interface SearchBarProps {
   defaultValue?: string
@@ -12,6 +13,7 @@ interface SearchBarProps {
   isSearching?: boolean
   onChange?: (query: string) => void
   onSearch?: (query: string) => void
+  variant?: 'default' | 'compact'
 }
 
 /**
@@ -20,7 +22,7 @@ interface SearchBarProps {
  * It supports both controlled and uncontrolled usage so page-level containers can decide whether
  * query text should be driven from URL state or local form state.
  */
-export function SearchBar({ defaultValue = '', value, placeholder, isSearching = false, onChange, onSearch }: SearchBarProps) {
+export function SearchBar({ defaultValue = '', value, placeholder, isSearching = false, onChange, onSearch, variant = 'default' }: SearchBarProps) {
   const { t } = useTranslation()
   const [query, setQuery] = useState(defaultValue)
   const isControlled = value !== undefined
@@ -52,7 +54,13 @@ export function SearchBar({ defaultValue = '', value, placeholder, isSearching =
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex gap-3 glass-strong p-2 rounded-xl">
+    <form
+      onSubmit={handleSubmit}
+      className={cn(
+        'flex gap-3',
+        variant === 'default' ? 'glass-strong rounded-xl p-2' : 'rounded-lg border bg-background p-1.5 shadow-sm',
+      )}
+    >
       <div className="relative flex-1">
         <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground pointer-events-none" />
         <Input
@@ -61,7 +69,10 @@ export function SearchBar({ defaultValue = '', value, placeholder, isSearching =
           onChange={(e) => handleChange(e.target.value)}
           maxLength={MAX_SEARCH_INPUT_LENGTH}
           placeholder={placeholder || t('searchBar.placeholder')}
-          className="pl-10 pr-10 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 h-12"
+          className={cn(
+            'border-0 bg-transparent pl-10 pr-10 focus-visible:ring-0 focus-visible:ring-offset-0',
+            variant === 'default' ? 'h-12' : 'h-10',
+          )}
         />
         {currentQuery ? (
           <button
@@ -75,7 +86,12 @@ export function SearchBar({ defaultValue = '', value, placeholder, isSearching =
           </button>
         ) : null}
       </div>
-      <Button type="submit" size="lg" className="px-8 min-w-28" disabled={isSearching}>
+      <Button
+        type="submit"
+        size={variant === 'default' ? 'lg' : 'default'}
+        className={cn(variant === 'default' ? 'min-w-28 px-8' : 'min-w-24 px-5')}
+        disabled={isSearching}
+      >
         {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : t('searchBar.button')}
       </Button>
     </form>

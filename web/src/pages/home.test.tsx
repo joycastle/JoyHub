@@ -62,5 +62,6 @@ describe('HomePage', () => {
     expect(html).toContain('skillCenter.title')
     expect(html).toContain('skillCenter.description')
     expect(html).toContain('skillCenter.publish')
+    expect(html).toContain('resourceCenter.resultCount')
   })
 })

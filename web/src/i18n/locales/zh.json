@@ -269,6 +269,39 @@
     "next": "下一页",
     "pageInfo": "第 {{current}} / {{total}} 页"
   },
+  "resourceCenter": {
+    "eyebrow": "能力中心",
+    "visibility": "这里仅展示全公司可见，以及你所在部门可见的已发布内容。",
+    "sortLabel": "排序",
+    "sort": {
+      "relevance": "推荐",
+      "newest": "最新发布",
+      "downloads": "热门下载"
+    },
+    "resultCount": "共 {{count}} 项",
+    "loadFailed": "内容加载失败，请稍后重试。",
+    "empty": "暂无匹配内容",
+    "viewMode": {
+      "group": "切换查看方式",
+      "list": "列表视图",
+      "grid": "宫格视图"
+    }
+  },
+  "agentCenter": {
+    "title": "Agent 中心",
+    "description": "发现公司内部可直接使用的 AI Agent、机器人和自动化助手。",
+    "publish": "发布 Agent",
+    "searchPlaceholder": "搜索 Agent 名称或能力",
+    "use": "在飞书中使用"
+  },
+  "toolCenter": {
+    "title": "工具中心",
+    "description": "发现公司内部的在线工具、插件、MCP、内部服务和资源包。",
+    "publish": "发布工具",
+    "searchPlaceholder": "搜索工具名称或能力",
+    "use": "立即使用",
+    "download": "下载"
+  },
   "home": {
     "subtitle": "技能注册中心",
     "description": "为开发者提供高效的技能管理、分发和协作平台",

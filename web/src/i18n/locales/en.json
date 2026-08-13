@@ -269,6 +269,39 @@
     "next": "Next",
     "pageInfo": "Page {{current}} of {{total}}"
   },
+  "resourceCenter": {
+    "eyebrow": "Capability Center",
+    "visibility": "Only published content visible company-wide or to your department is shown here.",
+    "sortLabel": "Sort",
+    "sort": {
+      "relevance": "Recommended",
+      "newest": "Newest",
+      "downloads": "Most downloaded"
+    },
+    "resultCount": "{{count}} items",
+    "loadFailed": "Content could not be loaded. Please try again later.",
+    "empty": "No matching content",
+    "viewMode": {
+      "group": "Change view mode",
+      "list": "List view",
+      "grid": "Grid view"
+    }
+  },
+  "agentCenter": {
+    "title": "Agent Center",
+    "description": "Discover internal AI agents, bots, and automation assistants ready to use.",
+    "publish": "Publish Agent",
+    "searchPlaceholder": "Search Agent names or capabilities",
+    "use": "Use in Feishu"
+  },
+  "toolCenter": {
+    "title": "Tool Center",
+    "description": "Discover internal online tools, plugins, MCPs, services, and resource packages.",
+    "publish": "Publish Tool",
+    "searchPlaceholder": "Search tool names or capabilities",
+    "use": "Use now",
+    "download": "Download"
+  },
   "home": {
     "subtitle": "Skill Registry",
     "description": "Efficient skill management, distribution, and collaboration platform for developers",
