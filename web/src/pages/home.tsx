@@ -1,8 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
-import { CenterFeatureTour, type CenterTourTarget } from '@/features/onboarding/center-feature-tour'
-import { resumePlatformOnboarding } from '@/features/onboarding/onboarding-events'
 import { ResourceCenterShell } from '@/features/search/resource-center-shell'
 import { useUnifiedResourceSearch } from '@/features/search/use-unified-resource-search'
 import { SkillCard } from '@/features/skill/skill-card'
@@ -14,8 +12,10 @@ import { SkeletonList } from '@/shared/components/skeleton-loader'
 import { useViewMode } from '@/shared/hooks/use-view-mode'
 import type { ResourceCategoryCode } from '@/shared/lib/resource-category'
 import { normalizeSearchQuery } from '@/shared/lib/search-query'
-import { cn } from '@/shared/lib/utils'
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/shared/ui/select'
+import { CenterFeatureTour, type CenterTourTarget } from '@/features/onboarding/center-feature-tour'
+import { completeOnboardingTask, openOnboardingGuide } from '@/features/onboarding/onboarding-progress'
+import { useAuth } from '@/features/auth/use-auth'
 
 type CenterSort = 'relevance' | 'newest' | 'downloads'
 const PAGE_SIZE = 12
@@ -24,15 +24,15 @@ const PAGE_SIZE = 12
 export function HomePage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const { user } = useAuth()
   const { onboarding } = useSearch({ from: '/skills' })
   const [queryInput, setQueryInput] = useState('')
   const [query, setQuery] = useState('')
   const [sort, setSort] = useState<CenterSort>('newest')
   const [page, setPage] = useState(0)
   const [categoryCode, setCategoryCode] = useState<ResourceCategoryCode>()
-  const [isArrivalGuideVisible, setIsArrivalGuideVisible] = useState(Boolean(onboarding))
-  const [tourTarget, setTourTarget] = useState<CenterTourTarget | null>(null)
   const [viewMode, setViewMode] = useViewMode('skills')
+  const [highlightedTarget, setHighlightedTarget] = useState<CenterTourTarget | null>(null)
   const { data, isLoading, isError, isFetching } = useUnifiedResourceSearch({
     q: query,
     type: 'SKILL',
@@ -43,18 +43,6 @@ export function HomePage() {
   })
   const skills = (data?.items ?? []).flatMap((item) => item.skill ? [item.skill] : [])
   const pageCount = data ? Math.max(Math.ceil(data.total / data.size), 1) : 1
-  const isCatalogHighlighted = tourTarget === 'catalog'
-
-  useEffect(() => {
-    setIsArrivalGuideVisible(Boolean(onboarding))
-    if (!onboarding) setTourTarget(null)
-  }, [onboarding])
-
-  const dismissArrivalGuide = () => {
-    setTourTarget(null)
-    setIsArrivalGuideVisible(false)
-  }
-
   return (
     <ResourceCenterShell
       eyebrow={t('resourceCenter.eyebrow')}
@@ -62,7 +50,7 @@ export function HomePage() {
       description={t('skillCenter.description')}
       visibility={t('skillCenter.visibility')}
       publishLabel={t('skillCenter.publish')}
-      onPublish={() => navigate({ to: '/dashboard/publish' })}
+      onPublish={() => navigate({ to: '/dashboard/publish', search: onboarding ? { onboarding: true } : {} })}
       queryInput={queryInput}
       onQueryChange={setQueryInput}
       onSearch={(value) => {
@@ -76,7 +64,7 @@ export function HomePage() {
       resultCountLabel={t('resourceCenter.resultCount', { count: data?.total ?? 0 })}
       viewMode={viewMode}
       onViewModeChange={setViewMode}
-      highlightedTarget={tourTarget === 'publish' || tourTarget === 'search' || tourTarget === 'filters' ? tourTarget : null}
+      highlightedTarget={highlightedTarget}
       filters={(
         <>
           <ResourceCategorySelect
@@ -106,35 +94,34 @@ export function HomePage() {
       ) : null}
       {!isLoading && !isError && skills.length === 0 ? <EmptyState title={t('resourceCenter.empty')} /> : null}
       {!isLoading && !isError && skills.length > 0 ? (
+        <div data-onboarding-target="catalog">
+        <div data-onboarding-target="search-results">
         <ResourceResultGrid viewMode={viewMode}>
-          {skills.map((skill, index) => (
-            <div
-              key={skill.id}
-              className={cn('h-full', isCatalogHighlighted && index === 0 && 'relative z-50 ring-4 ring-primary/50 ring-offset-4')}
-              data-onboarding-target={isCatalogHighlighted && index === 0 ? 'catalog' : undefined}
-            >
+          {skills.map((skill) => (
+            <div key={skill.id} className="h-full">
               <SkillCard
                 skill={skill}
                 density={viewMode === 'list' ? 'list' : 'default'}
                 showVersion={viewMode === 'list'}
-                onClick={() => navigate({ to: `/space/${skill.namespace}/${encodeURIComponent(skill.slug)}` })}
+                onClick={() => navigate({ to: '/space/$namespace/$slug', params: { namespace: skill.namespace, slug: skill.slug } })}
               />
             </div>
           ))}
         </ResourceResultGrid>
+        </div>
+        </div>
       ) : null}
       {!isLoading && !isError && data && pageCount > 1 ? (
         <Pagination page={page} totalPages={pageCount} onPageChange={setPage} />
       ) : null}
-      {isArrivalGuideVisible ? (
-        <CenterFeatureTour
-          center="SKILL"
-          hasCatalogItems={skills.length > 0}
-          onDismiss={dismissArrivalGuide}
-          onReturnToOnboarding={resumePlatformOnboarding}
-          onTargetChange={setTourTarget}
-        />
-      ) : null}
+      {onboarding ? <CenterFeatureTour
+        center="SKILL"
+        hasCatalogItems={skills.length > 0}
+        onTargetChange={setHighlightedTarget}
+        onComplete={() => completeOnboardingTask(user?.userId, 'skills')}
+        onDismiss={() => navigate({ to: '/skills', search: {} })}
+        onReturnToOnboarding={openOnboardingGuide}
+      /> : null}
     </ResourceCenterShell>
   )
 }

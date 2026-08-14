@@ -11,6 +11,8 @@ import { Button, buttonVariants } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
 import type { DiscoverySuggestion } from './recommendation-engine'
 import { useDiscoveryAssistant } from './use-discovery-assistant'
+import { useAuth } from '@/features/auth/use-auth'
+import { completeOnboardingJourneyUse } from '@/features/onboarding/onboarding-progress'
 
 const QUICK_PROMPTS = ['discoveryAssistant.promptAgent', 'discoveryAssistant.promptData', 'discoveryAssistant.promptWriting'] as const
 
@@ -390,6 +392,7 @@ function SuggestionCard({ suggestion, onOpen }: {
   onOpen: (suggestion: DiscoverySuggestion) => void
 }) {
   const { t } = useTranslation()
+  const { user } = useAuth()
   const [copied, copy] = useCopyToClipboard()
   const installCommand = suggestion.type === 'skill'
     ? buildInstallCommand(suggestion.namespace, suggestion.slug, getBaseUrl())
@@ -400,6 +403,7 @@ function SuggestionCard({ suggestion, onOpen }: {
     if (!installCommand) return
     try {
       await copy(installCommand)
+      completeOnboardingJourneyUse(user?.userId)
     } catch (error) {
       console.error('Failed to copy install command:', error)
     }
@@ -451,6 +455,7 @@ function SuggestionCard({ suggestion, onOpen }: {
                 href={accessUrl}
                 target="_blank"
                 rel="noreferrer"
+                onClick={() => completeOnboardingJourneyUse(user?.userId)}
                 className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'mt-2 gap-1.5 bg-background')}
               >
                 {t('discoveryAssistant.accessNow')}

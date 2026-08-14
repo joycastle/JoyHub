@@ -1828,10 +1828,33 @@
   },
   "onboarding": {
     "replay": "View onboarding",
+    "welcome": {
+      "title": "{{name}}, start with your goal",
+      "description": "JoyHub brings together the Agents, Skills, and tools available across your company. Choose a direction, and reopen this guide from the top right at any time.",
+      "useTitle": "Find and use a capability",
+      "useDescription": "Search for a work goal, check the guidance, then open, install, or download.",
+      "useAction": "Start browsing",
+      "publishTitle": "Publish for my colleagues",
+      "publishDescription": "Document a proven Skill, Agent, or tool for the team and keep it maintained.",
+      "publishAction": "Learn publishing",
+      "explore": "I’ll explore on my own"
+    },
+    "checklist": {
+      "title": "Get started with JoyHub",
+      "progress": "{{completed}} of {{total}} small tasks complete. Resume whenever you are ready.",
+      "help": "You do not need to complete these in order. Each item opens a real page instead of interrupting your work.",
+      "discover": { "title": "Search for a work goal", "description": "Try search or start from a common scenario." },
+      "agents": { "title": "Understand Agents: complete work directly", "description": "See how to filter and open a Feishu Agent from its card." },
+      "skills": { "title": "Understand Skills: install a proven method", "description": "See how to filter, read guidance, and copy an install command." },
+      "tools": { "title": "Understand tools: open or download", "description": "See online entries, downloadable packages, and common-tool actions." },
+      "detail": { "title": "Open a detail page", "description": "Check guidance, scope, and how to use it." },
+      "use": { "title": "Use one capability", "description": "Open an Agent, copy an install command, or download a tool." },
+      "publish": { "title": "Publish your first item", "description": "Share a Skill, Agent, or tool." }
+    },
     "returnToMap": "Return to starter map",
     "planLabel": "JoyHub starter map",
-    "planTitle": "Start using JoyHub in five steps",
-    "planDescription": "Discover capabilities from the home page, then enter each center to filter, use, or publish them.",
+    "planTitle": "Complete your first setup in eight steps",
+    "planDescription": "Find capabilities, understand the details, use them right away, then publish and maintain your own content. Each step opens the real page where the work happens.",
     "loginGreeting": "Welcome back, {{name}}",
     "member": "there",
     "stepCounter": "Step {{current}} of {{total}}",
@@ -1841,14 +1864,23 @@
     "previous": "Back",
     "next": "Next",
     "finish": "Start exploring",
+    "tourCounter": "Guided tour {{current}} of {{total}}",
+    "openDetailTour": "Open detail page tour",
     "steps": {
       "welcome": {
-        "shortTitle": "Start from Home",
-        "title": "Start with the work you want to do",
-        "description": "The home page recommends Agents, tools, and Skills by department and work scenario, or lets you search for a task directly.",
-        "nextTitle": "See search, scenarios, and recommendation cards first",
-        "nextDescription": "The home tour introduces search, quick browse, secondary filters, and quick-use actions before you explore each center in depth.",
+        "shortTitle": "Meet JoyHub",
+        "title": "Welcome to JoyHub, {{name}}",
+        "description": "JoyHub is the company’s shared AI capability entry: Agents complete a task directly, Skills let you install a proven method, and tools open, download, or connect a service.",
+        "nextTitle": "Start with your goal",
+        "nextDescription": "First learn how to find the right capability. Then we will show details, first use, and the full publishing workflow.",
         "action": "View home tour"
+      },
+      "discover": {
+        "shortTitle": "Find what you need",
+        "title": "Describe the goal, then narrow the results",
+        "description": "You do not need to know whether you need an Agent, Skill, or tool. Search for a task such as “summarize meeting notes” or “analyze campaign data”, or start from a common scenario.",
+        "howToUse": "The home page shows recommended, popular, and newly added capabilities. Then use type, scenario, visibility, and sorting to refine the results. Cards explain purpose and the quickest way to start.",
+        "action": "Learn to search"
       },
       "agents": {
         "shortTitle": "Use an Agent",
@@ -1878,12 +1910,38 @@
         "howToUse": "Publish dependable capabilities for the team, then use this page to review their status, update documentation, and keep their entry maintained.",
         "action": "View My Content"
       },
-      "search": {
-        "shortTitle": "Search by goal",
-        "title": "Start with your goal",
-        "description": "Search for a task or scenario whether you are creating content, analyzing data, or improving engineering work.",
-        "howToUse": "Use the top search or a scenario on the home page. Review visibility and documentation first; when you want to contribute, submit and maintain content from My Content.",
-        "action": "Start searching"
+      "detail": {
+        "shortTitle": "Understand a detail page",
+        "title": "Confirm it fits before you use it",
+        "description": "A detail page brings together what a capability does, who maintains it, who can see it, how to use it, its versions, and related capabilities—the key checks before you start.",
+        "howToUse": "Open any card from a center. The tour explains the overview, guidance, files or versions, and what Use now, Copy install, Download, and Favorite mean.",
+        "action": "Open a Skill detail"
+      },
+      "publish": {
+        "shortTitle": "Publish your first capability",
+        "title": "Share dependable methods and tools with the team",
+        "description": "Skills publish installable method packages. Publish Resource registers Feishu Agents, online tools, services, or installation packages. The workflows differ, but both help colleagues find and use them.",
+        "howToUse": "Choose Publish Skill or Publish Resource from My Content. The tour explains ownership, visibility, package or access entry, usage guidance, and maintenance after publishing.",
+        "action": "Learn the publishing flow"
+      }
+    },
+    "tours": {
+      "detail": {
+        "header": { "title": "Check identity, status, and access first", "description": "The badges explain resource type, current availability, and who can see it. The summary and tags help you decide whether it fits your task." },
+        "tabs": { "title": "Guidance, files, and versions live here", "description": "Overview and usage explain how to begin. Skills also show package files and versions. Read this first for dependencies, permissions, or setup questions." },
+        "action": { "title": "Do the real action from the side", "description": "Depending on type, you will see Use in Feishu, Copy install, or Download. Favorite makes it easy to find later; version, maintainer, and activity help judge reliability." }
+      },
+      "skillPublish": {
+        "repository": { "title": "1. Choose the owning workspace", "description": "This decides which team maintains the Skill. Choose a workspace where you can publish; later updates are managed from My Content." },
+        "visibility": { "title": "2. Decide who can see it", "description": "Workspace visibility suits team methods; private visibility lets you validate first. Visibility directly controls search results and who can install it." },
+        "package": { "title": "3. Upload a reusable Skill package", "description": "Choose an archive containing SKILL.md. The system checks package structure, file safety, and required metadata, and prompts you to resolve risks or missing content." },
+        "submit": { "title": "4. Submit and follow the result", "description": "Submission validates the package, then publishes it or sends it through review according to policy. Use My Content afterward to see status, improve guidance, release a new version, or archive it." }
+      },
+      "resourcePublish": {
+        "basics": { "title": "1. State what it is", "description": "Choose Agent or tool, then add name, summary, access entry or Feishu App ID, version, and scenario. The summary answers “what can it do?”." },
+        "usage": { "title": "2. Let colleagues know how to use it", "description": "Usage guidance answers what to provide, what to expect, and the limits. Tools can upload a package and generate a draft; Agents can include example prompts." },
+        "scope": { "title": "3. Set ownership and visibility", "description": "The owning department maintains it. Company visibility suits shared capabilities; department visibility suits business-specific content." },
+        "submit": { "title": "4. Save and publish", "description": "The checkbox can publish it immediately. Later use My Content to edit, publish, take offline, or archive it. Before publishing, verify the entry works and the guidance is enough for a new colleague." }
       }
     }
   },
@@ -1925,7 +1983,8 @@
       "CONTENT": {
         "publish": { "title": "Publish new content here", "description": "Publish Skill is for reusable practices, while Publish Resource registers Agents, tools, and services." },
         "filters": { "title": "Search and separate what you publish", "description": "As your content grows, search by name and switch between Skills, resources, or all content to review status." },
-        "catalog": { "title": "Everything you publish appears here", "description": "It is normal for this page to be empty at first: choose Publish Skill or Publish Resource. After publishing, this is where you edit, publish, take offline, archive, and review favorites." }
+        "catalog": { "title": "Everything you publish appears here", "description": "It is normal for this page to be empty at first: choose Publish Skill or Publish Resource. After publishing, this is where you edit, publish, take offline, archive, and review favorites." },
+        "manage": { "title": "Keep content maintained with these actions", "description": "Use Edit to correct instructions or an entry point. Take published resources offline when needed, and archive content that is no longer maintained; these actions affect whether colleagues can find and use it." }
       }
     }
   },

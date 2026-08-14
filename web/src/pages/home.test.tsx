@@ -23,6 +23,10 @@ vi.mock('@/features/skill/skill-card', () => ({
   SkillCard: () => null,
 }))
 
+vi.mock('@/features/auth/use-auth', () => ({
+  useAuth: () => ({ user: { userId: 'test-user' } }),
+}))
+
 vi.mock('@/shared/components/skeleton-loader', () => ({
   SkeletonList: () => null,
 }))

@@ -9,7 +9,7 @@ import { getAppHeaderClassName } from './layout-header-style'
 import { getAppMainContentLayout, resolveAppMainContentPathname } from './layout-main-content'
 import { BrandMark } from '@/shared/components/brand-mark'
 import { PlatformOnboarding } from '@/features/onboarding/platform-onboarding'
-import { resumePlatformOnboarding } from '@/features/onboarding/onboarding-events'
+import { ContinuousOnboarding } from '@/features/onboarding/continuous-onboarding'
 import { Bell, Compass, LogIn, Search } from 'lucide-react'
 import { DiscoveryAssistant } from '@/features/discovery-assistant/discovery-assistant'
 
@@ -28,7 +28,6 @@ export function Layout() {
   })
   const { user, isLoading } = useAuth()
   const [isHeaderElevated, setIsHeaderElevated] = useState(false)
-  const [hasDismissedOnboardingReturn, setHasDismissedOnboardingReturn] = useState(false)
   const contentLayoutPathname = resolveAppMainContentPathname(pathname, resolvedPathname)
   const mainContentLayout = getAppMainContentLayout(contentLayoutPathname)
 
@@ -69,18 +68,6 @@ export function Layout() {
     ? '/'
     : `${pathname}${searchStr ?? ''}${hash ?? ''}`
   const loginSearch = { returnTo: loginReturnTo || '/' }
-  const showOnboardingReturn = (pathname === '/dashboard/resources' || pathname === '/search')
-    && new URLSearchParams(searchStr).get('onboarding') === 'true'
-
-  useEffect(() => {
-    setHasDismissedOnboardingReturn(false)
-  }, [pathname, searchStr])
-
-  const returnToOnboarding = () => {
-    setHasDismissedOnboardingReturn(true)
-    resumePlatformOnboarding()
-  }
-
   return (
     <div className="relative flex min-h-screen flex-col overflow-x-clip bg-[#f6f8fa]">
 
@@ -123,7 +110,7 @@ export function Layout() {
             <Search className="h-5 w-5" strokeWidth={1.8} />
           </Link>
           {user ? (
-            <PlatformOnboarding userId={user.userId} displayName={user.displayName} />
+            <><PlatformOnboarding userId={user.userId} displayName={user.displayName} /><ContinuousOnboarding userId={user.userId} /></>
           ) : (
             <Link
               to="/login"
@@ -181,16 +168,6 @@ export function Layout() {
           </div>
         </Suspense>
       </main>
-
-      {showOnboardingReturn && !hasDismissedOnboardingReturn ? (
-        <button
-          type="button"
-          onClick={returnToOnboarding}
-          className="fixed bottom-20 right-6 z-30 rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-lg transition-transform hover:-translate-y-0.5 hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-        >
-          {t('onboarding.returnToMap')}
-        </button>
-      ) : null}
 
       <footer className="relative z-10 mt-auto border-t bg-white" style={{ borderColor: 'hsl(var(--border))' }}>
         <div className="max-w-6xl mx-auto px-6 md:px-12 py-10">

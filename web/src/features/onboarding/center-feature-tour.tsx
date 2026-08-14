@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import type { CatalogCenter } from '@/api/types'
 import { Button } from '@/shared/ui/button'
 
-export type CenterTourTarget = 'search' | 'quickBrowse' | 'filters' | 'catalog' | 'publish'
+export type CenterTourTarget = 'search' | 'quickBrowse' | 'filters' | 'catalog' | 'manage' | 'publish'
 type GuidedCenter = CatalogCenter | 'SKILL' | 'LANDING' | 'CONTENT'
 
 interface TourStep {
@@ -43,6 +43,7 @@ const CENTER_STEPS: Record<GuidedCenter, TourStep[]> = {
     { key: 'publish', target: 'publish', icon: Plus },
     { key: 'filters', target: 'filters', icon: SlidersHorizontal },
     { key: 'catalog', target: 'catalog', icon: BookOpenCheck },
+    { key: 'manage', target: 'manage', icon: SlidersHorizontal },
   ],
 }
 
@@ -52,6 +53,7 @@ interface CenterFeatureTourProps {
   onDismiss: () => void
   onReturnToOnboarding: () => void
   onTargetChange: (target: CenterTourTarget) => void
+  onComplete?: () => void
 }
 
 interface TourPosition {
@@ -63,20 +65,24 @@ interface TourPosition {
  * Guides a user through the controls already visible on a resource center page.
  * Each step spotlights one real control and leaves the rest of the page unchanged.
  */
-export function CenterFeatureTour({ center, hasCatalogItems, onDismiss, onReturnToOnboarding, onTargetChange }: CenterFeatureTourProps) {
+export function CenterFeatureTour({ center, hasCatalogItems, onDismiss, onReturnToOnboarding, onTargetChange, onComplete }: CenterFeatureTourProps) {
   const { t } = useTranslation()
   const steps = useMemo(
-    () => CENTER_STEPS[center].filter((step) => step.target !== 'catalog' || hasCatalogItems),
+    () => CENTER_STEPS[center].filter((step) => !['catalog', 'manage'].includes(step.target) || hasCatalogItems),
     [center, hasCatalogItems],
   )
-  const [stepIndex, setStepIndex] = useState(0)
+  const [requestedStepIndex, setStepIndex] = useState(0)
   const [position, setPosition] = useState<TourPosition | null>(null)
   const panelRef = useRef<HTMLElement>(null)
+  const stepIndex = Math.min(requestedStepIndex, steps.length - 1)
   const currentStep = steps[stepIndex]
   const StepIcon = currentStep.icon
   const isLastStep = stepIndex === steps.length - 1
 
   useLayoutEffect(() => {
+    if (requestedStepIndex !== stepIndex) {
+      setStepIndex(stepIndex)
+    }
     const updatePosition = () => {
       const target = document.querySelector<HTMLElement>(`[data-onboarding-target="${currentStep.target}"]`)
       const panel = panelRef.current
@@ -125,7 +131,7 @@ export function CenterFeatureTour({ center, hasCatalogItems, onDismiss, onReturn
       window.removeEventListener('resize', updatePosition)
       window.removeEventListener('scroll', updatePosition, true)
     }
-  }, [currentStep.target, onTargetChange])
+  }, [currentStep.target, onTargetChange, requestedStepIndex, stepIndex])
 
   const dismiss = () => {
     onTargetChange('search')
@@ -137,9 +143,13 @@ export function CenterFeatureTour({ center, hasCatalogItems, onDismiss, onReturn
     onReturnToOnboarding()
   }
 
+  const finish = () => {
+    onComplete?.()
+    dismiss()
+  }
+
   return (
     <>
-      <div className="fixed inset-0 z-40 bg-slate-950/35 backdrop-blur-[1px]" aria-hidden="true" />
       {createPortal(
         <section
           ref={panelRef}
@@ -180,7 +190,7 @@ export function CenterFeatureTour({ center, hasCatalogItems, onDismiss, onReturn
               <Button variant="outline" size="sm" disabled={stepIndex === 0} onClick={() => setStepIndex((index) => index - 1)}>
                 {t('centerFeatureTour.previous')}
               </Button>
-              <Button size="sm" onClick={isLastStep ? dismiss : () => setStepIndex((index) => index + 1)}>
+              <Button size="sm" onClick={isLastStep ? finish : () => setStepIndex((index) => index + 1)}>
                 {isLastStep ? t('centerFeatureTour.finish') : t('centerFeatureTour.next')}
               </Button>
             </div>

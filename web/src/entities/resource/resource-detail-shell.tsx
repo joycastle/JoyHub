@@ -45,7 +45,7 @@ export function ResourceDetailHeader({
   return (
     <header className="space-y-3">
       {backAction}
-      {badges ? <div className="mb-1 flex flex-wrap items-center gap-3">{badges}</div> : null}
+      {badges ? <div data-onboarding-target="detail-status" className="mb-1 flex flex-wrap items-center gap-3">{badges}</div> : null}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <h1 className="text-balance font-heading text-4xl font-bold text-foreground">{title}</h1>
         {actions ? <div className="shrink-0">{actions}</div> : null}

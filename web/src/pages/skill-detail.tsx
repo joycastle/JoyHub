@@ -48,6 +48,8 @@ import { Input } from '@/shared/ui/input'
 import { toast } from '@/shared/lib/toast'
 import { cn } from '@/shared/lib/utils'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/shared/ui/dropdown-menu'
+import { DetailPageHint } from '@/features/onboarding/detail-page-hint'
+import { completeOnboardingJourneyUse } from '@/features/onboarding/onboarding-progress'
 import {
   useSkillDetail,
   useSkillVersions,
@@ -322,6 +324,7 @@ export function SkillDetailPage() {
       return
     }
     if (!previewNode || !selectedVersion) return
+    completeOnboardingJourneyUse(user?.userId)
     const cleanNamespace = namespace.startsWith('@') ? namespace.slice(1) : namespace
     const url = buildApiUrl(
       `${WEB_API_PREFIX}/skills/${cleanNamespace}/${encodeURIComponent(slug)}/versions/${encodeURIComponent(selectedVersion)}/file?path=${encodeURIComponent(previewNode.path)}`
@@ -350,6 +353,7 @@ export function SkillDetailPage() {
       triggerBrowserDownload(
         buildApiUrl(`${WEB_API_PREFIX}/skills/${cleanNamespace}/${encodeURIComponent(slug)}/versions/${encodeURIComponent(selectedVersionEntry.version)}/download`),
       )
+      completeOnboardingJourneyUse(user?.userId)
       incrementSkillDownloadCount(queryClient, { namespace, slug })
       queryClient.invalidateQueries({ queryKey: ['skills', namespace, slug] })
       queryClient.invalidateQueries({ queryKey: ['skills', 'my'] })
@@ -671,6 +675,8 @@ export function SkillDetailPage() {
     <ResourceDetailLayout>
       {/* Main Content */}
       <div className="flex-1 min-w-0 space-y-8">
+        <DetailPageHint userId={user?.userId} />
+        <div data-onboarding-target="detail-header">
         <ResourceDetailHeader
           backAction={(
             <Button
@@ -760,13 +766,16 @@ export function SkillDetailPage() {
             </Link>
           )) : undefined}
         />
+        </div>
 
         <Tabs defaultValue="readme">
+          <div data-onboarding-target="detail-tabs">
           <TabsList>
             <TabsTrigger value="readme">{t('skillDetail.tabOverview')}</TabsTrigger>
             <TabsTrigger value="files">{t('skillDetail.tabFiles')}</TabsTrigger>
             <TabsTrigger value="versions">{t('skillDetail.tabVersions')}</TabsTrigger>
           </TabsList>
+          </div>
 
           <TabsContent value="readme" className="mt-6">
             {readme ? (
@@ -948,7 +957,7 @@ export function SkillDetailPage() {
       </div>
 
       {/* Sidebar */}
-      <aside className="w-full lg:w-80 flex-shrink-0 space-y-5">
+      <aside data-onboarding-target="detail-actions" data-onboarding-resource-type="SKILL" className="w-full lg:w-80 flex-shrink-0 space-y-5">
         {/* File Tree Sidebar — collapsible, mirrors SecurityAuditSummary card pattern */}
         {files && files.length > 0 && (
           <Card className="p-5 space-y-3">
@@ -1073,7 +1082,7 @@ export function SkillDetailPage() {
               namespace={namespace}
               slug={slug}
               version={publishedVersion.version}
-              onUse={() => recordResourceUse.mutate(`skill:${skill.id}`)}
+              onUse={() => { recordResourceUse.mutate(`skill:${skill.id}`); completeOnboardingJourneyUse(user?.userId) }}
             />
           </Card>
         )}

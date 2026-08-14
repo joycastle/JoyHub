@@ -7,16 +7,14 @@ const navigateMock = vi.fn()
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string, values?: Record<string, string | number>) =>
-      values ? `${key}:${Object.values(values).join('/')}` : key,
+    t: (key: string, values?: Record<string, string | number>) => values ? `${key}:${Object.values(values).join('/')}` : key,
   }),
 }))
 
-vi.mock('@tanstack/react-router', () => ({
-  useNavigate: () => navigateMock,
-}))
+vi.mock('@tanstack/react-router', () => ({ useNavigate: () => navigateMock }))
 
 import { PlatformOnboarding } from './platform-onboarding'
+import { chooseOnboardingGoal, startOnboardingJourney } from './onboarding-progress'
 
 describe('PlatformOnboarding', () => {
   afterEach(() => {
@@ -24,42 +22,28 @@ describe('PlatformOnboarding', () => {
     navigateMock.mockClear()
   })
 
-  it('opens after sign-in and advances through the walkthrough', () => {
+  it('asks the first-time user to choose between using and publishing', () => {
     render(<PlatformOnboarding userId="user-a" displayName="Mia" />)
 
-    expect(screen.getByText('onboarding.loginGreeting:Mia')).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: 'onboarding.next' }))
-    expect(screen.getByText('onboarding.steps.agents.title')).toBeTruthy()
+    expect(screen.getByText('onboarding.welcome.title:Mia')).toBeTruthy()
+    fireEvent.click(screen.getByText('onboarding.welcome.useAction'))
+    expect(navigateMock).toHaveBeenCalledWith({ to: '/' })
   })
 
-  it('only opens automatically once per user and remains replayable', () => {
+  it('opens again for the same user after a new login session', () => {
     const { rerender } = render(<PlatformOnboarding userId="user-b" />)
-
-    fireEvent.click(screen.getByRole('button', { name: 'onboarding.skip' }))
-    expect(screen.queryByRole('dialog')).toBeNull()
+    fireEvent.click(screen.getByText('onboarding.welcome.explore'))
     rerender(<PlatformOnboarding />)
     rerender(<PlatformOnboarding userId="user-b" />)
-    expect(screen.queryByRole('dialog')).toBeNull()
-    fireEvent.click(screen.getByRole('button', { name: 'onboarding.replay' }))
-    expect(screen.getByText('onboarding.loginGreeting:onboarding.member')).toBeTruthy()
+
+    expect(screen.getByText('onboarding.welcome.title:onboarding.member')).toBeTruthy()
   })
 
-  it('opens the refreshed home-page tour from the first onboarding step', () => {
+  it('resumes publishing at the real publishing entry', () => {
+    chooseOnboardingGoal('user-c', 'PUBLISH')
+    startOnboardingJourney('user-c', 'publishEntry')
     render(<PlatformOnboarding userId="user-c" />)
-
-    fireEvent.click(screen.getByRole('button', { name: 'onboarding.steps.welcome.action' }))
-    expect(navigateMock).toHaveBeenCalledWith({ to: '/', search: { onboarding: true } })
-  })
-
-  it('keeps an entry point back to the guide after opening content or search', () => {
-    render(<PlatformOnboarding userId="user-d" />)
-
-    fireEvent.click(screen.getByRole('button', { name: 'onboarding.steps.content.shortTitle' }))
-    fireEvent.click(screen.getByRole('button', { name: 'onboarding.steps.content.action' }))
-    expect(navigateMock).toHaveBeenCalledWith({ to: '/dashboard/resources', search: { onboarding: true } })
-
-    fireEvent.click(screen.getByRole('button', { name: 'onboarding.replay' }))
-    fireEvent.click(screen.getByRole('button', { name: 'onboarding.steps.welcome.action' }))
-    expect(navigateMock).toHaveBeenCalledWith({ to: '/', search: { onboarding: true } })
+    fireEvent.click(screen.getByRole('button', { name: '重新开始新手引导' }))
+    expect(navigateMock).toHaveBeenCalledWith({ to: '/dashboard/resources' })
   })
 })

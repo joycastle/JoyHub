@@ -1829,10 +1829,33 @@
   },
   "onboarding": {
     "replay": "查看新手引导",
+    "welcome": {
+      "title": "{{name}}，先从你的目标开始",
+      "description": "JoyHub 把公司内可用的 Agent、Skill 和工具放在一起。选择一个方向，之后可以随时从右上角继续查看指南。",
+      "useTitle": "我想先找能力并使用",
+      "useDescription": "搜索工作目标，查看说明，然后直接打开、安装或下载。",
+      "useAction": "开始浏览",
+      "publishTitle": "我想发布内容给同事",
+      "publishDescription": "把成熟的 Skill、Agent 或工具沉淀到团队并持续维护。",
+      "publishAction": "了解发布",
+      "explore": "我先自己逛逛"
+    },
+    "checklist": {
+      "title": "开始使用 JoyHub",
+      "progress": "已完成 {{completed}} / {{total}} 个小任务，可随时继续。",
+      "help": "无需按顺序完成。每一项都会带你去真实页面，而不是打断当前操作。",
+      "discover": { "title": "搜索一个工作目标", "description": "试试搜索或从常用场景开始。" },
+      "agents": { "title": "认识 Agent：直接完成任务", "description": "实地查看如何筛选并从卡片直接打开飞书机器人。" },
+      "skills": { "title": "认识 Skill：安装复用方法", "description": "实地查看如何筛选、阅读说明和复制安装命令。" },
+      "tools": { "title": "认识工具：打开或下载", "description": "实地查看在线入口、下载包和常用工具操作。" },
+      "detail": { "title": "打开一个详情页", "description": "确认说明、适用范围和使用方式。" },
+      "use": { "title": "完成一次使用", "description": "打开 Agent、复制安装命令或下载工具。" },
+      "publish": { "title": "发布我的第一个内容", "description": "沉淀一个 Skill、Agent 或工具。" }
+    },
     "returnToMap": "返回入门地图",
     "planLabel": "JoyHub 入门地图",
-    "planTitle": "用 5 步开始使用 JoyHub",
-    "planDescription": "先从首页发现能力，再进入对应中心完成筛选、使用或发布。",
+    "planTitle": "用 8 步完成第一次上手",
+    "planDescription": "从找到能力、看懂详情、立即使用，到发布和维护自己的内容；每一步都能进入真实页面继续学习。",
     "loginGreeting": "{{name}}，欢迎回来",
     "member": "新同事",
     "stepCounter": "第 {{current}} 步，共 {{total}} 步",
@@ -1842,14 +1865,23 @@
     "previous": "上一步",
     "next": "下一步",
     "finish": "开始探索",
+    "tourCounter": "实地导览 {{current}} / {{total}}",
+    "openDetailTour": "打开详情页导览",
     "steps": {
       "welcome": {
-        "shortTitle": "从首页开始",
-        "title": "先从工作目标发现能力",
-        "description": "首页会按你的部门和工作场景推荐 Agent、工具与 Skill；也可以直接搜索想完成的事。",
-        "nextTitle": "先看搜索、场景和推荐卡片",
-        "nextDescription": "首页导览会带你认识搜索入口、快速浏览、二级筛选和快捷使用入口；之后再进入各中心深入了解。",
+        "shortTitle": "认识 JoyHub",
+        "title": "{{name}}，欢迎来到 JoyHub",
+        "description": "JoyHub 是公司统一的 AI 能力入口：Agent 用来直接完成任务，Skill 用来安装复用方法，工具用来打开、下载或接入服务。",
+        "nextTitle": "先按你的目标开始",
+        "nextDescription": "先学习怎样找到合适能力；之后会带你看懂详情、完成一次使用，并了解发布全过程。",
         "action": "查看首页导览"
+      },
+      "discover": {
+        "shortTitle": "找到需要的能力",
+        "title": "先描述工作目标，再缩小范围",
+        "description": "不需要先知道该找 Agent、Skill 还是工具。直接输入“整理会议纪要”“做投放分析”这类任务，或从常用场景开始。",
+        "howToUse": "首页会展示推荐、热门和最新能力；搜索后可用资源类型、适用场景、可见范围和排序继续筛选。卡片会告诉你它能做什么及如何快速使用。",
+        "action": "学习如何搜索"
       },
       "agents": {
         "shortTitle": "使用 Agent",
@@ -1879,12 +1911,38 @@
         "howToUse": "把稳定可复用的能力发布给团队；后续在这里查看状态、更新说明和维护入口。",
         "action": "查看我的内容"
       },
-      "search": {
-        "shortTitle": "按目标搜索",
-        "title": "从你的工作目标开始搜索",
-        "description": "无论你要做内容生产、数据分析还是研发提效，都可以直接搜索任务或使用场景。",
-        "howToUse": "使用首页搜索或场景入口；下滑时搜索栏会固定在顶部，方便随时切换目标。",
-        "action": "返回首页搜索"
+      "detail": {
+        "shortTitle": "看懂详情页",
+        "title": "先确认它适不适合你，再开始使用",
+        "description": "详情页把“能做什么、谁在维护、谁能看、如何使用、有哪些版本和关联能力”放在一起，是开始使用前最重要的确认页面。",
+        "howToUse": "从任意中心打开一张卡片。导览会说明概览、说明文档、文件或版本，以及右侧的立即使用、复制安装、下载、收藏入口分别代表什么。",
+        "action": "去打开一个 Skill 详情"
+      },
+      "publish": {
+        "shortTitle": "发布第一个能力",
+        "title": "把稳定的方法和工具分享给团队",
+        "description": "Skill 用于发布可安装的方法包；发布资源用于登记飞书 Agent、在线工具、服务或安装包。两条流程不同，但都会让其他同事更快发现和使用。",
+        "howToUse": "先从“我的内容”选择发布 Skill 或发布资源。导览会逐项说明归属、可见范围、文件或访问入口、使用说明与发布后的维护方式。",
+        "action": "学习发布流程"
+      }
+    },
+    "tours": {
+      "detail": {
+        "header": { "title": "先看身份、状态与适用范围", "description": "顶部标签会说明这是哪类能力、当前是否可用、哪些人可见；标题下方的简介和标签用于快速判断是否适合当前任务。" },
+        "tabs": { "title": "说明文档、文件与版本都在这里", "description": "概览/使用说明告诉你如何开始；Skill 还可查看文件和版本。遇到依赖、权限或配置问题，先阅读这里的内容。" },
+        "action": { "title": "从右侧完成实际操作", "description": "根据资源类型会出现“在飞书中使用”“复制安装”或“下载”。收藏可方便以后找到；版本、维护者和使用数据帮助判断是否可靠。" }
+      },
+      "skillPublish": {
+        "repository": { "title": "1. 选择归属空间", "description": "决定这份 Skill 由哪个团队维护。请选择你有发布权限的空间；发布后仍可在“我的内容”更新新版本。" },
+        "visibility": { "title": "2. 选择谁可以看到", "description": "部门内可见适合团队方法；仅自己可见适合先验证。内容可见范围会直接影响搜索结果和同事是否能安装。" },
+        "package": { "title": "3. 上传可复用的 Skill 包", "description": "选择包含 SKILL.md 的压缩包。系统会检查包结构、文件安全性和必填信息；发现风险或缺失内容时会提示你处理。" },
+        "submit": { "title": "4. 提交并查看结果", "description": "提交后会完成校验，并按当前规则发布或进入审核。成功后到“我的内容”查看状态、补充说明、发布新版本或归档。" }
+      },
+      "resourcePublish": {
+        "basics": { "title": "1. 写清这是什么", "description": "选择 Agent 或工具类型，填写名称、简介、访问入口/飞书 App ID、版本和适用场景。简介回答“它能做什么”。" },
+        "usage": { "title": "2. 让同事知道怎么用", "description": "使用说明回答“需要提供什么、会得到什么、有哪些限制”。工具可上传安装包并让 AI 生成说明草稿；Agent 可填写示例提问。" },
+        "scope": { "title": "3. 指定维护归属与可见范围", "description": "所属部门负责后续维护；全公司可见适合通用能力，指定部门可见适合业务专用内容。" },
+        "submit": { "title": "4. 保存并发布", "description": "勾选后可直接发布；以后可在“我的内容”编辑、上架、下架或归档。发布前请确认入口能打开、说明足够让新同事独立使用。" }
       }
     }
   },
@@ -1926,7 +1984,8 @@
       "CONTENT": {
         "publish": { "title": "从这里发布新内容", "description": "“发布 Skill”和“发布资源”分别用于沉淀可复用的工作方法，以及登记 Agent、工具和服务。" },
         "filters": { "title": "搜索和区分自己发布的内容", "description": "发布内容多起来后，可按名称搜索，并切换 Skill、资源或全部内容查看状态。" },
-        "catalog": { "title": "这里会展示你发布的全部内容", "description": "当前没有内容很正常：先选择发布 Skill 或发布资源。发布后可以在这里编辑、上架、下架、归档和查看收藏。" }
+        "catalog": { "title": "这里会展示你发布的全部内容", "description": "当前没有内容很正常：先选择发布 Skill 或发布资源。发布后可以在这里编辑、上架、下架、归档和查看收藏。" },
+        "manage": { "title": "用这些操作持续维护内容", "description": "先用“编辑”修正说明或入口；已发布的资源可以下架，长期不用的内容可归档。它们会影响同事是否还能搜索和使用。" }
       }
     }
   },

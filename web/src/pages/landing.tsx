@@ -29,11 +29,11 @@ import { normalizeSearchQuery } from '@/shared/lib/search-query'
 import { cn } from '@/shared/lib/utils'
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/shared/ui/select'
 import { buildInstallCommand, getBaseUrl } from '@/features/skill/install-command'
-import { CenterFeatureTour, type CenterTourTarget } from '@/features/onboarding/center-feature-tour'
-import { resumePlatformOnboarding } from '@/features/onboarding/onboarding-events'
 import { useCommonTools } from '@/features/catalog/common-tools'
 import { ViewModeToggle } from '@/shared/components/view-mode-toggle'
 import { useViewMode } from '@/shared/hooks/use-view-mode'
+import { completeOnboardingJourneyUse, completeOnboardingTask, openOnboardingGuide } from '@/features/onboarding/onboarding-progress'
+import { CenterFeatureTour, type CenterTourTarget } from '@/features/onboarding/center-feature-tour'
 
 type DiscoveryMode = 'recommended' | 'downloads' | 'newest'
 type HomeScopeFilter = 'ALL' | 'PUBLIC' | 'DEPARTMENT'
@@ -95,7 +95,9 @@ function RecommendationCard({ resource, onOpen, onToolUse }: { resource: Unified
     : catalog?.accessUrl
       ? catalog.kind === 'AGENT' ? '立即使用' : '打开工具'
       : catalog?.artifactAvailable ? '下载' : null
+  const { user } = useAuth()
   const handleQuickAction = () => {
+    completeOnboardingJourneyUse(user?.userId)
     if (catalog && catalog.kind !== 'AGENT') onToolUse?.(catalog.id)
     if (skill) {
       void copy(buildInstallCommand(skill.namespace, skill.slug, getBaseUrl()))
@@ -155,7 +157,7 @@ export function LandingPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { onboarding } = useSearch({ from: '/' })
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, user } = useAuth()
   const [discoveryMode, setDiscoveryMode] = useState<DiscoveryMode>('recommended')
   const [homeResourceType, setHomeResourceType] = useState<UnifiedResourceSearchType>('ALL')
   const [homeScenario, setHomeScenario] = useState<ResourceCategoryCode | undefined>()
@@ -165,9 +167,8 @@ export function LandingPage() {
   const [searchType, setSearchType] = useState<UnifiedResourceSearchType>('ALL')
   const [searchSort, setSearchSort] = useState<'relevance' | 'downloads' | 'newest'>('relevance')
   const [isQuickSearchPinned, setIsQuickSearchPinned] = useState(false)
-  const [isArrivalGuideVisible, setIsArrivalGuideVisible] = useState(Boolean(onboarding))
+  const [highlightedTarget, setHighlightedTarget] = useState<CenterTourTarget | null>(null)
   const { toolIds: commonToolIds, recordToolUse } = useCommonTools()
-  const [tourTarget, setTourTarget] = useState<CenterTourTarget | null>(null)
   const [viewMode, setViewMode] = useViewMode('home')
   const quickSearchRef = useRef<HTMLDivElement>(null)
   const { data: recommendations = [] } = useResourceRecommendations(12)
@@ -241,11 +242,13 @@ export function LandingPage() {
     setSearchInput(normalizedQuery)
     setSearchQuery(normalizedQuery)
     setSearchSort('relevance')
+    if (normalizedQuery.trim()) completeOnboardingTask(user?.userId, 'discover')
   }
 
   const searchScenario = (categoryCode: ResourceCategoryCode) => {
     setHomeScenario(categoryCode)
     setSearchQuery('')
+    completeOnboardingTask(user?.userId, 'discover')
   }
 
   useEffect(() => {
@@ -254,16 +257,6 @@ export function LandingPage() {
     window.addEventListener('scroll', updatePinnedState, { passive: true })
     return () => window.removeEventListener('scroll', updatePinnedState)
   }, [])
-
-  useEffect(() => {
-    setIsArrivalGuideVisible(Boolean(onboarding))
-    if (!onboarding) setTourTarget(null)
-  }, [onboarding])
-
-  const dismissArrivalGuide = () => {
-    setTourTarget(null)
-    setIsArrivalGuideVisible(false)
-  }
 
   return (
     <div className="relative z-10">
@@ -278,7 +271,7 @@ export function LandingPage() {
               <p className="mt-2 text-muted-foreground">
                 {t('search.subtitle')}
               </p>
-              <div ref={quickSearchRef} data-onboarding-target="search" className={cn(tourTarget === 'search' && 'relative z-50 rounded-md ring-4 ring-primary/50 ring-offset-4')}>
+              <div ref={quickSearchRef} data-onboarding-target="search" className={cn(highlightedTarget === 'search' && 'relative z-50 rounded-lg ring-4 ring-primary/50 ring-offset-4')}>
                 <div className="mt-6 max-w-4xl">
                   <SearchBar
                     value={searchInput}
@@ -288,7 +281,7 @@ export function LandingPage() {
                     onSearch={handleSearch}
                   />
                 </div>
-                <div className="mt-4 flex max-w-6xl flex-nowrap items-center gap-2 overflow-x-auto pb-1">
+                <div data-onboarding-target="filters" className={cn('mt-4 flex max-w-6xl flex-nowrap items-center gap-2 overflow-x-auto pb-1', highlightedTarget === 'filters' && 'relative z-50 rounded-lg bg-background ring-4 ring-primary/50 ring-offset-4')}>
                   <span className="shrink-0 text-xs font-medium text-muted-foreground">{t('search.scenarios.label')}</span>
                   <button
                     type="button"
@@ -315,7 +308,7 @@ export function LandingPage() {
                 </div>
               </div>
             </div>
-            <aside className={cn('border-l border-border pl-6 lg:mt-1', tourTarget === 'quickBrowse' && 'relative z-50 rounded-md ring-4 ring-primary/50 ring-offset-4')} data-onboarding-target="quickBrowse">
+            <aside data-onboarding-target="quickBrowse" className={cn('border-l border-border pl-6 lg:mt-1', highlightedTarget === 'quickBrowse' && 'relative z-50 rounded-lg bg-background ring-4 ring-primary/50 ring-offset-4')}>
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">快速浏览</p>
               <div className="mt-3 divide-y divide-border">
                 {QUICK_BROWSE_ITEMS.map(({ to, label, description, icon: Icon }) => (
@@ -412,7 +405,7 @@ export function LandingPage() {
               <div className="ml-auto flex items-center gap-3"><span className="text-sm text-muted-foreground">{t('search.results', { count: searchResults?.total ?? 0 })}</span><ViewModeToggle value={viewMode} onChange={setViewMode} /></div>
             </div>
             {searchResults?.items.length ? (
-              <div className={cn('grid gap-3', viewMode === 'list' ? 'grid-cols-1 xl:grid-cols-2' : 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3')}>
+              <div data-onboarding-target="search-results" className={cn('grid gap-3', viewMode === 'list' ? 'grid-cols-1 xl:grid-cols-2' : 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3')}>
                 {searchResults.items.map((resource) => {
                   const catalog = resource.catalogResource
                   const skill = resource.skill
@@ -456,7 +449,7 @@ export function LandingPage() {
             <div><p className="text-sm font-semibold text-primary">DISCOVER</p><h2 className="mt-1 text-2xl font-semibold">{discoveryMode === 'recommended' && !isAuthenticated ? '推荐能力' : DISCOVERY_TITLES[discoveryMode]}</h2></div>
             <div className="flex items-center gap-3"><ViewModeToggle value={viewMode} onChange={setViewMode} /><Link to="/search" search={{ q: '', sort: 'relevance', page: 0, starredOnly: false }} className="text-sm font-medium text-primary">浏览全部 →</Link></div>
           </div>
-          <div className={cn('mb-5 flex flex-wrap items-center gap-2 border-b pb-4', tourTarget === 'filters' && 'relative z-50 rounded-md ring-4 ring-primary/50 ring-offset-4')} data-onboarding-target="filters">
+          <div className="mb-5 flex flex-wrap items-center gap-2 border-b pb-4">
             <span className="mr-1 text-sm font-medium text-muted-foreground">进一步筛选</span>
             <label className="sr-only" htmlFor="home-scenario-filter">使用场景</label>
             <ResourceCategorySelect id="home-scenario-filter" value={homeScenario} onChange={setHomeScenario} className="w-48" triggerPrefix="使用场景：" />
@@ -479,15 +472,15 @@ export function LandingPage() {
               </SelectContent>
             </Select>
           </div>
-          <div className={cn('grid gap-3', viewMode === 'list' ? 'grid-cols-1 xl:grid-cols-2' : 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3')}>
-            {visibleDiscoveryResources.map((resource, index) => {
+          <div data-onboarding-target="catalog" className={cn('grid gap-3', viewMode === 'list' ? 'grid-cols-1 xl:grid-cols-2' : 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3', highlightedTarget === 'catalog' && 'relative z-50 rounded-lg bg-background ring-4 ring-primary/50 ring-offset-4')}>
+          {visibleDiscoveryResources.map((resource) => {
               const catalog = resource.catalogResource
               const skill = resource.skill
               if (skill) {
-                return <div key={`SKILL:${skill.id}`} className={cn(tourTarget === 'catalog' && index === 0 && 'relative z-50 rounded-md ring-4 ring-primary/50 ring-offset-4')} data-onboarding-target={tourTarget === 'catalog' && index === 0 ? 'catalog' : undefined}><RecommendationCard resource={resource} onOpen={() => navigate({ to: `/space/${skill.namespace}/${encodeURIComponent(skill.slug)}` })} /></div>
+                return <div key={`SKILL:${skill.id}`}><RecommendationCard resource={resource} onOpen={() => { completeOnboardingTask(user?.userId, 'detail'); navigate({ to: '/space/$namespace/$slug', params: { namespace: skill.namespace, slug: skill.slug } }) }} /></div>
               }
               if (catalog) {
-                return <div key={`CATALOG:${catalog.id}`} className={cn(tourTarget === 'catalog' && index === 0 && 'relative z-50 rounded-md ring-4 ring-primary/50 ring-offset-4')} data-onboarding-target={tourTarget === 'catalog' && index === 0 ? 'catalog' : undefined}><RecommendationCard resource={resource} onOpen={() => navigate({ to: '/catalog/$slug', params: { slug: catalog.slug } })} /></div>
+                return <div key={`CATALOG:${catalog.id}`}><RecommendationCard resource={resource} onOpen={() => { completeOnboardingTask(user?.userId, 'detail'); navigate({ to: '/catalog/$slug', params: { slug: catalog.slug } }) }} /></div>
               }
               return null
             })}
@@ -496,7 +489,14 @@ export function LandingPage() {
         </div>
       </section> : null}
 
-      {isArrivalGuideVisible ? <CenterFeatureTour center="LANDING" hasCatalogItems={visibleDiscoveryResources.length > 0} onDismiss={dismissArrivalGuide} onReturnToOnboarding={resumePlatformOnboarding} onTargetChange={setTourTarget} /> : null}
+      {onboarding ? <CenterFeatureTour
+        center="LANDING"
+        hasCatalogItems={visibleDiscoveryResources.length > 0}
+        onTargetChange={setHighlightedTarget}
+        onDismiss={() => navigate({ to: '/', search: {} })}
+        onReturnToOnboarding={openOnboardingGuide}
+      /> : null}
+
 
     </div>
   )

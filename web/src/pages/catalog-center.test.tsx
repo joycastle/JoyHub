@@ -20,6 +20,9 @@ vi.mock('@/features/onboarding/center-feature-tour', () => ({ CenterFeatureTour:
 vi.mock('@/features/catalog/common-tools', () => ({
   useCommonTools: () => ({ isCommonTool: () => false, recordToolUse: vi.fn(), toggleTool: vi.fn() }),
 }))
+vi.mock('@/features/auth/use-auth', () => ({
+  useAuth: () => ({ user: { userId: 'test-user' } }),
+}))
 vi.mock('@/features/search/use-unified-resource-search', () => ({
   useUnifiedResourceSearch: () => ({
     data: { items: [], total: 0, page: 0, size: 12 },

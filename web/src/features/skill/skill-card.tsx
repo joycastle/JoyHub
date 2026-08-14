@@ -12,6 +12,7 @@ import { formatCompactCount } from '@/shared/lib/number-format'
 import { useCopyToClipboard } from '@/shared/lib/clipboard'
 import { cn } from '@/shared/lib/utils'
 import { buildInstallCommand, getBaseUrl } from './install-command'
+import { completeOnboardingJourneyUse } from '@/features/onboarding/onboarding-progress'
 
 interface SkillCardProps {
   skill: SkillSummary
@@ -24,7 +25,7 @@ interface SkillCardProps {
 /** Reusable, readable Skill summary card used across discovery pages. */
 export function SkillCard({ skill, onClick, highlightStarred = true, density = 'default', showVersion = true }: SkillCardProps) {
   const { t } = useTranslation()
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, user } = useAuth()
   const { data: repositories } = useSkillRepositories()
   const { data: starStatus } = useStar(skill.id, highlightStarred && isAuthenticated)
   const showStarredHighlight = highlightStarred && isAuthenticated && starStatus?.starred
@@ -32,6 +33,7 @@ export function SkillCard({ skill, onClick, highlightStarred = true, density = '
   const isInteractive = typeof onClick === 'function'
   const [copied, copy] = useCopyToClipboard()
   const quickInstall = () => {
+    completeOnboardingJourneyUse(user?.userId)
     void copy(buildInstallCommand(skill.namespace, skill.slug, getBaseUrl()))
   }
 

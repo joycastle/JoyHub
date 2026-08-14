@@ -16,6 +16,8 @@ import { useRecordResourceUse, useResourceLifecycleAction, useResourceStats, use
 import { formatCompactCount } from '@/shared/lib/number-format'
 import { useAuth } from '@/features/auth/use-auth'
 import { useCommonTools } from '@/features/catalog/common-tools'
+import { DetailPageHint } from '@/features/onboarding/detail-page-hint'
+import { completeOnboardingJourneyUse } from '@/features/onboarding/onboarding-progress'
 
 function copyPrompt(prompt: string) {
   void navigator.clipboard.writeText(prompt).then(
@@ -78,6 +80,7 @@ export function CatalogResourcePage() {
   }
 
   const handleUse = () => {
+    completeOnboardingJourneyUse(user?.userId)
     recordUse.mutate(resourceId, {
       onError: (error) => toast.error('使用次数统计失败', error instanceof Error ? error.message : '请稍后重试。'),
     })
@@ -185,7 +188,7 @@ export function CatalogResourcePage() {
         ]}
       />
 
-      <Card className="sticky top-5 z-10 space-y-3 p-5 shadow-md">
+      <Card data-onboarding-target="detail-actions" data-onboarding-resource-type={isAgent ? 'AGENT' : 'TOOL'} className="sticky top-5 z-10 space-y-3 p-5 shadow-md">
         <div className="text-sm font-semibold font-heading text-foreground">使用与分发</div>
         {resource.accessUrl ? (
           <a href={resource.accessUrl} target="_blank" rel="noreferrer" onClick={handleUse} className={cn(buttonVariants({ size: 'lg' }), 'w-full gap-2')}>
@@ -237,6 +240,8 @@ export function CatalogResourcePage() {
 
   return (
     <ResourceDetailLayout sidebar={sidebar}>
+      <DetailPageHint userId={user?.userId} />
+      <div data-onboarding-target="detail-header">
       <ResourceDetailHeader
         backAction={backAction}
         badges={badges}
@@ -246,13 +251,16 @@ export function CatalogResourcePage() {
         actions={actionMenu}
         tags={tags}
       />
+      </div>
 
       <Tabs defaultValue="overview">
+        <div data-onboarding-target="detail-tabs">
         <TabsList>
           <TabsTrigger value="overview">概览</TabsTrigger>
-          <TabsTrigger value="usage">使用说明</TabsTrigger>
+          <TabsTrigger value="usage" data-onboarding-target="usage-tab">使用说明</TabsTrigger>
           <TabsTrigger value="related">关联能力</TabsTrigger>
         </TabsList>
+        </div>
 
         <TabsContent value="overview" className="mt-6">
           <Card className="space-y-6 p-8">

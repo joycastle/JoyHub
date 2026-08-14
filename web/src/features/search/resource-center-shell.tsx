@@ -23,7 +23,7 @@ interface ResourceCenterShellProps {
   resultCountLabel: string
   viewMode: ViewMode
   onViewModeChange: (value: ViewMode) => void
-  highlightedTarget?: 'publish' | 'search' | 'filters' | null
+  highlightedTarget?: 'publish' | 'search' | 'quickBrowse' | 'filters' | 'catalog' | 'manage' | null
   children: ReactNode
   className?: string
 }

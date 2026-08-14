@@ -1,12 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import type { CatalogCenter, CatalogResourceKind } from '@/api/types'
 import { resourcesApi } from '@/api/client'
 import { CatalogResourceCard } from '@/entities/catalog-resource/catalog-resource-card'
 import { useCommonTools } from '@/features/catalog/common-tools'
-import { CenterFeatureTour, type CenterTourTarget } from '@/features/onboarding/center-feature-tour'
-import { resumePlatformOnboarding } from '@/features/onboarding/onboarding-events'
 import { ResourceCenterShell } from '@/features/search/resource-center-shell'
 import { useUnifiedResourceSearch } from '@/features/search/use-unified-resource-search'
 import { EmptyState } from '@/shared/components/empty-state'
@@ -17,15 +15,19 @@ import { SkeletonList } from '@/shared/components/skeleton-loader'
 import { useViewMode } from '@/shared/hooks/use-view-mode'
 import type { ResourceCategoryCode } from '@/shared/lib/resource-category'
 import { normalizeSearchQuery } from '@/shared/lib/search-query'
-import { cn } from '@/shared/lib/utils'
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/shared/ui/select'
+import { CenterFeatureTour, type CenterTourTarget } from '@/features/onboarding/center-feature-tour'
+import { completeOnboardingJourneyUse, completeOnboardingTask, openOnboardingGuide } from '@/features/onboarding/onboarding-progress'
+import { useAuth } from '@/features/auth/use-auth'
 
 type CenterSort = 'relevance' | 'newest' | 'downloads'
 const PAGE_SIZE = 12
 
-function CatalogCenterPage({ center, showArrivalGuide }: { center: CatalogCenter; showArrivalGuide: boolean }) {
+function CatalogCenterPage({ center }: { center: CatalogCenter }) {
   const { t } = useTranslation()
+  const { user } = useAuth()
   const navigate = useNavigate()
+  const { onboarding } = useSearch({ from: center === 'AGENT' ? '/agents' : '/tools' })
   const isAgent = center === 'AGENT'
   const translationKey = isAgent ? 'agentCenter' : 'toolCenter'
   const publishKind: CatalogResourceKind = isAgent ? 'AGENT' : 'ONLINE_TOOL'
@@ -34,9 +36,8 @@ function CatalogCenterPage({ center, showArrivalGuide }: { center: CatalogCenter
   const [categoryCode, setCategoryCode] = useState<ResourceCategoryCode>()
   const [sort, setSort] = useState<CenterSort>('relevance')
   const [page, setPage] = useState(0)
-  const [isArrivalGuideVisible, setIsArrivalGuideVisible] = useState(showArrivalGuide)
-  const [tourTarget, setTourTarget] = useState<CenterTourTarget | null>(null)
   const [viewMode, setViewMode] = useViewMode(`catalog-${center.toLowerCase()}`)
+  const [highlightedTarget, setHighlightedTarget] = useState<CenterTourTarget | null>(null)
   const { isCommonTool, recordToolUse, toggleTool } = useCommonTools()
   const { data, isLoading, isError, isFetching } = useUnifiedResourceSearch({
     q: query,
@@ -48,18 +49,6 @@ function CatalogCenterPage({ center, showArrivalGuide }: { center: CatalogCenter
   })
   const resources = (data?.items ?? []).flatMap((item) => item.catalogResource ? [item.catalogResource] : [])
   const pageCount = data ? Math.max(Math.ceil(data.total / data.size), 1) : 1
-  const isCatalogHighlighted = tourTarget === 'catalog'
-
-  useEffect(() => {
-    setIsArrivalGuideVisible(showArrivalGuide)
-    if (!showArrivalGuide) setTourTarget(null)
-  }, [showArrivalGuide])
-
-  const dismissArrivalGuide = () => {
-    setTourTarget(null)
-    setIsArrivalGuideVisible(false)
-  }
-
   return (
     <ResourceCenterShell
       eyebrow={t('resourceCenter.eyebrow')}
@@ -67,7 +56,7 @@ function CatalogCenterPage({ center, showArrivalGuide }: { center: CatalogCenter
       description={t(`${translationKey}.description`)}
       visibility={t('resourceCenter.visibility')}
       publishLabel={t(`${translationKey}.publish`)}
-      onPublish={() => navigate({ to: '/dashboard/catalog/new', search: { kind: publishKind } })}
+      onPublish={() => navigate({ to: '/dashboard/catalog/new', search: onboarding ? { kind: publishKind, onboarding: true } : { kind: publishKind } })}
       queryInput={queryInput}
       onQueryChange={setQueryInput}
       onSearch={(value) => {
@@ -81,7 +70,7 @@ function CatalogCenterPage({ center, showArrivalGuide }: { center: CatalogCenter
       resultCountLabel={t('resourceCenter.resultCount', { count: data?.total ?? 0 })}
       viewMode={viewMode}
       onViewModeChange={setViewMode}
-      highlightedTarget={tourTarget === 'publish' || tourTarget === 'search' || tourTarget === 'filters' ? tourTarget : null}
+      highlightedTarget={highlightedTarget}
       filters={(
         <>
           <ResourceCategorySelect
@@ -111,21 +100,18 @@ function CatalogCenterPage({ center, showArrivalGuide }: { center: CatalogCenter
       ) : null}
       {!isLoading && !isError && resources.length === 0 ? <EmptyState title={t('resourceCenter.empty')} /> : null}
       {!isLoading && !isError && resources.length > 0 ? (
+        <div data-onboarding-target="catalog">
         <ResourceResultGrid viewMode={viewMode}>
-          {resources.map((resource, index) => (
-            <div
-              key={resource.id}
-              className={cn('h-full', isCatalogHighlighted && index === 0 && 'relative z-50 ring-4 ring-primary/50 ring-offset-4')}
-              data-onboarding-target={isCatalogHighlighted && index === 0 ? 'catalog' : undefined}
-            >
+          {resources.map((resource) => (
+            <div key={resource.id} className="h-full">
               <CatalogResourceCard
                 resource={resource}
                 variant={viewMode === 'list' ? 'list' : 'default'}
                 onClick={() => navigate({ to: '/catalog/$slug', params: { slug: resource.slug } })}
                 onUse={resource.accessUrl
-                  ? () => { if (!isAgent) recordToolUse(resource.id); window.open(resource.accessUrl, '_blank', 'noopener,noreferrer') }
+                  ? () => { completeOnboardingJourneyUse(user?.userId); if (!isAgent) recordToolUse(resource.id); window.open(resource.accessUrl, '_blank', 'noopener,noreferrer') }
                   : resource.artifactAvailable
-                    ? () => { if (!isAgent) recordToolUse(resource.id); window.open(resourcesApi.downloadUrl(`catalog:${resource.id}`), '_blank', 'noopener,noreferrer') }
+                    ? () => { completeOnboardingJourneyUse(user?.userId); if (!isAgent) recordToolUse(resource.id); window.open(resourcesApi.downloadUrl(`catalog:${resource.id}`), '_blank', 'noopener,noreferrer') }
                     : undefined}
                 quickActionLabel={resource.accessUrl
                   ? t(isAgent ? 'agentCenter.use' : 'toolCenter.use')
@@ -136,29 +122,27 @@ function CatalogCenterPage({ center, showArrivalGuide }: { center: CatalogCenter
             </div>
           ))}
         </ResourceResultGrid>
+        </div>
       ) : null}
       {!isLoading && !isError && data && pageCount > 1 ? (
         <Pagination page={page} totalPages={pageCount} onPageChange={setPage} />
       ) : null}
-      {isArrivalGuideVisible ? (
-        <CenterFeatureTour
-          center={center}
-          hasCatalogItems={resources.length > 0}
-          onDismiss={dismissArrivalGuide}
-          onReturnToOnboarding={resumePlatformOnboarding}
-          onTargetChange={setTourTarget}
-        />
-      ) : null}
+      {onboarding ? <CenterFeatureTour
+        center={center}
+        hasCatalogItems={resources.length > 0}
+        onTargetChange={setHighlightedTarget}
+        onComplete={() => completeOnboardingTask(user?.userId, isAgent ? 'agents' : 'tools')}
+        onDismiss={() => navigate({ to: center === 'AGENT' ? '/agents' : '/tools', search: {} })}
+        onReturnToOnboarding={openOnboardingGuide}
+      /> : null}
     </ResourceCenterShell>
   )
 }
 
 export function AgentsPage() {
-  const { onboarding } = useSearch({ from: '/agents' })
-  return <CatalogCenterPage center="AGENT" showArrivalGuide={Boolean(onboarding)} />
+  return <CatalogCenterPage center="AGENT" />
 }
 
 export function ToolsPage() {
-  const { onboarding } = useSearch({ from: '/tools' })
-  return <CatalogCenterPage center="TOOL" showArrivalGuide={Boolean(onboarding)} />
+  return <CatalogCenterPage center="TOOL" />
 }
