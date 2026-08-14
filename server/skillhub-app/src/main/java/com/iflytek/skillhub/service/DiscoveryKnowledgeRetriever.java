@@ -38,6 +38,14 @@ public class DiscoveryKnowledgeRetriever {
     @Transactional(readOnly = true)
     public List<DiscoverySuggestionResponse> retrieve(List<String> searchQueries, PlatformPrincipal principal,
                                                        Map<Long, NamespaceRole> namespaceRoles, String language) {
+        return retrieve(searchQueries, principal, namespaceRoles, language,
+                String.join(" ", searchQueries == null ? List.of() : searchQueries));
+    }
+
+    @Transactional(readOnly = true)
+    public List<DiscoverySuggestionResponse> retrieve(List<String> searchQueries, PlatformPrincipal principal,
+                                                       Map<Long, NamespaceRole> namespaceRoles, String language,
+                                                       String constraintSource) {
         Map<Long, NamespaceRole> roles = namespaceRoles == null ? Map.of() : namespaceRoles;
         CatalogViewer viewer = new CatalogViewer(principal.userId(), roles,
                 principal.platformRoles() == null ? Set.of() : principal.platformRoles());
@@ -45,9 +53,10 @@ public class DiscoveryKnowledgeRetriever {
         documentRepository.findBySearchEnabledTrue().forEach(document ->
                 documents.put(document.getResourceType() + ":" + document.getResourceId(), document));
         Map<String, DiscoverySuggestionResponse> suggestions = new LinkedHashMap<>();
-        searchQueries.stream().filter(query -> query != null && !query.isBlank()).map(String::trim).distinct()
+        SearchConstraints constraints = SearchConstraints.from(constraintSource);
+        List<String> queries = searchQueries == null ? List.of() : searchQueries;
+        queries.stream().filter(query -> query != null && !query.isBlank()).map(String::trim).distinct()
                 .limit(4).forEach(query -> {
-                    SearchConstraints constraints = SearchConstraints.from(query);
                     unifiedSearchAppService.search(query, null, null, "relevance",
                         constraints.resourceType(), false, 0, RESULT_LIMIT, principal.userId(), roles, viewer,
                         constraints.accessModes())
@@ -112,12 +121,15 @@ public class DiscoveryKnowledgeRetriever {
     private record SearchConstraints(UnifiedResourceSearchType resourceType, Set<String> accessModes) {
         static SearchConstraints from(String query) {
             String normalized = query == null ? "" : query.toLowerCase(Locale.ROOT);
-            UnifiedResourceSearchType type = normalized.contains("agent") || normalized.contains("智能体")
-                    ? UnifiedResourceSearchType.AGENT
-                    : normalized.contains("tool") || normalized.contains("工具")
-                            ? UnifiedResourceSearchType.TOOL
-                            : normalized.contains("skill") || normalized.contains("技能")
-                                    ? UnifiedResourceSearchType.SKILL : UnifiedResourceSearchType.ALL;
+            // A specific positive request wins over a resource type merely mentioned in a
+            // negative comparison, e.g. "优先 Skill，不要只推荐通用 Agent".
+            boolean wantsSkill = normalized.contains("skill") || normalized.contains("技能");
+            boolean wantsTool = normalized.contains("tool") || normalized.contains("工具");
+            boolean wantsAgent = normalized.contains("agent") || normalized.contains("智能体");
+            UnifiedResourceSearchType type = wantsSkill
+                    ? UnifiedResourceSearchType.SKILL
+                    : wantsTool ? UnifiedResourceSearchType.TOOL
+                    : wantsAgent ? UnifiedResourceSearchType.AGENT : UnifiedResourceSearchType.ALL;
             Set<String> accessModes = normalized.contains("安装") || normalized.contains("install")
                     ? Set.of("INSTALL")
                     : normalized.contains("下载") || normalized.contains("download")

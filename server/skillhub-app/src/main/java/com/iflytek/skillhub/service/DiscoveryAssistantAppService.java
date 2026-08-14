@@ -22,8 +22,8 @@ import org.springframework.stereotype.Service;
 @Service
 public class DiscoveryAssistantAppService {
     private static final Logger log = LoggerFactory.getLogger(DiscoveryAssistantAppService.class);
-    private static final int STEP_RESULT_LIMIT = 100;
-    private static final int TOTAL_RESULT_LIMIT = 100;
+    private static final int STEP_RESULT_LIMIT = 8;
+    private static final int TOTAL_RESULT_LIMIT = 24;
 
     private final DiscoveryAiClient aiClient;
     private final DiscoveryAiProperties properties;
@@ -47,13 +47,13 @@ public class DiscoveryAssistantAppService {
         String safetyIdentifier = safetyIdentifier(principal.userId());
         DiscoveryConversationStore.Conversation conversation = conversationStore.load(
                 principal.userId(), conversationId);
-        // Retrieval must stay deterministic and finish within the web request budget.
-        // Query expansion is handled locally by DiscoveryKnowledgeRetriever, so an
-        // extra model call here only delays the unified search and can make the CDN
-        // close the request before recommendations are returned.
-        DiscoverySearchPlan plan = DiscoverySearchPlan.singleStep(question);
+        // Keep retrieval deterministic and inside the web request budget. A local plan
+        // still separates compound outcomes without adding another model round trip.
+        DiscoverySearchPlan plan = DiscoverySearchPlan.localPlan(question, conversation.turns());
+        String constraintSource = DiscoverySearchPlan.isRefinementTurn(question)
+                ? question : plan.goal();
         List<DiscoveryPlanStepResponse> candidateSteps = retrieveSteps(
-                question, plan, language, principal, normalizedRoles);
+                question, plan, language, principal, normalizedRoles, constraintSource);
         log.info("AI discovery candidates prepared [steps={}, candidates={}]",
                 candidateSteps.size(), candidateSteps.stream()
                         .mapToInt(step -> step.suggestions().size())
@@ -93,17 +93,17 @@ public class DiscoveryAssistantAppService {
                                                           DiscoverySearchPlan plan,
                                                           String language,
                                                           PlatformPrincipal principal,
-                                                          Map<Long, NamespaceRole> namespaceRoles) {
+                                                          Map<Long, NamespaceRole> namespaceRoles,
+                                                          String constraintSource) {
         List<DiscoveryPlanStepResponse> steps = new ArrayList<>();
         for (DiscoverySearchPlan.Step step : plan.steps()) {
-            List<String> queries = new ArrayList<>();
-            queries.add(question);
-            queries.addAll(step.queries());
+            List<String> queries = new ArrayList<>(step.queries());
+            if (plan.steps().size() == 1) queries.add(question);
             List<DiscoverySuggestionResponse> matches = knowledgeRetriever
                     .retrieve(queries.stream()
                             .filter(query -> query != null && !query.isBlank())
                             .distinct()
-                            .toList(), principal, namespaceRoles, language).stream()
+                            .toList(), principal, namespaceRoles, language, constraintSource).stream()
                     .limit(STEP_RESULT_LIMIT)
                     .toList();
             steps.add(new DiscoveryPlanStepResponse(step.objective(), matches));

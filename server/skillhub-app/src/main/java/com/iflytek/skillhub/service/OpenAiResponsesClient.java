@@ -34,6 +34,9 @@ public class OpenAiResponsesClient implements DiscoveryAiClient {
             A candidate is not a match merely because its name is vaguely related: require direct support in the
             evidence or usage metadata. If the evidence is weak or generic, return no resource for that step.
             Never force a primary recommendation when all candidates are weak.
+            Prefer a purpose-built resource that directly matches the step over a general-purpose Agent, even when the
+            general Agent can technically perform the task. Respect the employee's explicit resource-type preference.
+            Keep separate planned steps separate: do not collapse a multi-step workflow into one broad recommendation.
             Never invent resources, links, permissions, or capabilities. Return only this JSON shape:
             {"answer":"short overview","steps":[{"index":0,"resources":[{"type":"skill","id":1,"introduction":"what it does","usage":"how to use it"}]}]}
             Include every supplied step index. Select zero to four resources per step, ordered with the strongest
