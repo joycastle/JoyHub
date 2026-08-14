@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { ChevronRight, Compass, Search, Send, Sparkles } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { chooseOnboardingGoal, getOnboardingJourneyPath, resumeOnboardingJourney, startOnboardingJourney, type OnboardingGoal } from './onboarding-progress'
+import { chooseOnboardingGoal, getOnboardingJourneyPath, hasChosenOnboardingGoal, resumeOnboardingJourney, startOnboardingJourney, type OnboardingGoal } from './onboarding-progress'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/shared/ui/dialog'
 
 interface PlatformOnboardingProps { userId?: string; displayName?: string }
@@ -14,9 +14,9 @@ export function PlatformOnboarding({ userId, displayName }: PlatformOnboardingPr
   const [isGoalOpen, setIsGoalOpen] = useState(false)
   useEffect(() => {
     if (!userId) return
-    // Keep the welcome choice visible for every new login while the onboarding is being tested.
-    // The component remains mounted for the session, so it will not repeatedly interrupt normal use.
-    setIsGoalOpen(true)
+    // The welcome dialog is a first-login experience. A user can still restart the
+    // walkthrough explicitly from the compass button in the header.
+    setIsGoalOpen(!hasChosenOnboardingGoal(userId))
   }, [userId])
 
   if (!userId) return null

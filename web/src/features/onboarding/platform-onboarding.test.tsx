@@ -30,13 +30,13 @@ describe('PlatformOnboarding', () => {
     expect(navigateMock).toHaveBeenCalledWith({ to: '/' })
   })
 
-  it('opens again for the same user after a new login session', () => {
+  it('does not reopen for the same user after a new login session', () => {
     const { rerender } = render(<PlatformOnboarding userId="user-b" />)
     fireEvent.click(screen.getByText('onboarding.welcome.explore'))
     rerender(<PlatformOnboarding />)
     rerender(<PlatformOnboarding userId="user-b" />)
 
-    expect(screen.getByText('onboarding.welcome.title:onboarding.member')).toBeTruthy()
+    expect(screen.queryByText('onboarding.welcome.title:onboarding.member')).toBeNull()
   })
 
   it('resumes publishing at the real publishing entry', () => {
