@@ -51,6 +51,7 @@ class CliRestrictedReadAuthorizationIntegrationTest {
     private String namespaceSlug;
     private String skillSlug;
     private String publicSkillSlug;
+    private String searchTerm;
     private String version;
     private String ownerToken;
     private String outsiderToken;
@@ -63,6 +64,7 @@ class CliRestrictedReadAuthorizationIntegrationTest {
         namespaceSlug = "private-ns-" + suffix;
         skillSlug = Long.toUnsignedString(UUID.randomUUID().getMostSignificantBits());
         publicSkillSlug = "public-skill-" + suffix;
+        searchTerm = "restricted-read-" + suffix;
         version = "1.0.0";
 
         userAccountRepository.save(new UserAccount(
@@ -78,6 +80,7 @@ class CliRestrictedReadAuthorizationIntegrationTest {
                 new Namespace(namespaceSlug, "Private Namespace", ownerId));
         Skill skill = skillRepository.save(new Skill(
                 namespace.getId(), skillSlug, ownerId, SkillVisibility.PRIVATE));
+        skill.setSummary("Private match for " + searchTerm);
         SkillVersion published = new SkillVersion(skill.getId(), version, ownerId);
         published.setStatus(SkillVersionStatus.PUBLISHED);
         published.setPublishedAt(Instant.parse("2026-07-28T00:00:00Z"));
@@ -93,15 +96,16 @@ class CliRestrictedReadAuthorizationIntegrationTest {
                 namespaceSlug,
                 ownerId,
                 skillSlug,
-                "Private skill search fixture",
-                "private",
-                skillSlug,
+                "Private match for " + searchTerm,
+                searchTerm,
+                searchTerm,
                 "",
                 SkillVisibility.PRIVATE.name(),
                 skill.getStatus().name()));
 
         Skill publicSkill = skillRepository.save(new Skill(
                 namespace.getId(), publicSkillSlug, ownerId, SkillVisibility.PUBLIC));
+        publicSkill.setSummary("Public match for " + searchTerm);
         SkillVersion publicPublished = new SkillVersion(publicSkill.getId(), version, ownerId);
         publicPublished.setStatus(SkillVersionStatus.PUBLISHED);
         publicPublished.setPublishedAt(Instant.parse("2026-07-28T00:00:00Z"));
@@ -116,10 +120,10 @@ class CliRestrictedReadAuthorizationIntegrationTest {
                 namespace.getId(),
                 namespaceSlug,
                 ownerId,
-                skillSlug,
-                "Public match for " + publicSkillSlug,
-                "public",
-                skillSlug,
+                publicSkillSlug,
+                "Public match for " + searchTerm,
+                searchTerm,
+                searchTerm,
                 "",
                 SkillVisibility.PUBLIC.name(),
                 publicSkill.getStatus().name()));
@@ -131,7 +135,7 @@ class CliRestrictedReadAuthorizationIntegrationTest {
     void outsiderSearchReturnsMatchingPublicSkillAndOmitsPrivateSkill() throws Exception {
         mockMvc.perform(withBearer(
                         get("/api/cli/v1/skills/search")
-                                .param("q", skillSlug)
+                                .param("q", searchTerm)
                                 .param("limit", "20"),
                         outsiderToken))
                 .andExpect(status().isOk())
