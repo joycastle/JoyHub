@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { isRedirect } from '@tanstack/react-router'
-import { buildReturnTo, createRequireAuth } from './auth-route'
+import { buildReturnTo, createRequireAuth, redirectAuthenticatedUser } from './auth-route'
 
 describe('auth-route', () => {
   it('buildReturnTo preserves pathname search and hash', () => {
@@ -42,5 +42,23 @@ describe('auth-route', () => {
       location: { pathname: '/dashboard' },
     })).resolves.toEqual({ user })
     expect(getCurrentUser).toHaveBeenCalledTimes(1)
+  })
+
+  it('redirects an authenticated OAuth callback away from the login route', async () => {
+    await expect(redirectAuthenticatedUser(async () => ({ userId: 'user-1' }), '/dashboard/resources'))
+      .rejects.toSatisfy((error: unknown) => {
+        expect(isRedirect(error)).toBe(true)
+        return isRedirect(error) && error.options.to === '/dashboard/resources'
+      })
+  })
+
+  it('keeps the login route available when the browser has no session', async () => {
+    await expect(redirectAuthenticatedUser(async () => null, '/dashboard/resources'))
+      .resolves.toBeUndefined()
+  })
+
+  it('rejects unsafe authenticated return targets', async () => {
+    await expect(redirectAuthenticatedUser(async () => ({ userId: 'user-1' }), 'https://evil.example'))
+      .rejects.toSatisfy((error: unknown) => isRedirect(error) && error.options.to === '/')
   })
 })

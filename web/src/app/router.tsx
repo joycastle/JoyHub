@@ -3,7 +3,7 @@ import { createRouter, createRoute, createRootRoute, redirect } from '@tanstack/
 import { Layout } from './layout'
 import { getCurrentUser } from '@/api/client'
 import { RoleGuard } from '@/shared/components/role-guard'
-import { createRequireAuth } from '@/shared/lib/auth-route'
+import { createRequireAuth, redirectAuthenticatedUser } from '@/shared/lib/auth-route'
 import { isApiTokensEnabled } from '@/shared/config/features'
 import { clearDynamicImportReloadGuard, recoverFromDynamicImportError } from '@/shared/lib/dynamic-import-recovery'
 import { normalizeSearchQuery } from '@/shared/lib/search-query'
@@ -200,6 +200,10 @@ const loginRoute = createRoute({
     returnTo: typeof search.returnTo === 'string' ? search.returnTo : '',
     reason: typeof search.reason === 'string' ? search.reason : undefined,
   }),
+  beforeLoad: async ({ search }) => redirectAuthenticatedUser(
+    getCurrentUser,
+    typeof search.returnTo === 'string' ? search.returnTo : '/',
+  ),
   component: LoginPage,
 })
 
@@ -322,9 +326,10 @@ const dashboardPublishRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: 'dashboard/publish',
   beforeLoad: requireAuth,
-  validateSearch: (search: Record<string, unknown>): { namespace?: string; visibility?: string } => ({
+  validateSearch: (search: Record<string, unknown>): { namespace?: string; visibility?: string; onboarding?: boolean } => ({
     namespace: typeof search.namespace === 'string' && search.namespace ? search.namespace : undefined,
     visibility: typeof search.visibility === 'string' && search.visibility ? search.visibility : undefined,
+    onboarding: search.onboarding === true ? true : undefined,
   }),
   component: PublishPage,
 })
@@ -341,10 +346,11 @@ const dashboardCatalogPublishRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: 'dashboard/catalog/new',
   beforeLoad: requireAuth,
-  validateSearch: (search: Record<string, unknown>): { kind?: CatalogResourceKind } => ({
+  validateSearch: (search: Record<string, unknown>): { kind?: CatalogResourceKind; onboarding?: boolean } => ({
     kind: typeof search.kind === 'string' && CATALOG_RESOURCE_KINDS.includes(search.kind as CatalogResourceKind)
       ? search.kind as CatalogResourceKind
       : undefined,
+    onboarding: search.onboarding === true ? true : undefined,
   }),
   component: PublishResourcePage,
 })
