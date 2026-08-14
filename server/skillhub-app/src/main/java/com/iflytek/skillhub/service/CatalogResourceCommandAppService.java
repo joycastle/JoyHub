@@ -191,7 +191,7 @@ public class CatalogResourceCommandAppService {
                 request.maintenanceStatus(),
                 request.visibilityScope(),
                 visibleDepartmentIds,
-                safeStringSet(request.scenarios()),
+                scenariosForLegacyAgentValidation(request),
                 safeStringSet(request.tags()),
                 safeLongSet(request.relatedResourceIds()),
                 safeLongSet(request.relatedSkillIds())
@@ -204,6 +204,24 @@ public class CatalogResourceCommandAppService {
             return request.slug();
         }
         return "agent-" + UUID.randomUUID().toString().replace("-", "").substring(0, 12);
+    }
+
+    /**
+     * Agents historically required a free-text scenario before they could be
+     * published. The portal now supplies one structured category instead.
+     * Mirror that category into the legacy aggregate field during the gradual
+     * migration, including the AI-classification choice.
+     */
+    private Set<String> scenariosForLegacyAgentValidation(CatalogResourceRequest request) {
+        Set<String> requestedScenarios = safeStringSet(request.scenarios());
+        if (request.kind() != com.iflytek.skillhub.catalog.domain.CatalogResourceKind.AGENT
+                || !requestedScenarios.isEmpty()) {
+            return requestedScenarios;
+        }
+        if (request.categoryCode() != null && !request.categoryCode().isBlank()) {
+            return Set.of(request.categoryCode().trim());
+        }
+        return Set.of("OTHER");
     }
 
     private void validateDepartments(Set<Long> departmentIds) {

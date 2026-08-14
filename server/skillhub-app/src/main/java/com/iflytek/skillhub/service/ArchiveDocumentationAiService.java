@@ -31,13 +31,32 @@ public class ArchiveDocumentationAiService {
     private final DiscoveryAiProperties properties;
     private final SkillPackageArchiveExtractor archiveExtractor;
     private final OpenAiResponsesClient aiClient;
+    private final PublicWebEvidenceFetcher webEvidenceFetcher;
 
     public ArchiveDocumentationAiService(DiscoveryAiProperties properties,
                                          SkillPackageArchiveExtractor archiveExtractor,
-                                         OpenAiResponsesClient aiClient) {
+                                         OpenAiResponsesClient aiClient,
+                                         PublicWebEvidenceFetcher webEvidenceFetcher) {
         this.properties = properties;
         this.archiveExtractor = archiveExtractor;
         this.aiClient = aiClient;
+        this.webEvidenceFetcher = webEvidenceFetcher;
+    }
+
+    public ArchiveDocumentationDraftResponse draftFromUrl(String accessUrl, String userId, String language) {
+        ensureAiAvailable();
+        try {
+            return aiClient.generateToolDocumentation(webEvidenceFetcher.fetch(accessUrl), language, safetyIdentifier(userId));
+        } catch (RuntimeException exception) {
+            if (exception instanceof CatalogDomainException) throw exception;
+            throw CatalogDomainException.badRequest("error.catalog.ai.failed");
+        }
+    }
+
+    private void ensureAiAvailable() {
+        if (!properties.isEnabled() || properties.getApiKey() == null || properties.getApiKey().isBlank()) {
+            throw CatalogDomainException.badRequest("error.catalog.ai.unavailable");
+        }
     }
 
     public ArchiveDocumentationDraftResponse draft(MultipartFile file, String userId, String language) {

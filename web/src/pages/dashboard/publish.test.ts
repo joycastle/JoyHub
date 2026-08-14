@@ -74,6 +74,10 @@ vi.mock('@/api/client', () => ({
   },
 }))
 
+vi.mock('@/features/auth/use-auth', () => ({
+  useAuth: () => ({ user: { userId: 'test-user' } }),
+}))
+
 import { PublishPage } from './publish'
 
 describe('PublishPage', () => {

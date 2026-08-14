@@ -30,6 +30,10 @@ import { toast } from '@/shared/lib/toast'
 import { ApiError } from '@/api/client'
 import type { BatchPublishItemResult } from '@/api/types'
 import { RESOURCE_CATEGORY_OPTIONS, resourceCategoryLabel, type ResourceCategoryCode } from '@/shared/lib/resource-category'
+import { PublishWorkflowHint } from '@/features/onboarding/publish-workflow-hint'
+import { completeOnboardingTask } from '@/features/onboarding/onboarding-progress'
+import { FormFeatureTour } from '@/features/onboarding/form-feature-tour'
+import { useAuth } from '@/features/auth/use-auth'
 
 const EMPTY_REPOSITORY_VALUE = '__select_repository__'
 const MAX_BATCH_FILES = 20
@@ -55,6 +59,7 @@ function mergeSelectedFiles(existing: File[], incoming: File[]): File[] {
 export function PublishPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const { user } = useAuth()
   const search = useSearch({ from: '/dashboard/publish' })
   const prefill = normalizePublishPrefill(search)
   const [selectedFiles, setSelectedFiles] = useState<File[]>([])
@@ -133,7 +138,8 @@ export function PublishPage() {
         t('publish.publishedTitle'),
         t('publish.publishedDescription', { skill: skillLabel })
       )
-      navigate({ to: '/dashboard/resources' })
+      completeOnboardingTask(user?.userId, 'publish')
+      navigate({ to: '/dashboard/resources', search: search.onboarding ? { onboarding: true } : {} })
     } catch (error) {
       handlePublishError(error)
     }
@@ -176,7 +182,8 @@ export function PublishPage() {
             failed: result.failed,
           })
         )
-        navigate({ to: '/dashboard/resources' })
+        completeOnboardingTask(user?.userId, 'publish')
+        navigate({ to: '/dashboard/resources', search: search.onboarding ? { onboarding: true } : {} })
         return
       }
 
@@ -188,6 +195,8 @@ export function PublishPage() {
             failed: result.failed,
           })
         )
+        completeOnboardingTask(user?.userId, 'publish')
+        navigate({ to: '/dashboard/resources', search: search.onboarding ? { onboarding: true } : {} })
         return
       }
 
@@ -268,9 +277,10 @@ export function PublishPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-8 animate-fade-up">
       <DashboardPageHeader title={t('publish.title')} subtitle={t('publish.subtitle')} />
+      <PublishWorkflowHint kind="skill" />
 
       <Card className="p-8 space-y-8">
-        <div className="space-y-3">
+        <div data-onboarding-target="skill-repository" className="space-y-3">
           <Label htmlFor="repository" className="text-sm font-semibold font-heading">{t('publish.repository')}</Label>
           {isLoadingPublishTargets ? (
             <div className="h-11 animate-shimmer rounded-lg" />
@@ -296,7 +306,7 @@ export function PublishPage() {
           )}
         </div>
 
-        <div className="space-y-3">
+        <div data-onboarding-target="skill-category" className="space-y-3">
           <Label htmlFor="publish-category" className="text-sm font-semibold font-heading">{t('resourceCategory.label')}</Label>
           <Select value={categoryCode ?? '__ai__'} onValueChange={(value) => setCategoryCode(value === '__ai__' ? undefined : value as ResourceCategoryCode)}>
             <SelectTrigger id="publish-category"><SelectValue /></SelectTrigger>
@@ -308,7 +318,7 @@ export function PublishPage() {
           <p className="text-xs text-muted-foreground">{t('resourceCategory.aiHint')}</p>
         </div>
 
-        <div className="space-y-3">
+        <div data-onboarding-target="skill-visibility" className="space-y-3">
           <Label htmlFor="visibility" className="text-sm font-semibold font-heading">{t('publish.visibility')}</Label>
           <Select value={visibility} onValueChange={setVisibility}>
             <SelectTrigger id="visibility">
@@ -321,7 +331,7 @@ export function PublishPage() {
           </Select>
         </div>
 
-        <div className="space-y-3">
+        <div data-onboarding-target="skill-upload" className="space-y-3">
           <div className="flex items-center justify-between gap-3">
             <Label className="text-sm font-semibold font-heading">{t('publish.file')}</Label>
             {selectedFiles.length > 0 && (
@@ -399,15 +409,25 @@ export function PublishPage() {
           </div>
         )}
 
-        <Button
-          className="w-full text-primary-foreground disabled:text-primary-foreground"
-          size="lg"
-          onClick={handlePublish}
-          disabled={selectedFiles.length === 0 || !repositorySlug || isPublishing}
-        >
-          {isPublishing ? t('publish.publishing') : confirmLabel}
-        </Button>
+        <div data-onboarding-target="skill-submit">
+          <Button
+            className="w-full text-primary-foreground disabled:text-primary-foreground"
+            size="lg"
+            onClick={handlePublish}
+            disabled={selectedFiles.length === 0 || !repositorySlug || isPublishing}
+          >
+            {isPublishing ? t('publish.publishing') : confirmLabel}
+          </Button>
+        </div>
       </Card>
+
+      {search.onboarding ? <FormFeatureTour onDismiss={() => navigate({ to: '/dashboard/publish', search: { namespace: search.namespace, visibility: search.visibility } })} steps={[
+        { target: 'skill-repository', title: '先选发布到哪里', description: '选择你负责的技能仓库。仓库决定这项 Skill 的归属和哪些同事默认能找到它。' },
+        { target: 'skill-category', title: '标注适用场景', description: '选择最接近的工作场景，帮助同事在筛选和搜索时找到它。' },
+        { target: 'skill-visibility', title: '决定可见范围', description: '部门内可见适合团队技能；仅自己可见可先用于验证。确认后再扩大范围。' },
+        { target: 'skill-upload', title: '上传完整 Skill 包', description: '上传 ZIP，并确认根目录包含 SKILL.md。系统会先校验文件和安全风险；出现提示时请先阅读再继续。' },
+        { target: 'skill-submit', title: '提交后检查状态', description: '发布完成后去“我的内容”确认状态、说明和下载入口。需要修改时新增版本或编辑内容，不要让旧说明失效。' },
+      ]} /> : null}
 
       <ConfirmDialog
         open={warningDialogOpen}

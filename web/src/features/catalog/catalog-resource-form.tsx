@@ -13,11 +13,14 @@ import { Label } from '@/shared/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/ui/select'
 import { Textarea } from '@/shared/ui/textarea'
 import { RESOURCE_CATEGORY_OPTIONS, isResourceCategoryCode, resourceCategoryLabel, type ResourceCategoryCode } from '@/shared/lib/resource-category'
+import { FormFeatureTour } from '@/features/onboarding/form-feature-tour'
 
 interface CatalogResourceFormProps {
   onCreated: (slug: string) => void
   initialKind?: CatalogResourceKind
   resource?: CatalogResourceDetail
+  onboarding?: boolean
+  onOnboardingDismiss?: () => void
 }
 
 type OnlineToolHostingMode = 'MANAGED_STATIC' | 'EXTERNAL'
@@ -32,7 +35,7 @@ function appendGeneratedContent(existing: string, generated: string, separator: 
   return `${current}${separator}${draft}`
 }
 
-export function CatalogResourceForm({ onCreated, initialKind, resource }: CatalogResourceFormProps) {
+export function CatalogResourceForm({ onCreated, initialKind, resource, onboarding = false, onOnboardingDismiss }: CatalogResourceFormProps) {
   const { t } = useTranslation()
   const createMutation = useCreateCatalogResource()
   const updateMutation = useUpdateCatalogResource()
@@ -56,6 +59,7 @@ export function CatalogResourceForm({ onCreated, initialKind, resource }: Catalo
   const [primaryDepartmentId, setPrimaryDepartmentId] = useState<number | undefined>(() => resource?.department?.id)
   const [documentation, setDocumentation] = useState(() => resource?.documentation ?? '')
   const [summary, setSummary] = useState(() => resource?.summary ?? '')
+  const [accessUrl, setAccessUrl] = useState(() => resource?.accessUrl ?? '')
   const [categoryCode, setCategoryCode] = useState<ResourceCategoryCode | undefined>(() =>
     resource?.categorySource === 'AUTHOR' && isResourceCategoryCode(resource.categoryCode)
       ? resource.categoryCode
@@ -74,6 +78,7 @@ export function CatalogResourceForm({ onCreated, initialKind, resource }: Catalo
   const isOnlineTool = kind === 'ONLINE_TOOL'
   const isManagedStatic = isOnlineTool && hostingMode === 'MANAGED_STATIC'
   const supportsArtifact = !isAgent && (!isOnlineTool || isManagedStatic)
+  const canGenerateToolDocumentation = Boolean(artifact || accessUrl.trim())
   const isExistingManagedStatic = resource?.kind === 'ONLINE_TOOL'
     && resource.artifactAvailable
     && (!resource.accessUrl || resource.accessUrl.includes(`/apps/${resource.slug}/`))
@@ -96,6 +101,10 @@ export function CatalogResourceForm({ onCreated, initialKind, resource }: Catalo
     const feishuAppId = String(form.get('feishuAppId') ?? '').trim()
     const requestedVersion = String(form.get('version') ?? '').trim()
     const publishRequested = !isEditing && form.get('publish') === 'on'
+    // Catalog's long-standing Agent lifecycle requires at least one scenario.
+    // The new single-choice category is its replacement, so keep the legacy
+    // field populated until the aggregate itself is migrated.
+    const scenarios = isAgent ? [categoryCode ?? 'OTHER'] : []
     setLocalSkillError('')
     let relatedSkillIds = selectedSkillIds
     if (isAgent && localSkillFile) {
@@ -122,7 +131,7 @@ export function CatalogResourceForm({ onCreated, initialKind, resource }: Catalo
           ? `https://applink.feishu.cn/client/bot/open?appId=${encodeURIComponent(feishuAppId)}`
           : isManagedStatic
             ? isExistingManagedStatic ? resource.accessUrl : undefined
-            : String(form.get('accessUrl') ?? '').trim() || undefined,
+            : accessUrl.trim() || undefined,
         documentation: documentation.trim(),
         version: isManagedStatic && isEditing && resource?.status === 'PUBLISHED'
           ? resource.version
@@ -136,6 +145,7 @@ export function CatalogResourceForm({ onCreated, initialKind, resource }: Catalo
         maintenanceStatus: resource?.maintenanceStatus ?? 'ACTIVE',
         visibilityScope: visibility,
         visibleDepartmentIds: visibility === 'DEPARTMENTS' ? selectedDepartments : [],
+        scenarios,
         categoryCode: categoryCode ?? null,
         tags: split(form.get('tags')),
         relatedResourceIds: [],
@@ -176,20 +186,26 @@ export function CatalogResourceForm({ onCreated, initialKind, resource }: Catalo
     const form = formRef.current
     if (!form) return
     if (!isAgent) {
-      if (!artifact) {
-        setDocumentationGenerationError('请先选择工具 ZIP，再点击 AI 解析并生成说明。')
+      if (!artifact && !accessUrl.trim()) {
+        setDocumentationGenerationError('请上传工具 ZIP，或填写可公开访问的外链地址后再生成。')
         return
       }
       setDocumentationGenerationError('')
       setIsGeneratingDocumentation(true)
       try {
-        const body = new FormData()
-        body.append('file', artifact)
-        const draft = await fetchJson<{ summary: string; documentation: string }>('/api/web/catalog/tool-documentation-draft', {
-          method: 'POST',
-          headers: getCsrfHeaders(),
-          body,
-        })
+        const draft = artifact
+          ? await (() => {
+              const body = new FormData()
+              body.append('file', artifact)
+              return fetchJson<{ summary: string; documentation: string }>('/api/web/catalog/tool-documentation-draft', {
+                method: 'POST', headers: getCsrfHeaders(), body,
+              })
+            })()
+          : await fetchJson<{ summary: string; documentation: string }>('/api/web/catalog/tool-documentation-draft-from-url', {
+              method: 'POST',
+              headers: getCsrfHeaders({ 'Content-Type': 'application/json' }),
+              body: JSON.stringify({ accessUrl: accessUrl.trim() }),
+            })
         setSummary((current) => appendGeneratedContent(current, draft.summary, '\n'))
         setDocumentation((current) => appendGeneratedContent(current, draft.documentation, '\n\n'))
       } catch (error) {
@@ -202,7 +218,7 @@ export function CatalogResourceForm({ onCreated, initialKind, resource }: Catalo
     const values = new FormData(form)
     const name = String(values.get('name') ?? '').trim()
     const summary = String(values.get('summary') ?? '').trim()
-    const scenarios = categoryCode ? [categoryCode] : []
+    const scenarios = [categoryCode ?? 'OTHER']
     if (!name || !summary) {
       setDocumentationGenerationError('请先填写 Agent 名称和简介，再生成使用说明。')
       return
@@ -225,7 +241,7 @@ export function CatalogResourceForm({ onCreated, initialKind, resource }: Catalo
 
   return (
     <form ref={formRef} onSubmit={(event) => void submit(event)} className="space-y-8">
-      <section className="grid gap-6 rounded-2xl border bg-card p-6 md:grid-cols-2">
+      <section data-onboarding-target="resource-basics" className="grid gap-6 rounded-2xl border bg-card p-6 md:grid-cols-2">
         <div className="md:col-span-2">
           <h2 className="text-xl font-semibold">基础信息</h2>
           <p className="mt-1 text-sm text-muted-foreground">同一项能力只维护一个主条目。</p>
@@ -255,8 +271,8 @@ export function CatalogResourceForm({ onCreated, initialKind, resource }: Catalo
           </p>
         </div> : null}
         <div><Label htmlFor="icon">图标</Label><Input className="mt-2" id="icon" name="icon" placeholder="可填写 Emoji 或图片地址" defaultValue={resource?.icon ?? ''} /></div>
-        <div className="md:col-span-2"><Label htmlFor="summary">简介 *</Label><Textarea className="mt-2" id="summary" name="summary" required maxLength={1200} rows={3} value={summary} onChange={(event) => setSummary(event.target.value)} /></div>
-        <div>
+        <div data-onboarding-target="resource-summary" className="md:col-span-2"><Label htmlFor="summary">简介 *</Label><Textarea className="mt-2" id="summary" name="summary" required maxLength={1200} rows={3} value={summary} onChange={(event) => setSummary(event.target.value)} /></div>
+        <div data-onboarding-target="resource-access">
           <Label htmlFor={isAgent ? 'feishuAppId' : 'accessUrl'}>{isAgent ? '飞书机器人 App ID *' : '访问入口'}</Label>
           <Input
             className="mt-2"
@@ -267,13 +283,15 @@ export function CatalogResourceForm({ onCreated, initialKind, resource }: Catalo
             disabled={isManagedStatic}
             pattern={isAgent ? 'cli_[A-Za-z0-9]+' : undefined}
             placeholder={isAgent ? 'cli_xxxxxxxxxxxxxxxx' : isManagedStatic ? t('catalogPublish.accessUrlGenerated') : 'https://...'}
-            defaultValue={isAgent ? new URL(resource?.accessUrl ?? 'https://applink.feishu.cn').searchParams.get('appId') ?? '' : resource?.accessUrl ?? ''}
+            defaultValue={isAgent ? new URL(resource?.accessUrl ?? 'https://applink.feishu.cn').searchParams.get('appId') ?? '' : undefined}
+            value={isAgent ? undefined : accessUrl}
+            onChange={isAgent ? undefined : (event) => { setAccessUrl(event.target.value); setDocumentationGenerationError('') }}
           />
           {isAgent ? <p className="mt-2 text-xs text-muted-foreground">在飞书开发者后台「凭证与基础信息」中获取。系统会自动生成“立即使用”的机器人会话链接。</p> : null}
           {isManagedStatic ? <p className="mt-2 text-xs text-muted-foreground">{t('catalogPublish.accessUrlHint')}</p> : null}
         </div>
         {!isAgent ? <div><Label htmlFor="version">版本{isManagedStatic ? ' *' : ''}</Label><Input className="mt-2" id="version" name="version" placeholder="1.0.0" required={isManagedStatic} readOnly={isManagedStatic && isEditing && !artifact} defaultValue={resource?.version ?? ''} />{isManagedStatic && isEditing && !artifact ? <p className="mt-2 text-xs text-muted-foreground">{t('catalogPublish.versionWithArtifactHint')}</p> : null}</div> : <div><Label>当前发布方式</Label><div className={`${FIELD_CLASS} text-muted-foreground`}>飞书机器人</div></div>}
-        <div>
+        <div data-onboarding-target="resource-category">
           <Label htmlFor="categoryCode">适用场景</Label>
           <Select value={categoryCode ?? '__ai__'} onValueChange={(value) => setCategoryCode(value === '__ai__' ? undefined : value as ResourceCategoryCode)}>
             <SelectTrigger id="categoryCode" className="mt-2"><SelectValue /></SelectTrigger>
@@ -311,21 +329,22 @@ export function CatalogResourceForm({ onCreated, initialKind, resource }: Catalo
         </div>
       </section> : null}
 
-      <section className="space-y-5 rounded-2xl border bg-card p-6">
-        <div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="text-xl font-semibold">使用说明 *</h2><p className="mt-1 text-sm text-muted-foreground">{isAgent ? '这是 Agent 的完整使用说明，请在这里写清输入要求、能力边界和反馈方式；支持 Markdown。' : '说明这项工具如何使用；支持 Markdown。可根据上传的归档生成草稿，再自行检查和编辑。'}</p></div>{isAgent || supportsArtifact ? <Button type="button" variant="outline" size="sm" disabled={isGeneratingDocumentation} onClick={() => void generateDocumentation()}>{isGeneratingDocumentation ? '正在生成...' : isAgent ? 'AI 生成草稿' : 'AI 解析并生成说明'}</Button> : null}</div>
+      <section data-onboarding-target="resource-documentation" className="space-y-5 rounded-2xl border bg-card p-6">
+        <div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="text-xl font-semibold">使用说明 *</h2><p className="mt-1 text-sm text-muted-foreground">{isAgent ? '这是 Agent 的完整使用说明，请在这里写清输入要求、能力边界和反馈方式；支持 Markdown。' : '说明这项工具如何使用；支持 Markdown。可解析工具 ZIP，或读取填写的公开外链页面生成草稿，再自行检查和编辑。'}</p></div><Button type="button" variant="outline" size="sm" disabled={isGeneratingDocumentation || (!isAgent && !canGenerateToolDocumentation)} onClick={() => void generateDocumentation()}>{isGeneratingDocumentation ? '正在生成...' : isAgent ? 'AI 生成草稿' : 'AI 生成简介和说明'}</Button></div>
         <Textarea id="documentation" name="documentation" required rows={14} value={documentation} onChange={(event) => setDocumentation(event.target.value)} placeholder={'# 快速开始\n\n说明如何访问、安装或配置这项能力。'} />
         {isAgent ? <><div className="rounded-xl border border-dashed p-4"><Label htmlFor="documentationFile">上传并解析文档</Label><Input id="documentationFile" className="mt-2" type="file" accept=".docx,.md,.txt" disabled={isExtractingDocument} onChange={(event) => void extractDocument(event.target.files?.[0])} /><p className="mt-2 text-xs text-muted-foreground">支持 Word（.docx）、Markdown 和文本文件；解析后请检查并编辑内容。{isExtractingDocument ? ' 正在解析…' : ''}</p></div><div><Label htmlFor="agentExamplePrompts">示例提问 <span className="text-muted-foreground">（可选，每行一条）</span></Label><Textarea id="agentExamplePrompts" className="mt-2" rows={3} value={examplePrompts} onChange={(event) => setExamplePrompts(event.target.value)} placeholder={'请把下面的会议纪要整理成待办事项\n根据这段项目背景给我下一步建议'} /><p className="mt-1 text-xs text-muted-foreground">仅用于让用户快速开始对话；完整规则仍以使用说明为准。</p></div></> : null}
         {documentationGenerationError ? <p className="text-sm text-destructive">{documentationGenerationError}</p> : null}
+        {!isAgent && !artifact && accessUrl.trim() ? <p className="rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">AI 会读取这个公开外链页面中的可见文字生成草稿；若页面需要登录、主要内容靠脚本加载或没有文字说明，请上传 ZIP 或手动补充。</p> : null}
         {supportsArtifact ? <div>
-          <Label htmlFor="artifact">{isManagedStatic ? t('catalogPublish.staticArtifact') : '安装包（可选）'}</Label>
-          <Input id="artifact" className="mt-2" type="file" accept=".zip,application/zip" required={isManagedStatic && !resource?.artifactAvailable} onChange={(event) => setArtifact(event.target.files?.[0])} />
-          <p className="mt-2 text-xs text-muted-foreground">{isManagedStatic ? `${t('catalogPublish.staticArtifactHint')} 选择文件后可点击上方“AI 解析并生成说明”。` : '插件、模板和资源包可上传 ZIP，最大 100MB。选择文件后可点击上方“AI 解析并生成说明”。'}</p>
+          <div className="flex flex-wrap items-center justify-between gap-3"><Label htmlFor="artifact">{isManagedStatic ? t('catalogPublish.staticArtifact') : '安装包（可选）'}</Label></div>
+          <Input id="artifact" className="mt-2" type="file" accept=".zip,application/zip" required={isManagedStatic && !resource?.artifactAvailable} onChange={(event) => { setArtifact(event.target.files?.[0]); setDocumentationGenerationError('') }} />
+          <p className="mt-2 text-xs text-muted-foreground">{artifact ? `已选择：${artifact.name}。AI 会优先解析 ZIP 内容生成简介和使用说明。` : `${isManagedStatic ? t('catalogPublish.staticArtifactHint') : '插件、模板和资源包可上传 ZIP，最大 100MB。未上传 ZIP 时，AI 会尝试解析上方填写的公开外链页面。'}`}</p>
           {isManagedStatic && resource?.artifactFilename ? <p className="mt-2 text-xs text-muted-foreground">{t('catalogPublish.currentArtifact', { filename: resource.artifactFilename })}</p> : null}
         </div> : null}
       </section>
 
-      <section className="grid gap-6 rounded-2xl border bg-card p-6 md:grid-cols-2">
-        <div className="md:col-span-2"><h2 className="text-xl font-semibold">归属与可见范围</h2></div>
+      <section data-onboarding-target="resource-scope" className="grid gap-6 rounded-2xl border bg-card p-6 md:grid-cols-2">
+        <div className="md:col-span-2"><h2 className="text-xl font-semibold">归属与可见范围</h2><p className="mt-1 text-sm text-muted-foreground">所属部门负责维护；可见范围决定哪些同事可以搜索和使用。</p></div>
         <div>
           <Label htmlFor="primaryDepartmentId">所属部门 *</Label>
           <Select value={primaryDepartmentId === undefined ? undefined : String(primaryDepartmentId)} onValueChange={(value) => setPrimaryDepartmentId(Number(value))}>
@@ -364,13 +383,22 @@ export function CatalogResourceForm({ onCreated, initialKind, resource }: Catalo
         ) : null}
       </section>
 
-      <div className="flex items-center justify-between rounded-2xl border bg-card p-5">
+      <div data-onboarding-target="resource-submit" className="flex items-center justify-between rounded-2xl border bg-card p-5">
         {isEditing ? <p className="text-sm text-muted-foreground">{isManagedStatic && artifact && resource?.status === 'PUBLISHED' ? t('catalogPublish.updateDeployHint') : '保存修改不会改变当前的发布状态。'}</p> : <label className="flex items-center gap-3 text-sm"><input name="publish" type="checkbox" defaultChecked /> {isManagedStatic ? t('catalogPublish.publishAndDeploy') : '填写完成后直接发布'}</label>}
         <Button type="submit" size="lg" disabled={createMutation.isPending || updateMutation.isPending || publishSkillMutation.isPending || primaryDepartmentId === undefined || (visibility === 'DEPARTMENTS' && selectedDepartments.length === 0)}>
           {createMutation.isPending || updateMutation.isPending || publishSkillMutation.isPending ? t('catalogPublish.deploying') : isEditing && isManagedStatic && artifact && resource?.status === 'PUBLISHED' ? t('catalogPublish.saveAndDeploy') : isEditing ? '保存修改' : isManagedStatic ? t('catalogPublish.saveResource') : '保存资源'}
         </Button>
       </div>
       {createMutation.isError || updateMutation.isError ? <p className="text-sm text-destructive">{createMutation.error?.message ?? updateMutation.error?.message}</p> : null}
+      {onboarding ? <FormFeatureTour onDismiss={() => onOnboardingDismiss?.()} steps={[
+        { target: 'resource-basics', title: '先定义这是什么能力', description: '填写名称、类型和唯一标识。名称要让同事一眼看懂；不要使用只有项目组知道的内部代号。' },
+        { target: 'resource-summary', title: '再写一句可搜索的简介', description: '用“谁在什么场景下，能完成什么结果”描述它。这段会出现在列表和搜索结果里。' },
+        { target: 'resource-category', title: '选择最接近的工作场景', description: '场景和标签用于筛选与推荐。选择最相关的一项即可，避免为了曝光堆叠无关标签。' },
+        { target: 'resource-access', title: '填写同事真正能打开的入口', description: '飞书 Agent 填 App ID；在线工具填公开入口；下载型工具上传 ZIP。不要填个人测试地址。' },
+        { target: 'resource-documentation', title: '补全使用说明', description: '写清楚同事需要准备什么、从哪里开始、会得到什么以及限制。AI 草稿只能作为起点，必须人工核对。' },
+        { target: 'resource-scope', title: '指定谁负责、谁能看见', description: '所属部门负责后续维护；可见范围决定搜索结果中哪些同事能看到它。' },
+        { target: 'resource-submit', title: '保存并在“我的内容”验证', description: '提交后到“我的内容”检查状态和入口；以后可编辑、下架或归档，避免失效内容继续被推荐。' },
+      ]} /> : null}
     </form>
   )
 }

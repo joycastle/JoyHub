@@ -8,6 +8,7 @@ import com.iflytek.skillhub.domain.namespace.NamespaceRole;
 import com.iflytek.skillhub.dto.ApiResponse;
 import com.iflytek.skillhub.dto.ApiResponseFactory;
 import com.iflytek.skillhub.dto.AgentDocumentationDraftRequest;
+import com.iflytek.skillhub.dto.ToolDocumentationUrlDraftRequest;
 import com.iflytek.skillhub.dto.CatalogResourceDetailResponse;
 import com.iflytek.skillhub.dto.ArchiveDocumentationDraftResponse;
 import com.iflytek.skillhub.dto.CatalogPublishRequest;
@@ -108,6 +109,19 @@ public class CatalogController extends BaseApiController {
         }
         return ok("response.success.read", archiveDocumentationAiService.draft(
                 file, principal.userId(), language));
+    }
+
+    @PostMapping("/tool-documentation-draft-from-url")
+    @Operation(summary = "Generate a reviewable Tool usage-guide draft from a public Tool page")
+    public ApiResponse<ArchiveDocumentationDraftResponse> generateToolDocumentationDraftFromUrl(
+            @Valid @RequestBody ToolDocumentationUrlDraftRequest request,
+            @AuthenticationPrincipal PlatformPrincipal principal,
+            @RequestHeader(value = "Accept-Language", required = false) String language) {
+        if (principal == null) {
+            throw CatalogDomainException.forbidden("error.auth.required");
+        }
+        return ok("response.success.read", archiveDocumentationAiService.draftFromUrl(
+                request.accessUrl(), principal.userId(), language));
     }
 
     @GetMapping("/resources")
