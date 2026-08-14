@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { CatalogResourceDetail, CatalogResourceKind, CatalogResourceRequest, CatalogVisibilityScope } from '@/api/types'
+import type { CatalogResourceDetail, CatalogResourceKind, CatalogResourceRequest } from '@/api/types'
 import { fetchJson, getCsrfHeaders } from '@/api/client'
 import { CATALOG_RESOURCE_KINDS, catalogKindLabel } from '@/entities/catalog-resource/catalog-resource-kind'
 import { useCreateCatalogResource, useUpdateCatalogResource } from './use-catalog-queries'
@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/shared/ui/textarea'
 import { RESOURCE_CATEGORY_OPTIONS, isResourceCategoryCode, resourceCategoryLabel, type ResourceCategoryCode } from '@/shared/lib/resource-category'
 import { FormFeatureTour } from '@/features/onboarding/form-feature-tour'
+import { catalogPublishScopeHint, resolveCatalogPublishScope } from './catalog-publish-scope'
 
 interface CatalogResourceFormProps {
   onCreated: (slug: string) => void
@@ -41,7 +42,6 @@ export function CatalogResourceForm({ onCreated, initialKind, resource, onboardi
   const updateMutation = useUpdateCatalogResource()
   const { data: publishTargets = [] } = usePublishTargets()
   const [kind, setKind] = useState<CatalogResourceKind>(() => resource?.kind ?? initialKind ?? 'ONLINE_TOOL')
-  const [visibility, setVisibility] = useState<CatalogVisibilityScope>(() => resource?.visibilityScope ?? 'COMPANY')
   const [artifact, setArtifact] = useState<File>()
   const [hostingMode, setHostingMode] = useState<OnlineToolHostingMode>(() => {
     if (!resource) {
@@ -55,7 +55,6 @@ export function CatalogResourceForm({ onCreated, initialKind, resource, onboardi
     }
     return 'EXTERNAL'
   })
-  const [selectedDepartments, setSelectedDepartments] = useState<number[]>(() => resource?.visibleDepartments?.flatMap((item) => item.id === undefined ? [] : [item.id]) ?? [])
   const [primaryDepartmentId, setPrimaryDepartmentId] = useState<number | undefined>(() => resource?.department?.id)
   const [documentation, setDocumentation] = useState(() => resource?.documentation ?? '')
   const [summary, setSummary] = useState(() => resource?.summary ?? '')
@@ -101,6 +100,8 @@ export function CatalogResourceForm({ onCreated, initialKind, resource, onboardi
     const feishuAppId = String(form.get('feishuAppId') ?? '').trim()
     const requestedVersion = String(form.get('version') ?? '').trim()
     const publishRequested = !isEditing && form.get('publish') === 'on'
+    const publishTarget = publishTargets.find((target) => target.id === primaryDepartmentId)
+    const publishScope = resolveCatalogPublishScope(publishTarget)
     // Catalog's long-standing Agent lifecycle requires at least one scenario.
     // The new single-choice category is its replacement, so keep the legacy
     // field populated until the aggregate itself is migrated.
@@ -143,8 +144,8 @@ export function CatalogResourceForm({ onCreated, initialKind, resource, onboardi
         agentExamplePrompts: isAgent ? splitLines(examplePrompts) : [],
         primaryDepartmentId,
         maintenanceStatus: resource?.maintenanceStatus ?? 'ACTIVE',
-        visibilityScope: visibility,
-        visibleDepartmentIds: visibility === 'DEPARTMENTS' ? selectedDepartments : [],
+        visibilityScope: publishScope.visibilityScope,
+        visibleDepartmentIds: publishScope.visibleDepartmentIds,
         scenarios,
         categoryCode: categoryCode ?? null,
         tags: split(form.get('tags')),
@@ -343,49 +344,23 @@ export function CatalogResourceForm({ onCreated, initialKind, resource, onboardi
         </div> : null}
       </section>
 
-      <section data-onboarding-target="resource-scope" className="grid gap-6 rounded-2xl border bg-card p-6 md:grid-cols-2">
-        <div className="md:col-span-2"><h2 className="text-xl font-semibold">归属与可见范围</h2><p className="mt-1 text-sm text-muted-foreground">所属部门负责维护；可见范围决定哪些同事可以搜索和使用。</p></div>
-        <div>
-          <Label htmlFor="primaryDepartmentId">所属部门 *</Label>
+      <section data-onboarding-target="resource-scope" className="space-y-5 rounded-2xl border bg-card p-6">
+        <div><h2 className="text-xl font-semibold">所属部门</h2><p className="mt-1 text-sm text-muted-foreground">选择负责维护这项内容的公共库或部门库。</p></div>
+        <div className="max-w-xl">
+          <Label htmlFor="primaryDepartmentId">部门 *</Label>
           <Select value={primaryDepartmentId === undefined ? undefined : String(primaryDepartmentId)} onValueChange={(value) => setPrimaryDepartmentId(Number(value))}>
             <SelectTrigger id="primaryDepartmentId" className="mt-2"><SelectValue placeholder="请选择" /></SelectTrigger>
             <SelectContent>
               {publishTargets.map((item) => <SelectItem key={item.id} value={String(item.id)}>{item.displayName}</SelectItem>)}
             </SelectContent>
           </Select>
+          <p className="mt-2 text-xs text-muted-foreground">{catalogPublishScopeHint(publishTargets.find((target) => target.id === primaryDepartmentId))}</p>
         </div>
-        <div>
-          <Label htmlFor="visibility">可见范围</Label>
-          <Select value={visibility} onValueChange={(value) => setVisibility(value as CatalogVisibilityScope)}>
-            <SelectTrigger id="visibility" className="mt-2"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="COMPANY">全公司可见</SelectItem>
-              <SelectItem value="DEPARTMENTS">指定部门可见</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        {visibility === 'DEPARTMENTS' ? (
-          <div className="space-y-2 md:col-span-2">
-            <Label>可见部门 *</Label>
-            <div className="grid gap-2 md:grid-cols-3">
-              {publishTargets.map((item) => (
-                <label key={item.id} className="flex items-center gap-2 rounded-lg border p-3 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={selectedDepartments.includes(item.id)}
-                    onChange={(event) => setSelectedDepartments((current) => event.target.checked ? [...current, item.id] : current.filter((id) => id !== item.id))}
-                  />
-                  {item.displayName}
-                </label>
-              ))}
-            </div>
-          </div>
-        ) : null}
       </section>
 
       <div data-onboarding-target="resource-submit" className="flex items-center justify-between rounded-2xl border bg-card p-5">
         {isEditing ? <p className="text-sm text-muted-foreground">{isManagedStatic && artifact && resource?.status === 'PUBLISHED' ? t('catalogPublish.updateDeployHint') : '保存修改不会改变当前的发布状态。'}</p> : <label className="flex items-center gap-3 text-sm"><input name="publish" type="checkbox" defaultChecked /> {isManagedStatic ? t('catalogPublish.publishAndDeploy') : '填写完成后直接发布'}</label>}
-        <Button type="submit" size="lg" disabled={createMutation.isPending || updateMutation.isPending || publishSkillMutation.isPending || primaryDepartmentId === undefined || (visibility === 'DEPARTMENTS' && selectedDepartments.length === 0)}>
+        <Button type="submit" size="lg" disabled={createMutation.isPending || updateMutation.isPending || publishSkillMutation.isPending || primaryDepartmentId === undefined}>
           {createMutation.isPending || updateMutation.isPending || publishSkillMutation.isPending ? t('catalogPublish.deploying') : isEditing && isManagedStatic && artifact && resource?.status === 'PUBLISHED' ? t('catalogPublish.saveAndDeploy') : isEditing ? '保存修改' : isManagedStatic ? t('catalogPublish.saveResource') : '保存资源'}
         </Button>
       </div>
@@ -396,7 +371,7 @@ export function CatalogResourceForm({ onCreated, initialKind, resource, onboardi
         { target: 'resource-category', title: '选择最接近的工作场景', description: '场景和标签用于筛选与推荐。选择最相关的一项即可，避免为了曝光堆叠无关标签。' },
         { target: 'resource-access', title: '填写同事真正能打开的入口', description: '飞书 Agent 填 App ID；在线工具填公开入口；下载型工具上传 ZIP。不要填个人测试地址。' },
         { target: 'resource-documentation', title: '补全使用说明', description: '写清楚同事需要准备什么、从哪里开始、会得到什么以及限制。AI 草稿只能作为起点，必须人工核对。' },
-        { target: 'resource-scope', title: '指定谁负责、谁能看见', description: '所属部门负责后续维护；可见范围决定搜索结果中哪些同事能看到它。' },
+        { target: 'resource-scope', title: '选择所属部门', description: '公共库内容全公司可见；部门库内容由该部门维护，并对部门内全体人员可见。' },
         { target: 'resource-submit', title: '保存并在“我的内容”验证', description: '提交后到“我的内容”检查状态和入口；以后可编辑、下架或归档，避免失效内容继续被推荐。' },
       ]} /> : null}
     </form>

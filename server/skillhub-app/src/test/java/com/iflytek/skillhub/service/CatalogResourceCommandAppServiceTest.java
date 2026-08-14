@@ -57,12 +57,43 @@ class CatalogResourceCommandAppServiceTest {
         Namespace department = mock(Namespace.class);
         given(department.getId()).willReturn(42L);
         given(department.getStatus()).willReturn(NamespaceStatus.ACTIVE);
-        given(namespaceRepository.findByIdIn(List.of(42L))).willReturn(List.of(department));
+        given(namespaceRepository.findById(42L)).willReturn(java.util.Optional.of(department));
 
         assertThatThrownBy(() -> service.create(request(42L), viewer(Set.of(7L))))
                 .isInstanceOfSatisfying(CatalogDomainException.class,
                         exception -> org.assertj.core.api.Assertions.assertThat(exception.code())
                                 .isEqualTo("error.catalog.publishTarget.membershipRequired"));
+    }
+
+    @Test
+    void createDerivesDepartmentVisibilityFromTheSelectedPublishTarget() {
+        CatalogResourceService resourceService = mock(CatalogResourceService.class);
+        CatalogResourceRepository resourceRepository = mock(CatalogResourceRepository.class);
+        CatalogResource created = mock(CatalogResource.class);
+        Namespace department = mock(Namespace.class);
+        given(department.getId()).willReturn(42L);
+        given(department.getSlug()).willReturn("lab");
+        given(department.getStatus()).willReturn(NamespaceStatus.ACTIVE);
+        given(namespaceRepository.findById(42L)).willReturn(java.util.Optional.of(department));
+        given(resourceRepository.findBySlug("report-tool")).willReturn(java.util.Optional.empty());
+        given(created.getKind()).willReturn(CatalogResourceKind.ONLINE_TOOL);
+        given(created.getId()).willReturn(8L);
+        given(resourceService.create(org.mockito.ArgumentMatchers.any(CatalogResourceDraft.class),
+                org.mockito.ArgumentMatchers.eq("user-1"), org.mockito.ArgumentMatchers.eq(false)))
+                .willReturn(created);
+        service = new CatalogResourceCommandAppService(
+                resourceService, resourceRepository, namespaceRepository, mock(SkillRepository.class),
+                mock(UserAccountRepository.class), mock(CatalogResourceProjectionAssembler.class),
+                mock(ResourceSearchDocumentSyncService.class), mock(ResourceCategoryAppService.class));
+
+        service.create(request(42L), viewer(Set.of(42L)));
+
+        ArgumentCaptor<CatalogResourceDraft> draft = ArgumentCaptor.forClass(CatalogResourceDraft.class);
+        verify(resourceService).create(draft.capture(), org.mockito.ArgumentMatchers.eq("user-1"),
+                org.mockito.ArgumentMatchers.eq(false));
+        org.assertj.core.api.Assertions.assertThat(draft.getValue().visibilityScope())
+                .isEqualTo(CatalogVisibilityScope.DEPARTMENTS);
+        org.assertj.core.api.Assertions.assertThat(draft.getValue().visibleNamespaceIds()).containsExactly(42L);
     }
 
     @Test
@@ -73,7 +104,7 @@ class CatalogResourceCommandAppServiceTest {
         Namespace department = mock(Namespace.class);
         given(department.getId()).willReturn(42L);
         given(department.getStatus()).willReturn(NamespaceStatus.ACTIVE);
-        given(namespaceRepository.findByIdIn(List.of(42L))).willReturn(List.of(department));
+        given(namespaceRepository.findById(42L)).willReturn(java.util.Optional.of(department));
         given(resourceRepository.findBySlug("agent-test")).willReturn(java.util.Optional.empty());
         given(created.getKind()).willReturn(CatalogResourceKind.AGENT);
         given(created.getId()).willReturn(8L);
@@ -106,8 +137,8 @@ class CatalogResourceCommandAppServiceTest {
                 "report-tool", "Report tool", "Generate reports", CatalogResourceKind.ONLINE_TOOL,
                 null, "https://example.com", "Usage", "1.0.0",
                 null, null, null, null, Set.of(), targetId,
-                CatalogMaintenanceStatus.ACTIVE, CatalogVisibilityScope.COMPANY,
-                Set.of(), Set.of(), Set.of(), Set.of(), Set.of(), false);
+                CatalogMaintenanceStatus.ACTIVE, CatalogVisibilityScope.DEPARTMENTS,
+                Set.of(999L), Set.of(), Set.of(), Set.of(), Set.of(), false);
     }
 
     private CatalogResourceRequest agentRequest(String categoryCode) {
@@ -115,7 +146,7 @@ class CatalogResourceCommandAppServiceTest {
                 "agent-test", "Data agent", "Analyze data", CatalogResourceKind.AGENT,
                 null, "https://example.com/agent", "Usage", "1.0.0",
                 null, null, null, null, Set.of(), 42L,
-                CatalogMaintenanceStatus.ACTIVE, CatalogVisibilityScope.COMPANY,
-                Set.of(), Set.of(), Set.of(), Set.of(), Set.of(), categoryCode, true);
+                CatalogMaintenanceStatus.ACTIVE, CatalogVisibilityScope.DEPARTMENTS,
+                Set.of(42L), Set.of(), Set.of(), Set.of(), Set.of(), categoryCode, true);
     }
 }

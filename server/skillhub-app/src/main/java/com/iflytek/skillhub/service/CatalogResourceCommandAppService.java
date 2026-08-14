@@ -17,8 +17,6 @@ import com.iflytek.skillhub.dto.CatalogResourceRequest;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
@@ -160,14 +158,13 @@ public class CatalogResourceCommandAppService {
             String existingSlug,
             CatalogViewer viewer) {
         validateAccessUrl(request.accessUrl());
-        Set<Long> visibleDepartmentIds = request.visibilityScope() == CatalogVisibilityScope.DEPARTMENTS
-                ? safeLongSet(request.visibleDepartmentIds()) : Set.of();
-        Set<Long> departmentIds = new HashSet<>(visibleDepartmentIds);
-        if (request.primaryDepartmentId() != null) {
-            departmentIds.add(request.primaryDepartmentId());
-        }
-        validateDepartments(departmentIds);
-        requirePublishTargetAccess(request.primaryDepartmentId(), viewer);
+        Namespace publishTarget = requirePublishTargetAccess(request.primaryDepartmentId(), viewer);
+        CatalogVisibilityScope visibilityScope = "global".equals(publishTarget.getSlug())
+                ? CatalogVisibilityScope.COMPANY
+                : CatalogVisibilityScope.DEPARTMENTS;
+        Set<Long> visibleDepartmentIds = visibilityScope == CatalogVisibilityScope.DEPARTMENTS
+                ? Set.of(publishTarget.getId())
+                : Set.of();
         validateResourceLinks(safeLongSet(request.relatedResourceIds()), currentResourceId);
         validateSkillLinks(safeLongSet(request.relatedSkillIds()));
 
@@ -189,7 +186,7 @@ public class CatalogResourceCommandAppService {
                 safeStringSet(request.agentExamplePrompts()),
                 request.primaryDepartmentId(),
                 request.maintenanceStatus(),
-                request.visibilityScope(),
+                visibilityScope,
                 visibleDepartmentIds,
                 scenariosForLegacyAgentValidation(request),
                 safeStringSet(request.tags()),
@@ -224,27 +221,17 @@ public class CatalogResourceCommandAppService {
         return Set.of("OTHER");
     }
 
-    private void validateDepartments(Set<Long> departmentIds) {
-        if (departmentIds.isEmpty()) {
-            return;
-        }
-        List<Namespace> departments = namespaceRepository.findByIdIn(new ArrayList<>(departmentIds));
-        Set<Long> activeIds = departments.stream()
-                .filter(namespace -> namespace.getStatus() == NamespaceStatus.ACTIVE)
-                .map(Namespace::getId)
-                .collect(java.util.stream.Collectors.toSet());
-        if (!activeIds.containsAll(departmentIds)) {
-            throw CatalogDomainException.badRequest("error.catalog.department.invalid");
-        }
-    }
-
-    private void requirePublishTargetAccess(Long namespaceId, CatalogViewer viewer) {
+    private Namespace requirePublishTargetAccess(Long namespaceId, CatalogViewer viewer) {
         if (namespaceId == null) {
             throw CatalogDomainException.badRequest("error.catalog.publishTarget.required");
         }
+        Namespace namespace = namespaceRepository.findById(namespaceId)
+                .filter(candidate -> candidate.getStatus() == NamespaceStatus.ACTIVE)
+                .orElseThrow(() -> CatalogDomainException.badRequest("error.catalog.department.invalid"));
         if (!viewer.superAdmin() && !viewer.namespaceIds().contains(namespaceId)) {
             throw CatalogDomainException.forbidden("error.catalog.publishTarget.membershipRequired");
         }
+        return namespace;
     }
 
     @Transactional(readOnly = true)

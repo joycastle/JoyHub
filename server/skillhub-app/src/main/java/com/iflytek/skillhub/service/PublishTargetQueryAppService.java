@@ -1,12 +1,14 @@
 package com.iflytek.skillhub.service;
 
 import com.iflytek.skillhub.domain.namespace.Namespace;
+import com.iflytek.skillhub.domain.namespace.DepartmentNameNormalizer;
 import com.iflytek.skillhub.domain.namespace.NamespaceRepository;
 import com.iflytek.skillhub.domain.namespace.NamespaceRole;
 import com.iflytek.skillhub.domain.namespace.NamespaceStatus;
 import com.iflytek.skillhub.dto.PublishTargetResponse;
 import java.util.Comparator;
 import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import org.springframework.data.domain.Pageable;
@@ -33,12 +35,24 @@ public class PublishTargetQueryAppService {
         List<Namespace> namespaces = superAdmin
                 ? namespaceRepository.findByStatus(NamespaceStatus.ACTIVE, Pageable.unpaged()).getContent()
                 : namespaceRepository.findByIdIn(roles.keySet().stream().toList());
-        return namespaces.stream()
+        Map<String, Namespace> uniqueNamespaces = new LinkedHashMap<>();
+        namespaces.stream()
                 .filter(namespace -> namespace.getStatus() == NamespaceStatus.ACTIVE)
+                .sorted(Comparator
+                        .comparing((Namespace namespace) -> namespace.getExternalProvider() != null)
+                        .thenComparing(Namespace::getSlug))
+                .forEach(namespace -> uniqueNamespaces.putIfAbsent(departmentKey(namespace), namespace));
+        return uniqueNamespaces.values().stream()
                 .sorted(Comparator
                         .comparing((Namespace namespace) -> !"global".equals(namespace.getSlug()))
                         .thenComparing(Namespace::getSlug))
                 .map(namespace -> PublishTargetResponse.from(namespace, roles.get(namespace.getId())))
                 .toList();
+    }
+
+    private String departmentKey(Namespace namespace) {
+        return "global".equals(namespace.getSlug())
+                ? "global"
+                : DepartmentNameNormalizer.normalize(namespace.getDisplayName());
     }
 }

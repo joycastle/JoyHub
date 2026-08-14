@@ -3,6 +3,7 @@ package com.iflytek.skillhub.auth.organization;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -23,6 +24,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 
 @ExtendWith(MockitoExtension.class)
 class FeishuDepartmentMembershipSyncServiceTest {
@@ -38,6 +41,40 @@ class FeishuDepartmentMembershipSyncServiceTest {
     @BeforeEach
     void setUp() {
         service = new FeishuDepartmentMembershipSyncService(namespaceRepository, namespaceMemberRepository);
+        lenient().when(namespaceRepository.findByStatus(
+                com.iflytek.skillhub.domain.namespace.NamespaceStatus.ACTIVE,
+                Pageable.unpaged())).thenReturn(new PageImpl<>(List.of()));
+    }
+
+    @Test
+    void synchronize_reusesCanonicalDepartmentAndRemovesDuplicateFeishuMembership() {
+        Namespace canonicalLab = new Namespace("lab", "Lab", "system");
+        ReflectionTestUtils.setField(canonicalLab, "id", 8L);
+        Namespace duplicateLab = departmentNamespace(18L, "od-lab", "部门8 Lab");
+        when(namespaceRepository.findByStatus(
+                com.iflytek.skillhub.domain.namespace.NamespaceStatus.ACTIVE,
+                Pageable.unpaged())).thenReturn(new PageImpl<>(List.of(canonicalLab, duplicateLab)));
+        when(namespaceRepository.findByExternalProviderAndExternalId("feishu", "od-lab"))
+                .thenReturn(Optional.of(duplicateLab));
+        when(namespaceRepository.findByExternalProvider("feishu")).thenReturn(List.of(duplicateLab));
+        when(namespaceMemberRepository.findByNamespaceIdAndUserId(8L, "feishu:ou-user"))
+                .thenReturn(Optional.empty());
+        when(namespaceMemberRepository.save(any(NamespaceMember.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(namespaceMemberRepository.findByUserId("feishu:ou-user")).thenReturn(List.of(
+                new NamespaceMember(1L, "feishu:ou-user", NamespaceRole.MEMBER),
+                new NamespaceMember(18L, "feishu:ou-user", NamespaceRole.MEMBER)
+        ));
+
+        service.synchronize("feishu:ou-user", List.of(
+                new FeishuDirectoryClient.FeishuDepartment("od-lab", "部门8 Lab")
+        ));
+
+        ArgumentCaptor<NamespaceMember> member = ArgumentCaptor.forClass(NamespaceMember.class);
+        verify(namespaceMemberRepository).save(member.capture());
+        assertThat(member.getValue().getNamespaceId()).isEqualTo(8L);
+        verify(namespaceMemberRepository).deleteByNamespaceIdAndUserId(18L, "feishu:ou-user");
+        verify(namespaceRepository, never()).save(any(Namespace.class));
     }
 
     @Test

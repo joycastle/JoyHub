@@ -2,10 +2,12 @@ package com.iflytek.skillhub.auth.organization;
 
 import com.iflytek.skillhub.auth.oauth.OAuthClaims;
 import com.iflytek.skillhub.domain.namespace.Namespace;
+import com.iflytek.skillhub.domain.namespace.DepartmentNameNormalizer;
 import com.iflytek.skillhub.domain.namespace.NamespaceMember;
 import com.iflytek.skillhub.domain.namespace.NamespaceMemberRepository;
 import com.iflytek.skillhub.domain.namespace.NamespaceRepository;
 import com.iflytek.skillhub.domain.namespace.NamespaceRole;
+import com.iflytek.skillhub.domain.namespace.NamespaceStatus;
 import com.iflytek.skillhub.domain.namespace.NamespaceType;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -16,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -82,18 +85,37 @@ public class FeishuDepartmentMembershipSyncService {
     }
 
     private Namespace ensureDepartmentNamespace(String externalId, String displayName, String createdBy) {
-        Namespace namespace = namespaceRepository.findByExternalProviderAndExternalId(PROVIDER, externalId)
-                .orElseGet(() -> {
-                    Namespace created = new Namespace(slugFor(externalId), displayName, createdBy);
-                    created.setType(NamespaceType.TEAM);
-                    created.setDescription("由飞书通讯录自动同步");
-                    created.bindExternalIdentity(PROVIDER, externalId);
-                    return created;
-                });
+        Namespace synchronizedNamespace = namespaceRepository.findByExternalProviderAndExternalId(PROVIDER, externalId)
+                .orElse(null);
+        Namespace canonicalNamespace = findCanonicalDepartmentNamespace(displayName);
+        if (canonicalNamespace != null) {
+            return canonicalNamespace;
+        }
+        Namespace namespace = synchronizedNamespace != null ? synchronizedNamespace : newFeishuNamespace(
+                externalId, displayName, createdBy);
         if (!displayName.equals(namespace.getDisplayName())) {
             namespace.setDisplayName(displayName);
         }
         return namespaceRepository.save(namespace);
+    }
+
+    private Namespace newFeishuNamespace(String externalId, String displayName, String createdBy) {
+        Namespace created = new Namespace(slugFor(externalId), displayName, createdBy);
+        created.setType(NamespaceType.TEAM);
+        created.setDescription("由飞书通讯录自动同步");
+        created.bindExternalIdentity(PROVIDER, externalId);
+        return created;
+    }
+
+    private Namespace findCanonicalDepartmentNamespace(String displayName) {
+        String normalizedDisplayName = DepartmentNameNormalizer.normalize(displayName);
+        return namespaceRepository.findByStatus(NamespaceStatus.ACTIVE, Pageable.unpaged()).getContent().stream()
+                .filter(namespace -> namespace.getType() == NamespaceType.TEAM)
+                .filter(namespace -> namespace.getExternalProvider() == null)
+                .filter(namespace -> DepartmentNameNormalizer.normalize(namespace.getDisplayName())
+                        .equalsIgnoreCase(normalizedDisplayName))
+                .findFirst()
+                .orElse(null);
     }
 
     private static Map<String, String> parseDepartments(Object rawValue) {

@@ -9,6 +9,7 @@ import com.iflytek.skillhub.domain.namespace.Namespace;
 import com.iflytek.skillhub.domain.namespace.NamespaceRepository;
 import com.iflytek.skillhub.domain.namespace.NamespaceRole;
 import com.iflytek.skillhub.domain.namespace.NamespaceStatus;
+import com.iflytek.skillhub.domain.namespace.NamespaceType;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -36,6 +37,30 @@ class PublishTargetQueryAppServiceTest {
         assertThat(targets).extracting(target -> target.slug()).containsExactly("global", "team-a", "team-b");
         assertThat(targets).allSatisfy(target -> assertThat(target.supportedResourceTypes())
                 .containsExactlyInAnyOrder("SKILL", "TOOL", "AGENT"));
+    }
+
+    @Test
+    void listCollapsesFeishuDuplicatesButKeepsUniqueCurrentDepartments() {
+        Namespace global = namespace(1L, "global", NamespaceStatus.ACTIVE);
+        global.setType(NamespaceType.GLOBAL);
+        Namespace canonicalLab = namespace(8L, "lab", NamespaceStatus.ACTIVE);
+        Namespace duplicateLab = namespace(18L, "feishu-dept-duplicate", NamespaceStatus.ACTIVE);
+        duplicateLab.setDisplayName("部门8 Lab");
+        duplicateLab.bindExternalIdentity("feishu", "od-lab");
+        Namespace operations = namespace(19L, "feishu-dept-operations", NamespaceStatus.ACTIVE);
+        operations.setDisplayName("运维组");
+        operations.bindExternalIdentity("feishu", "od-operations");
+        given(namespaceRepository.findByIdIn(anyList()))
+                .willReturn(List.of(global, canonicalLab, duplicateLab, operations));
+
+        var targets = service.list(Map.of(
+                1L, NamespaceRole.MEMBER,
+                8L, NamespaceRole.MEMBER,
+                18L, NamespaceRole.MEMBER,
+                19L, NamespaceRole.MEMBER), Set.of("USER"));
+
+        assertThat(targets).extracting(target -> target.slug())
+                .containsExactly("global", "feishu-dept-operations", "lab");
     }
 
     private Namespace namespace(Long id, String slug, NamespaceStatus status) {
