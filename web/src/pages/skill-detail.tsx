@@ -48,7 +48,6 @@ import { Input } from '@/shared/ui/input'
 import { toast } from '@/shared/lib/toast'
 import { cn } from '@/shared/lib/utils'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/shared/ui/dropdown-menu'
-import { DetailPageHint } from '@/features/onboarding/detail-page-hint'
 import { completeOnboardingJourneyUse } from '@/features/onboarding/onboarding-progress'
 import {
   useSkillDetail,
@@ -666,7 +665,6 @@ export function SkillDetailPage() {
     <ResourceDetailLayout>
       {/* Main Content */}
       <div className="flex-1 min-w-0 space-y-8">
-        <DetailPageHint userId={user?.userId} />
         <div data-onboarding-target="detail-header">
         <ResourceDetailHeader
           backAction={(

@@ -16,7 +16,6 @@ import { useRecordResourceUse, useResourceLifecycleAction, useResourceStats, use
 import { formatCompactCount } from '@/shared/lib/number-format'
 import { useAuth } from '@/features/auth/use-auth'
 import { useCommonTools } from '@/features/catalog/common-tools'
-import { DetailPageHint } from '@/features/onboarding/detail-page-hint'
 import { completeOnboardingJourneyUse } from '@/features/onboarding/onboarding-progress'
 
 function copyPrompt(prompt: string) {
@@ -240,7 +239,6 @@ export function CatalogResourcePage() {
 
   return (
     <ResourceDetailLayout sidebar={sidebar}>
-      <DetailPageHint userId={user?.userId} />
       <div data-onboarding-target="detail-header">
       <ResourceDetailHeader
         backAction={backAction}

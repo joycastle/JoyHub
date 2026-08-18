@@ -429,6 +429,13 @@ describe('SkillDetailPage', () => {
     expect(html).not.toContain('__RATING_WIDGET__')
   })
 
+  it('keeps onboarding hidden during ordinary detail browsing', () => {
+    render(<SkillDetailPage />)
+
+    expect(screen.queryByRole('region', { name: '详情页导览' })).toBeNull()
+    expect(document.querySelector('[data-onboarding-target="detail-header"]')).not.toBeNull()
+  })
+
   it('renders rejected owner preview without governance review copy', () => {
     useSkillDetailMock.mockReturnValue({
       data: createSkill({

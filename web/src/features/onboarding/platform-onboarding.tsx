@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { ChevronRight, Compass, Search, Send, Sparkles } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -7,17 +7,11 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 
 interface PlatformOnboardingProps { userId?: string; displayName?: string }
 
-/** First-run choice starts one cross-page, step-by-step journey. */
+/** An explicit user action starts or resumes the cross-page onboarding journey. */
 export function PlatformOnboarding({ userId, displayName }: PlatformOnboardingProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const [isGoalOpen, setIsGoalOpen] = useState(false)
-  useEffect(() => {
-    if (!userId) return
-    // The welcome dialog is a first-login experience. A user can still restart the
-    // walkthrough explicitly from the compass button in the header.
-    setIsGoalOpen(!hasChosenOnboardingGoal(userId))
-  }, [userId])
 
   if (!userId) return null
 
@@ -40,9 +34,17 @@ export function PlatformOnboarding({ userId, displayName }: PlatformOnboardingPr
     else navigate({ to: current === 'agents' ? '/agents' : current === 'tools' ? '/tools' : current === 'open' || current === 'inspectHeader' || current === 'inspectStatus' || current === 'inspectTabs' || current === 'practice' || current === 'use' || current === 'useComplete' ? '/skills' : current === 'publishEntry' || current === 'publishBasics' || current === 'publishCategory' || current === 'publishDocumentation' || current === 'publishScope' || current === 'publishSubmit' || current === 'manage' ? '/dashboard/resources' : '/' })
   }
 
+  const openGuide = () => {
+    if (!hasChosenOnboardingGoal(userId)) {
+      setIsGoalOpen(true)
+      return
+    }
+    restartJourney()
+  }
+
   return (
     <>
-      <button type="button" onClick={restartJourney} className="inline-flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-secondary hover:text-foreground" aria-label="重新开始新手引导" title="重新开始新手引导">
+      <button type="button" onClick={openGuide} className="inline-flex h-9 w-9 items-center justify-center rounded-full transition-colors hover:bg-secondary hover:text-foreground" aria-label={t('onboarding.replay')} title={t('onboarding.replay')}>
         <Compass className="h-5 w-5" strokeWidth={1.8} />
       </button>
 
@@ -65,7 +67,7 @@ export function PlatformOnboarding({ userId, displayName }: PlatformOnboardingPr
               <span className="mt-4 inline-flex items-center text-sm font-medium text-primary">{t('onboarding.welcome.publishAction')} <ChevronRight className="ml-1 h-4 w-4" /></span>
             </button>
           </div>
-          <button type="button" onClick={() => { chooseOnboardingGoal(userId, 'USE'); setIsGoalOpen(false) }} className="pb-6 text-center text-sm text-muted-foreground hover:text-foreground">{t('onboarding.welcome.explore')}</button>
+          <button type="button" onClick={() => setIsGoalOpen(false)} className="pb-6 text-center text-sm text-muted-foreground hover:text-foreground">{t('onboarding.welcome.explore')}</button>
         </DialogContent>
       </Dialog>
 

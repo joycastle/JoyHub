@@ -14,7 +14,7 @@ vi.mock('react-i18next', () => ({
 vi.mock('@tanstack/react-router', () => ({ useNavigate: () => navigateMock }))
 
 import { PlatformOnboarding } from './platform-onboarding'
-import { chooseOnboardingGoal, startOnboardingJourney } from './onboarding-progress'
+import { chooseOnboardingGoal, getOnboardingGoal, getOnboardingJourneyStep, startOnboardingJourney } from './onboarding-progress'
 
 describe('PlatformOnboarding', () => {
   afterEach(() => {
@@ -22,28 +22,39 @@ describe('PlatformOnboarding', () => {
     navigateMock.mockClear()
   })
 
-  it('asks the first-time user to choose between using and publishing', () => {
+  it('waits for an explicit click before offering onboarding goals', () => {
     render(<PlatformOnboarding userId="user-a" displayName="Mia" />)
 
+    expect(screen.queryByText('onboarding.welcome.title:Mia')).toBeNull()
+    expect(getOnboardingJourneyStep('user-a')).toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: 'onboarding.replay' }))
     expect(screen.getByText('onboarding.welcome.title:Mia')).toBeTruthy()
     fireEvent.click(screen.getByText('onboarding.welcome.useAction'))
+
+    expect(getOnboardingJourneyStep('user-a')).toBe('start')
     expect(navigateMock).toHaveBeenCalledWith({ to: '/' })
   })
 
-  it('does not reopen for the same user after a new login session', () => {
-    const { rerender } = render(<PlatformOnboarding userId="user-b" />)
+  it('keeps free exploration outside the onboarding journey', () => {
+    render(<PlatformOnboarding userId="user-b" />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'onboarding.replay' }))
     fireEvent.click(screen.getByText('onboarding.welcome.explore'))
-    rerender(<PlatformOnboarding />)
-    rerender(<PlatformOnboarding userId="user-b" />)
 
     expect(screen.queryByText('onboarding.welcome.title:onboarding.member')).toBeNull()
+    expect(getOnboardingGoal('user-b')).toBeNull()
+    expect(getOnboardingJourneyStep('user-b')).toBeNull()
   })
 
-  it('resumes publishing at the real publishing entry', () => {
+  it('only resumes an existing publishing journey after an explicit click', () => {
     chooseOnboardingGoal('user-c', 'PUBLISH')
     startOnboardingJourney('user-c', 'publishEntry')
     render(<PlatformOnboarding userId="user-c" />)
-    fireEvent.click(screen.getByRole('button', { name: '重新开始新手引导' }))
+
+    expect(navigateMock).not.toHaveBeenCalled()
+
+    fireEvent.click(screen.getByRole('button', { name: 'onboarding.replay' }))
     expect(navigateMock).toHaveBeenCalledWith({ to: '/dashboard/resources' })
   })
 })
