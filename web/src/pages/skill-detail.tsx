@@ -29,7 +29,7 @@ import { ApiError, buildApiUrl, WEB_API_PREFIX } from '@/api/client'
 import { SecurityAuditSummary } from '@/features/security-audit/security-audit-summary'
 import { normalizeVersionStatusForDisplay } from '@/shared/lib/version-status-display'
 import { incrementSkillDownloadCount } from '@/shared/lib/skill-download-cache'
-import { getSkillLabelSearch, getSkillSquareSearch, normalizeSkillDetailReturnTo } from '@/shared/lib/skill-navigation'
+import { getSkillLabelSearch } from '@/shared/lib/skill-navigation'
 import { formatCompactCount } from '@/shared/lib/number-format'
 import { formatLocalDateTime } from '@/shared/lib/date-time'
 import { resolveDocumentationFilePath } from '@/shared/lib/skill-documentation'
@@ -373,15 +373,6 @@ export function SkillDetailPage() {
     })
   }
 
-  const handleBack = () => {
-    const returnTo = normalizeSkillDetailReturnTo(search.returnTo)
-    if (returnTo) {
-      navigate({ to: returnTo })
-      return
-    }
-    navigate({ to: '/search', search: getSkillSquareSearch() })
-  }
-
   const resolveSkillStatusLabel = (status?: string) => {
     if (status === 'ARCHIVED') {
       return t('skillDetail.statusArchived')
@@ -679,15 +670,13 @@ export function SkillDetailPage() {
         <div data-onboarding-target="detail-header">
         <ResourceDetailHeader
           backAction={(
-            <Button
-              variant="ghost"
-              size="sm"
-              className="gap-2 px-0 text-muted-foreground hover:text-foreground"
-              onClick={handleBack}
+            <Link
+              to="/skills"
+              className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
             >
               <ArrowLeft className="h-4 w-4" />
               {t('skillDetail.back')}
-            </Button>
+            </Link>
           )}
           badges={(
             <>
