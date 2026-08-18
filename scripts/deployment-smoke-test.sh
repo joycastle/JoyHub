@@ -56,12 +56,17 @@ PY
 curl --fail-with-body -sS "${ADMIN_HEADERS[@]}" \
   "$API_BASE/api/v1/auth/providers" >/dev/null
 
+GLOBAL_NAMESPACE_RESPONSE="$(curl --fail-with-body -sS "${ADMIN_HEADERS[@]}" \
+  "$API_BASE/api/v1/namespaces/global")"
+GLOBAL_NAMESPACE_ID="$(printf '%s' "$GLOBAL_NAMESPACE_RESPONSE" | json_value data.id)"
+
 CREATE_RESPONSE="$(post_json "/api/v1/catalog/resources" "{
   \"slug\":\"$SLUG\",
   \"name\":\"Deployment smoke $SMOKE_ID\",
   \"summary\":\"Static deployment end-to-end smoke resource\",
   \"kind\":\"ONLINE_TOOL\",
   \"documentation\":\"Created by deployment smoke test\",
+  \"primaryDepartmentId\":$GLOBAL_NAMESPACE_ID,
   \"maintenanceStatus\":\"ACTIVE\",
   \"visibilityScope\":\"COMPANY\",
   \"visibleDepartmentIds\":[],
@@ -88,6 +93,7 @@ post_json "/api/v1/catalog/resources" "{
   \"summary\":\"Catalog one-click deployment smoke resource\",
   \"kind\":\"ONLINE_TOOL\",
   \"documentation\":\"Created by deployment smoke test\",
+  \"primaryDepartmentId\":$GLOBAL_NAMESPACE_ID,
   \"maintenanceStatus\":\"ACTIVE\",
   \"visibilityScope\":\"COMPANY\",
   \"visibleDepartmentIds\":[],
