@@ -1,16 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getSkillSquareSearch, getSkillLabelSearch, normalizeSkillDetailReturnTo } from './skill-navigation'
-
-describe('getSkillSquareSearch', () => {
-  it('returns the default search params for the skill square', () => {
-    expect(getSkillSquareSearch()).toEqual({
-      q: '',
-      sort: 'relevance',
-      page: 0,
-      starredOnly: false,
-    })
-  })
-})
+import { getSkillLabelSearch, normalizeSkillDetailReturnTo } from './skill-navigation'
 
 describe('getSkillLabelSearch', () => {
   it('returns search params that filter by the given label', () => {

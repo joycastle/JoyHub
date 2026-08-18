@@ -3,6 +3,11 @@ import en from './locales/en.json'
 import zh from './locales/zh.json'
 
 describe('skill detail lifecycle locales', () => {
+  it('defines the skill center back label in both locales', () => {
+    expect(zh.skillDetail.back).toBe('返回技能中心')
+    expect(en.skillDetail.back).toBe('Back to Skill Center')
+  })
+
   it('defines the unarchive label in both locales', () => {
     expect(zh.skillDetail.unarchiveSkill).toBe('恢复技能')
     expect(en.skillDetail.unarchiveSkill).toBe('Restore Skill')

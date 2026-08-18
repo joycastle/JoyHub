@@ -1028,7 +1028,7 @@
     "emptyDescription": "No skills have been published in this repository yet"
   },
   "skillDetail": {
-    "back": "Back",
+    "back": "Back to Skill Center",
     "notFound": "Skill not found",
     "notFoundDesc": "This skill may have been deleted or never existed",
     "loginRequired": "Login Required",

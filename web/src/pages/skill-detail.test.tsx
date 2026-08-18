@@ -312,6 +312,13 @@ describe('SkillDetailPage', () => {
     useSkillFileMock.mockReturnValue({ data: null, isLoading: false, error: null })
   })
 
+  it('links back to the skill center', () => {
+    const html = renderToStaticMarkup(<SkillDetailPage />)
+
+    expect(html).toContain('href="/skills"')
+    expect(html).toContain('skillDetail.back')
+  })
+
   it('shows hard delete action for a super admin', () => {
     hasRoleMock.mockImplementation((role: string) => role === 'SUPER_ADMIN')
 
