@@ -4,6 +4,7 @@ import { BookOpenCheck, LayoutGrid, Plus, Search, SlidersHorizontal } from 'luci
 import { useTranslation } from 'react-i18next'
 import type { CatalogCenter } from '@/api/types'
 import { Button } from '@/shared/ui/button'
+import { getOnboardingPanelPosition, getOnboardingViewport } from './onboarding-panel-position'
 
 export type CenterTourTarget = 'search' | 'quickBrowse' | 'filters' | 'catalog' | 'manage' | 'publish'
 type GuidedCenter = CatalogCenter | 'SKILL' | 'LANDING' | 'CONTENT'
@@ -91,29 +92,7 @@ export function CenterFeatureTour({ center, hasCatalogItems, onDismiss, onReturn
         return
       }
 
-      const targetRect = target.getBoundingClientRect()
-      const panelRect = panel.getBoundingClientRect()
-      const margin = 16
-      const maxLeft = window.innerWidth - panelRect.width - margin
-      const maxTop = window.innerHeight - panelRect.height - margin
-      const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max)
-      const canPlaceRight = targetRect.right + margin + panelRect.width <= window.innerWidth - margin
-      const canPlaceLeft = targetRect.left - margin - panelRect.width >= margin
-
-      if (canPlaceRight) {
-        setPosition({ left: targetRect.right + margin, top: clamp(targetRect.top, margin, maxTop) })
-        return
-      }
-      if (canPlaceLeft) {
-        setPosition({ left: targetRect.left - margin - panelRect.width, top: clamp(targetRect.top, margin, maxTop) })
-        return
-      }
-
-      const canPlaceBelow = targetRect.bottom + margin + panelRect.height <= window.innerHeight - margin
-      setPosition({
-        left: clamp(targetRect.left, margin, maxLeft),
-        top: canPlaceBelow ? targetRect.bottom + margin : clamp(targetRect.top - margin - panelRect.height, margin, maxTop),
-      })
+      setPosition(getOnboardingPanelPosition(target.getBoundingClientRect(), panel.getBoundingClientRect(), getOnboardingViewport()))
     }
 
     onTargetChange(currentStep.target)
@@ -126,10 +105,15 @@ export function CenterFeatureTour({ center, hasCatalogItems, onDismiss, onReturn
     })
     window.addEventListener('resize', updatePosition)
     window.addEventListener('scroll', updatePosition, true)
+    const resizeObserver = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(updatePosition)
+    if (panelRef.current) resizeObserver?.observe(panelRef.current)
+    window.visualViewport?.addEventListener('resize', updatePosition)
     return () => {
       window.cancelAnimationFrame(firstFrame)
       window.removeEventListener('resize', updatePosition)
       window.removeEventListener('scroll', updatePosition, true)
+      resizeObserver?.disconnect()
+      window.visualViewport?.removeEventListener('resize', updatePosition)
     }
   }, [currentStep.target, onTargetChange, requestedStepIndex, stepIndex])
 

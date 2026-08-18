@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 import { CheckCircle2, ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { Button } from '@/shared/ui/button'
+import { getOnboardingPanelPosition, getOnboardingViewport } from './onboarding-panel-position'
 
 export interface FormTourStep { target: string; title: string; description: string }
 
@@ -23,34 +24,28 @@ export function FormFeatureTour({ steps, onDismiss, label = '实地导览', comp
         setPosition(null)
         return
       }
-      const targetRect = target.getBoundingClientRect()
-      const panelRect = panel.getBoundingClientRect()
-      const margin = 16
-      const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max)
-      const maxLeft = window.innerWidth - panelRect.width - margin
-      const maxTop = window.innerHeight - panelRect.height - margin
-      if (targetRect.left - panelRect.width - margin >= margin) {
-        setPosition({ left: targetRect.left - panelRect.width - margin, top: clamp(targetRect.top, margin, maxTop) })
-      } else if (targetRect.right + panelRect.width + margin <= window.innerWidth - margin) {
-        setPosition({ left: targetRect.right + margin, top: clamp(targetRect.top, margin, maxTop) })
-      } else {
-        setPosition({ left: clamp(targetRect.left, margin, maxLeft), top: targetRect.bottom + panelRect.height + margin <= window.innerHeight ? targetRect.bottom + margin : clamp(targetRect.top - panelRect.height - margin, margin, maxTop) })
-      }
+      setPosition(getOnboardingPanelPosition(target.getBoundingClientRect(), panel.getBoundingClientRect(), getOnboardingViewport()))
     }
     const frame = window.requestAnimationFrame(() => window.requestAnimationFrame(updatePosition))
     window.addEventListener('resize', updatePosition)
     window.addEventListener('scroll', updatePosition, true)
+    const resizeObserver = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(updatePosition)
+    if (panelRef.current) resizeObserver?.observe(panelRef.current)
+    if (target) resizeObserver?.observe(target)
+    window.visualViewport?.addEventListener('resize', updatePosition)
     return () => {
       window.cancelAnimationFrame(frame)
       window.removeEventListener('resize', updatePosition)
       window.removeEventListener('scroll', updatePosition, true)
+      resizeObserver?.disconnect()
+      window.visualViewport?.removeEventListener('resize', updatePosition)
       target?.classList.remove('relative', 'z-30', 'rounded-lg', 'ring-4', 'ring-primary/50', 'ring-offset-4')
     }
   }, [step.target])
 
   const dismiss = () => { setVisible(false); onDismiss() }
   if (!visible) return null
-  return <aside ref={panelRef} className={position ? 'fixed z-[60] w-[min(26rem,calc(100vw-2.5rem))] rounded-xl border bg-white p-5 shadow-xl' : 'fixed bottom-5 right-5 z-[60] w-[min(26rem,calc(100vw-2.5rem))] rounded-xl border bg-white p-5 shadow-xl'} style={position ?? undefined} role="region" aria-label={label}>
+  return <aside ref={panelRef} className={position ? 'fixed z-[60] w-[min(26rem,calc(100vw-2rem))] rounded-xl border bg-white p-5 shadow-xl' : 'fixed inset-x-4 bottom-4 z-[60] mx-auto w-[min(26rem,calc(100vw-2rem))] rounded-xl border bg-white p-5 shadow-xl'} style={position ?? undefined} role="region" aria-label={label}>
     <div className="flex items-start gap-3"><span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">{index + 1}</span><div className="min-w-0 flex-1"><p className="text-xs font-semibold uppercase tracking-wide text-primary">{label} {index + 1} / {steps.length}</p><h2 className="mt-1 text-base font-semibold">{step.title}</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">{step.description}</p></div><button type="button" onClick={dismiss} aria-label={`退出${label}`} className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button></div>
     <div className="mt-4 flex justify-between gap-3"><Button variant="outline" size="sm" disabled={index === 0} onClick={() => setIndex((value) => value - 1)}><ChevronLeft className="mr-1 h-4 w-4" />上一步</Button><Button size="sm" onClick={() => index === steps.length - 1 ? dismiss() : setIndex((value) => value + 1)}>{index === steps.length - 1 ? <><CheckCircle2 className="mr-1 h-4 w-4" />{completeLabel}</> : <>下一步<ChevronRight className="ml-1 h-4 w-4" /></>}</Button></div>
   </aside>

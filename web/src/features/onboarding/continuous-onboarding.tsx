@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState, type PointerEven
 import { useNavigate, useRouterState } from '@tanstack/react-router'
 import { CheckCircle2, ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { Button } from '@/shared/ui/button'
+import { getOnboardingPanelPosition, getOnboardingViewport } from './onboarding-panel-position'
 import { advanceOnboardingJourney, chooseOnboardingGoal, completeOnboardingTask, finishOnboardingJourney, getOnboardingGoal, getOnboardingJourneyStep, getOnboardingTasks, hasCompletedOnboardingJourneyUse, pauseOnboardingJourney, resumeOnboardingJourney, saveOnboardingJourneyPath, subscribeOnboardingGuideOpen, subscribeOnboardingProgress, type OnboardingJourneyStep } from './onboarding-progress'
 
 interface JourneyInstruction {
@@ -175,15 +176,15 @@ export function ContinuousOnboarding({ userId }: { userId: string }) {
       setResourceType(type === 'SKILL' || type === 'AGENT' || type === 'TOOL' ? type : null)
       const panel = panelRef.current
       if (!target || !panel || window.innerWidth < 768) return setPosition(null)
-      const rect = target.getBoundingClientRect(); const panelRect = panel.getBoundingClientRect(); const margin = 16
-      const left = rect.right + panelRect.width + margin <= window.innerWidth ? rect.right + margin : Math.max(margin, rect.left - panelRect.width - margin)
-      setPosition({ left, top: Math.min(Math.max(rect.top, margin), window.innerHeight - panelRect.height - margin) })
+      setPosition(getOnboardingPanelPosition(target.getBoundingClientRect(), panel.getBoundingClientRect(), getOnboardingViewport()))
     }
     const frame = requestAnimationFrame(() => requestAnimationFrame(update))
     const observer = new MutationObserver(update)
     observer.observe(document.body, { childList: true, subtree: true })
-    window.addEventListener('resize', update); window.addEventListener('scroll', update, true)
-    return () => { cancelAnimationFrame(frame); observer.disconnect(); window.removeEventListener('resize', update); window.removeEventListener('scroll', update, true); highlightedTarget?.classList.remove('relative', 'z-30', 'rounded-lg', 'ring-4', 'ring-primary/50', 'ring-offset-4') }
+    const resizeObserver = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(update)
+    if (panelRef.current) resizeObserver?.observe(panelRef.current)
+    window.addEventListener('resize', update); window.addEventListener('scroll', update, true); window.visualViewport?.addEventListener('resize', update)
+    return () => { cancelAnimationFrame(frame); observer.disconnect(); resizeObserver?.disconnect(); window.removeEventListener('resize', update); window.removeEventListener('scroll', update, true); window.visualViewport?.removeEventListener('resize', update); highlightedTarget?.classList.remove('relative', 'z-30', 'rounded-lg', 'ring-4', 'ring-primary/50', 'ring-offset-4') }
   }, [instruction])
 
   if (!step || !instruction) return null
@@ -254,7 +255,7 @@ export function ContinuousOnboarding({ userId }: { userId: string }) {
     dragRef.current = null
     event.currentTarget.releasePointerCapture(event.pointerId)
   }
-  return <aside ref={panelRef} role="region" aria-label="新手连续引导" className={panelPosition ? 'fixed z-[60] w-[min(24rem,calc(100vw-2rem))] rounded-xl border bg-white p-5 shadow-xl' : 'fixed bottom-5 right-5 z-[60] w-[min(24rem,calc(100vw-2rem))] rounded-xl border bg-white p-5 shadow-xl'} style={panelPosition ?? undefined}>
+  return <aside ref={panelRef} role="region" aria-label="新手连续引导" className={panelPosition ? 'fixed z-[60] w-[min(24rem,calc(100vw-2rem))] rounded-xl border bg-white p-5 shadow-xl' : 'fixed inset-x-4 bottom-4 z-[60] mx-auto w-[min(24rem,calc(100vw-2rem))] rounded-xl border bg-white p-5 shadow-xl'} style={panelPosition ?? undefined}>
     <div className="flex cursor-grab touch-none gap-3 active:cursor-grabbing" onPointerDown={startDragging} onPointerMove={drag} onPointerUp={stopDragging} onPointerCancel={stopDragging}>
       <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">{journeySteps.indexOf(step) + 1}</span><div className="min-w-0 flex-1"><p className="text-xs font-semibold uppercase tracking-wide text-primary">开始使用 · {journeySteps.indexOf(step) + 1}/{journeySteps.length}</p><h2 className="mt-1 text-base font-semibold">{instruction.title}</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">{instruction.description}</p></div><button type="button" aria-label="暂停新手引导" onClick={() => pauseOnboardingJourney(userId)} className="cursor-pointer text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
     </div>
