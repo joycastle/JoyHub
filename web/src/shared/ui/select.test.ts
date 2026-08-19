@@ -4,6 +4,7 @@ import {
   SELECT_ITEM_CLASS_NAME,
   SELECT_SCROLL_BUTTON_CLASS_NAME,
   SELECT_TRIGGER_CLASS_NAME,
+  SELECT_VIEWPORT_POPPER_CLASS_NAME,
   normalizeSelectValue,
 } from './select'
 
@@ -22,8 +23,15 @@ describe('shared select contract', () => {
   it('uses themed panel and item classes for the floating listbox', () => {
     expect(SELECT_CONTENT_CLASS_NAME).toContain('bg-popover')
     expect(SELECT_CONTENT_CLASS_NAME).toContain('text-popover-foreground')
+    expect(SELECT_CONTENT_CLASS_NAME).toContain('max-h-[min(24rem,var(--radix-select-content-available-height))]')
+    expect(SELECT_CONTENT_CLASS_NAME).toContain('pointer-events-auto')
     expect(SELECT_ITEM_CLASS_NAME).toContain('focus:bg-slate-50')
     expect(SELECT_ITEM_CLASS_NAME).toContain('data-[disabled]:opacity-50')
+  })
+
+  it('sizes the popper viewport from trigger width without locking height', () => {
+    expect(SELECT_VIEWPORT_POPPER_CLASS_NAME).toContain('min-w-[var(--radix-select-trigger-width)]')
+    expect(SELECT_VIEWPORT_POPPER_CLASS_NAME).not.toContain('h-[var(--radix-select-trigger-height)]')
   })
 
   it('keeps the dropdown and selected items visually discoverable', () => {

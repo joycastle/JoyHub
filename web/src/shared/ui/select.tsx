@@ -13,13 +13,15 @@ export const SELECT_TRIGGER_CLASS_NAME = cn(
 )
 
 export const SELECT_CONTENT_CLASS_NAME = cn(
-  'z-50 overflow-hidden rounded-xl border border-slate-200 bg-popover text-popover-foreground shadow-lg shadow-slate-900/10',
+  'z-50 max-h-[min(24rem,var(--radix-select-content-available-height))] pointer-events-auto overflow-hidden rounded-xl border border-slate-200 bg-popover text-popover-foreground shadow-lg shadow-slate-900/10',
   'data-[state=open]:animate-in data-[state=closed]:animate-out',
   'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
   'data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
   'data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2',
   'data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2'
 )
+
+export const SELECT_VIEWPORT_POPPER_CLASS_NAME = 'min-w-[var(--radix-select-trigger-width)]'
 
 export const SELECT_ITEM_CLASS_NAME = cn(
   'relative flex min-h-11 w-full cursor-pointer select-none items-center py-2.5 pl-10 pr-4 text-sm outline-none',
@@ -36,7 +38,26 @@ export function normalizeSelectValue(value?: string | null) {
   return typeof value === 'string' && value.length > 0 ? value : undefined
 }
 
-const Select = SelectPrimitive.Root
+const SelectModalContext = React.createContext(false)
+
+type SelectProps = React.ComponentPropsWithoutRef<typeof SelectPrimitive.Root> & {
+  modal?: boolean
+}
+
+function Select({ modal = false, ...props }: SelectProps) {
+  return (
+    <SelectModalContext.Provider value={modal}>
+      <SelectPrimitive.Root {...props} />
+    </SelectModalContext.Provider>
+  )
+}
+
+function unlockInlinePointerEvents(element: HTMLElement, restoreTo: '' | 'auto' = '') {
+  if (element.style.pointerEvents === 'none') {
+    element.style.pointerEvents = restoreTo
+  }
+}
+
 const SelectGroup = SelectPrimitive.Group
 const SelectValue = SelectPrimitive.Value
 
@@ -91,33 +112,72 @@ SelectScrollDownButton.displayName = SelectPrimitive.ScrollDownButton.displayNam
 const SelectContent = React.forwardRef<
   React.ElementRef<typeof SelectPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof SelectPrimitive.Content>
->(({ className, children, position = 'popper', ...props }, ref) => (
-  <SelectPrimitive.Portal>
-    <SelectPrimitive.Content
-      ref={ref}
-      className={cn(
-        SELECT_CONTENT_CLASS_NAME,
-        position === 'popper'
-          && 'data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1',
-        className
-      )}
-      position={position}
-      {...props}
-    >
-      <SelectScrollUpButton />
-      <SelectPrimitive.Viewport
+>(({ className, children, position = 'popper', ...props }, ref) => {
+  const modal = React.useContext(SelectModalContext)
+  const [contentNode, setContentNode] = React.useState<HTMLDivElement | null>(null)
+
+  React.useEffect(() => {
+    if (modal || !contentNode) {
+      return undefined
+    }
+
+    const { body } = contentNode.ownerDocument
+    const wrapper = contentNode.parentElement
+
+    const unlock = () => {
+      unlockInlinePointerEvents(body)
+      if (wrapper?.hasAttribute('data-radix-popper-content-wrapper')) {
+        unlockInlinePointerEvents(wrapper, 'auto')
+      }
+    }
+
+    unlock()
+    const observer = new MutationObserver(unlock)
+    observer.observe(body, { attributes: true, attributeFilter: ['style'] })
+    if (wrapper) {
+      observer.observe(wrapper, { attributes: true, attributeFilter: ['style'] })
+    }
+
+    return () => {
+      observer.disconnect()
+      unlock()
+    }
+  }, [modal, contentNode])
+
+  return (
+    <SelectPrimitive.Portal>
+      <SelectPrimitive.Content
+        ref={(node) => {
+          setContentNode(node)
+          if (typeof ref === 'function') {
+            ref(node)
+          } else if (ref) {
+            ref.current = node
+          }
+        }}
         className={cn(
-          'p-0',
+          SELECT_CONTENT_CLASS_NAME,
           position === 'popper'
-            && 'h-[var(--radix-select-trigger-height)] min-w-[var(--radix-select-trigger-width)]'
+            && 'data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1',
+          className
         )}
+        position={position}
+        {...props}
       >
-        {children}
-      </SelectPrimitive.Viewport>
-      <SelectScrollDownButton />
-    </SelectPrimitive.Content>
-  </SelectPrimitive.Portal>
-))
+        <SelectScrollUpButton />
+        <SelectPrimitive.Viewport
+          className={cn(
+            'p-0',
+            position === 'popper' && SELECT_VIEWPORT_POPPER_CLASS_NAME
+          )}
+        >
+          {children}
+        </SelectPrimitive.Viewport>
+        <SelectScrollDownButton />
+      </SelectPrimitive.Content>
+    </SelectPrimitive.Portal>
+  )
+})
 
 SelectContent.displayName = SelectPrimitive.Content.displayName
 
