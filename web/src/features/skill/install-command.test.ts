@@ -57,14 +57,14 @@ describe('install-command', () => {
   it('uses the plain slug for the global namespace', () => {
     expect(buildInstallTarget('global', 'my-skill')).toBe('my-skill')
     expect(buildInstallCommand('global', 'my-skill', 'https://skill.xfyun.cn')).toBe(
-      'npx @astron-team/skillhub@latest install my-skill --registry https://skill.xfyun.cn',
+      'npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub install "@global/my-skill" --registry "https://skill.xfyun.cn"',
     )
   })
 
   it('prefixes non-global namespaces in the install target', () => {
     expect(buildInstallTarget('team-alpha', 'my-skill')).toBe('team-alpha--my-skill')
     expect(buildInstallCommand('team-alpha', 'my-skill', 'https://skill.xfyun.cn')).toBe(
-      'npx @astron-team/skillhub@latest install my-skill --namespace team-alpha --registry https://skill.xfyun.cn',
+      'npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub install "@team-alpha/my-skill" --registry "https://skill.xfyun.cn"',
     )
   })
 
@@ -125,7 +125,7 @@ describe('install-command', () => {
     expect(html).not.toContain('flex-1 rounded-md')
   })
 
-  it('renders SkillHub CLI as the default install method', () => {
+  it('renders JoyHub CLI as the default install method', () => {
     setMockWindow('https://app.example.com')
 
     const html = renderToStaticMarkup(createElement(InstallCommand, {
@@ -134,9 +134,9 @@ describe('install-command', () => {
     }))
 
     expect(html).toContain('skillDetail.installMethodClawhub')
-    expect(html).toContain('skillDetail.installMethodSkillhub')
+    expect(html).toContain('skillDetail.installMethodJoyhub')
     expect(html).toContain('aria-selected="true"')
-    expect(html).toContain('npx @astron-team/skillhub@latest install meeting-minutes-generator --namespace team-alpha --registry https://app.example.com')
+    expect(html).toContain('npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub install &quot;@team-alpha/meeting-minutes-generator&quot; --registry &quot;https://app.example.com&quot;')
     expect(html).not.toContain('npx clawhub install team-alpha--meeting-minutes-generator --registry https://app.example.com')
   })
 })

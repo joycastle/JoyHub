@@ -31,8 +31,7 @@ export function getBaseUrl(): string {
 }
 
 export function buildInstallCommand(namespace: string, slug: string, baseUrl: string): string {
-  const namespaceArg = namespace === 'global' ? '' : ` --namespace ${namespace}`
-  return `npx @astron-team/skillhub@latest install ${slug}${namespaceArg} --registry ${baseUrl}`
+  return `npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub install "@${namespace}/${slug}" --registry "${baseUrl}"`
 }
 
 export function buildClawhubInstallCommand(namespace: string, slug: string, baseUrl: string): string {
@@ -86,21 +85,21 @@ function CommandBlock({ command, onUse }: CommandBlockProps) {
 export function InstallCommand({ namespace, slug, onUse }: InstallCommandProps) {
   const { t } = useTranslation()
   const baseUrl = useMemo(() => getBaseUrl(), [])
-  const skillhubCommand = useMemo(() => buildInstallCommand(namespace, slug, baseUrl), [baseUrl, namespace, slug])
+  const joyhubCommand = useMemo(() => buildInstallCommand(namespace, slug, baseUrl), [baseUrl, namespace, slug])
   const clawhubCommand = useMemo(() => buildClawhubInstallCommand(namespace, slug, baseUrl), [baseUrl, namespace, slug])
 
   return (
-    <Tabs defaultValue="skillhub" className="space-y-3">
+    <Tabs defaultValue="joyhub" className="space-y-3">
       <TabsList className="w-full gap-6 border-border/70 bg-transparent p-0 text-xs">
-        <TabsTrigger value="skillhub" className={installMethodTabTriggerClass}>
-          {t('skillDetail.installMethodSkillhub')}
+        <TabsTrigger value="joyhub" className={installMethodTabTriggerClass}>
+          {t('skillDetail.installMethodJoyhub')}
         </TabsTrigger>
         <TabsTrigger value="clawhub" className={installMethodTabTriggerClass}>
           {t('skillDetail.installMethodClawhub')}
         </TabsTrigger>
       </TabsList>
-      <TabsContent value="skillhub">
-        <CommandBlock command={skillhubCommand} onUse={onUse} />
+      <TabsContent value="joyhub">
+        <CommandBlock command={joyhubCommand} onUse={onUse} />
       </TabsContent>
       <TabsContent value="clawhub">
         <CommandBlock command={clawhubCommand} onUse={onUse} />

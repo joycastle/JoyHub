@@ -128,20 +128,23 @@ In the browser, you can add the `X-Mock-User-Id` header via a browser extension 
 
 ## Install the CLI Tool
 
-SkillHub is compatible with the OpenClaw CLI. You can use the `npx clawhub` command to manage skill packages:
+Use the JoyHub CLI (`@joycastle/joyhub-cli@0.2.0`, command `joyhub`). A global install is not required. Official agent skills `find-skills` / `share-skill` call the same CLI. Search requires login.
 
 ```bash
-# Configure the SkillHub registry URL
-export CLAWHUB_REGISTRY=http://localhost:8080
+# Point the CLI at your registry
+export JOYHUB_REGISTRY=http://localhost:8080
 
-# Search for skill packages
-npx clawhub search email
+# First use: browser Device Flow (no token copy)
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub auth ensure
+
+# Search skill packages
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub search email
 
 # Install a skill package
-npx clawhub install my-skill
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub install my-skill
 
 # Publish a skill package
-npx clawhub publish ./my-skill
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub publish ./my-skill --namespace my-team
 ```
 
 ## Publish Your First Skill Package
@@ -164,13 +167,16 @@ my-skill/
 
 ```bash
 # Configure the registry
-export CLAWHUB_REGISTRY=http://localhost:8080
+export JOYHUB_REGISTRY=http://localhost:8080
 
-# Publish to the default namespace
-npx clawhub publish ./my-skill
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub auth ensure
 
-# Publish to a specific namespace
-npx clawhub publish ./my-skill --namespace my-team
+# Dry-run, then publish (official share-skill also requires confirmation)
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 \
+  joyhub publish ./my-skill --namespace my-team --dry-run
+
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 \
+  joyhub publish ./my-skill --namespace my-team
 ```
 
 3. **Wait for security scanning**
@@ -200,14 +206,17 @@ Administrators will receive a notification and the skill package will be officia
 ### Using the CLI
 
 ```bash
-# Search for skill packages
-npx clawhub search pdf
+export JOYHUB_REGISTRY=http://localhost:8080
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub auth ensure
+
+# Search skill packages (login required)
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub search pdf
 
 # Install a skill package
-npx clawhub install pdf-parser
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub install pdf-parser
 
-# Install a skill package from a specific namespace
-npx clawhub install my-team--pdf-parser
+# Install a skill from a specific namespace
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub install @my-team/pdf-parser
 ```
 
 ### Using the Web UI

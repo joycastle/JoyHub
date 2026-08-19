@@ -9,31 +9,29 @@
 | 组件 | 已验证版本 | 说明 |
 |------|------------|------|
 | SkillHub Server | `v0.2.13` | 公开或自托管 registry |
-| SkillHub CLI | `0.1.8` | npm 包 `@astron-team/skillhub` |
+| JoyHub CLI | `0.2.0` | npm 包 `@joycastle/joyhub-cli` |
 | Hermes Agent | `0.18.2` | 上游 tag [`v2026.7.7.2`](https://github.com/NousResearch/hermes-agent/tree/v2026.7.7.2) |
 
 验证日期：2026-07-17。
 
-Hermes 0.18.2 使用兼容 [Agent Skills](https://agentskills.io/) 的 `SKILL.md` 格式，并递归扫描 `$HERMES_HOME/skills/`。SkillHub CLI 可以通过 `--dir` 把完整技能包解压到指定目录。因此，当前兼容链路不需要格式转换、Hermes 专用 CLI profile 或服务端适配：
+Hermes 0.18.2 使用兼容 [Agent Skills](https://agentskills.io/) 的 `SKILL.md` 格式，并递归扫描 `$HERMES_HOME/skills/`。JoyHub CLI 可以通过 `--dir` 把完整技能包解压到指定目录。因此，当前兼容链路不需要格式转换、Hermes 专用 CLI profile 或服务端适配：
 
 ```text
 SkillHub registry
-  -> skillhub install --dir <Hermes 技能目录>
+  -> joyhub install --dir <Hermes 技能目录>
   -> <Hermes 技能目录>/<skill-slug>/SKILL.md
   -> Hermes 发现并按需加载
 ```
 
-> Hermes 0.18.2 没有原生 SkillHub registry source。本指南使用 SkillHub CLI 负责搜索、下载和本地安装，Hermes 负责发现和执行技能。
+> Hermes 0.18.2 没有原生 SkillHub registry source。本指南使用 JoyHub CLI 负责搜索、下载和本地安装，Hermes 负责发现和执行技能。
 
 ## 前置条件
 
 1. 已安装并初始化 Hermes Agent。
-2. 已安装 SkillHub CLI：
+2. 已安装 Node.js / npm。按需运行固定版本 JoyHub CLI，无需全局安装：
 
 ```bash
-npm install -g @astron-team/skillhub
-
-skillhub version
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub version
 hermes version
 ```
 
@@ -48,25 +46,25 @@ hermes version
 设置公开或自托管 SkillHub 地址：
 
 ```bash
-export SKILLHUB_REGISTRY=https://skillhub.your-company.com
+export JOYHUB_REGISTRY=https://skillhub.your-company.com
 ```
 
-公开且允许匿名下载的技能可以跳过登录。访问团队命名空间、受限技能或私有部署时，先保存 API Token：
+搜索需要登录。首次使用运行 `joyhub auth ensure`（浏览器 Device Flow，无需复制 Token）：
 
 ```bash
-skillhub login \
-  --registry "$SKILLHUB_REGISTRY" \
-  --token YOUR_API_TOKEN
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 \
+  joyhub auth ensure --registry "$JOYHUB_REGISTRY"
 
-skillhub whoami --registry "$SKILLHUB_REGISTRY"
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 \
+  joyhub whoami --registry "$JOYHUB_REGISTRY"
 ```
 
-请使用占位 Token 演示，不要把真实 Token 写入 `SKILL.md`、脚本或版本库。
+凭证保存在 `~/.joyhub/credentials.json`。不要把真实 Token 写入 `SKILL.md`、脚本或版本库。Hermes 飞书身份透传与无 CLI 鉴权不在本期范围。
 
 ### 2. 搜索技能
 
 ```bash
-skillhub search "pdf" --registry "$SKILLHUB_REGISTRY"
+joyhub search "pdf" --registry "$JOYHUB_REGISTRY"
 ```
 
 记录结果中的 namespace、slug 和所需版本。下面以 `my-team/my-skill` 为例：
@@ -88,13 +86,13 @@ export HERMES_SKILLHUB_DIR="$HERMES_HOME/skills/skillhub/$SKILLHUB_NAMESPACE"
 安装技能：
 
 ```bash
-skillhub install "$SKILLHUB_SKILL" \
+joyhub install "$SKILLHUB_SKILL" \
   --namespace "$SKILLHUB_NAMESPACE" \
   --dir "$HERMES_SKILLHUB_DIR" \
-  --registry "$SKILLHUB_REGISTRY"
+  --registry "$JOYHUB_REGISTRY"
 ```
 
-SkillHub CLI 会保留技能包中的 `SKILL.md`、`references/`、`scripts/`、`templates/`、`assets/` 等文件，并额外写入 `.skillhub/metadata.json` 记录安装来源。目录结构类似：
+JoyHub CLI 会保留技能包中的 `SKILL.md`、`references/`、`scripts/`、`templates/`、`assets/` 等文件，并额外写入 `.joyhub/metadata.json` 记录安装来源。目录结构类似：
 
 ```text
 $HERMES_HOME/skills/
@@ -104,7 +102,7 @@ $HERMES_HOME/skills/
             ├── SKILL.md
             ├── references/          # 可选
             ├── scripts/             # 可选
-            └── .skillhub/
+            └── .joyhub/
                 └── metadata.json
 ```
 
@@ -134,53 +132,53 @@ hermes
 
 ## 更新技能
 
-SkillHub CLI 0.1.8 使用同一安装命令加 `--force` 覆盖本地技能。省略 `--version` 会解析最新已发布版本；也可以显式固定版本：
+JoyHub CLI 0.2.0 使用同一安装命令加 `--force` 覆盖本地技能。省略 `--version` 会解析最新已发布版本；也可以显式固定版本：
 
 ```bash
-skillhub install "$SKILLHUB_SKILL" \
+joyhub install "$SKILLHUB_SKILL" \
   --namespace "$SKILLHUB_NAMESPACE" \
   --dir "$HERMES_SKILLHUB_DIR" \
-  --registry "$SKILLHUB_REGISTRY" \
+  --registry "$JOYHUB_REGISTRY" \
   --force
 
 # 固定版本示例
-skillhub install "$SKILLHUB_SKILL" \
+joyhub install "$SKILLHUB_SKILL" \
   --namespace "$SKILLHUB_NAMESPACE" \
   --version 1.2.0 \
   --dir "$HERMES_SKILLHUB_DIR" \
-  --registry "$SKILLHUB_REGISTRY" \
+  --registry "$JOYHUB_REGISTRY" \
   --force
 ```
 
 覆盖前请先审查新版本，因为 `--force` 会替换现有技能目录。更新后重新运行：
 
 ```bash
-skillhub list \
+joyhub list \
   --dir "$HERMES_SKILLHUB_DIR" \
-  --registry "$SKILLHUB_REGISTRY"
+  --registry "$JOYHUB_REGISTRY"
 
 hermes skills list --source local --enabled-only
 ```
 
-> `skillhub update` 更新的是 SkillHub CLI 自身，不会更新已安装技能。已安装技能使用 `skillhub install ... --force` 刷新。
+> `joyhub update` 更新的是 JoyHub CLI 自身，不会更新已安装技能。已安装技能使用 `joyhub install ... --force` 刷新。
 
 ## 移除技能
 
 先列出同一 registry 中的全部安装，确认没有其他需要保留的同 slug 技能：
 
 ```bash
-skillhub list \
-  --registry "$SKILLHUB_REGISTRY"
+joyhub list \
+  --registry "$JOYHUB_REGISTRY"
 ```
 
 再移除本地安装：
 
 ```bash
-skillhub remove "$SKILLHUB_SKILL" \
-  --registry "$SKILLHUB_REGISTRY"
+joyhub remove "$SKILLHUB_SKILL" \
+  --registry "$JOYHUB_REGISTRY"
 ```
 
-SkillHub CLI 会同时删除技能目录和本地 inventory 记录。当前版本的本地 `remove` 仅按 registry 和 slug 匹配，不按 namespace 或目录过滤；同一 registry 下所有 namespace、所有安装目录中的相同 slug 都会被移除。如果未过滤的 `skillhub list` 中存在需要保留的匹配项，请不要执行该命令；按 namespace 或目录精确移除需要后续 CLI 能力支持。
+JoyHub CLI 会同时删除技能目录和本地 inventory 记录。当前版本的本地 `remove` 仅按 registry 和 slug 匹配，不按 namespace 或目录过滤；同一 registry 下所有 namespace、所有安装目录中的相同 slug 都会被移除。如果未过滤的 `joyhub list` 中存在需要保留的匹配项，请不要执行该命令；按 namespace 或目录精确移除需要后续 CLI 能力支持。
 
 移除后，使用 `/reload-skills`、重启 Hermes 会话，或运行以下命令确认技能已消失：
 
@@ -195,10 +193,10 @@ hermes skills list --source local --enabled-only
 ```bash
 export SHARED_SKILLHUB_DIR="$HOME/.agents/skills/skillhub/$SKILLHUB_NAMESPACE"
 
-skillhub install "$SKILLHUB_SKILL" \
+joyhub install "$SKILLHUB_SKILL" \
   --namespace "$SKILLHUB_NAMESPACE" \
   --dir "$SHARED_SKILLHUB_DIR" \
-  --registry "$SKILLHUB_REGISTRY"
+  --registry "$JOYHUB_REGISTRY"
 ```
 
 然后把共享根目录合并到 `$HERMES_HOME/config.yaml`，不要覆盖已有的 `skills` 配置：
@@ -216,8 +214,8 @@ Hermes 会把 external skill 与本地技能一起列出和加载。不要依赖
 ## 兼容性与安全边界
 
 - **格式兼容不等于运行时完全兼容。** Hermes 能读取 `SKILL.md` 和配套文件，但技能引用的 Agent 专用工具、MCP server、命令、环境变量或平台能力仍需逐项验证。
-- **Hermes 将此路径识别为 local skill。** 通过 SkillHub CLI 复制到本地的技能不会经过 Hermes Skills Hub 的 community 安装扫描。安装前应查看 SkillHub 安全报告并审查技能内容，必要时使用 Hermes 的终端隔离能力。
-- **保留多文件包。** 不要把多文件 SkillHub 技能改成 Hermes 0.18.2 的直接 URL 安装；该版本的 URL source 只保证单个 `SKILL.md`，而 SkillHub CLI 会解压完整包。
+- **Hermes 将此路径识别为 local skill。** 通过 JoyHub CLI 复制到本地的技能不会经过 Hermes Skills Hub 的 community 安装扫描。安装前应查看 SkillHub 安全报告并审查技能内容，必要时使用 Hermes 的终端隔离能力。
+- **保留多文件包。** 不要把多文件 SkillHub 技能改成 Hermes 0.18.2 的直接 URL 安装；该版本的 URL source 只保证单个 `SKILL.md`，而 JoyHub CLI 会解压完整包。
 - **避免名称冲突。** 文件路径按 namespace 隔离仍不能解决斜杠命令冲突；同一 Hermes profile 内应保持规范化后的命令名唯一。例如 `PDF Tools` 和 `pdf_tools` 都会变成 `/pdf-tools`。
 - **保护凭证。** Token 只用于 SkillHub registry 访问，不应写进技能包。需要运行时 secret 的技能应遵循 Hermes 的环境变量和安全设置方式。
 
@@ -234,7 +232,7 @@ Hermes 会把 external skill 与本地技能一起列出和加载。不要依赖
 5. 执行 `/reload-skills` 或启动新会话后是否出现。
 
 ```bash
-skillhub list --dir "$HERMES_SKILLHUB_DIR" --registry "$SKILLHUB_REGISTRY"
+joyhub list --dir "$HERMES_SKILLHUB_DIR" --registry "$JOYHUB_REGISTRY"
 hermes skills list --source local
 ```
 
@@ -243,17 +241,17 @@ hermes skills list --source local
 已有目录默认不会被覆盖。先审查目标版本，再增加 `--force`：
 
 ```bash
-skillhub install "$SKILLHUB_SKILL" \
+joyhub install "$SKILLHUB_SKILL" \
   --namespace "$SKILLHUB_NAMESPACE" \
   --dir "$HERMES_SKILLHUB_DIR" \
-  --registry "$SKILLHUB_REGISTRY" \
+  --registry "$JOYHUB_REGISTRY" \
   --force
 ```
 
 ### 提示 `registry unreachable` 或下载失败
 
-- 核对 `SKILLHUB_REGISTRY` 是否是 SkillHub 根地址。
-- 先运行同一 registry 的 `skillhub search` 判断 registry 是否可达。
+- 核对 `JOYHUB_REGISTRY` 是否是 SkillHub 根地址。
+- 先运行同一 registry 的 `joyhub search` 判断 registry 是否可达。
 - 检查代理、DNS、证书和自托管服务状态。
 - 短暂网络错误可以在确认服务正常后重试；不要通过关闭 TLS 校验绕过证书问题。
 
@@ -263,16 +261,16 @@ skillhub install "$SKILLHUB_SKILL" \
 
 ### 能否直接运行 `hermes skills install` 安装 SkillHub 坐标？
 
-Hermes 0.18.2 没有 SkillHub registry source，不能直接解析 SkillHub 的 namespace/slug。请使用本指南中的 `skillhub install --dir ...`。如果未来需要 Hermes 内原生搜索、安装、更新和安全扫描，应单独设计 Hermes source adapter，并重新定义协议和验收范围。
+Hermes 0.18.2 没有 SkillHub registry source，不能直接解析 SkillHub 的 namespace/slug。请使用本指南中的 `joyhub install --dir ...`。如果未来需要 Hermes 内原生搜索、安装、更新和安全扫描，应单独设计 Hermes source adapter，并重新定义协议和验收范围。
 
 ## 升级后的回归检查
 
-升级 SkillHub CLI 或 Hermes 后，至少重新验证：
+升级 JoyHub CLI 或 Hermes 后，至少重新验证：
 
-1. `skillhub install --dir` 仍生成 `<slug>/SKILL.md` 并保留配套文件。
+1. `joyhub install --dir` 仍生成 `<slug>/SKILL.md` 并保留配套文件。
 2. `hermes skills list --source local --enabled-only` 能发现技能。
 3. `/skill-name` 能加载 `SKILL.md` 并暴露配套文件路径；再通过 `skill_view(name, file_path)` 读取一个实际引用文件，或执行技能使用的脚本/资产验证其运行时路径。
-4. `skillhub install --force` 能覆盖更新且 inventory 正常。
-5. `skillhub remove` 后 Hermes 不再发现该技能。
+4. `joyhub install --force` 能覆盖更新且 inventory 正常。
+5. `joyhub remove` 后 Hermes 不再发现该技能。
 
 上游参考：[Hermes Skills System（v0.18.2）](https://github.com/NousResearch/hermes-agent/blob/v2026.7.7.2/website/docs/user-guide/features/skills.md)。

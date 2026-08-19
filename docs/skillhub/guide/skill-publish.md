@@ -57,15 +57,17 @@ SkillHub 提供了类似 npm 的发布体验，但增加了企业级的权限控
 2. **使用 CLI 发布（推荐）**
 
 ```bash
-# 配置注册中心
-export CLAWHUB_REGISTRY=http://localhost:8080
+export JOYHUB_REGISTRY=http://localhost:8080
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub auth ensure
 
-# 发布到默认命名空间
-npx clawhub publish ./my-skill
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 \
+  joyhub publish ./my-skill --namespace my-team --dry-run
 
-# 发布到指定命名空间
-npx clawhub publish ./my-skill --namespace my-team
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 \
+  joyhub publish ./my-skill --namespace my-team
 ```
+
+在 Codex / Claude Code 中也可以使用官方 Skill `share-skill`：先 dry-run，用户确认后再发布。
 
 3. **使用 Web UI 发布**
 

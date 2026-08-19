@@ -9,31 +9,29 @@ This guide explains how to install skills from SkillHub into [NousResearch Herme
 | Component | Validated version | Notes |
 |-----------|-------------------|-------|
 | SkillHub Server | `v0.2.13` | Public or self-hosted registry |
-| SkillHub CLI | `0.1.8` | npm package `@astron-team/skillhub` |
+| JoyHub CLI | `0.2.0` | npm package `@joycastle/joyhub-cli` |
 | Hermes Agent | `0.18.2` | Upstream tag [`v2026.7.7.2`](https://github.com/NousResearch/hermes-agent/tree/v2026.7.7.2) |
 
 Validation date: 2026-07-17.
 
-Hermes 0.18.2 uses an [Agent Skills](https://agentskills.io/)-compatible `SKILL.md` format and recursively scans `$HERMES_HOME/skills/`. SkillHub CLI can extract a complete skill package into any explicit `--dir` target. The current integration therefore needs no format conversion, Hermes-specific CLI profile, or server adapter:
+Hermes 0.18.2 uses an [Agent Skills](https://agentskills.io/)-compatible `SKILL.md` format and recursively scans `$HERMES_HOME/skills/`. JoyHub CLI can extract a complete skill package into any explicit `--dir` target. The current integration therefore needs no format conversion, Hermes-specific CLI profile, or server adapter:
 
 ```text
 SkillHub registry
-  -> skillhub install --dir <Hermes skills directory>
+  -> joyhub install --dir <Hermes skills directory>
   -> <Hermes skills directory>/<skill-slug>/SKILL.md
   -> Hermes discovers and loads the skill on demand
 ```
 
-> Hermes 0.18.2 has no native SkillHub registry source. This guide uses SkillHub CLI for search, download, and local installation, while Hermes handles discovery and execution.
+> Hermes 0.18.2 has no native SkillHub registry source. This guide uses JoyHub CLI for search, download, and local installation, while Hermes handles discovery and execution.
 
 ## Prerequisites
 
 1. Install and initialize Hermes Agent.
-2. Install SkillHub CLI:
+2. Install Node.js / npm. Run the pinned JoyHub CLI on demand; a global install is not required:
 
 ```bash
-npm install -g @astron-team/skillhub
-
-skillhub version
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub version
 hermes version
 ```
 
@@ -48,25 +46,25 @@ The examples below use Bash/zsh. On Windows, use the same directory structure, r
 Set the public or self-hosted SkillHub URL:
 
 ```bash
-export SKILLHUB_REGISTRY=https://skillhub.your-company.com
+export JOYHUB_REGISTRY=https://skillhub.your-company.com
 ```
 
-You can skip login for public skills that allow anonymous downloads. For team namespaces, restricted skills, or private deployments, save an API token first:
+Search requires login. On first use, run `joyhub auth ensure` (browser Device Flow; no token copy):
 
 ```bash
-skillhub login \
-  --registry "$SKILLHUB_REGISTRY" \
-  --token YOUR_API_TOKEN
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 \
+  joyhub auth ensure --registry "$JOYHUB_REGISTRY"
 
-skillhub whoami --registry "$SKILLHUB_REGISTRY"
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 \
+  joyhub whoami --registry "$JOYHUB_REGISTRY"
 ```
 
-Use placeholder tokens in examples. Never write a real token into `SKILL.md`, scripts, or version control.
+Credentials are stored in `~/.joyhub/credentials.json`. Never write a real token into `SKILL.md`, scripts, or version control. Hermes identity passthrough without the CLI is out of scope for this iteration.
 
 ### 2. Search for a skill
 
 ```bash
-skillhub search "pdf" --registry "$SKILLHUB_REGISTRY"
+joyhub search "pdf" --registry "$JOYHUB_REGISTRY"
 ```
 
 Record the namespace, slug, and required version. The following examples use `my-team/my-skill`:
@@ -88,13 +86,13 @@ export HERMES_SKILLHUB_DIR="$HERMES_HOME/skills/skillhub/$SKILLHUB_NAMESPACE"
 Install the skill:
 
 ```bash
-skillhub install "$SKILLHUB_SKILL" \
+joyhub install "$SKILLHUB_SKILL" \
   --namespace "$SKILLHUB_NAMESPACE" \
   --dir "$HERMES_SKILLHUB_DIR" \
-  --registry "$SKILLHUB_REGISTRY"
+  --registry "$JOYHUB_REGISTRY"
 ```
 
-SkillHub CLI preserves `SKILL.md`, `references/`, `scripts/`, `templates/`, `assets/`, and other package files. It also writes `.skillhub/metadata.json` to record the installation source. The resulting layout looks like this:
+JoyHub CLI preserves `SKILL.md`, `references/`, `scripts/`, `templates/`, `assets/`, and other package files. It also writes `.joyhub/metadata.json` to record the installation source. The resulting layout looks like this:
 
 ```text
 $HERMES_HOME/skills/
@@ -104,7 +102,7 @@ $HERMES_HOME/skills/
             ├── SKILL.md
             ├── references/          # optional
             ├── scripts/             # optional
-            └── .skillhub/
+            └── .joyhub/
                 └── metadata.json
 ```
 
@@ -134,53 +132,53 @@ If a running session does not immediately show a new skill, run `/reload-skills`
 
 ## Update a skill
 
-SkillHub CLI 0.1.8 overwrites a local skill by repeating the install command with `--force`. Omitting `--version` resolves the latest published version; you can also pin one explicitly:
+JoyHub CLI 0.2.0 overwrites a local skill by repeating the install command with `--force`. Omitting `--version` resolves the latest published version; you can also pin one explicitly:
 
 ```bash
-skillhub install "$SKILLHUB_SKILL" \
+joyhub install "$SKILLHUB_SKILL" \
   --namespace "$SKILLHUB_NAMESPACE" \
   --dir "$HERMES_SKILLHUB_DIR" \
-  --registry "$SKILLHUB_REGISTRY" \
+  --registry "$JOYHUB_REGISTRY" \
   --force
 
 # Pinned version example
-skillhub install "$SKILLHUB_SKILL" \
+joyhub install "$SKILLHUB_SKILL" \
   --namespace "$SKILLHUB_NAMESPACE" \
   --version 1.2.0 \
   --dir "$HERMES_SKILLHUB_DIR" \
-  --registry "$SKILLHUB_REGISTRY" \
+  --registry "$JOYHUB_REGISTRY" \
   --force
 ```
 
 Review the new version before overwriting because `--force` replaces the existing skill directory. Afterward, run:
 
 ```bash
-skillhub list \
+joyhub list \
   --dir "$HERMES_SKILLHUB_DIR" \
-  --registry "$SKILLHUB_REGISTRY"
+  --registry "$JOYHUB_REGISTRY"
 
 hermes skills list --source local --enabled-only
 ```
 
-> `skillhub update` updates SkillHub CLI itself; it does not update installed skills. Refresh an installed skill with `skillhub install ... --force`.
+> `joyhub update` updates JoyHub CLI itself; it does not update installed skills. Refresh an installed skill with `joyhub install ... --force`.
 
 ## Remove a skill
 
 First, list every installation from the same registry and confirm that there are no other same-slug skills you need to keep:
 
 ```bash
-skillhub list \
-  --registry "$SKILLHUB_REGISTRY"
+joyhub list \
+  --registry "$JOYHUB_REGISTRY"
 ```
 
 Then remove the local installation:
 
 ```bash
-skillhub remove "$SKILLHUB_SKILL" \
-  --registry "$SKILLHUB_REGISTRY"
+joyhub remove "$SKILLHUB_SKILL" \
+  --registry "$JOYHUB_REGISTRY"
 ```
 
-SkillHub CLI deletes both the skill directory and the local inventory record. Local `remove` in this version matches only registry and slug; it does not filter by namespace or directory. Every same-slug target from that registry, across all namespaces and installation directories, is removed. If the unfiltered `skillhub list` shows a match you need to keep, do not run the command; namespace- or directory-scoped removal requires a future CLI capability.
+JoyHub CLI deletes both the skill directory and the local inventory record. Local `remove` in this version matches only registry and slug; it does not filter by namespace or directory. Every same-slug target from that registry, across all namespaces and installation directories, is removed. If the unfiltered `joyhub list` shows a match you need to keep, do not run the command; namespace- or directory-scoped removal requires a future CLI capability.
 
 After removal, run `/reload-skills`, restart the Hermes session, or confirm that the skill is gone with:
 
@@ -195,10 +193,10 @@ When several agents share `~/.agents/skills`, install SkillHub skills into that 
 ```bash
 export SHARED_SKILLHUB_DIR="$HOME/.agents/skills/skillhub/$SKILLHUB_NAMESPACE"
 
-skillhub install "$SKILLHUB_SKILL" \
+joyhub install "$SKILLHUB_SKILL" \
   --namespace "$SKILLHUB_NAMESPACE" \
   --dir "$SHARED_SKILLHUB_DIR" \
-  --registry "$SKILLHUB_REGISTRY"
+  --registry "$JOYHUB_REGISTRY"
 ```
 
 Merge the shared root into `$HERMES_HOME/config.yaml` without replacing existing `skills` settings:
@@ -216,8 +214,8 @@ Hermes lists and loads external skills alongside local skills. Do not rely on lo
 ## Compatibility and security boundaries
 
 - **Format compatibility is not complete runtime compatibility.** Hermes can read `SKILL.md` and supporting files, but agent-specific tools, MCP servers, commands, environment variables, and platform capabilities referenced by a skill still need individual verification.
-- **Hermes treats this path as local.** A skill copied by SkillHub CLI does not run through the Hermes Skills Hub community-install scanner. Review the SkillHub security report and the skill contents before installation, and use Hermes terminal isolation where appropriate.
-- **Keep multi-file packages intact.** Do not replace SkillHub CLI with the Hermes 0.18.2 direct-URL source for multi-file skills. That release guarantees a single `SKILL.md` for URL installs, whereas SkillHub CLI extracts the complete package.
+- **Hermes treats this path as local.** A skill copied by JoyHub CLI does not run through the Hermes Skills Hub community-install scanner. Review the SkillHub security report and the skill contents before installation, and use Hermes terminal isolation where appropriate.
+- **Keep multi-file packages intact.** Do not replace JoyHub CLI with the Hermes 0.18.2 direct-URL source for multi-file skills. That release guarantees a single `SKILL.md` for URL installs, whereas JoyHub CLI extracts the complete package.
 - **Avoid name collisions.** Namespace-separated filesystem paths do not resolve slash-command collisions. Keep normalized command names unique within one Hermes profile. For example, `PDF Tools` and `pdf_tools` both become `/pdf-tools`.
 - **Protect credentials.** A registry token is only for SkillHub access and does not belong in a skill package. Skills that need runtime secrets should use Hermes environment-variable and security settings.
 
@@ -234,7 +232,7 @@ Check these items in order:
 5. The skill appears after `/reload-skills` or in a new session.
 
 ```bash
-skillhub list --dir "$HERMES_SKILLHUB_DIR" --registry "$SKILLHUB_REGISTRY"
+joyhub list --dir "$HERMES_SKILLHUB_DIR" --registry "$JOYHUB_REGISTRY"
 hermes skills list --source local
 ```
 
@@ -243,17 +241,17 @@ hermes skills list --source local
 Existing directories are not overwritten by default. Review the target version, then add `--force`:
 
 ```bash
-skillhub install "$SKILLHUB_SKILL" \
+joyhub install "$SKILLHUB_SKILL" \
   --namespace "$SKILLHUB_NAMESPACE" \
   --dir "$HERMES_SKILLHUB_DIR" \
-  --registry "$SKILLHUB_REGISTRY" \
+  --registry "$JOYHUB_REGISTRY" \
   --force
 ```
 
 ### The CLI reports `registry unreachable` or a download failure
 
-- Confirm that `SKILLHUB_REGISTRY` is the SkillHub root URL.
-- Run `skillhub search` against the same registry to distinguish registry reachability from a download failure.
+- Confirm that `JOYHUB_REGISTRY` is the SkillHub root URL.
+- Run `joyhub search` against the same registry to distinguish registry reachability from a download failure.
 - Check proxy, DNS, certificate, and self-hosted service status.
 - Retry a transient network error only after confirming the service is healthy; do not bypass certificate failures by disabling TLS verification.
 
@@ -263,16 +261,16 @@ Check tool names, shell commands, script runtimes, packages, MCP servers, enviro
 
 ### Can `hermes skills install` consume a SkillHub coordinate directly?
 
-Hermes 0.18.2 has no SkillHub registry source and cannot resolve a SkillHub namespace/slug directly. Use `skillhub install --dir ...` as shown in this guide. Native search, installation, updates, and security scanning inside Hermes would require a separately designed Hermes source adapter with its own protocol and acceptance scope.
+Hermes 0.18.2 has no SkillHub registry source and cannot resolve a SkillHub namespace/slug directly. Use `joyhub install --dir ...` as shown in this guide. Native search, installation, updates, and security scanning inside Hermes would require a separately designed Hermes source adapter with its own protocol and acceptance scope.
 
 ## Regression checks after upgrades
 
-After upgrading SkillHub CLI or Hermes, verify at least the following:
+After upgrading JoyHub CLI or Hermes, verify at least the following:
 
-1. `skillhub install --dir` still creates `<slug>/SKILL.md` and preserves support files.
+1. `joyhub install --dir` still creates `<slug>/SKILL.md` and preserves support files.
 2. `hermes skills list --source local --enabled-only` discovers the skill.
 3. `/skill-name` loads `SKILL.md` and exposes support-file paths; then read one referenced file with `skill_view(name, file_path)` or exercise the script/asset the skill actually uses.
-4. `skillhub install --force` overwrites the skill while keeping a healthy inventory.
-5. Hermes no longer discovers the skill after `skillhub remove`.
+4. `joyhub install --force` overwrites the skill while keeping a healthy inventory.
+5. Hermes no longer discovers the skill after `joyhub remove`.
 
 Upstream reference: [Hermes Skills System at v0.18.2](https://github.com/NousResearch/hermes-agent/blob/v2026.7.7.2/website/docs/user-guide/features/skills.md).

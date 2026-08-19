@@ -57,15 +57,17 @@ Ensure skill package conforms to SkillHub specification:
 2. **Publish via CLI (Recommended)**
 
 ```bash
-# Configure registry
-export CLAWHUB_REGISTRY=http://localhost:8080
+export JOYHUB_REGISTRY=http://localhost:8080
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub auth ensure
 
-# Publish to default namespace
-npx clawhub publish ./my-skill
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 \
+  joyhub publish ./my-skill --namespace my-team --dry-run
 
-# Publish to specific namespace
-npx clawhub publish ./my-skill --namespace my-team
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 \
+  joyhub publish ./my-skill --namespace my-team
 ```
+
+In Codex / Claude Code you can also use the official `share-skill` skill: dry-run first, then publish only after the user confirms.
 
 3. **Publish via Web UI**
 

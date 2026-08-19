@@ -53,20 +53,16 @@ spring:
 
 ## Q: How do I use the CLI tool to manage skill packages?
 
-A: SkillHub is compatible with the OpenClaw CLI. Use the `npx clawhub` command to interact with it:
+A: Use the official JoyHub CLI (`@joycastle/joyhub-cli@0.2.0`, command `joyhub`). A global install is not required. Search requires login. Codex / Claude Code can also use the official `find-skills` / `share-skill` skills.
 
 ```bash
-# Configure the registry URL
-export CLAWHUB_REGISTRY=http://your-skillhub-host:8080
+export JOYHUB_REGISTRY=http://your-skillhub-host:8080
 
-# Search for skill packages
-npx clawhub search email
-
-# Install a skill package
-npx clawhub install my-skill
-
-# Publish a skill package
-npx clawhub publish ./my-skill
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub auth ensure
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub search email
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub install my-skill
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 \
+  joyhub publish ./my-skill --namespace my-team
 ```
 
 ## Q: How do I configure HTTPS?
@@ -134,7 +130,7 @@ curl -fsSL https://imageless.oss-cn-beijing.aliyuncs.com/runtime.sh | sh -s -- u
 
 ## Q: How do I search for or operate on a skill package within a specific namespace?
 
-A: When using the OpenClaw CLI, you can specify the namespace using the `<namespace>--<skill-name>` format for operations like search or installation. If you encounter issues finding it on the web interface, you can also manage it by exporting the skill package and importing it into your target namespace.
+A: JoyHub CLI uses `@{namespace}/{skill}` (or `namespace/skill`), for example `joyhub install @my-team/pdf-parser`. The OpenClaw compatibility layer still accepts `<namespace>--<skill-name>`. If you cannot find the skill on the web UI, you can also export the package and import it into the target namespace.
 
 ## Q: What is the recommended deployment method? Can I pull the images and deploy manually?
 
@@ -194,7 +190,7 @@ A: SkillHub has built-in security scanning. The scanner integration, task orches
 
 A: `scanner/Dockerfile` runs `pip install cisco-ai-skill-scanner` directly without pinning a version, so the latest version on PyPI is pulled when the image is built. To pin a version, do so yourself when customizing the build.
 
-## Q: How do I troubleshoot a `registry returned 400` error from `skillhub publish` (CLI)?
+## Q: How do I troubleshoot a `registry returned 400` error from `joyhub publish` (CLI)?
 
 A: A 400 usually means backend validation failed. Common causes:
 
@@ -251,7 +247,7 @@ A:
 docker image inspect ghcr.io/iflytek/skillhub-server:latest --format '{{index .Config.Labels "org.opencontainers.image.version"}}'
 ```
 
-- Check the CLI version: `skillhub version`.
+- Check the CLI version: `npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub version`.
 - For customization (e.g. changing the logo), it is recommended to fork the latest code, modify it, and build your own Docker image.
 
 ## Q: The page loads, but the login / register APIs return 502?
@@ -314,14 +310,16 @@ target_dir=/opt/skillhub-skills
 
 # install one by one
 for skill in skill-a skill-b skill-c; do
-  skillhub install "$skill" --dir "$target_dir"
+  npx --yes --package=@joycastle/joyhub-cli@0.2.0 \
+    joyhub install "$skill" --dir "$target_dir"
 done
 
 # or read from a manifest file (one skill name per line)
-xargs -a skills.txt -I {} skillhub install "{}" --dir "$target_dir"
+xargs -a skills.txt -I {} npx --yes --package=@joycastle/joyhub-cli@0.2.0 \
+  joyhub install "{}" --dir "$target_dir"
 ```
 
-Since **SkillHub Server v0.2.12**, public skills support anonymous search and install. Note that an invalid bearer token now fails the command instead of falling back to anonymous access — update or remove the stale credential in that case.
+JoyHub CLI search requires authentication and does not fall back to anonymous search. An invalid token fails the command; re-bind with `joyhub auth ensure`.
 
 ## Q: What should I do if I encounter issues?
 

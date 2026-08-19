@@ -128,20 +128,23 @@ curl -H "X-Mock-User-Id: local-admin" http://localhost:8080/api/v1/auth/me
 
 ## 安装 CLI 工具
 
-SkillHub 兼容 OpenClaw CLI，可以使用 `npx clawhub` 命令管理技能包：
+推荐使用 JoyHub CLI（`@joycastle/joyhub-cli@0.2.0`，命令 `joyhub`）。无需全局安装。官方 Agent Skill `find-skills` / `share-skill` 调用同一 CLI。搜索需要登录。
 
 ```bash
-# 配置 SkillHub 注册中心地址
-export CLAWHUB_REGISTRY=http://localhost:8080
+# 配置 JoyHub 注册中心地址
+export JOYHUB_REGISTRY=http://localhost:8080
+
+# 首次使用：浏览器授权（无需复制 Token）
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub auth ensure
 
 # 搜索技能包
-npx clawhub search email
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub search email
 
 # 安装技能包
-npx clawhub install my-skill
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub install my-skill
 
 # 发布技能包
-npx clawhub publish ./my-skill
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub publish ./my-skill --namespace my-team
 ```
 
 ## 发布第一个技能包
@@ -164,13 +167,16 @@ my-skill/
 
 ```bash
 # 配置注册中心
-export CLAWHUB_REGISTRY=http://localhost:8080
+export JOYHUB_REGISTRY=http://localhost:8080
 
-# 发布到默认命名空间
-npx clawhub publish ./my-skill
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub auth ensure
 
-# 发布到指定命名空间
-npx clawhub publish ./my-skill --namespace my-team
+# dry-run 校验后再正式发布（官方 share-skill 也要求先确认）
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 \
+  joyhub publish ./my-skill --namespace my-team --dry-run
+
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 \
+  joyhub publish ./my-skill --namespace my-team
 ```
 
 3. **等待安全扫描**
@@ -200,14 +206,17 @@ npx clawhub publish ./my-skill --namespace my-team
 ### 使用 CLI 工具
 
 ```bash
-# 搜索技能包
-npx clawhub search pdf
+export JOYHUB_REGISTRY=http://localhost:8080
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub auth ensure
+
+# 搜索技能包（需登录）
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub search pdf
 
 # 安装技能包
-npx clawhub install pdf-parser
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub install pdf-parser
 
 # 安装指定命名空间的技能包
-npx clawhub install my-team--pdf-parser
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub install @my-team/pdf-parser
 ```
 
 ### 使用 Web UI

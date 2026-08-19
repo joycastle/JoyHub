@@ -48,18 +48,17 @@ Only view skill packages with `data-processing` tag.
 ### Using CLI to Search and Install (Recommended)
 
 ```bash
-# Configure registry
-export CLAWHUB_REGISTRY=http://localhost:8080
+export JOYHUB_REGISTRY=http://localhost:8080
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub auth ensure
 
-# Search skill packages
-npx clawhub search pdf
+# Search requires login; results are skills the current user can see
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub search pdf
 
-# Install skill package
-npx clawhub install pdf-parser
-
-# Install skill package from specific namespace
-npx clawhub install my-team--pdf-parser
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub install pdf-parser
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub install @my-team/pdf-parser
 ```
+
+In Codex / Claude Code you can also use the official `find-skills` skill, which calls the same JoyHub CLI.
 
 ### Using Web UI to Search
 
