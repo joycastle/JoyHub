@@ -127,6 +127,16 @@ set_env_value JOYHUB_DEPLOYMENT_RUNNER_IMAGE ghcr.io/joycastle/joyhub-deployment
 "${compose_args[@]}" pull server web skill-scanner deployment-runner
 "${compose_args[@]}" up -d --wait
 
+# Recreated containers can receive new addresses, and the shared edge nginx keeps
+# serving the previous ones until it re-resolves, which turns the public health
+# check below into a false negative that triggers a rollback.
+edge_nginx_container="$(get_env_value EDGE_NGINX_CONTAINER feishu-project-automation-nginx)"
+if [[ -n "${edge_nginx_container}" ]] \
+  && docker inspect --format '{{.State.Running}}' "${edge_nginx_container}" 2>/dev/null | grep -q true; then
+  docker exec "${edge_nginx_container}" nginx -s reload \
+    || echo "Warning: failed to reload ${edge_nginx_container}" >&2
+fi
+
 api_port="$(get_env_value API_PORT 18081)"
 web_port="$(get_env_value WEB_PORT 18080)"
 curl --fail --silent --show-error --retry 12 --retry-delay 5 \
