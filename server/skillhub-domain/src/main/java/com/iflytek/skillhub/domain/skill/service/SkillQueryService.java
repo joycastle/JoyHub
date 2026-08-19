@@ -412,7 +412,10 @@ public class SkillQueryService {
      * Opens a single file stream from object storage after verifying that the
      * caller may inspect the requested version.
      */
-    public InputStream getFileContent(
+    public record ReadableSkillFile(long skillId, long versionId, SkillFile file) {
+    }
+
+    public ReadableSkillFile resolveReadableFile(
             String namespaceSlug,
             String skillSlug,
             String version,
@@ -426,9 +429,18 @@ public class SkillQueryService {
         SkillVersion skillVersion = findVersion(skill, version);
         assertPreviewAccessible(skill, skillVersion, version, currentUserId, userNsRoles);
 
-        SkillFile file = findFile(skillVersion, filePath);
+        return new ReadableSkillFile(skill.getId(), skillVersion.getId(), findFile(skillVersion, filePath));
+    }
 
-        return readFileContent(file);
+    public InputStream getFileContent(
+            String namespaceSlug,
+            String skillSlug,
+            String version,
+            String filePath,
+            String currentUserId,
+            Map<Long, NamespaceRole> userNsRoles) {
+        return readFileContent(resolveReadableFile(
+                namespaceSlug, skillSlug, version, filePath, currentUserId, userNsRoles).file());
     }
 
     public InputStream getFileContentByTag(

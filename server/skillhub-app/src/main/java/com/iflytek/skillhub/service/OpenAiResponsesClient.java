@@ -318,8 +318,8 @@ public class OpenAiResponsesClient implements DiscoveryAiClient {
                 if (model.equals(properties.getModel())) {
                     throw primaryFailure;
                 }
-                log.warn("Skill documentation translation model unavailable [model={}]; falling back to [model={}]",
-                        model, properties.getModel());
+                log.warn("Skill documentation translation model unavailable [model={}]; falling back to [model={}]: {}",
+                        model, properties.getModel(), primaryFailure.getMessage());
                 return request(properties.getModel(), SKILL_DOCUMENTATION_TRANSLATION_INSTRUCTIONS,
                         serializedInput, safetyIdentifier).text();
             }
