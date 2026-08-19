@@ -30,7 +30,6 @@ import { toast } from '@/shared/lib/toast'
 import { ApiError } from '@/api/client'
 import type { BatchPublishItemResult } from '@/api/types'
 import { RESOURCE_CATEGORY_OPTIONS, resourceCategoryLabel, type ResourceCategoryCode } from '@/shared/lib/resource-category'
-import { PublishWorkflowHint } from '@/features/onboarding/publish-workflow-hint'
 import { completeOnboardingTask } from '@/features/onboarding/onboarding-progress'
 import { FormFeatureTour } from '@/features/onboarding/form-feature-tour'
 import { useAuth } from '@/features/auth/use-auth'
@@ -277,7 +276,6 @@ export function PublishPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-8 animate-fade-up">
       <DashboardPageHeader title={t('publish.title')} subtitle={t('publish.subtitle')} />
-      <PublishWorkflowHint kind="skill" />
 
       <Card className="p-8 space-y-8">
         <div data-onboarding-target="skill-repository" className="space-y-3">

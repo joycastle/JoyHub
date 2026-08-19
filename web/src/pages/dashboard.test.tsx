@@ -32,7 +32,7 @@ vi.mock('@/shared/hooks/use-user-queries', () => ({
 
 vi.mock('@/shared/hooks/use-skill-repositories', () => ({
   useSkillRepositories: () => ({
-    data: [{ slug: 'global', displayName: 'JoyHub公共库', defaultRepository: true }],
+    data: [{ slug: 'global', displayName: '所有人', defaultRepository: true }],
     isLoading: false,
   }),
 }))

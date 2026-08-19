@@ -69,7 +69,7 @@ import { NamespacePage } from './namespace'
 describe('NamespacePage', () => {
   beforeEach(() => {
     useSkillRepositoriesMock.mockReturnValue({
-      data: [{ slug: 'global', displayName: 'JoyHub公共库', defaultRepository: true }],
+      data: [{ slug: 'global', displayName: '所有人', defaultRepository: true }],
       isLoading: false,
     })
   })

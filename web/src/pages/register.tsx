@@ -61,7 +61,7 @@ export function RegisterPage() {
   const [fieldErrors, setFieldErrors] = useState<RegisterFieldErrors>({})
   const [formError, setFormError] = useState<string | null>(null)
 
-  const returnTo = search.returnTo && search.returnTo.startsWith('/') ? search.returnTo : '/dashboard'
+  const returnTo = search.returnTo && search.returnTo.startsWith('/') ? search.returnTo : '/'
 
   function validateUsername(value: string) {
     const trimmed = value.trim()

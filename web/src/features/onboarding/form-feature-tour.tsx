@@ -21,10 +21,11 @@ export function FormFeatureTour({ steps, onDismiss, label = '实地导览', comp
     const updatePosition = () => {
       const panel = panelRef.current
       if (!target || !panel || window.innerWidth < 768) {
-        setPosition(null)
+        setPosition((current) => current === null ? current : null)
         return
       }
-      setPosition(getOnboardingPanelPosition(target.getBoundingClientRect(), panel.getBoundingClientRect(), getOnboardingViewport()))
+      const next = getOnboardingPanelPosition(target.getBoundingClientRect(), panel.getBoundingClientRect(), getOnboardingViewport())
+      setPosition((current) => current && current.left === next.left && current.top === next.top ? current : next)
     }
     const frame = window.requestAnimationFrame(() => window.requestAnimationFrame(updatePosition))
     window.addEventListener('resize', updatePosition)

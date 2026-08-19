@@ -345,7 +345,7 @@ export function CatalogResourceForm({ onCreated, initialKind, resource, onboardi
       </section>
 
       <section data-onboarding-target="resource-scope" className="space-y-5 rounded-2xl border bg-card p-6">
-        <div><h2 className="text-xl font-semibold">所属项目空间</h2><p className="mt-1 text-sm text-muted-foreground">选择负责维护这项内容的公共库或项目空间。</p></div>
+        <div><h2 className="text-xl font-semibold">所属项目空间</h2><p className="mt-1 text-sm text-muted-foreground">选择负责维护这项内容的空间。全员可见的内容发到「所有人」，团队内容发到对应项目空间。</p></div>
         <div className="max-w-xl">
           <Label htmlFor="primaryDepartmentId">部门 *</Label>
           <Select value={primaryDepartmentId === undefined ? undefined : String(primaryDepartmentId)} onValueChange={(value) => setPrimaryDepartmentId(Number(value))}>
@@ -371,7 +371,7 @@ export function CatalogResourceForm({ onCreated, initialKind, resource, onboardi
         { target: 'resource-category', title: '选择最接近的工作场景', description: '场景和标签用于筛选与推荐。选择最相关的一项即可，避免为了曝光堆叠无关标签。' },
         { target: 'resource-access', title: '填写同事真正能打开的入口', description: '飞书 Agent 填 App ID；在线工具填公开入口；下载型工具上传 ZIP。不要填个人测试地址。' },
         { target: 'resource-documentation', title: '补全使用说明', description: '写清楚同事需要准备什么、从哪里开始、会得到什么以及限制。AI 草稿只能作为起点，必须人工核对。' },
-        { target: 'resource-scope', title: '选择所属项目空间', description: '公共库内容对所有人可见；项目空间内容由该空间维护，并对空间内全体人员可见。' },
+        { target: 'resource-scope', title: '选择所属项目空间', description: '发到所有人后全员可见；项目空间内容由该空间维护，并对空间内全体人员可见。' },
         { target: 'resource-submit', title: '保存并在“我的内容”验证', description: '提交后到“我的内容”检查状态和入口；以后可编辑、下架或归档，避免失效内容继续被推荐。' },
       ]} /> : null}
     </form>

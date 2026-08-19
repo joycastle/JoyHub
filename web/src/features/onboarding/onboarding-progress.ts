@@ -52,6 +52,14 @@ export function hasChosenOnboardingGoal(userId: string) {
   return read(userId, 'goal') === 'USE' || read(userId, 'goal') === 'PUBLISH'
 }
 
+export function hasSeenOnboardingWelcome(userId: string) {
+  return read(userId, 'welcome') === 'seen' || hasChosenOnboardingGoal(userId) || read(userId, 'journey') !== null
+}
+
+export function markOnboardingWelcomeSeen(userId: string) {
+  write(userId, 'welcome', 'seen')
+}
+
 export function getOnboardingGoal(userId: string): OnboardingGoal | null {
   const goal = read(userId, 'goal')
   return goal === 'USE' || goal === 'PUBLISH' ? goal : null

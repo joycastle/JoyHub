@@ -13,7 +13,7 @@ interface DashboardPageHeaderProps {
 /**
  * Standard header used by dashboard sub-pages so navigation and page framing stay consistent.
  */
-export function DashboardPageHeader({ title, subtitle, actions, showBackToDashboard = true }: DashboardPageHeaderProps) {
+export function DashboardPageHeader({ title, subtitle, actions, showBackToDashboard = false }: DashboardPageHeaderProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
 

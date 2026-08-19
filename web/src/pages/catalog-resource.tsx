@@ -193,7 +193,7 @@ export function CatalogResourcePage() {
       <ResourceDetailMetaCard
         rows={[
           { label: '版本', value: resource.version ? `v${resource.version}` : '—' },
-          { label: '归属部门', value: <span className="inline-flex items-center gap-1.5"><Building2 className="h-3.5 w-3.5" />{resource.department?.name || '公共库'}</span> },
+          { label: '归属部门', value: <span className="inline-flex items-center gap-1.5"><Building2 className="h-3.5 w-3.5" />{resource.department?.name || '所有人'}</span> },
           { label: '维护者', value: <span className="inline-flex items-center gap-1.5"><UserRound className="h-3.5 w-3.5" />{resource.owner?.displayName || resource.owner?.id || '—'}</span> },
           { label: '可见范围', value: resource.visibilityScope === 'COMPANY' ? '所有人' : resource.department?.name || '项目空间' },
           { label: '访问次数', value: formatCompactCount(stats.data?.viewCount ?? 0) },

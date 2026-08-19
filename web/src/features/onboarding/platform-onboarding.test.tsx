@@ -14,7 +14,7 @@ vi.mock('react-i18next', () => ({
 vi.mock('@tanstack/react-router', () => ({ useNavigate: () => navigateMock }))
 
 import { PlatformOnboarding } from './platform-onboarding'
-import { chooseOnboardingGoal, getOnboardingGoal, getOnboardingJourneyStep, startOnboardingJourney } from './onboarding-progress'
+import { chooseOnboardingGoal, getOnboardingGoal, getOnboardingJourneyStep, markOnboardingWelcomeSeen, startOnboardingJourney } from './onboarding-progress'
 
 describe('PlatformOnboarding', () => {
   afterEach(() => {
@@ -22,18 +22,23 @@ describe('PlatformOnboarding', () => {
     navigateMock.mockClear()
   })
 
-  it('waits for an explicit click before offering onboarding goals', () => {
+  it('offers onboarding goals on the first visit, then only after an explicit click', () => {
     render(<PlatformOnboarding userId="user-a" displayName="Mia" />)
 
-    expect(screen.queryByText('onboarding.welcome.title:Mia')).toBeNull()
+    expect(screen.getByText('onboarding.welcome.title:Mia')).toBeTruthy()
     expect(getOnboardingJourneyStep('user-a')).toBeNull()
 
-    fireEvent.click(screen.getByRole('button', { name: 'onboarding.replay' }))
-    expect(screen.getByText('onboarding.welcome.title:Mia')).toBeTruthy()
     fireEvent.click(screen.getByText('onboarding.welcome.useAction'))
 
     expect(getOnboardingJourneyStep('user-a')).toBe('start')
     expect(navigateMock).toHaveBeenCalledWith({ to: '/' })
+  })
+
+  it('does not reopen the welcome dialog after the first visit', () => {
+    markOnboardingWelcomeSeen('user-seen')
+    render(<PlatformOnboarding userId="user-seen" displayName="Mia" />)
+
+    expect(screen.queryByText('onboarding.welcome.title:Mia')).toBeNull()
   })
 
   it('keeps free exploration outside the onboarding journey', () => {

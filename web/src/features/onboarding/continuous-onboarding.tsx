@@ -58,7 +58,7 @@ function isDetailPath(pathname: string) {
 export function ContinuousOnboarding({ userId }: { userId: string }) {
   const navigate = useNavigate()
   const pathname = useRouterState({ select: (state) => state.location.pathname })
-  const [step, setStep] = useState<OnboardingJourneyStep | null>(() => getOnboardingJourneyStep(userId))
+  const [step, setStep] = useState<OnboardingJourneyStep | null>(null)
   const [tasks, setTasks] = useState(() => getOnboardingTasks(userId))
   const [hasTarget, setHasTarget] = useState(false)
   const [hasSearchResults, setHasSearchResults] = useState(false)
@@ -87,6 +87,9 @@ export function ContinuousOnboarding({ userId }: { userId: string }) {
   const isPublishing = pathname === '/dashboard/publish' || pathname === '/dashboard/catalog/new'
 
   useEffect(() => {
+    if (getOnboardingJourneyStep(userId)) {
+      pauseOnboardingJourney(userId)
+    }
     const refresh = () => { setStep(getOnboardingJourneyStep(userId)); setTasks(getOnboardingTasks(userId)); setHasUsedCurrentJourney(hasCompletedOnboardingJourneyUse(userId)) }
     return subscribeOnboardingProgress(refresh)
   }, [userId])
@@ -168,6 +171,7 @@ export function ContinuousOnboarding({ userId }: { userId: string }) {
       setHasTarget(Boolean(target))
       target?.scrollIntoView?.({ behavior: 'smooth', block: 'center' })
     }
+    let scheduled = 0
     const update = () => {
       const target = findTarget()
       applyHighlight(target)
@@ -175,16 +179,27 @@ export function ContinuousOnboarding({ userId }: { userId: string }) {
       const type = document.querySelector<HTMLElement>('[data-onboarding-resource-type]')?.dataset.onboardingResourceType
       setResourceType(type === 'SKILL' || type === 'AGENT' || type === 'TOOL' ? type : null)
       const panel = panelRef.current
-      if (!target || !panel || window.innerWidth < 768) return setPosition(null)
-      setPosition(getOnboardingPanelPosition(target.getBoundingClientRect(), panel.getBoundingClientRect(), getOnboardingViewport()))
+      if (!target || !panel || window.innerWidth < 768) {
+        setPosition((current) => current === null ? current : null)
+        return
+      }
+      const next = getOnboardingPanelPosition(target.getBoundingClientRect(), panel.getBoundingClientRect(), getOnboardingViewport())
+      setPosition((current) => current && current.left === next.left && current.top === next.top ? current : next)
+    }
+    const scheduleUpdate = () => {
+      if (scheduled) return
+      scheduled = requestAnimationFrame(() => {
+        scheduled = 0
+        update()
+      })
     }
     const frame = requestAnimationFrame(() => requestAnimationFrame(update))
-    const observer = new MutationObserver(update)
+    const observer = new MutationObserver(scheduleUpdate)
     observer.observe(document.body, { childList: true, subtree: true })
     const resizeObserver = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(update)
     if (panelRef.current) resizeObserver?.observe(panelRef.current)
     window.addEventListener('resize', update); window.addEventListener('scroll', update, true); window.visualViewport?.addEventListener('resize', update)
-    return () => { cancelAnimationFrame(frame); observer.disconnect(); resizeObserver?.disconnect(); window.removeEventListener('resize', update); window.removeEventListener('scroll', update, true); window.visualViewport?.removeEventListener('resize', update); highlightedTarget?.classList.remove('relative', 'z-30', 'rounded-lg', 'ring-4', 'ring-primary/50', 'ring-offset-4') }
+    return () => { cancelAnimationFrame(frame); if (scheduled) cancelAnimationFrame(scheduled); observer.disconnect(); resizeObserver?.disconnect(); window.removeEventListener('resize', update); window.removeEventListener('scroll', update, true); window.visualViewport?.removeEventListener('resize', update); highlightedTarget?.classList.remove('relative', 'z-30', 'rounded-lg', 'ring-4', 'ring-primary/50', 'ring-offset-4') }
   }, [instruction])
 
   if (!step || !instruction) return null

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
 import { ChevronRight, Compass, Search, Send, Sparkles } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { chooseOnboardingGoal, getOnboardingJourneyPath, hasChosenOnboardingGoal, resumeOnboardingJourney, startOnboardingJourney, type OnboardingGoal } from './onboarding-progress'
+import { chooseOnboardingGoal, getOnboardingJourneyPath, hasChosenOnboardingGoal, hasSeenOnboardingWelcome, markOnboardingWelcomeSeen, resumeOnboardingJourney, startOnboardingJourney, type OnboardingGoal } from './onboarding-progress'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/shared/ui/dialog'
 
 interface PlatformOnboardingProps { userId?: string; displayName?: string }
@@ -11,11 +11,17 @@ interface PlatformOnboardingProps { userId?: string; displayName?: string }
 export function PlatformOnboarding({ userId, displayName }: PlatformOnboardingProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const [isGoalOpen, setIsGoalOpen] = useState(false)
+  const [isGoalOpen, setIsGoalOpen] = useState(() => userId ? !hasSeenOnboardingWelcome(userId) : false)
 
   if (!userId) return null
 
+  const closeWelcome = () => {
+    markOnboardingWelcomeSeen(userId)
+    setIsGoalOpen(false)
+  }
+
   const selectGoal = (goal: OnboardingGoal) => {
+    markOnboardingWelcomeSeen(userId)
     chooseOnboardingGoal(userId, goal)
     startOnboardingJourney(userId, goal === 'PUBLISH' ? 'publishEntry' : 'start')
     setIsGoalOpen(false)
@@ -48,7 +54,7 @@ export function PlatformOnboarding({ userId, displayName }: PlatformOnboardingPr
         <Compass className="h-5 w-5" strokeWidth={1.8} />
       </button>
 
-      <Dialog open={isGoalOpen} onOpenChange={setIsGoalOpen}>
+      <Dialog open={isGoalOpen} onOpenChange={(open) => open ? setIsGoalOpen(true) : closeWelcome()}>
         <DialogContent className="max-w-xl rounded-xl p-0 overflow-hidden">
           <div className="bg-[#f6f8fa] px-7 py-8 md:px-10 md:py-10">
             <div className="inline-flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10 text-primary"><Sparkles className="h-5 w-5" /></div>
@@ -67,7 +73,7 @@ export function PlatformOnboarding({ userId, displayName }: PlatformOnboardingPr
               <span className="mt-4 inline-flex items-center text-sm font-medium text-primary">{t('onboarding.welcome.publishAction')} <ChevronRight className="ml-1 h-4 w-4" /></span>
             </button>
           </div>
-          <button type="button" onClick={() => setIsGoalOpen(false)} className="pb-6 text-center text-sm text-muted-foreground hover:text-foreground">{t('onboarding.welcome.explore')}</button>
+          <button type="button" onClick={closeWelcome} className="pb-6 text-center text-sm text-muted-foreground hover:text-foreground">{t('onboarding.welcome.explore')}</button>
         </DialogContent>
       </Dialog>
 

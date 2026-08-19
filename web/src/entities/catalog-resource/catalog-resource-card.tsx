@@ -23,7 +23,7 @@ export function CatalogResourceCard({ resource, onClick, onUse, quickActionLabel
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary/10 text-xl">{resource.icon || catalogKindEmoji(resource.kind)}</div>
           <div className="min-w-0 flex-1">
             <h3 className="truncate text-base font-semibold leading-5 transition-colors group-hover:text-primary">{resource.name}</h3>
-            <p className="mt-1 truncate text-xs text-muted-foreground">{resource.department?.name || resource.owner?.displayName || 'JoyHub 公共库'}</p>
+            <p className="mt-1 truncate text-xs text-muted-foreground">{resource.department?.name || resource.owner?.displayName || '所有人'}</p>
           </div>
           <span className="shrink-0 rounded-full border border-border px-2 py-0.5 text-[11px] font-medium text-muted-foreground">{catalogKindLabel(resource.kind)}</span>
         </div>

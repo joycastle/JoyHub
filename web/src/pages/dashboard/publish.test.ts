@@ -55,7 +55,7 @@ vi.mock('@/shared/hooks/use-skill-queries', () => ({
 
 vi.mock('@/shared/hooks/use-publish-targets', () => ({
   usePublishTargets: () => ({
-    data: [{ id: 1, slug: 'global', displayName: 'JoyHub公共库', supportedResourceTypes: ['SKILL', 'TOOL', 'AGENT'] }],
+    data: [{ id: 1, slug: 'global', displayName: '所有人', supportedResourceTypes: ['SKILL', 'TOOL', 'AGENT'] }],
     isLoading: false,
   }),
 }))
