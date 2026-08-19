@@ -2,7 +2,7 @@ export function userStateDir(home = process.env.HOME || process.env.USERPROFILE 
   if (!home) {
     throw new Error('Cannot resolve user home directory')
   }
-  return `${home.replace(/\\/g, '/')}/.skillhub`
+  return `${home.replace(/\\/g, '/')}/.joyhub`
 }
 
 export function joinPath(...parts: string[]): string {

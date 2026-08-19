@@ -2,11 +2,11 @@ import { stat, readFile } from 'node:fs/promises'
 import { basename } from 'node:path'
 import { ConfigStore } from '../stores/config-store'
 import { CredentialsStore } from '../stores/credentials-store'
-import { SkillHubClient } from '../clients/skillhub-client'
+import { JoyHubClient } from '../clients/skillhub-client'
 import { resolveRegistry, resolveToken } from '../services/registry-service'
 import { CliError } from '../shared/errors'
 import { EXIT } from '../shared/constants'
-import { createZip, isZipFile } from '../platform/archive'
+import { createZip, isZipFile, listZipFiles } from '../platform/archive'
 
 export interface PublishCommandOptions {
   namespace?: string
@@ -34,7 +34,7 @@ export async function publishCommand(path: string, options: PublishCommandOption
   const visibility = options.visibility ?? 'public'
 
   if (!token) {
-    throw new CliError('authentication required for publish', EXIT.auth, { next: 'run `skillhub login`' })
+    throw new CliError('authentication required for publish', EXIT.auth, { next: 'run `joyhub auth ensure`' })
   }
 
   // Create or read archive
@@ -55,17 +55,18 @@ export async function publishCommand(path: string, options: PublishCommandOption
     throw new CliError(`path must be a file or directory: ${path}`, EXIT.filesystem, { path })
   }
 
-  const client = new SkillHubClient(registry, token)
+  const client = new JoyHubClient(registry, token)
+  const files = await listZipFiles(archiveBlob)
 
   if (options.dryRun) {
     const result = await client.validatePublish(namespace, archiveBlob, toServerVisibility(visibility), archiveName)
 
     if (options.json) {
       if (!result.valid) {
-        process.stdout.write(JSON.stringify(result) + '\n')
+        process.stdout.write(JSON.stringify({ ok: false, ...result, namespace, files }) + '\n')
         throw new CliError('validation failed', EXIT.validation)
       }
-      return JSON.stringify(result)
+      return JSON.stringify({ ok: true, ...result, namespace, files })
     }
 
     const lines: string[] = []
@@ -73,6 +74,11 @@ export async function publishCommand(path: string, options: PublishCommandOption
       lines.push('Validation passed')
     } else {
       lines.push('Validation failed')
+    }
+    lines.push(`  Namespace: ${namespace}`)
+    lines.push('  Files:')
+    for (const file of files) {
+      lines.push(`    - ${file}`)
     }
     if (result.resolvedSlug) {
       lines.push(`  Slug: ${result.resolvedSlug}`)
@@ -108,12 +114,14 @@ export async function publishCommand(path: string, options: PublishCommandOption
       ok: true,
       namespace: result.namespace,
       slug: result.slug,
+      coordinate: `@${result.namespace}/${result.slug}`,
       version: result.version,
+      status: result.status,
       visibility: result.visibility.toLowerCase(),
       detailUrl
     })
   }
-  return `Published successfully: ${result.namespace}/${result.slug}@${result.version}\nDetail: ${detailUrl}`
+  return `Published successfully: @${result.namespace}/${result.slug}@${result.version} (${result.status})\nDetail: ${detailUrl}`
 }
 
 /**

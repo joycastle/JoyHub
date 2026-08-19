@@ -23,6 +23,14 @@ class ApiTokenScopeServiceTest {
     }
 
     @Test
+    void parseScopesShouldHandleJsonColumnReturningEncodedString() {
+        Set<String> scopes = scopeService.parseScopes(
+                "\"\\\"[\\\\\\\"skill:read\\\\\\\",\\\\\\\"skill:publish\\\\\\\"]\\\"\"");
+
+        assertEquals(Set.of("skill:read", "skill:publish"), scopes);
+    }
+
+    @Test
     void authorizeShouldAllowCliWhoamiWithoutScope() {
         ApiTokenScopeService.AuthorizationDecision decision = scopeService.authorize(
             "GET",

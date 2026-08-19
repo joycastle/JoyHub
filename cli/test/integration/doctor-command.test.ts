@@ -6,7 +6,7 @@ import { runCli } from '../helpers/run-cli'
 
 /**
  * Seed a single skill metadata file under the given scan root.
- * Doctor scans its cwd for `.<agent>/skills/<slug>/.skillhub/metadata.json`,
+ * Doctor scans its cwd for `.<agent>/skills/<slug>/.joyhub/metadata.json`,
  * so we seed fixtures inside `scanRoot` (a temp dir) and pass that same dir
  * as the CLI's cwd — no writes into the repo working tree.
  */
@@ -22,7 +22,7 @@ async function seedSkill(scanRoot: string, options: {
     installedAt: string
   }
 }): Promise<void> {
-  const metaDir = join(scanRoot, options.agentDir, 'skills', options.slug, '.skillhub')
+  const metaDir = join(scanRoot, options.agentDir, 'skills', options.slug, '.joyhub')
   await mkdir(metaDir, { recursive: true })
   await writeFile(join(metaDir, 'metadata.json'), JSON.stringify(options.metadata))
 }
@@ -41,7 +41,7 @@ describe('doctor command', () => {
     const json = JSON.parse(result.stdout)
     expect(json.ok).toBe(true)
     expect(typeof json.inventoryPath).toBe('string')
-    expect(json.inventoryPath).toContain('.skillhub')
+    expect(json.inventoryPath).toContain('.joyhub')
     expect(json.inventoryPath).toContain('inventory.json')
     expect(json.backupPath).toBeNull()
     expect(json.itemsScanned).toBe(0)
@@ -62,7 +62,7 @@ describe('doctor command', () => {
 
     expect(result.exitCode).toBe(0)
     expect(result.stdout).toContain('Inventory:')
-    expect(result.stdout).toContain('.skillhub')
+    expect(result.stdout).toContain('.joyhub')
     expect(result.stdout).toContain('inventory.json')
     expect(result.stdout).toContain('Scanned: 0 items, 0 targets')
     expect(result.stdout).not.toContain('Backup:')
@@ -91,7 +91,7 @@ describe('doctor command', () => {
 
     expect(result.exitCode).toBe(0)
 
-    const inventoryPath = join(home, '.skillhub', 'inventory.json')
+    const inventoryPath = join(home, '.joyhub', 'inventory.json')
     const raw = await readFile(inventoryPath, 'utf-8')
     const inventory = JSON.parse(raw) as { items: Array<{
       namespace: string
@@ -198,7 +198,7 @@ describe('doctor command', () => {
 
     // The persisted inventory must mirror the JSON output: no items.
     const inventory = JSON.parse(
-      await readFile(join(home, '.skillhub', 'inventory.json'), 'utf-8')
+      await readFile(join(home, '.joyhub', 'inventory.json'), 'utf-8')
     ) as { items: unknown[] }
     expect(inventory.items).toHaveLength(0)
   })
@@ -212,14 +212,14 @@ describe('doctor command', () => {
   test('doctor reports skipped entries for malformed and incomplete metadata', async () => {
     const { home, cwd } = await createTempHome()
 
-    // (1) Bad JSON: triggers the catch around JSON.parse → "no .skillhub/metadata.json"
+    // (1) Bad JSON: triggers the catch around JSON.parse → "no .joyhub/metadata.json"
     //     because the catch block is shared with the readFile failure path.
-    const badJsonDir = join(cwd, '.codex', 'skills', 'broken-json', '.skillhub')
+    const badJsonDir = join(cwd, '.codex', 'skills', 'broken-json', '.joyhub')
     await mkdir(badJsonDir, { recursive: true })
     await writeFile(join(badJsonDir, 'metadata.json'), '{ this is not json')
 
     // (2) Incomplete fields: parses fine but is missing `version`.
-    const incompleteDir = join(cwd, '.claude', 'skills', 'incomplete', '.skillhub')
+    const incompleteDir = join(cwd, '.claude', 'skills', 'incomplete', '.joyhub')
     await mkdir(incompleteDir, { recursive: true })
     await writeFile(
       join(incompleteDir, 'metadata.json'),
@@ -270,7 +270,7 @@ describe('doctor command', () => {
 
     expect(json.itemsScanned).toBe(1) // only good-skill
     const inventory = JSON.parse(
-      await readFile(join(home, '.skillhub', 'inventory.json'), 'utf-8')
+      await readFile(join(home, '.joyhub', 'inventory.json'), 'utf-8')
     ) as { items: Array<{ slug: string }> }
     expect(inventory.items).toHaveLength(1)
     expect(inventory.items[0]?.slug).toBe('good-skill')
@@ -279,9 +279,9 @@ describe('doctor command', () => {
   test('doctor backs up existing inventory.json and reports backupPath', async () => {
     const { home, cwd } = await createTempHome()
 
-    const skillhubDir = join(home, '.skillhub')
-    await mkdir(skillhubDir, { recursive: true })
-    const inventoryPath = join(skillhubDir, 'inventory.json')
+    const joyhubDir = join(home, '.joyhub')
+    await mkdir(joyhubDir, { recursive: true })
+    const inventoryPath = join(joyhubDir, 'inventory.json')
     const originalContent = JSON.stringify({ items: [{ registry: 'old', namespace: 'x', slug: 'y', version: '0.0.1', targets: [] }] })
     await writeFile(inventoryPath, originalContent)
 
@@ -303,9 +303,9 @@ describe('doctor command', () => {
   test('doctor merges with existing inventory and preserves out-of-cwd entries', async () => {
     const { home, cwd } = await createTempHome()
 
-    const skillhubDir = join(home, '.skillhub')
-    await mkdir(skillhubDir, { recursive: true })
-    const inventoryPath = join(skillhubDir, 'inventory.json')
+    const joyhubDir = join(home, '.joyhub')
+    await mkdir(joyhubDir, { recursive: true })
+    const inventoryPath = join(joyhubDir, 'inventory.json')
 
     await writeFile(inventoryPath, JSON.stringify({
       items: [
@@ -363,7 +363,7 @@ describe('doctor command', () => {
 
   // -------------------------------------------------------------------------
   // P1 — Symlink safety: doctor must skip (not follow) symlinked agent /
-  // skill / .skillhub directories. This protects against malicious or
+  // skill / .joyhub directories. This protects against malicious or
   // accidental symlinks that would otherwise let metadata be slurped from
   // arbitrary filesystem locations.
   // -------------------------------------------------------------------------
@@ -372,7 +372,7 @@ describe('doctor command', () => {
     const { symlink, mkdir: mkdirP } = await import('node:fs/promises')
 
     // Real target with a valid metadata file off in /tmp.
-    const realRoot = join(cwd, '__real__', '.codex', 'skills', 'pdf-parser', '.skillhub')
+    const realRoot = join(cwd, '__real__', '.codex', 'skills', 'pdf-parser', '.joyhub')
     await mkdirP(realRoot, { recursive: true })
     await writeFile(join(realRoot, 'metadata.json'), JSON.stringify({
       registry: 'https://skill.xfyun.cn', namespace: 'global', slug: 'pdf-parser',
@@ -400,9 +400,9 @@ describe('doctor command', () => {
     const { home, cwd } = await createTempHome()
     const { symlink, mkdir: mkdirP } = await import('node:fs/promises')
 
-    // Real metadata under cwd/__real__/pdf-parser/.skillhub/
+    // Real metadata under cwd/__real__/pdf-parser/.joyhub/
     const realSlug = join(cwd, '__real__', 'pdf-parser')
-    const realSkillhub = join(realSlug, '.skillhub')
+    const realSkillhub = join(realSlug, '.joyhub')
     await mkdirP(realSkillhub, { recursive: true })
     await writeFile(join(realSkillhub, 'metadata.json'), JSON.stringify({
       registry: 'https://skill.xfyun.cn', namespace: 'global', slug: 'pdf-parser',
@@ -430,11 +430,11 @@ describe('doctor command', () => {
     expect(symlinked?.reason).toContain('regular directory')
   })
 
-  test('doctor skips a .skillhub dir that is a symlink', async () => {
+  test('doctor skips a .joyhub dir that is a symlink', async () => {
     const { home, cwd } = await createTempHome()
     const { symlink, mkdir: mkdirP } = await import('node:fs/promises')
 
-    // Real metadata reachable through a symlinked .skillhub directory.
+    // Real metadata reachable through a symlinked .joyhub directory.
     const realSkillhub = join(cwd, '__real_meta__')
     await mkdirP(realSkillhub, { recursive: true })
     await writeFile(join(realSkillhub, 'metadata.json'), JSON.stringify({
@@ -444,7 +444,7 @@ describe('doctor command', () => {
 
     const slugDir = join(cwd, '.codex', 'skills', 'pdf-parser')
     await mkdirP(slugDir, { recursive: true })
-    await symlink(realSkillhub, join(slugDir, '.skillhub'))
+    await symlink(realSkillhub, join(slugDir, '.joyhub'))
 
     const result = await runCli(['doctor', '--json'], {
       HOME: home, USERPROFILE: home
@@ -458,6 +458,6 @@ describe('doctor command', () => {
     expect(json.itemsScanned).toBe(0)
     const skipped = json.skipped.find(s => s.path.endsWith('pdf-parser'))
     expect(skipped).toBeDefined()
-    expect(skipped?.reason.toLowerCase()).toMatch(/skillhub|regular directory/)
+    expect(skipped?.reason.toLowerCase()).toMatch(/joyhub|regular directory/)
   })
 })

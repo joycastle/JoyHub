@@ -22,7 +22,7 @@ export function createFakeRegistry(handlers: Record<string, FakeHandler>) {
 /**
  * Controls how a specific endpoint behaves when a failure is injected:
  *   'auth'         => 401 { code: 401, message: 'unauthorized' }
- *   'forbidden'    => 403 with a standard SkillHub error envelope
+ *   'forbidden'    => 403 with a standard JoyHub error envelope
  *   'forbidden_unstructured' => 403 with a non-JSON response body
  *   'not_found'    => 404 { code: 404, message: 'not found' }
  *   'server_error' => 500 { code: 500, message: 'internal error' }
@@ -137,6 +137,24 @@ interface FakeRegistryOptions {
   skills?: FakeSkill[]
   /** Response to return for publish/validate (dry-run) requests. */
   dryRunResponse?: { valid: boolean; errors: string[]; warnings: string[]; resolvedSlug: string | null; resolvedVersion: string | null }
+  publishStatus?: string
+  searchUnauthorizedCount?: number
+  publishTargets?: Array<{
+    id: number
+    slug: string
+    displayName: string
+    currentUserRole: string
+    supportedResourceTypes: string[]
+  }>
+  deviceFlow?: {
+    userCode?: string
+    verificationUri?: string
+    expiresIn?: number
+    interval?: number
+    pendingPolls?: number
+    accessToken?: string
+    error?: string
+  }
   /**
    * Per-endpoint failure injection. When set for an endpoint, that endpoint
    * ignores all other logic and returns the specified failure (or throws for
@@ -163,7 +181,7 @@ interface FakeRegistryOptions {
  * between bind and fetch — otherwise the client might connect to someone
  * else instead of failing. Any fetch reaches open() and gets terminated,
  * which surfaces as a socket error and maps to
- * CliError('registry unreachable', EXIT.network) in the SkillHub client.
+ * CliError('registry unreachable', EXIT.network) in the JoyHub client.
  */
 async function startNetworkFailureServer(): Promise<{ url: string; stop: () => void }> {
   const listener = Bun.listen<unknown>({
@@ -190,7 +208,18 @@ export async function startFakeRegistry(options: FakeRegistryOptions = {}) {
     resolve: CapturedResolve | null
     delete: CapturedDelete | null
     validate: CapturedValidate | null
-  } = { publish: null, resolve: null, delete: null, validate: null }
+    devicePolls: number
+    deviceCodes: number
+    searchRequests: number
+  } = {
+    publish: null,
+    resolve: null,
+    delete: null,
+    validate: null,
+    devicePolls: 0,
+    deviceCodes: 0,
+    searchRequests: 0
+  }
 
   // If any endpoint is configured with 'network' failure mode, we need a real
   // TCP-level failure. Start a connection-dropping server and return its URL
@@ -235,6 +264,45 @@ export async function startFakeRegistry(options: FakeRegistryOptions = {}) {
       const path = url.pathname
       const baseUrl = `${url.protocol}//${url.host}`
 
+      if (path === '/api/v1/auth/device/code' && req.method === 'POST') {
+        state.deviceCodes += 1
+        return Response.json({
+          code: 0,
+          data: {
+            deviceCode: 'device-test',
+            userCode: options.deviceFlow?.userCode ?? 'JOYH-1234',
+            verificationUri: options.deviceFlow?.verificationUri ?? '/cli/auth',
+            expiresIn: options.deviceFlow?.expiresIn ?? 10,
+            interval: options.deviceFlow?.interval ?? 0
+          }
+        })
+      }
+
+      if (path === '/api/v1/auth/device/token' && req.method === 'POST') {
+        state.devicePolls += 1
+        const pendingPolls = options.deviceFlow?.pendingPolls ?? 0
+        if (state.devicePolls <= pendingPolls) {
+          return Response.json({
+            code: 0,
+            data: { accessToken: null, tokenType: null, error: 'authorization_pending' }
+          })
+        }
+        if (options.deviceFlow?.error) {
+          return Response.json({
+            code: 0,
+            data: { accessToken: null, tokenType: null, error: options.deviceFlow.error }
+          })
+        }
+        return Response.json({
+          code: 0,
+          data: {
+            accessToken: options.deviceFlow?.accessToken ?? options.token ?? 'jh_device',
+            tokenType: 'Bearer',
+            error: null
+          }
+        })
+      }
+
       // ------------------------------------------------------------------ //
       // GET /api/cli/v1/auth/whoami
       // ------------------------------------------------------------------ //
@@ -252,7 +320,13 @@ export async function startFakeRegistry(options: FakeRegistryOptions = {}) {
       // GET /api/cli/v1/skills/search
       // ------------------------------------------------------------------ //
       if (path === '/api/cli/v1/skills/search') {
+        state.searchRequests += 1
         if (options.failures?.search) return failureResponse(options.failures.search)
+        if (state.searchRequests <= (options.searchUnauthorizedCount ?? 0)) {
+          return failureResponse('auth')
+        }
+        const authErr = checkAuth(req)
+        if (authErr) return authErr
         return Response.json({
           code: 0,
           data: {
@@ -261,6 +335,12 @@ export async function startFakeRegistry(options: FakeRegistryOptions = {}) {
             limit: 20
           }
         })
+      }
+
+      if (path === '/api/cli/v1/namespaces/publish-targets' && req.method === 'GET') {
+        const authErr = checkAuth(req)
+        if (authErr) return authErr
+        return Response.json({ code: 0, data: options.publishTargets ?? [] })
       }
 
       // ------------------------------------------------------------------ //
@@ -418,7 +498,8 @@ export async function startFakeRegistry(options: FakeRegistryOptions = {}) {
               namespace,
               slug: fileName.replace(/\.zip$/, ''),
               version: '1.0.0',
-              visibility
+              visibility,
+              status: options.publishStatus ?? 'PENDING_REVIEW'
             }
           })
         })

@@ -13,23 +13,23 @@ describe('NpmRegistryClient', () => {
     })
 
     await expect(client.latestVersion()).resolves.toBe('1.2.3')
-    expect(requestedUrl).toBe('https://registry.npmmirror.com/%40astron-team%2Fskillhub/latest')
+    expect(requestedUrl).toBe('https://registry.npmmirror.com/%40joycastle%2Fjoyhub-cli/latest')
   })
 
-  test('uses SkillHub registry override before npm registry env vars', async () => {
+  test('uses JoyHub registry override before npm registry env vars', async () => {
     let requestedUrl = ''
     const successfulFetch = (async (input: RequestInfo | URL) => {
       requestedUrl = String(input)
       return Response.json({ version: '1.2.3' })
     }) as typeof fetch
     const client = new NpmRegistryClient(successfulFetch, 10_000, {
-      SKILLHUB_NPM_REGISTRY: 'https://skillhub-registry.example.test/npm/',
+      JOYHUB_NPM_REGISTRY: 'https://joyhub-registry.example.test/npm/',
       npm_config_registry: 'https://lower-priority.example.test',
       NPM_CONFIG_REGISTRY: 'https://lowest-priority.example.test'
     })
 
     await expect(client.latestVersion()).resolves.toBe('1.2.3')
-    expect(requestedUrl).toBe('https://skillhub-registry.example.test/npm/%40astron-team%2Fskillhub/latest')
+    expect(requestedUrl).toBe('https://joyhub-registry.example.test/npm/%40joycastle%2Fjoyhub-cli/latest')
   })
 
   test('resolves registry env names case-insensitively for Windows compatibility', async () => {
@@ -39,11 +39,11 @@ describe('NpmRegistryClient', () => {
       return Response.json({ version: '1.2.3' })
     }) as typeof fetch
     const client = new NpmRegistryClient(successfulFetch, 10_000, {
-      skillhub_npm_registry: 'https://windows-env.example.test'
+      joyhub_npm_registry: 'https://windows-env.example.test'
     })
 
     await expect(client.latestVersion()).resolves.toBe('1.2.3')
-    expect(requestedUrl).toBe('https://windows-env.example.test/%40astron-team%2Fskillhub/latest')
+    expect(requestedUrl).toBe('https://windows-env.example.test/%40joycastle%2Fjoyhub-cli/latest')
   })
 
   test('ignores empty registry env values before falling back', async () => {
@@ -53,13 +53,13 @@ describe('NpmRegistryClient', () => {
       return Response.json({ version: '1.2.3' })
     }) as typeof fetch
     const client = new NpmRegistryClient(successfulFetch, 10_000, {
-      SKILLHUB_NPM_REGISTRY: '   ',
+      JOYHUB_NPM_REGISTRY: '   ',
       npm_config_registry: '',
       NPM_CONFIG_REGISTRY: 'https://registry.example.test'
     })
 
     await expect(client.latestVersion()).resolves.toBe('1.2.3')
-    expect(requestedUrl).toBe('https://registry.example.test/%40astron-team%2Fskillhub/latest')
+    expect(requestedUrl).toBe('https://registry.example.test/%40joycastle%2Fjoyhub-cli/latest')
   })
 
   test('uses the default npm registry when no registry is configured', async () => {
@@ -71,7 +71,7 @@ describe('NpmRegistryClient', () => {
     const client = new NpmRegistryClient(successfulFetch, 10_000, {})
 
     await expect(client.latestVersion()).resolves.toBe('1.2.3')
-    expect(requestedUrl).toBe('https://registry.npmjs.org/%40astron-team%2Fskillhub/latest')
+    expect(requestedUrl).toBe('https://registry.npmjs.org/%40joycastle%2Fjoyhub-cli/latest')
   })
 
   test('classifies network failures as CLI errors', async () => {
@@ -96,7 +96,7 @@ describe('NpmRegistryClient', () => {
   test('reports registry context for non-2xx responses', async () => {
     const failingFetch = (async () => new Response('{}', { status: 503 })) as unknown as typeof fetch
     const client = new NpmRegistryClient(failingFetch, 10_000, {
-      SKILLHUB_NPM_REGISTRY: 'https://registry.example.test'
+      JOYHUB_NPM_REGISTRY: 'https://registry.example.test'
     })
 
     await expect(client.latestVersion()).rejects.toMatchObject({
@@ -109,7 +109,7 @@ describe('NpmRegistryClient', () => {
   })
 
   test('rejects registry responses without a version', async () => {
-    const failingFetch = (async () => Response.json({ name: '@astron-team/skillhub' })) as unknown as typeof fetch
+    const failingFetch = (async () => Response.json({ name: '@joycastle/joyhub-cli' })) as unknown as typeof fetch
     const client = new NpmRegistryClient(failingFetch, 10_000, {
       npm_config_registry: 'https://registry.example.test'
     })

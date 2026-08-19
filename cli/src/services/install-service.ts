@@ -1,6 +1,6 @@
 import { mkdir, mkdtemp, rename, rm, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
-import { SkillHubClient } from '../clients/skillhub-client'
+import { JoyHubClient } from '../clients/skillhub-client'
 import { InventoryStore } from '../stores/inventory-store'
 import { CliError } from '../shared/errors'
 import { EXIT } from '../shared/constants'
@@ -54,7 +54,7 @@ async function preflightInstallTargets(
 
 export async function installSkill(options: InstallOptions): Promise<{ installed: Array<{ agent: string; dir: string }> }> {
   const preparedTargets = await preflightInstallTargets(options.targets, options.slug, options.force)
-  const client = new SkillHubClient(options.registry, options.token)
+  const client = new JoyHubClient(options.registry, options.token)
   const resolved = await client.resolve(options.namespace, options.slug, options.version)
   const response = await client.download(options.namespace, options.slug, resolved.version)
   const buffer = await readBoundedResponseBody(response)
@@ -71,7 +71,7 @@ export async function installSkill(options: InstallOptions): Promise<{ installed
       await extractZip(buffer, tempDir)
 
       const installedAt = new Date().toISOString()
-      const metaDir = join(tempDir, '.skillhub')
+      const metaDir = join(tempDir, '.joyhub')
       await mkdir(metaDir, { recursive: true })
       await writeFile(join(metaDir, 'metadata.json'), JSON.stringify({
         registry: options.registry,

@@ -3,5 +3,5 @@ import { printResult } from '../shared/output'
 
 export async function versionCommand(args: string[]): Promise<string> {
   const json = args.includes('--json')
-  return printResult(json ? { ok: true, version: CLI_VERSION } : `SkillHub CLI ${CLI_VERSION}`, json)
+  return printResult(json ? { ok: true, version: CLI_VERSION } : `JoyHub CLI ${CLI_VERSION}`, json)
 }

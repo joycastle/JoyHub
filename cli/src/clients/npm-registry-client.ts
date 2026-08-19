@@ -20,7 +20,9 @@ function readEnv(env: NodeJS.ProcessEnv, name: string): string | undefined {
 }
 
 function resolveRegistry(env: NodeJS.ProcessEnv): string {
-  return readEnv(env, 'SKILLHUB_NPM_REGISTRY')
+  return readEnv(env, 'JOYHUB_NPM_REGISTRY')
+    // Deprecated compatibility alias.
+    ?? readEnv(env, 'SKILLHUB_NPM_REGISTRY')
     ?? readEnv(env, 'npm_config_registry')
     ?? readEnv(env, 'NPM_CONFIG_REGISTRY')
     ?? DEFAULT_NPM_REGISTRY

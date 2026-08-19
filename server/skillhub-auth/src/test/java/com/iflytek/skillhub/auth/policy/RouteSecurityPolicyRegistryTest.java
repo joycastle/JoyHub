@@ -123,13 +123,31 @@ class RouteSecurityPolicyRegistryTest {
     @Test
     void apiTokenPolicySupportsNativeCliRoutes() {
         assertTrue(registry.authorizeApiToken("GET", "/api/cli/v1/auth/whoami", Set.of()).allowed());
-        assertTrue(registry.authorizeApiToken("GET", "/api/cli/v1/skills/search", Set.of()).allowed());
+        assertFalse(registry.authorizeApiToken("GET", "/api/cli/v1/skills/search", Set.of()).allowed());
+        assertTrue(registry.authorizeApiToken(
+                "GET", "/api/cli/v1/skills/search", Set.of("skill:read")).allowed());
         assertTrue(registry.authorizeApiToken("GET", "/api/cli/v1/skills/global/demo/resolve", Set.of()).allowed());
+        assertFalse(registry.authorizeApiToken(
+                "GET", "/api/cli/v1/namespaces/publish-targets", Set.of("skill:read")).allowed());
+        assertTrue(registry.authorizeApiToken(
+                "GET", "/api/cli/v1/namespaces/publish-targets", Set.of("skill:publish")).allowed());
         assertFalse(registry.authorizeApiToken("POST", "/api/cli/v1/skills/global/publish", Set.of()).allowed());
         assertTrue(registry.authorizeApiToken("POST", "/api/cli/v1/skills/global/publish", Set.of("skill:publish")).allowed());
         assertFalse(registry.authorizeApiToken("POST", "/api/cli/v1/skills/global/publish/validate", Set.of()).allowed());
         assertTrue(registry.authorizeApiToken("POST", "/api/cli/v1/skills/global/publish/validate", Set.of("skill:publish")).allowed());
         assertTrue(registry.authorizeApiToken("DELETE", "/api/cli/v1/skills/global/demo", Set.of("skill:delete")).allowed());
+    }
+
+    @Test
+    void routeAuthorizationRequiresAuthenticationForNativeCliSearchAndPublishTargets() {
+        assertTrue(registry.authorizationPolicies().stream()
+                .anyMatch(policy -> policy.method() == HttpMethod.GET
+                        && "/api/cli/v1/skills/search".equals(policy.pattern())
+                        && policy.accessLevel() == RouteSecurityPolicyRegistry.AccessLevel.AUTHENTICATED));
+        assertTrue(registry.authorizationPolicies().stream()
+                .anyMatch(policy -> policy.method() == HttpMethod.GET
+                        && "/api/cli/v1/namespaces/publish-targets".equals(policy.pattern())
+                        && policy.accessLevel() == RouteSecurityPolicyRegistry.AccessLevel.AUTHENTICATED));
     }
 
     @Test

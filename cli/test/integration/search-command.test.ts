@@ -1,6 +1,17 @@
+import { mkdir, writeFile } from 'node:fs/promises'
+import { join } from 'node:path'
 import { afterEach, describe, expect, test } from 'bun:test'
 import { startFakeRegistry } from '../helpers/fake-registry'
-import { runCli } from '../helpers/run-cli'
+import { runCli as baseRunCli } from '../helpers/run-cli'
+import { createTempHome } from '../helpers/temp-env'
+
+function runCli(
+  args: string[],
+  env: Record<string, string> = {},
+  options: Parameters<typeof baseRunCli>[2] = {}
+) {
+  return baseRunCli(args, { JOYHUB_TOKEN: 'jh_test', ...env }, options)
+}
 
 let registry: Awaited<ReturnType<typeof startFakeRegistry>> | undefined
 
@@ -10,7 +21,57 @@ afterEach(() => {
 })
 
 describe('search command', () => {
-  test('--token sends bearer auth and takes priority over SKILLHUB_TOKEN', async () => {
+  test('missing token automatically binds once and continues search', async () => {
+    const env = await createTempHome()
+    const secret = 'jh_search_device'
+    registry = await startFakeRegistry({
+      token: secret,
+      deviceFlow: { accessToken: secret },
+      searchItems: [{ namespace: 'global', slug: 'pdf', latestVersion: '1.0.0', summary: 'PDF' }]
+    })
+
+    const result = await runCli(['search', 'pdf', '--registry', registry.url, '--json'], {
+      HOME: env.home,
+      USERPROFILE: env.home,
+      JOYHUB_TOKEN: '',
+      JOYHUB_NO_BROWSER: '1'
+    })
+
+    expect(result.exitCode).toBe(0)
+    expect(JSON.parse(result.stdout).items).toHaveLength(1)
+    expect(registry.received.deviceCodes).toBe(1)
+    expect(registry.received.searchRequests).toBe(1)
+    expect(result.stdout + result.stderr).not.toContain(secret)
+  })
+
+  test('--query is an alias for the positional query', async () => {
+    let capturedQuery = ''
+    const server = Bun.serve({
+      port: 0,
+      fetch(req) {
+        const url = new URL(req.url)
+        if (url.pathname === '/api/cli/v1/skills/search') {
+          capturedQuery = url.searchParams.get('q') ?? ''
+          return Response.json({ code: 0, data: { items: [], total: 0, limit: 20 } })
+        }
+        return Response.json({ code: 404 }, { status: 404 })
+      }
+    })
+    try {
+      const result = await runCli([
+        'search',
+        '--query',
+        'pdf parser',
+        '--registry',
+        `http://localhost:${server.port}`
+      ])
+      expect(result.exitCode).toBe(0)
+      expect(capturedQuery).toBe('pdf parser')
+    } finally {
+      server.stop()
+    }
+  })
+  test('--token sends bearer auth and takes priority over JOYHUB_TOKEN', async () => {
     let capturedAuth = ''
     const server = Bun.serve({
       port: 0,
@@ -34,83 +95,79 @@ describe('search command', () => {
     try {
       const result = await runCli(
         ['search', 'pdf', '--registry', `http://localhost:${server.port}`, '--token', 'sk_ok'],
-        { SKILLHUB_TOKEN: 'sk_bad' }
+        { JOYHUB_TOKEN: 'sk_bad' }
       )
 
       expect(result.exitCode).toBe(0)
       expect(capturedAuth).toBe('Bearer sk_ok')
-      expect(result.stdout).toContain('global/pdf-parser')
+      expect(result.stdout).toContain('@global/pdf-parser')
     } finally {
       server.stop()
     }
   })
 
-  test('bad --token fails with auth output and does not retry anonymously', async () => {
-    const authHeaders: Array<string | null> = []
-    const server = Bun.serve({
-      port: 0,
-      fetch(req) {
-        const url = new URL(req.url)
-        if (url.pathname === '/api/cli/v1/skills/search') {
-          const auth = req.headers.get('authorization')
-          authHeaders.push(auth)
-          if (auth === 'Bearer sk_bad') {
-            return Response.json({ code: 401, message: 'unauthorized' }, { status: 401 })
-          }
-          return Response.json({
-            code: 0,
-            data: {
-              items: [{ namespace: 'global', slug: 'anonymous-only', latestVersion: '1.0.0', summary: 'anonymous fallback' }],
-              total: 1,
-              limit: 20
-            }
-          })
-        }
-        return Response.json({ code: 404 }, { status: 404 })
-      }
+  test('revoked token rebinds once and retries the original search', async () => {
+    const env = await createTempHome()
+    const stateDir = join(env.home, '.joyhub')
+    await mkdir(stateDir, { recursive: true })
+    registry = await startFakeRegistry({
+      token: 'jh_replacement',
+      deviceFlow: { accessToken: 'jh_replacement' },
+      searchItems: [{ namespace: 'team', slug: 'pdf', latestVersion: '2.0.0', summary: 'PDF' }]
+    })
+    await writeFile(join(stateDir, 'config.json'), JSON.stringify({ registry: registry.url }))
+    await writeFile(
+      join(stateDir, 'credentials.json'),
+      JSON.stringify({ tokens: { [registry.url]: 'jh_revoked' } })
+    )
+
+    const result = await runCli(['search', 'pdf', '--json'], {
+      HOME: env.home,
+      USERPROFILE: env.home,
+      JOYHUB_TOKEN: '',
+      JOYHUB_NO_BROWSER: '1'
     })
 
-    try {
-      const registryUrl = `http://localhost:${server.port}`
-      const result = await runCli(['search', 'pdf', '--registry', registryUrl, '--token', 'sk_bad'])
-
-      expect(result.exitCode).toBe(2)
-      expect(result.stderr).toContain('Error: authentication failed')
-      expect(result.stderr).toContain(`Context: registry ${registryUrl}`)
-      expect(result.stderr).toContain('Next:')
-      expect(authHeaders).toEqual(['Bearer sk_bad'])
-    } finally {
-      server.stop()
-    }
+    expect(result.exitCode).toBe(0)
+    expect(JSON.parse(result.stdout).items[0].slug).toBe('pdf')
+    expect(registry.received.searchRequests).toBe(2)
+    expect(registry.received.deviceCodes).toBe(1)
+    expect(result.stdout + result.stderr).not.toContain('jh_replacement')
   })
 
-  test('bad --token returns structured json auth error', async () => {
-    const server = Bun.serve({
-      port: 0,
-      fetch(req) {
-        const url = new URL(req.url)
-        if (url.pathname === '/api/cli/v1/skills/search') {
-          return Response.json({ code: 401, message: 'unauthorized' }, { status: 401 })
-        }
-        return Response.json({ code: 404 }, { status: 404 })
-      }
+  test('does not start a second device flow when retried search also returns 401', async () => {
+    const env = await createTempHome()
+    const stateDir = join(env.home, '.joyhub')
+    await mkdir(stateDir, { recursive: true })
+    registry = await startFakeRegistry({
+      token: 'jh_replacement',
+      deviceFlow: { accessToken: 'jh_replacement' },
+      searchUnauthorizedCount: 2
+    })
+    await writeFile(join(stateDir, 'config.json'), JSON.stringify({ registry: registry.url }))
+    await writeFile(
+      join(stateDir, 'credentials.json'),
+      JSON.stringify({ tokens: { [registry.url]: 'jh_revoked' } })
+    )
+
+    const result = await runCli(['search', 'pdf', '--json'], {
+      HOME: env.home,
+      USERPROFILE: env.home,
+      JOYHUB_TOKEN: '',
+      JOYHUB_NO_BROWSER: '1'
     })
 
-    try {
-      const registryUrl = `http://localhost:${server.port}`
-      const result = await runCli(['search', 'pdf', '--registry', registryUrl, '--token', 'sk_bad', '--json'])
+    expect(result.exitCode).toBe(2)
+    expect(registry.received.searchRequests).toBe(2)
+    expect(registry.received.deviceCodes).toBe(1)
+  })
 
-      expect(result.exitCode).toBe(2)
-      const parsed = JSON.parse(result.stderr)
-      expect(parsed.ok).toBe(false)
-      expect(parsed.message).toBe('authentication failed')
-      expect(parsed.exitCode).toBe(2)
-      expect(parsed.details.registry).toBe(registryUrl)
-      expect(typeof parsed.details.next).toBe('string')
-      expect(parsed.details.next).toContain('skillhub login')
-    } finally {
-      server.stop()
-    }
+  test('does not reauthenticate or retry on 403', async () => {
+    registry = await startFakeRegistry({ failures: { search: 'forbidden' } })
+    const result = await runCli(['search', 'pdf', '--registry', registry.url])
+    expect(result.exitCode).toBe(2)
+    expect(registry.received.searchRequests).toBe(1)
+    expect(registry.received.deviceCodes).toBe(0)
   })
 
   test('prints compact search table', async () => {
@@ -121,7 +178,7 @@ describe('search command', () => {
     const result = await runCli(['search', 'pdf', '--registry', registry.url])
 
     expect(result.exitCode).toBe(0)
-    expect(result.stdout).toContain('global/pdf-parser')
+    expect(result.stdout).toContain('@global/pdf-parser')
     expect(result.stdout).toContain('1.2.0')
   })
 
@@ -150,8 +207,8 @@ describe('search command', () => {
     const result = await runCli(['search', '--registry', registry.url])
 
     expect(result.exitCode).toBe(0)
-    expect(result.stdout).toContain('global/pdf-parser')
-    expect(result.stdout).toContain('global/doc-parser')
+    expect(result.stdout).toContain('@global/pdf-parser')
+    expect(result.stdout).toContain('@global/doc-parser')
   })
 
   // P1: empty result set
@@ -205,6 +262,7 @@ describe('search command', () => {
 
     expect(result.exitCode).toBe(3) // EXIT.network
     expect(result.stderr).toMatch(/registry unreachable|registry returned 5\d\d/)
+    expect(registry.received.deviceCodes).toBe(0)
   })
 
   // -------------------------------------------------------------------------

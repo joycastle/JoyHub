@@ -1,29 +1,29 @@
 {
-  "name": "@astron-team/skillhub",
-  "version": "0.1.9",
-  "description": "Manage and install skills for AI coding agents",
+  "name": "@joycastle/joyhub-cli",
+  "version": "0.2.0",
+  "description": "Manage and install JoyHub skills for AI coding agents",
   "keywords": [
-    "skillhub",
+    "joyhub",
     "ai",
     "coding-agent",
     "skills",
     "cli"
   ],
-  "homepage": "https://github.com/iflytek/skillhub#readme",
+  "homepage": "https://github.com/joycastle/JoyHub#readme",
   "bugs": {
-    "url": "https://github.com/iflytek/skillhub/issues"
+    "url": "https://github.com/joycastle/JoyHub/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/iflytek/skillhub.git",
+    "url": "https://github.com/joycastle/JoyHub.git",
     "directory": "cli"
   },
   "license": "Apache-2.0",
-  "author": "iFLYTEK",
+  "author": "JoyCastle",
   "type": "module",
   "packageManager": "bun@1.3.13",
   "bin": {
-    "skillhub": "./dist/index.js"
+    "joyhub": "./dist/index.js"
   },
   "files": [
     "dist",

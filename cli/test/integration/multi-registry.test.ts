@@ -24,7 +24,7 @@ afterEach(() => {
 })
 
 async function readCreds(home: string): Promise<{ tokens: Record<string, string> }> {
-  return JSON.parse(await readFile(join(home, '.skillhub', 'credentials.json'), 'utf-8'))
+  return JSON.parse(await readFile(join(home, '.joyhub', 'credentials.json'), 'utf-8'))
 }
 
 describe('multi-registry credential isolation', () => {

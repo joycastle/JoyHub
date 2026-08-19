@@ -92,8 +92,30 @@ public class DeviceAuthService {
                     throw new DomainBadRequestException("error.deviceAuth.deviceCode.alreadyAuthorized");
                 }
             }
+            case DENIED -> throw new DomainBadRequestException("error.deviceAuth.deviceCode.denied");
             case USED -> throw new DomainBadRequestException("error.deviceAuth.deviceCode.used");
         }
+    }
+
+    /** Rejects a pending device request without issuing a token. */
+    public void denyDeviceCode(String userCode) {
+        String deviceCode = (String) redisTemplate.opsForValue().get(USER_CODE_PREFIX + userCode);
+        if (deviceCode == null) {
+            throw new DomainBadRequestException("error.deviceAuth.userCode.invalid");
+        }
+
+        DeviceCodeData data = readDeviceCodeData(deviceCode);
+        if (data == null) {
+            throw new DomainBadRequestException("error.deviceAuth.deviceCode.expired");
+        }
+        if (data.getStatus() != DeviceCodeStatus.PENDING) {
+            throw new DomainBadRequestException("error.deviceAuth.deviceCode.notPending");
+        }
+
+        data.setStatus(DeviceCodeStatus.DENIED);
+        redisTemplate.opsForValue().set(
+                DEVICE_CODE_PREFIX + deviceCode, data, PENDING_CODE_TTL_MINUTES, TimeUnit.MINUTES);
+        redisTemplate.delete(USER_CODE_PREFIX + userCode);
     }
 
     /**
@@ -110,6 +132,7 @@ public class DeviceAuthService {
         return switch (data.getStatus()) {
             case PENDING -> DeviceTokenResponse.pending();
             case AUTHORIZED -> redeemAuthorizedDeviceCode(deviceCode, data);
+            case DENIED -> DeviceTokenResponse.denied();
             case USED -> throw new DomainBadRequestException("error.deviceAuth.deviceCode.used");
         };
     }

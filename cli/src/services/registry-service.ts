@@ -5,7 +5,14 @@ export function resolveRegistry(
   env: NodeJS.ProcessEnv,
   config: { registry?: string | undefined }
 ): string {
-  return normalizeRegistry(args.registry || env.SKILLHUB_REGISTRY || config.registry || DEFAULT_REGISTRY)
+  return normalizeRegistry(
+    args.registry ||
+    env.JOYHUB_REGISTRY ||
+    // Deprecated compatibility alias. Do not expose it in user-facing help.
+    env.SKILLHUB_REGISTRY ||
+    config.registry ||
+    DEFAULT_REGISTRY
+  )
 }
 
 export function resolveToken(
@@ -13,7 +20,11 @@ export function resolveToken(
   env: NodeJS.ProcessEnv,
   storedToken?: string | undefined
 ): string | undefined {
-  return args.token || env.SKILLHUB_TOKEN || storedToken
+  return args.token ||
+    env.JOYHUB_TOKEN ||
+    // Deprecated compatibility alias. Do not expose it in user-facing help.
+    env.SKILLHUB_TOKEN ||
+    storedToken
 }
 
 function normalizeRegistry(registry: string): string {

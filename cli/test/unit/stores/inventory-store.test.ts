@@ -6,14 +6,14 @@ import { join, dirname } from 'node:path'
 import { InventoryStore } from '../../../src/stores/inventory-store'
 
 function makeTempHome() {
-  return mkdtemp(join(tmpdir(), 'skillhub-store-test-'))
+  return mkdtemp(join(tmpdir(), 'joyhub-store-test-'))
 }
 
 function makeTarget(slug: string) {
   return {
     agent: 'claude',
     rootDir: `/projects/${slug}`,
-    installDir: `/projects/${slug}/.skillhub/skills/${slug}`,
+    installDir: `/projects/${slug}/.joyhub/skills/${slug}`,
     installedAt: new Date().toISOString(),
   }
 }

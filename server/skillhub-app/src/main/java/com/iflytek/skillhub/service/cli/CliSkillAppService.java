@@ -141,7 +141,8 @@ public class CliSkillAppService {
                 namespace,
                 result.slug(),
                 result.version().getVersion(),
-                visibility.name()
+                visibility.name(),
+                result.version().getStatus().name()
         );
     }
 
