@@ -14,6 +14,6 @@ export function resolveCatalogPublishScope(target: PublishTarget | undefined): C
 
 export function catalogPublishScopeHint(target: PublishTarget | undefined): string {
   return target?.slug === 'global'
-    ? '发布到公共库后，全公司人员可见。'
-    : '发布到部门库后，所属部门内全体人员可见。'
+    ? '发布到公共库后，所有人可见。'
+    : '发布到项目空间后，该空间内所有人可见。'
 }

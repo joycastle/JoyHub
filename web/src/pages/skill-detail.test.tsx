@@ -312,10 +312,10 @@ describe('SkillDetailPage', () => {
     useSkillFileMock.mockReturnValue({ data: null, isLoading: false, error: null })
   })
 
-  it('links back to the skill center', () => {
+  it('renders a contextual back control', () => {
     const html = renderToStaticMarkup(<SkillDetailPage />)
 
-    expect(html).toContain('href="/skills"')
+    expect(html).toContain('<button type="button"')
     expect(html).toContain('skillDetail.back')
   })
 

@@ -325,7 +325,7 @@ export function CatalogResourceForm({ onCreated, initialKind, resource, onboardi
           <Label htmlFor="localSkill">上传本地 Skill 包</Label>
           <Input id="localSkill" className="mt-2" type="file" accept=".zip,application/zip" onChange={(event) => setLocalSkillFile(event.target.files?.[0])} />
           <p className="mt-1 text-xs text-muted-foreground">ZIP 内须包含 SKILL.md；会使用平台原有的安全校验和发布流程。</p>
-          {localSkillFile ? <div className="mt-4"><Label htmlFor="skillVisibility">Skill 可见范围</Label><Select value={skillVisibility} onValueChange={setSkillVisibility}><SelectTrigger id="skillVisibility" className="mt-2"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="WAREHOUSE">部门内可见</SelectItem><SelectItem value="PRIVATE">仅自己可见</SelectItem></SelectContent></Select><p className="mt-2 text-xs text-muted-foreground">Skill 会与 Agent 发布到同一个所属部门。</p></div> : null}
+          {localSkillFile ? <div className="mt-4"><Label htmlFor="skillVisibility">Skill 可见范围</Label><Select value={skillVisibility} onValueChange={setSkillVisibility}><SelectTrigger id="skillVisibility" className="mt-2"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="WAREHOUSE">项目空间内可见</SelectItem><SelectItem value="PRIVATE">仅自己可见</SelectItem></SelectContent></Select><p className="mt-2 text-xs text-muted-foreground">Skill 会与 Agent 发布到同一个项目空间。</p></div> : null}
           {localSkillError ? <p className="mt-2 text-sm text-destructive">{localSkillError}</p> : null}
         </div>
       </section> : null}
@@ -345,7 +345,7 @@ export function CatalogResourceForm({ onCreated, initialKind, resource, onboardi
       </section>
 
       <section data-onboarding-target="resource-scope" className="space-y-5 rounded-2xl border bg-card p-6">
-        <div><h2 className="text-xl font-semibold">所属部门</h2><p className="mt-1 text-sm text-muted-foreground">选择负责维护这项内容的公共库或部门库。</p></div>
+        <div><h2 className="text-xl font-semibold">所属项目空间</h2><p className="mt-1 text-sm text-muted-foreground">选择负责维护这项内容的公共库或项目空间。</p></div>
         <div className="max-w-xl">
           <Label htmlFor="primaryDepartmentId">部门 *</Label>
           <Select value={primaryDepartmentId === undefined ? undefined : String(primaryDepartmentId)} onValueChange={(value) => setPrimaryDepartmentId(Number(value))}>
@@ -371,7 +371,7 @@ export function CatalogResourceForm({ onCreated, initialKind, resource, onboardi
         { target: 'resource-category', title: '选择最接近的工作场景', description: '场景和标签用于筛选与推荐。选择最相关的一项即可，避免为了曝光堆叠无关标签。' },
         { target: 'resource-access', title: '填写同事真正能打开的入口', description: '飞书 Agent 填 App ID；在线工具填公开入口；下载型工具上传 ZIP。不要填个人测试地址。' },
         { target: 'resource-documentation', title: '补全使用说明', description: '写清楚同事需要准备什么、从哪里开始、会得到什么以及限制。AI 草稿只能作为起点，必须人工核对。' },
-        { target: 'resource-scope', title: '选择所属部门', description: '公共库内容全公司可见；部门库内容由该部门维护，并对部门内全体人员可见。' },
+        { target: 'resource-scope', title: '选择所属项目空间', description: '公共库内容对所有人可见；项目空间内容由该空间维护，并对空间内全体人员可见。' },
         { target: 'resource-submit', title: '保存并在“我的内容”验证', description: '提交后到“我的内容”检查状态和入口；以后可编辑、下架或归档，避免失效内容继续被推荐。' },
       ]} /> : null}
     </form>

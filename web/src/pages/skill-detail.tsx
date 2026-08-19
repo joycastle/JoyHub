@@ -668,13 +668,28 @@ export function SkillDetailPage() {
         <div data-onboarding-target="detail-header">
         <ResourceDetailHeader
           backAction={(
-            <Link
-              to="/skills"
+            <button
+              type="button"
+              onClick={() => search.returnTo
+                ? window.history.back()
+                : navigate({ to: '/skills', search: { q: '', sort: 'newest', page: 0 } })}
               className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
             >
               <ArrowLeft className="h-4 w-4" />
-              {t('skillDetail.back')}
-            </Link>
+              {search.returnTo?.startsWith('/search')
+                ? '返回搜索结果'
+                : search.returnTo?.startsWith('/dashboard/stars')
+                  ? '返回我的收藏'
+                  : search.returnTo?.startsWith('/dashboard/subscriptions')
+                    ? '返回我的订阅'
+                    : search.returnTo?.startsWith('/dashboard/resources')
+                      ? '返回我的内容'
+                      : search.returnTo?.startsWith('/space/')
+                        ? '返回技能仓库'
+                        : search.returnTo === '/'
+                          ? '返回首页'
+                          : t('skillDetail.back')}
+            </button>
           )}
           badges={(
             <>

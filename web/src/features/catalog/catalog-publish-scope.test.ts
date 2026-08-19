@@ -12,7 +12,7 @@ describe('catalog publish scope', () => {
       visibilityScope: 'COMPANY',
       visibleDepartmentIds: [],
     })
-    expect(catalogPublishScopeHint(target(1, 'global'))).toContain('全公司人员可见')
+    expect(catalogPublishScopeHint(target(1, 'global'))).toContain('所有人可见')
   })
 
   it('limits a department library to everyone in that department', () => {
@@ -20,6 +20,6 @@ describe('catalog publish scope', () => {
       visibilityScope: 'DEPARTMENTS',
       visibleDepartmentIds: [8],
     })
-    expect(catalogPublishScopeHint(target(8, 'lab'))).toContain('所属部门内全体人员可见')
+    expect(catalogPublishScopeHint(target(8, 'lab'))).toContain('该空间内所有人可见')
   })
 })

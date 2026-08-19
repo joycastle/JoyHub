@@ -23,7 +23,7 @@ interface SkillCardProps {
 }
 
 /** Reusable, readable Skill summary card used across discovery pages. */
-export function SkillCard({ skill, onClick, highlightStarred = true, density = 'default', showVersion = true }: SkillCardProps) {
+export function SkillCard({ skill, onClick, highlightStarred = false, density = 'default', showVersion = true }: SkillCardProps) {
   const { t } = useTranslation()
   const { isAuthenticated, user } = useAuth()
   const { data: repositories } = useSkillRepositories()

@@ -6,7 +6,7 @@ import type { CatalogCenter } from '@/api/types'
 import { Button } from '@/shared/ui/button'
 import { getOnboardingPanelPosition, getOnboardingViewport } from './onboarding-panel-position'
 
-export type CenterTourTarget = 'search' | 'quickBrowse' | 'filters' | 'catalog' | 'manage' | 'publish'
+export type CenterTourTarget = 'search' | 'filters' | 'catalog' | 'manage' | 'publish'
 type GuidedCenter = CatalogCenter | 'SKILL' | 'LANDING' | 'CONTENT'
 
 interface TourStep {
@@ -36,7 +36,6 @@ const CENTER_STEPS: Record<GuidedCenter, TourStep[]> = {
   ],
   LANDING: [
     { key: 'search', target: 'search', icon: Search },
-    { key: 'quickBrowse', target: 'quickBrowse', icon: LayoutGrid },
     { key: 'filters', target: 'filters', icon: SlidersHorizontal },
     { key: 'catalog', target: 'catalog', icon: BookOpenCheck },
   ],

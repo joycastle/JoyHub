@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react'
-import { useNavigate, useParams } from '@tanstack/react-router'
+import { useNavigate, useParams, useSearch } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { SkillCard } from '@/features/skill/skill-card'
 import { SkeletonList } from '@/shared/components/skeleton-loader'
@@ -18,14 +17,10 @@ export function NamespacePage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { namespace } = useParams({ from: '/space/$namespace' })
-  const [page, setPage] = useState(0)
+  const { page } = useSearch({ from: '/space/$namespace' })
   const { data: repositories, isLoading: isLoadingRepositories } = useSkillRepositories()
   const repositoryName = resolveRepositoryDisplayName(namespace, repositories)
   const repositoryExists = repositories?.some((item) => item.slug === namespace) ?? false
-
-  useEffect(() => {
-    setPage(0)
-  }, [namespace])
 
   const { data: skillsData, isLoading: isLoadingSkills } = useSearchSkills({
     namespace,
@@ -36,7 +31,10 @@ export function NamespacePage() {
   const totalPages = skillsData ? Math.max(Math.ceil(skillsData.total / skillsData.size), 1) : 1
 
   const handleSkillClick = (slug: string) => {
-    navigate({ to: `/space/${namespace}/${encodeURIComponent(slug)}` })
+    navigate({
+      to: `/space/${namespace}/${encodeURIComponent(slug)}`,
+      search: { returnTo: `${window.location.pathname}${window.location.search}` },
+    })
   }
 
   if (isLoadingRepositories) {
@@ -78,7 +76,7 @@ export function NamespacePage() {
               <Pagination
                 page={page}
                 totalPages={totalPages}
-                onPageChange={setPage}
+                onPageChange={(nextPage) => navigate({ to: '/space/$namespace', params: { namespace }, search: { page: nextPage } })}
               />
             )}
           </>

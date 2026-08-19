@@ -7,21 +7,24 @@ interface DashboardPageHeaderProps {
   title: string
   subtitle?: string
   actions?: React.ReactNode
+  showBackToDashboard?: boolean
 }
 
 /**
  * Standard header used by dashboard sub-pages so navigation and page framing stay consistent.
  */
-export function DashboardPageHeader({ title, subtitle, actions }: DashboardPageHeaderProps) {
+export function DashboardPageHeader({ title, subtitle, actions, showBackToDashboard = true }: DashboardPageHeaderProps) {
   const { t } = useTranslation()
   const navigate = useNavigate()
 
   return (
     <div className="space-y-4">
-      <Button variant="ghost" className="px-0 text-muted-foreground hover:text-foreground" onClick={() => navigate({ to: '/dashboard' })}>
-        <ArrowLeft className="mr-2 h-4 w-4" />
-        {t('dashboard.backToDashboard')}
-      </Button>
+      {showBackToDashboard ? (
+        <Button variant="ghost" className="px-0 text-muted-foreground hover:text-foreground" onClick={() => navigate({ to: '/dashboard' })}>
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          {t('dashboard.backToDashboard')}
+        </Button>
+      ) : null}
       <div className="flex items-center justify-between gap-4">
         <div>
           <h1 className="text-4xl font-bold font-heading mb-2">{title}</h1>

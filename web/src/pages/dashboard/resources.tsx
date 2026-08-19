@@ -90,7 +90,11 @@ export function ResourcesPage() {
       })
       return
     }
-    navigate({ to: '/catalog/$slug', params: { slug: resource.slug } })
+    navigate({
+      to: '/catalog/$slug',
+      params: { slug: resource.slug },
+      search: { returnTo: buildReturnTo(location) },
+    })
   }
 
   const updateSkill = (resource: UnifiedResource) => {
@@ -151,6 +155,7 @@ export function ResourcesPage() {
       <DashboardPageHeader
         title={t('resources.title')}
         subtitle={t('resources.subtitle')}
+        showBackToDashboard={false}
         actions={(
           <div data-onboarding-target="publish" className={highlightedTarget === 'publish' ? 'relative z-50 flex flex-wrap gap-2 rounded-lg bg-background ring-4 ring-primary/50 ring-offset-4' : 'flex flex-wrap gap-2'}>
             <Button variant="outline" onClick={() => navigate({ to: '/dashboard/publish', search: onboarding ? { onboarding: true } : {} })}>{t('resources.publishSkill')}</Button>

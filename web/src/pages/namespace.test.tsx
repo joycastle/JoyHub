@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => vi.fn(),
   useParams: () => ({ namespace: 'global' }),
+  useSearch: () => ({ page: 0 }),
 }))
 
 vi.mock('react-i18next', async () => {

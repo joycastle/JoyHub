@@ -343,6 +343,7 @@ export function SearchPage() {
                           onClick={() => navigate({
                             to: '/catalog/$slug',
                             params: { slug: resource.slug },
+                            search: { returnTo: `${window.location.pathname}${window.location.search}` },
                           })}
                         />
                       </div>

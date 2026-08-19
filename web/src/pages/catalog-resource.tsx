@@ -1,4 +1,4 @@
-import { Link, useNavigate, useParams } from '@tanstack/react-router'
+import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router'
 import { ArrowLeft, BookmarkCheck, BookmarkPlus, Building2, Copy, Download, ExternalLink, Heart, HeartOff, MessageCircle, MoreHorizontal, Pencil, Power, UserRound } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { resourcesApi } from '@/api/client'
@@ -43,6 +43,7 @@ function statusLabel(status?: string) {
 export function CatalogResourcePage() {
   const { t } = useTranslation()
   const { slug } = useParams({ from: '/catalog/$slug' })
+  const { returnTo } = useSearch({ from: '/catalog/$slug' })
   const navigate = useNavigate()
   const { data: resource, isLoading, isError } = useCatalogResource(slug)
   const { user } = useAuth()
@@ -145,9 +146,24 @@ export function CatalogResourcePage() {
   ) : null
 
   const backAction = (
-    <Link to={isAgent ? '/agents' : '/tools'} className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
-      <ArrowLeft className="h-4 w-4" /> 返回{isAgent ? ' Agent 中心' : '工具中心'}
-    </Link>
+    <button
+      type="button"
+      onClick={() => returnTo
+        ? window.history.back()
+        : navigate({ to: isAgent ? '/agents' : '/tools', search: { q: '', sort: 'relevance', page: 0 } })}
+      className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+    >
+      <ArrowLeft className="h-4 w-4" />
+      {returnTo?.startsWith('/search')
+        ? '返回搜索结果'
+        : returnTo?.startsWith('/dashboard/stars')
+          ? '返回我的收藏'
+          : returnTo?.startsWith('/dashboard/resources')
+            ? '返回我的内容'
+            : returnTo === '/'
+              ? '返回首页'
+              : `返回${isAgent ? ' Agent 中心' : '工具中心'}`}
+    </button>
   )
 
   const badges = (
@@ -161,7 +177,7 @@ export function CatalogResourcePage() {
         <span className="badge-soft bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">{resource.maintenanceStatus}</span>
       ) : null}
       <span className="badge-soft inline-flex items-center gap-1">
-        {resource.visibilityScope === 'COMPANY' ? '全公司可见' : '指定部门可见'}
+        {resource.visibilityScope === 'COMPANY' ? '所有人可见' : `${resource.department?.name || '项目空间'}可见`}
       </span>
     </>
   )
@@ -177,9 +193,9 @@ export function CatalogResourcePage() {
       <ResourceDetailMetaCard
         rows={[
           { label: '版本', value: resource.version ? `v${resource.version}` : '—' },
-          { label: '归属部门', value: <span className="inline-flex items-center gap-1.5"><Building2 className="h-3.5 w-3.5" />{resource.department?.name || '全公司'}</span> },
+          { label: '归属部门', value: <span className="inline-flex items-center gap-1.5"><Building2 className="h-3.5 w-3.5" />{resource.department?.name || '公共库'}</span> },
           { label: '维护者', value: <span className="inline-flex items-center gap-1.5"><UserRound className="h-3.5 w-3.5" />{resource.owner?.displayName || resource.owner?.id || '—'}</span> },
-          { label: '可见范围', value: resource.visibilityScope === 'COMPANY' ? '全公司' : '指定部门' },
+          { label: '可见范围', value: resource.visibilityScope === 'COMPANY' ? '所有人' : resource.department?.name || '项目空间' },
           { label: '访问次数', value: formatCompactCount(stats.data?.viewCount ?? 0) },
           { label: '使用次数', value: formatCompactCount(stats.data?.useCount ?? 0) },
           { label: '下载次数', value: formatCompactCount(stats.data?.downloadCount ?? 0) },

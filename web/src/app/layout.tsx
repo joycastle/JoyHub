@@ -204,11 +204,6 @@ export function Layout() {
                       {t('nav.search')}
                     </Link>
                   </li>
-                  <li>
-                    <Link to="/dashboard" className="hover:opacity-80 transition-opacity" style={{ color: 'hsl(var(--text-secondary))' }}>
-                      {t('nav.dashboard')}
-                    </Link>
-                  </li>
                 </ul>
               </div>
               <div>

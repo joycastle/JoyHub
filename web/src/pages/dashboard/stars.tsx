@@ -29,7 +29,7 @@ export function MyStarsPage() {
 
   return (
     <div className="space-y-8 animate-fade-up">
-      <DashboardPageHeader title={t('stars.title')} subtitle={t('stars.subtitle')} />
+      <DashboardPageHeader title={t('stars.title')} subtitle={t('stars.subtitle')} showBackToDashboard={false} />
 
       {!skills || skills.length === 0 ? (
         <Card className="p-12 text-center text-muted-foreground">{t('stars.empty')}</Card>
@@ -40,7 +40,10 @@ export function MyStarsPage() {
               <SkillCard
                 key={skill.id}
                 skill={skill}
-                onClick={() => navigate({ to: `/space/${skill.namespace}/${encodeURIComponent(skill.slug)}` })}
+                onClick={() => navigate({
+                  to: `/space/${skill.namespace}/${encodeURIComponent(skill.slug)}`,
+                  search: { returnTo: `${window.location.pathname}${window.location.search}` },
+                })}
               />
             ))}
           </div>

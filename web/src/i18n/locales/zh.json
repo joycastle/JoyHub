@@ -254,7 +254,7 @@
   "skillCenter": {
     "title": "技能中心",
     "description": "发现、安装和复用公司内部成熟的 Skill 包、脚本、模板与参考资料。",
-    "visibility": "这里仅展示全公司可见，以及你所在部门可见的已发布技能。",
+    "visibility": "这里仅展示所有人可见，以及你所在项目空间可见的已发布技能。",
     "publish": "发布 Skill",
     "searchPlaceholder": "搜索 Skill 名称或能力",
     "search": "搜索",
@@ -271,7 +271,7 @@
   },
   "resourceCenter": {
     "eyebrow": "能力中心",
-    "visibility": "这里仅展示全公司可见，以及你所在部门可见的已发布内容。",
+    "visibility": "这里仅展示所有人可见，以及你所在项目空间可见的已发布内容。",
     "sortLabel": "排序",
     "sort": {
       "relevance": "推荐",
@@ -1941,7 +1941,7 @@
       "resourcePublish": {
         "basics": { "title": "1. 写清这是什么", "description": "选择 Agent 或工具类型，填写名称、简介、访问入口/飞书 App ID、版本和适用场景。简介回答“它能做什么”。" },
         "usage": { "title": "2. 让同事知道怎么用", "description": "使用说明回答“需要提供什么、会得到什么、有哪些限制”。工具可上传安装包并让 AI 生成说明草稿；Agent 可填写示例提问。" },
-        "scope": { "title": "3. 指定维护归属与可见范围", "description": "所属部门负责后续维护；全公司可见适合通用能力，指定部门可见适合业务专用内容。" },
+        "scope": { "title": "3. 指定维护归属与可见范围", "description": "所属项目空间负责后续维护；所有人可见适合通用能力，项目空间可见适合业务专用内容。" },
         "submit": { "title": "4. 保存并发布", "description": "勾选后可直接发布；以后可在“我的内容”编辑、上架、下架或归档。发布前请确认入口能打开、说明足够让新同事独立使用。" }
       }
     }
@@ -1977,8 +1977,7 @@
       },
       "LANDING": {
         "search": { "title": "先说你想完成什么", "description": "从工作目标、业务场景或能力关键词开始搜索；常用场景提供一键进入。" },
-        "quickBrowse": { "title": "按能力形态进入中心", "description": "不确定该找什么时，先从 Agent、Skill 或工具的使用方式开始判断。" },
-        "filters": { "title": "在推荐流中继续筛选", "description": "首页推荐流支持按适用场景、可见范围和排序组合筛选，减少盲目搜索。" },
+        "filters": { "title": "在推荐流中继续筛选", "description": "首页推荐流支持按适用场景、适用范围和排序组合筛选，减少盲目搜索。" },
         "catalog": { "title": "从卡片直接使用", "description": "卡片展示用途、下载与收藏，并按资源类型提供立即使用、复制安装或下载入口。" }
       },
       "CONTENT": {

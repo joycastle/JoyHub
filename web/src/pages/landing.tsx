@@ -36,7 +36,7 @@ import { completeOnboardingJourneyUse, completeOnboardingTask, openOnboardingGui
 import { CenterFeatureTour, type CenterTourTarget } from '@/features/onboarding/center-feature-tour'
 
 type DiscoveryMode = 'recommended' | 'downloads' | 'newest'
-type HomeScopeFilter = 'ALL' | 'PUBLIC' | 'DEPARTMENT'
+type HomeScopeFilter = 'PUBLIC' | 'DEPARTMENT'
 
 const DISCOVERY_ITEMS: Array<{ key: DiscoveryMode; label: string }> = [
   { key: 'recommended', label: '为你和所在部门推荐' },
@@ -69,12 +69,6 @@ const RESOURCE_TYPES: Array<{ type: UnifiedResourceSearchType; labelKey: string;
   { type: 'AGENT', labelKey: 'search.types.agent', icon: Bot },
   { type: 'TOOL', labelKey: 'search.types.tool', icon: Wrench },
   { type: 'SKILL', labelKey: 'search.types.skill', icon: Puzzle },
-]
-
-const QUICK_BROWSE_ITEMS: Array<{ to: '/agents' | '/skills' | '/tools'; label: string; description: string; icon: LucideIcon }> = [
-  { to: '/agents', label: 'Agent 中心', description: '直接在飞书中使用', icon: Bot },
-  { to: '/skills', label: '技能中心', description: '复制安装，沉淀方法', icon: Puzzle },
-  { to: '/tools', label: '工具中心', description: '下载或打开工具', icon: Wrench },
 ]
 
 function RecommendationCard({ resource, onOpen, onToolUse }: { resource: UnifiedResourceSearchItem; onOpen: () => void; onToolUse?: (toolId: number) => void }) {
@@ -161,7 +155,7 @@ export function LandingPage() {
   const [discoveryMode, setDiscoveryMode] = useState<DiscoveryMode>('recommended')
   const [homeResourceType, setHomeResourceType] = useState<UnifiedResourceSearchType>('ALL')
   const [homeScenario, setHomeScenario] = useState<ResourceCategoryCode | undefined>()
-  const [homeScopeFilter, setHomeScopeFilter] = useState<HomeScopeFilter>('ALL')
+  const [homeScopeFilter, setHomeScopeFilter] = useState<HomeScopeFilter>('PUBLIC')
   const [searchInput, setSearchInput] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [searchType, setSearchType] = useState<UnifiedResourceSearchType>('ALL')
@@ -218,24 +212,23 @@ export function LandingPage() {
       : rankedResources?.items ?? [],
     [discoveryMode, homeScenario, rankedResources?.items, recommendations, scenarioResources?.items],
   )
+  const department = myNamespaces.find((namespace) => namespace.type === 'TEAM')
   const visibleDiscoveryResources = discoveryResources.filter((resource) => {
     if (homeResourceType !== 'ALL' && resource.resourceType !== homeResourceType) return false
     if (homeScopeFilter === 'PUBLIC') {
-      return resource.skill?.namespace === 'global' || resource.catalogResource?.department == null
+      return resource.skill?.namespace === 'global' || resource.catalogResource?.visibilityScope === 'COMPANY'
     }
     if (homeScopeFilter === 'DEPARTMENT') {
-      return (resource.catalogResource?.department?.id != null && myNamespaces.some((namespace) => namespace.id === resource.catalogResource?.department?.id))
-        || (resource.skill?.namespace != null && myNamespaces.some((namespace) => namespace.slug === resource.skill?.namespace))
+      return resource.catalogResource?.department?.id === department?.id
+        || resource.skill?.namespace === department?.slug
     }
-    return true
+    return false
   })
   const commonTools = useMemo(() => {
     const toolsById = new Map((toolResources?.items ?? []).flatMap((resource) => resource.catalogResource ? [[resource.catalogResource.id, resource] as const] : []))
     return commonToolIds.map((id) => toolsById.get(id)).filter((resource): resource is UnifiedResourceSearchItem => resource != null)
   }, [commonToolIds, toolResources?.items])
-  const homeScopeLabel = homeScopeFilter === 'PUBLIC'
-    ? '公司公共库'
-    : homeScopeFilter === 'DEPARTMENT' ? '所在部门' : '全部'
+  const homeScopeLabel = homeScopeFilter === 'PUBLIC' ? '所有人' : department?.displayName ?? '项目空间'
 
   const handleSearch = (query: string) => {
     const normalizedQuery = normalizeSearchQuery(query)
@@ -262,7 +255,7 @@ export function LandingPage() {
     <div className="relative z-10">
       <section className="border-b border-border bg-[#f6f8fa] px-5 py-9 md:px-10">
         <div className="mx-auto max-w-7xl">
-          <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
+          <div>
             <div className="max-w-4xl">
               <div className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-primary">JOYHUB MARKETPLACE</div>
               <h1 className="text-3xl font-semibold tracking-tight text-foreground md:text-[2.5rem]">
@@ -308,18 +301,6 @@ export function LandingPage() {
                 </div>
               </div>
             </div>
-            <aside data-onboarding-target="quickBrowse" className={cn('border-l border-border pl-6 lg:mt-1', highlightedTarget === 'quickBrowse' && 'relative z-50 rounded-lg bg-background ring-4 ring-primary/50 ring-offset-4')}>
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">快速浏览</p>
-              <div className="mt-3 divide-y divide-border">
-                {QUICK_BROWSE_ITEMS.map(({ to, label, description, icon: Icon }) => (
-                  <Link key={to} to={to} className="group flex items-center gap-3 py-3 first:pt-0 last:pb-0">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-md bg-white text-primary shadow-sm ring-1 ring-border"><Icon className="h-4 w-4" /></span>
-                    <span className="min-w-0 flex-1"><span className="block text-sm font-semibold text-foreground group-hover:text-primary">{label}</span><span className="mt-0.5 block text-xs text-muted-foreground">{description}</span></span>
-                    <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
-                  </Link>
-                ))}
-              </div>
-            </aside>
           </div>
         </div>
       </section>
@@ -347,7 +328,7 @@ export function LandingPage() {
                 <p className="text-sm font-semibold text-primary">TOOLS</p>
                 <h2 id="common-tools-heading" className="mt-1 text-2xl font-semibold">{t('joyhubHome.commonTools.title')}</h2>
               </div>
-              <Link to="/tools" className="shrink-0 text-sm font-medium text-primary hover:underline">
+              <Link to="/tools" search={{ q: '', sort: 'relevance', page: 0 }} className="shrink-0 text-sm font-medium text-primary hover:underline">
                 {t('joyhubHome.commonTools.browseAll')} <ArrowRight className="inline h-4 w-4" aria-hidden="true" />
               </Link>
             </div>
@@ -453,13 +434,12 @@ export function LandingPage() {
             <span className="mr-1 text-sm font-medium text-muted-foreground">进一步筛选</span>
             <label className="sr-only" htmlFor="home-scenario-filter">使用场景</label>
             <ResourceCategorySelect id="home-scenario-filter" value={homeScenario} onChange={setHomeScenario} className="w-48" triggerPrefix="使用场景：" />
-            <label className="sr-only" htmlFor="home-scope-filter">可见范围</label>
+            <label className="sr-only" htmlFor="home-scope-filter">适用范围</label>
             <Select value={homeScopeFilter} onValueChange={(value) => setHomeScopeFilter(value as HomeScopeFilter)}>
-              <SelectTrigger id="home-scope-filter" className="w-48"><span>可见范围：{homeScopeLabel}</span></SelectTrigger>
+              <SelectTrigger id="home-scope-filter" className="w-48"><span>适用范围：{homeScopeLabel}</span></SelectTrigger>
               <SelectContent>
-                <SelectItem value="ALL">全部</SelectItem>
-                <SelectItem value="PUBLIC">公司公共库</SelectItem>
-                <SelectItem value="DEPARTMENT">所在部门</SelectItem>
+                <SelectItem value="PUBLIC">所有人</SelectItem>
+                {department ? <SelectItem value="DEPARTMENT">{department.displayName}</SelectItem> : null}
               </SelectContent>
             </Select>
             <label className="sr-only" htmlFor="home-sort-filter">排序</label>
@@ -477,10 +457,10 @@ export function LandingPage() {
               const catalog = resource.catalogResource
               const skill = resource.skill
               if (skill) {
-                return <div key={`SKILL:${skill.id}`}><RecommendationCard resource={resource} onOpen={() => { completeOnboardingTask(user?.userId, 'detail'); navigate({ to: '/space/$namespace/$slug', params: { namespace: skill.namespace, slug: skill.slug } }) }} /></div>
+                return <div key={`SKILL:${skill.id}`}><RecommendationCard resource={resource} onOpen={() => { completeOnboardingTask(user?.userId, 'detail'); navigate({ to: '/space/$namespace/$slug', params: { namespace: skill.namespace, slug: skill.slug }, search: { returnTo: `${window.location.pathname}${window.location.search}` } }) }} /></div>
               }
               if (catalog) {
-                return <div key={`CATALOG:${catalog.id}`}><RecommendationCard resource={resource} onOpen={() => { completeOnboardingTask(user?.userId, 'detail'); navigate({ to: '/catalog/$slug', params: { slug: catalog.slug } }) }} /></div>
+                return <div key={`CATALOG:${catalog.id}`}><RecommendationCard resource={resource} onOpen={() => { completeOnboardingTask(user?.userId, 'detail'); navigate({ to: '/catalog/$slug', params: { slug: catalog.slug }, search: { returnTo: `${window.location.pathname}${window.location.search}` } }) }} /></div>
               }
               return null
             })}

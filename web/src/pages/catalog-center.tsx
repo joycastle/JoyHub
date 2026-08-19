@@ -27,15 +27,14 @@ function CatalogCenterPage({ center }: { center: CatalogCenter }) {
   const { t } = useTranslation()
   const { user } = useAuth()
   const navigate = useNavigate()
-  const { onboarding } = useSearch({ from: center === 'AGENT' ? '/agents' : '/tools' })
+  const routePath = center === 'AGENT' ? '/agents' : '/tools'
+  const search = useSearch({ from: routePath })
+  const { onboarding, q: query, sort, page } = search
+  const categoryCode = search.categoryCode as ResourceCategoryCode | undefined
   const isAgent = center === 'AGENT'
   const translationKey = isAgent ? 'agentCenter' : 'toolCenter'
   const publishKind: CatalogResourceKind = isAgent ? 'AGENT' : 'ONLINE_TOOL'
-  const [queryInput, setQueryInput] = useState('')
-  const [query, setQuery] = useState('')
-  const [categoryCode, setCategoryCode] = useState<ResourceCategoryCode>()
-  const [sort, setSort] = useState<CenterSort>('relevance')
-  const [page, setPage] = useState(0)
+  const [queryInput, setQueryInput] = useState(query)
   const [viewMode, setViewMode] = useViewMode(`catalog-${center.toLowerCase()}`)
   const [highlightedTarget, setHighlightedTarget] = useState<CenterTourTarget | null>(null)
   const { isCommonTool, recordToolUse, toggleTool } = useCommonTools()
@@ -60,9 +59,9 @@ function CatalogCenterPage({ center }: { center: CatalogCenter }) {
       queryInput={queryInput}
       onQueryChange={setQueryInput}
       onSearch={(value) => {
-        setQueryInput(value)
-        setQuery(normalizeSearchQuery(value))
-        setPage(0)
+        const q = normalizeSearchQuery(value)
+        setQueryInput(q)
+        navigate({ to: routePath, search: { ...search, q, page: 0 } })
       }}
       searchPlaceholder={t(`${translationKey}.searchPlaceholder`)}
       isSearching={isFetching && !isLoading}
@@ -75,11 +74,11 @@ function CatalogCenterPage({ center }: { center: CatalogCenter }) {
         <>
           <ResourceCategorySelect
             value={categoryCode}
-            onChange={(value) => { setCategoryCode(value); setPage(0) }}
+            onChange={(value) => navigate({ to: routePath, search: { ...search, categoryCode: value, page: 0 } })}
             className="w-full sm:w-56"
             triggerPrefix={`${t('resourceCategory.label')}：`}
           />
-          <Select value={sort} onValueChange={(value) => { setSort(value as CenterSort); setPage(0) }}>
+          <Select value={sort} onValueChange={(value) => navigate({ to: routePath, search: { ...search, sort: value as CenterSort, page: 0 } })}>
             <SelectTrigger className="w-full sm:w-44">
               <span>{t('resourceCenter.sortLabel')}：{t(`resourceCenter.sort.${sort}`)}</span>
             </SelectTrigger>
@@ -107,7 +106,11 @@ function CatalogCenterPage({ center }: { center: CatalogCenter }) {
               <CatalogResourceCard
                 resource={resource}
                 variant={viewMode === 'list' ? 'list' : 'default'}
-                onClick={() => navigate({ to: '/catalog/$slug', params: { slug: resource.slug } })}
+                onClick={() => navigate({
+                  to: '/catalog/$slug',
+                  params: { slug: resource.slug },
+                  search: { returnTo: `${window.location.pathname}${window.location.search}` },
+                })}
                 onUse={resource.accessUrl
                   ? () => { completeOnboardingJourneyUse(user?.userId); if (!isAgent) recordToolUse(resource.id); window.open(resource.accessUrl, '_blank', 'noopener,noreferrer') }
                   : resource.artifactAvailable
@@ -125,14 +128,14 @@ function CatalogCenterPage({ center }: { center: CatalogCenter }) {
         </div>
       ) : null}
       {!isLoading && !isError && data && pageCount > 1 ? (
-        <Pagination page={page} totalPages={pageCount} onPageChange={setPage} />
+        <Pagination page={page} totalPages={pageCount} onPageChange={(nextPage) => navigate({ to: routePath, search: { ...search, page: nextPage } })} />
       ) : null}
       {onboarding ? <CenterFeatureTour
         center={center}
         hasCatalogItems={resources.length > 0}
         onTargetChange={setHighlightedTarget}
         onComplete={() => completeOnboardingTask(user?.userId, isAgent ? 'agents' : 'tools')}
-        onDismiss={() => navigate({ to: center === 'AGENT' ? '/agents' : '/tools', search: {} })}
+        onDismiss={() => navigate({ to: routePath, search: { ...search, onboarding: undefined } })}
         onReturnToOnboarding={openOnboardingGuide}
       /> : null}
     </ResourceCenterShell>

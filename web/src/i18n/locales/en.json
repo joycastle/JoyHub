@@ -254,7 +254,7 @@
   "skillCenter": {
     "title": "Skill Center",
     "description": "Discover, install, and reuse mature internal Skill packages, scripts, templates, and references.",
-    "visibility": "Only published Skills visible company-wide or to your department are shown here.",
+    "visibility": "Only published Skills visible to everyone or to your project space are shown here.",
     "publish": "Publish Skill",
     "searchPlaceholder": "Search Skill names or capabilities",
     "search": "Search",
@@ -271,7 +271,7 @@
   },
   "resourceCenter": {
     "eyebrow": "Capability Center",
-    "visibility": "Only published content visible company-wide or to your department is shown here.",
+    "visibility": "Only published content visible to everyone or to your project space is shown here.",
     "sortLabel": "Sort",
     "sort": {
       "relevance": "Recommended",
@@ -1976,8 +1976,7 @@
       },
       "LANDING": {
         "search": { "title": "Start with what you need to do", "description": "Search by work goal, business scenario, or capability keyword. Common scenarios provide a one-click start." },
-        "quickBrowse": { "title": "Choose a capability shape", "description": "If you are not sure what to search for, start by deciding whether you need an Agent, Skill, or tool." },
-        "filters": { "title": "Refine the recommendation feed", "description": "Combine scenario, visibility, and sorting filters to reduce blind searching." },
+        "filters": { "title": "Refine the recommendation feed", "description": "Combine scenario, audience, and sorting filters to reduce blind searching." },
         "catalog": { "title": "Use a card directly", "description": "Cards show purpose, downloads, and favorites, then provide Use now, Copy install, or Download according to the resource type." }
       },
       "CONTENT": {

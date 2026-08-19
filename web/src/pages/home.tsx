@@ -25,12 +25,10 @@ export function HomePage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { user } = useAuth()
-  const { onboarding } = useSearch({ from: '/skills' })
-  const [queryInput, setQueryInput] = useState('')
-  const [query, setQuery] = useState('')
-  const [sort, setSort] = useState<CenterSort>('newest')
-  const [page, setPage] = useState(0)
-  const [categoryCode, setCategoryCode] = useState<ResourceCategoryCode>()
+  const search = useSearch({ from: '/skills' })
+  const { onboarding, q: query, sort, page } = search
+  const categoryCode = search.categoryCode as ResourceCategoryCode | undefined
+  const [queryInput, setQueryInput] = useState(query)
   const [viewMode, setViewMode] = useViewMode('skills')
   const [highlightedTarget, setHighlightedTarget] = useState<CenterTourTarget | null>(null)
   const { data, isLoading, isError, isFetching } = useUnifiedResourceSearch({
@@ -54,9 +52,9 @@ export function HomePage() {
       queryInput={queryInput}
       onQueryChange={setQueryInput}
       onSearch={(value) => {
-        setQueryInput(value)
-        setQuery(normalizeSearchQuery(value))
-        setPage(0)
+        const q = normalizeSearchQuery(value)
+        setQueryInput(q)
+        navigate({ to: '/skills', search: { ...search, q, page: 0 } })
       }}
       searchPlaceholder={t('skillCenter.searchPlaceholder')}
       isSearching={isFetching && !isLoading}
@@ -69,11 +67,11 @@ export function HomePage() {
         <>
           <ResourceCategorySelect
             value={categoryCode}
-            onChange={(value) => { setCategoryCode(value); setPage(0) }}
+            onChange={(value) => navigate({ to: '/skills', search: { ...search, categoryCode: value, page: 0 } })}
             className="w-full sm:w-56"
             triggerPrefix={`${t('resourceCategory.label')}：`}
           />
-          <Select value={sort} onValueChange={(value) => { setSort(value as CenterSort); setPage(0) }}>
+          <Select value={sort} onValueChange={(value) => navigate({ to: '/skills', search: { ...search, sort: value as CenterSort, page: 0 } })}>
             <SelectTrigger className="w-full sm:w-44">
               <span>{t('resourceCenter.sortLabel')}：{t(`resourceCenter.sort.${sort}`)}</span>
             </SelectTrigger>
@@ -103,7 +101,11 @@ export function HomePage() {
                 skill={skill}
                 density={viewMode === 'list' ? 'list' : 'default'}
                 showVersion={viewMode === 'list'}
-                onClick={() => navigate({ to: '/space/$namespace/$slug', params: { namespace: skill.namespace, slug: skill.slug } })}
+                onClick={() => navigate({
+                  to: '/space/$namespace/$slug',
+                  params: { namespace: skill.namespace, slug: skill.slug },
+                  search: { returnTo: `${window.location.pathname}${window.location.search}` },
+                })}
               />
             </div>
           ))}
@@ -112,14 +114,14 @@ export function HomePage() {
         </div>
       ) : null}
       {!isLoading && !isError && data && pageCount > 1 ? (
-        <Pagination page={page} totalPages={pageCount} onPageChange={setPage} />
+        <Pagination page={page} totalPages={pageCount} onPageChange={(nextPage) => navigate({ to: '/skills', search: { ...search, page: nextPage } })} />
       ) : null}
       {onboarding ? <CenterFeatureTour
         center="SKILL"
         hasCatalogItems={skills.length > 0}
         onTargetChange={setHighlightedTarget}
         onComplete={() => completeOnboardingTask(user?.userId, 'skills')}
-        onDismiss={() => navigate({ to: '/skills', search: {} })}
+        onDismiss={() => navigate({ to: '/skills', search: { ...search, onboarding: undefined } })}
         onReturnToOnboarding={openOnboardingGuide}
       /> : null}
     </ResourceCenterShell>

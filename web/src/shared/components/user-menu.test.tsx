@@ -77,6 +77,23 @@ describe('user-menu module exports', () => {
 })
 
 describe('UserMenu security settings visibility', () => {
+  it('keeps favorites and subscriptions without duplicating top-level content links', () => {
+    const html = renderToStaticMarkup(
+      <UserMenu
+        user={{
+          displayName: 'Regular User',
+          platformRoles: ['USER'],
+          canChangePassword: false,
+        }}
+      />,
+    )
+
+    expect(html).toContain('user.menu.stars')
+    expect(html).toContain('user.menu.subscriptions')
+    expect(html).not.toContain('user.menu.dashboard')
+    expect(html).not.toContain('user.menu.myContent')
+  })
+
   it('shows security settings when password changes are allowed, independent of OAuth provider', () => {
     const html = renderToStaticMarkup(
       <UserMenu

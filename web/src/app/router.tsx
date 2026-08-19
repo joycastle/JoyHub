@@ -157,12 +157,31 @@ const landingRoute = createRoute({
   component: LandingPage,
 })
 
+type ResourceCenterSearch = {
+  q: string
+  categoryCode?: string
+  sort: 'relevance' | 'newest' | 'downloads'
+  page: number
+  onboarding?: boolean
+}
+
+function validateResourceCenterSearch(search: Record<string, unknown>, defaultSort: ResourceCenterSearch['sort']): ResourceCenterSearch {
+  const sort = typeof search.sort === 'string' && ['relevance', 'newest', 'downloads'].includes(search.sort)
+    ? search.sort as ResourceCenterSearch['sort']
+    : defaultSort
+  return {
+    q: normalizeSearchQuery(typeof search.q === 'string' ? search.q : ''),
+    categoryCode: typeof search.categoryCode === 'string' && search.categoryCode ? search.categoryCode : undefined,
+    sort,
+    page: Math.max(Number(search.page) || 0, 0),
+    onboarding: search.onboarding === true || search.onboarding === 'true' ? true : undefined,
+  }
+}
+
 const skillsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: 'skills',
-  validateSearch: (search: Record<string, unknown>): { onboarding?: boolean } => ({
-    onboarding: search.onboarding === true || search.onboarding === 'true' ? true : undefined,
-  }),
+  validateSearch: (search: Record<string, unknown>) => validateResourceCenterSearch(search, 'newest'),
   component: HomePage,
 })
 
@@ -170,9 +189,7 @@ const agentsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: 'agents',
   beforeLoad: requireAuth,
-  validateSearch: (search: Record<string, unknown>): { onboarding?: boolean } => ({
-    onboarding: search.onboarding === true || search.onboarding === 'true' ? true : undefined,
-  }),
+  validateSearch: (search: Record<string, unknown>) => validateResourceCenterSearch(search, 'relevance'),
   component: AgentsPage,
 })
 
@@ -180,9 +197,7 @@ const toolsRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: 'tools',
   beforeLoad: requireAuth,
-  validateSearch: (search: Record<string, unknown>): { onboarding?: boolean } => ({
-    onboarding: search.onboarding === true || search.onboarding === 'true' ? true : undefined,
-  }),
+  validateSearch: (search: Record<string, unknown>) => validateResourceCenterSearch(search, 'relevance'),
   component: ToolsPage,
 })
 
@@ -190,6 +205,9 @@ const catalogResourceRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: 'catalog/$slug',
   beforeLoad: requireAuth,
+  validateSearch: (search: Record<string, unknown>): { returnTo?: string } => ({
+    returnTo: typeof search.returnTo === 'string' && search.returnTo.startsWith('/') ? search.returnTo : undefined,
+  }),
   component: CatalogResourcePage,
 })
 
@@ -269,6 +287,9 @@ const namespaceRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/space/$namespace',
   beforeLoad: requireAuth,
+  validateSearch: (search: Record<string, unknown>): { page: number } => ({
+    page: Math.max(Number(search.page) || 0, 0),
+  }),
   component: NamespacePage,
 })
 
@@ -519,6 +540,7 @@ const routeTree = rootRoute.addChildren([
 export const router = createRouter({
   routeTree,
   defaultNotFoundComponent: DefaultNotFound,
+  scrollRestoration: true,
 })
 
 declare module '@tanstack/react-router' {
