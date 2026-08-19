@@ -148,7 +148,7 @@ describe('cross-command — local lifecycle', () => {
 
     // Inventory has exactly one target, not two duplicates.
     const inv = JSON.parse(
-      await readFile(join(env.home, '.skillhub', 'inventory.json'), 'utf-8')
+      await readFile(join(env.home, '.joyhub', 'inventory.json'), 'utf-8')
     ) as { items: Array<{ slug: string; targets: Array<{ installDir: string }> }> }
     const item = inv.items.find(i => i.slug === 'pdf-parser')
     expect(item?.targets).toHaveLength(1)
@@ -276,7 +276,7 @@ describe('cross-command — filesystem drift', () => {
     // Inventory still has the entry — doctor preserved it because the
     // installDir was NOT in the (now-empty) scan result.
     const inv = JSON.parse(
-      await readFile(join(env.home, '.skillhub', 'inventory.json'), 'utf-8')
+      await readFile(join(env.home, '.joyhub', 'inventory.json'), 'utf-8')
     ) as { items: Array<{ slug: string }> }
     expect(inv.items.find(i => i.slug === 'pdf-parser')).toBeDefined()
 
@@ -300,7 +300,7 @@ describe('cross-command — doctor idempotence', () => {
     const env = await createTempHome()
 
     // Seed one valid metadata file.
-    const metaDir = join(env.cwd, '.codex', 'skills', 'pdf-parser', '.skillhub')
+    const metaDir = join(env.cwd, '.codex', 'skills', 'pdf-parser', '.joyhub')
     await mkdir(metaDir, { recursive: true })
     await writeFile(join(metaDir, 'metadata.json'), JSON.stringify({
       registry: 'https://skill.xfyun.cn',
@@ -312,10 +312,10 @@ describe('cross-command — doctor idempotence', () => {
     }))
 
     await runCli(['doctor'], { HOME: env.home, USERPROFILE: env.home }, { cwd: env.cwd })
-    const after1 = await readFile(join(env.home, '.skillhub', 'inventory.json'), 'utf-8')
+    const after1 = await readFile(join(env.home, '.joyhub', 'inventory.json'), 'utf-8')
 
     await runCli(['doctor'], { HOME: env.home, USERPROFILE: env.home }, { cwd: env.cwd })
-    const after2 = await readFile(join(env.home, '.skillhub', 'inventory.json'), 'utf-8')
+    const after2 = await readFile(join(env.home, '.joyhub', 'inventory.json'), 'utf-8')
 
     expect(after2).toBe(after1)
   })
@@ -445,7 +445,7 @@ describe('cross-command — metadata.json drift', () => {
     // Corrupt the installed metadata. inventory.json (the authoritative
     // source for `list`) is untouched, so `list` should still work.
     await writeFile(
-      join(installDir, 'pdf-parser', '.skillhub', 'metadata.json'),
+      join(installDir, 'pdf-parser', '.joyhub', 'metadata.json'),
       '{ truncated'
     )
 
@@ -466,7 +466,7 @@ describe('cross-command — metadata.json drift', () => {
 // ---------------------------------------------------------------------------
 
 describe('cross-command — registry priority end-to-end', () => {
-  test('search uses --registry over SKILLHUB_REGISTRY env over default', async () => {
+  test('search uses --registry over JOYHUB_REGISTRY env over default', async () => {
     registry = await startFakeRegistry({
       searchItems: [{ namespace: 'global', slug: 'wins', latestVersion: '1.0.0', summary: 'right one' }]
     })
@@ -476,7 +476,7 @@ describe('cross-command — registry priority end-to-end', () => {
 
     const result = await runCli(
       ['search', '', '--registry', registry.url, '--json'],
-      { SKILLHUB_REGISTRY: registryB.url }
+      { JOYHUB_REGISTRY: registryB.url, JOYHUB_TOKEN: 'jh_test' }
     )
     expect(result.exitCode).toBe(0)
     const items = JSON.parse(result.stdout).items as Array<{ slug: string }>

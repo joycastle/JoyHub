@@ -150,6 +150,13 @@ class CliTokenLifecycleSecurityIntegrationTest {
             return;
         }
 
+        if (endpoint == EndpointCase.SEARCH
+                && credentialState == MixedCredentialState.BASIC_ONLY) {
+            assertUnauthorizedEnvelope(request);
+            verifyNoInteractions(cliSkillAppService);
+            return;
+        }
+
         ResultActions result = mockMvc.perform(request).andExpect(status().isOk());
         if (endpoint == EndpointCase.LATEST_DOWNLOAD
                 || endpoint == EndpointCase.VERSIONED_DOWNLOAD) {
@@ -182,9 +189,9 @@ class CliTokenLifecycleSecurityIntegrationTest {
     }
 
     @Test
-    void searchWithoutAuthorizationReturns200() throws Exception {
+    void searchWithoutAuthorizationReturns401() throws Exception {
         mockMvc.perform(get("/api/cli/v1/skills/search").param("q", "demo").param("limit", "20"))
-                .andExpect(status().isOk());
+                .andExpect(status().isUnauthorized());
     }
 
     @Test

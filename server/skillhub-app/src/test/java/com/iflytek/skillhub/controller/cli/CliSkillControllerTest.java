@@ -78,17 +78,33 @@ class CliSkillControllerTest {
 
     @Test
     void searchReturnsCompactCliResponse() throws Exception {
-        given(cliSkillAppService.search("pdf", 20, null, null)).willReturn(
+        ApiToken token = new ApiToken("search-user", "cli", "sk_test", "hash", "[\"skill:read\"]");
+        UserAccount user = new UserAccount("search-user", "Search User", "search@example.com", "");
+        given(apiTokenService.validateToken("search-token")).willReturn(Optional.of(token));
+        given(userAccountRepository.findById("search-user")).willReturn(Optional.of(user));
+        given(userRoleBindingRepository.findByUserId("search-user")).willReturn(List.of());
+        given(cliSkillAppService.search("pdf", 20, "search-user", Map.of())).willReturn(
                 new CliSkillAppService.CliSearchResult(List.of(
                         new CliSkillAppService.CliSearchItem("global", "pdf-parser", "1.2.0", "Parse PDFs")
                 ), 1, 20)
         );
 
-        mockMvc.perform(get("/api/cli/v1/skills/search").param("q", "pdf").param("limit", "20"))
+        mockMvc.perform(get("/api/cli/v1/skills/search")
+                        .param("q", "pdf")
+                        .param("limit", "20")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer search-token"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.items[0].namespace").value("global"))
                 .andExpect(jsonPath("$.data.items[0].slug").value("pdf-parser"))
                 .andExpect(jsonPath("$.data.items[0].latestVersion").value("1.2.0"));
+    }
+
+    @Test
+    void searchRequiresAuthentication() throws Exception {
+        mockMvc.perform(get("/api/cli/v1/skills/search").param("q", "pdf"))
+                .andExpect(status().isUnauthorized());
+
+        verifyNoInteractions(cliSkillAppService);
     }
 
     @Test
@@ -109,7 +125,7 @@ class CliSkillControllerTest {
 
     @Test
     void searchWithValidBearerProjectsIdentityAndNamespaceRoles() throws Exception {
-        ApiToken token = new ApiToken("user-cli-token", "cli", "sk_test", "hash", "[]");
+        ApiToken token = new ApiToken("user-cli-token", "cli", "sk_test", "hash", "[\"skill:read\"]");
         UserAccount user = new UserAccount("user-cli-token", "CLI User", "cli@example.com", "");
         Map<Long, NamespaceRole> nsRoles = Map.of(9L, NamespaceRole.MEMBER);
 

@@ -1,37 +1,37 @@
-# SkillHub CLI
+# JoyHub CLI
 
-SkillHub CLI is the official command-line tool for SkillHub, designed for searching, installing, managing, and publishing Agent skill packages.
+JoyHub CLI is the official command-line tool for JoyHub, designed for searching, installing, managing, and publishing Agent skill packages.
 
 ## 📦 Installation
 
 ```bash
 # Install globally via npm
-npm install -g @astron-team/skillhub
+npm install -g @joycastle/joyhub-cli
 
 # Or run directly with npx
-npx @astron-team/skillhub@latest version
+npx @joycastle/joyhub-cli@latest version
 
 # Or install globally via Bun
-bun add -g @astron-team/skillhub
+bun add -g @joycastle/joyhub-cli
 ```
 
 ## 🚀 Quick Start
 
 ```bash
-# Login
-skillhub login --token sk_xxx
+# Ensure a valid login (opens Device Flow when needed)
+joyhub auth ensure
 
 # Search skills
-skillhub search pdf
+joyhub search pdf
 
 # Install skill to Agent directory
-skillhub install pdf-parser --agent codex
+joyhub install pdf-parser --agent codex
 
 # List installed skills
-skillhub list
+joyhub list
 
 # Publish skill
-skillhub publish ./my-skill --namespace myspace
+joyhub publish ./my-skill --namespace myspace
 ```
 
 ## 🌐 Registry Configuration
@@ -39,28 +39,28 @@ skillhub publish ./my-skill --namespace myspace
 The active registry is resolved in the following priority order:
 
 1. `--registry <url>` command-line argument
-2. `SKILLHUB_REGISTRY` environment variable
-3. `registry` in `~/.skillhub/config.json`
+2. `JOYHUB_REGISTRY` environment variable
+3. `registry` in `~/.joyhub/config.json`
 4. Default value `https://skill.xfyun.cn`
 
 ```bash
 # Temporarily use another registry
-skillhub search pdf --registry https://skillhub.example.com
+joyhub search pdf --registry https://joyhub.example.com
 
 # Set via environment variable (Linux/macOS)
-export SKILLHUB_REGISTRY=https://skillhub.example.com
+export JOYHUB_REGISTRY=https://joyhub.example.com
 ```
 
 **Windows PowerShell:**
 
 ```powershell
-$env:SKILLHUB_REGISTRY="https://skillhub.example.com"
+$env:JOYHUB_REGISTRY="https://joyhub.example.com"
 ```
 
 **Windows CMD:**
 
 ```cmd
-set SKILLHUB_REGISTRY=https://skillhub.example.com
+set JOYHUB_REGISTRY=https://joyhub.example.com
 ```
 
 ## 🔐 Authentication
@@ -68,58 +68,77 @@ set SKILLHUB_REGISTRY=https://skillhub.example.com
 Token resolution priority:
 
 1. `--token <token>` command-line argument
-2. `SKILLHUB_TOKEN` environment variable
-3. Token stored in `~/.skillhub/credentials.json` (per registry)
+2. `JOYHUB_TOKEN` environment variable
+3. Token stored in `~/.joyhub/credentials.json` (per registry)
 
 ### Login
 
 ```bash
+# Browser-based Device Flow
+joyhub auth ensure
+
+# Machine-readable result for agents
+joyhub auth ensure --json
+
 # Login with API token
-skillhub login --token sk_xxx
+joyhub login --token sk_xxx
 
 # Login to specific registry
-skillhub login --token sk_xxx --registry https://skillhub.example.com
+joyhub login --token sk_xxx --registry https://joyhub.example.com
 ```
 
-`login` validates the token, stores it in `~/.skillhub/credentials.json`, and writes the registry to `~/.skillhub/config.json`.
+`login` validates the token, stores it in `~/.joyhub/credentials.json`, and writes the registry to `~/.joyhub/config.json`.
+When no token is supplied, `login` uses the same Device Flow as `auth ensure`.
 
 ### Check Current Identity
 
 ```bash
-skillhub whoami
+joyhub whoami
 
 # Check specific registry
-skillhub whoami --registry https://skillhub.example.com
+joyhub whoami --registry https://joyhub.example.com
 
 # Temporarily use different token
-skillhub whoami --token sk_other
+joyhub whoami --token sk_other
 ```
 
 ### Logout
 
 ```bash
-skillhub logout
+joyhub logout
 
 # Logout from specific registry
-skillhub logout --registry https://skillhub.example.com
+joyhub logout --registry https://joyhub.example.com
 ```
 
 Logout only removes the token for the specified registry, preserving registry configuration and installation records.
 
 ## 🔍 Search
 
+Search requires authentication. Agents should run `joyhub auth ensure --json` first.
+
+```bash
+joyhub search --query "pdf parser" --limit 10 --json
+```
+
+## Publishable Namespaces
+
+```bash
+joyhub namespaces --publishable --json
+```
+
 ```bash
 # Keyword search
-skillhub search pdf
+joyhub search pdf
 
 # Search with a one-off token
-skillhub search pdf --token sk_xxx
+joyhub search pdf --token sk_xxx
 
 # List all skills (empty query)
-skillhub search "" --limit 50
+joyhub search "" --limit 50
 
 # JSON output
-skillhub search pdf --json
+joyhub search pdf --json
 ```
 
 Output format: `namespace/slug  version  summary`
@@ -142,34 +161,34 @@ conflicting value is rejected instead of silently overriding the coordinate.
 
 ```bash
 # Install to auto-detected Agent directory
-skillhub install pdf-parser
+joyhub install pdf-parser
 
 # Equivalent namespaced coordinates
-skillhub install team/my-skill
-skillhub install @team/my-skill
-skillhub install team--my-skill
+joyhub install team/my-skill
+joyhub install @team/my-skill
+joyhub install team--my-skill
 
 # Choose install scope explicitly
-skillhub install pdf-parser --scope user
-skillhub install pdf-parser --scope project --agent codex
+joyhub install pdf-parser --scope user
+joyhub install pdf-parser --scope project --agent codex
 
 # Specify namespace for a bare slug (default: global)
-skillhub install pdf-parser --namespace myspace
+joyhub install pdf-parser --namespace myspace
 
 # Specify version
-skillhub install pdf-parser --version 1.2.0
+joyhub install pdf-parser --version 1.2.0
 
 # Install to specific Agent
-skillhub install pdf-parser --agent codex
+joyhub install pdf-parser --agent codex
 
 # Install to multiple Agents
-skillhub install pdf-parser --agent codex --agent claude-code
+joyhub install pdf-parser --agent codex --agent claude-code
 
 # Install to custom directory
-skillhub install pdf-parser --dir ~/.claude/skills
+joyhub install pdf-parser --dir ~/.claude/skills
 
 # Force overwrite existing installation
-skillhub install pdf-parser --force
+joyhub install pdf-parser --force
 ```
 
 ### Install Target Resolution
@@ -217,7 +236,7 @@ For a custom path or an unsupported Agent directory, use `--dir` to specify the 
 ```
 .codex/skills/pdf-parser/
 ├── ...                          # Extracted skill package files
-└── .skillhub/
+└── .joyhub/
     └── metadata.json            # Installation metadata
 ```
 
@@ -240,46 +259,46 @@ For a custom path or an unsupported Agent directory, use `--dir` to specify the 
 
 ```bash
 # List all installed skills
-skillhub list
+joyhub list
 
 # Filter by Agent
-skillhub list --agent codex
+joyhub list --agent codex
 
 # Filter by multiple Agents
-skillhub list --agent codex --agent claude-code
+joyhub list --agent codex --agent claude-code
 
 # Filter by directory
-skillhub list --dir ~/.codex/skills
+joyhub list --dir ~/.codex/skills
 
 # JSON output
-skillhub list --json
+joyhub list --json
 ```
 
 ### Remove Skills
 
 ```bash
 # A bare slug removes matching local installations across namespaces
-skillhub remove pdf-parser
+joyhub remove pdf-parser
 
 # A namespaced coordinate removes only that namespace
-skillhub remove myspace/pdf-parser
-skillhub remove @myspace/pdf-parser
-skillhub remove myspace--pdf-parser
+joyhub remove myspace/pdf-parser
+joyhub remove @myspace/pdf-parser
+joyhub remove myspace--pdf-parser
 
 # Equivalent precise local removal with an explicit namespace
-skillhub remove pdf-parser --namespace myspace
+joyhub remove pdf-parser --namespace myspace
 
 # Remove only specific Agent's installation
-skillhub remove pdf-parser --agent codex
+joyhub remove pdf-parser --agent codex
 
 # Remove all targets (skip interactive confirmation)
-skillhub remove pdf-parser --all
+joyhub remove pdf-parser --all
 
 # Remove remote skill (requires authentication, prompts for confirmation)
-skillhub remove pdf-parser --remote --namespace myspace
+joyhub remove pdf-parser --remote --namespace myspace
 
 # Skip remote deletion confirmation
-skillhub remove pdf-parser --remote --hard --namespace myspace
+joyhub remove pdf-parser --remote --hard --namespace myspace
 ```
 
 > Parameter exclusivity rules:
@@ -290,12 +309,12 @@ skillhub remove pdf-parser --remote --hard --namespace myspace
 ### Rebuild Local Inventory
 
 ```bash
-skillhub doctor
+joyhub doctor
 ```
 
 `doctor` performs the following operations:
 
-1. Scans `<cwd>/.<agent>/skills/<slug>/.skillhub/metadata.json`
+1. Scans `<cwd>/.<agent>/skills/<slug>/.joyhub/metadata.json`
 2. Groups by `registry + namespace + slug`
 3. Backs up old `inventory.json` (if exists)
 4. Writes new `inventory.json`
@@ -306,13 +325,13 @@ If the same skill has version conflicts across different targets, that skill wil
 
 ```bash
 # Publish directory (auto-packaged as zip)
-skillhub publish ./my-skill --namespace myspace
+joyhub publish ./my-skill --namespace myspace
 
 # Publish existing zip file
-skillhub publish ./my-skill.zip --namespace myspace
+joyhub publish ./my-skill.zip --namespace myspace
 
 # Specify visibility
-skillhub publish ./my-skill --namespace myspace --visibility private
+joyhub publish ./my-skill --namespace myspace --visibility private
 ```
 
 Visibility options:
@@ -326,15 +345,15 @@ After successful publication, the skill detail page URL will be displayed.
 
 ```bash
 # Check for new version
-skillhub update --check
+joyhub update --check
 
 # Execute update
-skillhub update
+joyhub update
 ```
 
 Update mechanism:
-- Installed via npm globally: Auto-executes `npm install -g @astron-team/skillhub@latest`
-- Installed via Bun globally: Auto-executes `bun add -g @astron-team/skillhub@latest`
+- Installed via npm globally: Auto-executes `npm install -g @joycastle/joyhub-cli@latest`
+- Installed via Bun globally: Auto-executes `bun add -g @joycastle/joyhub-cli@latest`
 - Run via npx: Prompts manual update command
 - Unknown installation method: Prompts manual update
 
@@ -342,13 +361,13 @@ Update mechanism:
 
 | Variable | Description | Priority |
 |----------|-------------|----------|
-| `SKILLHUB_REGISTRY` | Default registry URL | Lower than `--registry` parameter |
-| `SKILLHUB_TOKEN` | API token | Lower than `--token` parameter, higher than stored token |
+| `JOYHUB_REGISTRY` | Default registry URL | Lower than `--registry` parameter |
+| `JOYHUB_TOKEN` | API token | Lower than `--token` parameter, higher than stored token |
 
 ## 📂 Local File Structure
 
 ```
-~/.skillhub/
+~/.joyhub/
 ├── config.json           # User configuration (registry, defaultAgent, etc.)
 ├── credentials.json      # API tokens (stored per registry, permissions 0600)
 └── inventory.json        # Installed skills inventory
@@ -358,22 +377,22 @@ Update mechanism:
 
 | Command | Description |
 |---------|-------------|
-| `skillhub help [command]` | Display help information |
-| `skillhub version [--json]` | Display CLI version |
-| `skillhub login --token <token> [--registry <url>] [--json]` | Save token and registry configuration |
-| `skillhub logout [--registry <url>] [--json]` | Remove token for specified registry |
-| `skillhub whoami [--registry <url>] [--token <token>] [--json]` | Validate current token and display user information |
-| `skillhub search <query> [--registry <url>] [--token <token>] [--limit <n>] [--json]` | Search published skills |
-| `skillhub install <coordinate> [--scope <user\|project>] [--namespace <slug>] [--version <v>] [--agent <profile>] [--dir <path>] [--force] [--registry <url>] [--token <token>] [--json]` | Install a skill |
-| `skillhub list [--agent <profile>] [--dir <path>] [--registry <url>] [--json]` | List installed skills |
-| `skillhub remove <coordinate> [--agent <profile>] [--all] [--remote] [--hard] [--namespace <slug>] [--registry <url>] [--token <token>] [--json]` | Remove a skill |
-| `skillhub doctor [--json]` | Scan project directory and rebuild local inventory |
-| `skillhub publish <path> [--namespace <slug>] [--visibility <v>] [--registry <url>] [--token <token>] [--json]` | Publish a skill |
-| `skillhub update [--check] [--json]` | Check or execute CLI self-update |
+| `joyhub help [command]` | Display help information |
+| `joyhub version [--json]` | Display CLI version |
+| `joyhub login --token <token> [--registry <url>] [--json]` | Save token and registry configuration |
+| `joyhub logout [--registry <url>] [--json]` | Remove token for specified registry |
+| `joyhub whoami [--registry <url>] [--token <token>] [--json]` | Validate current token and display user information |
+| `joyhub search <query> [--registry <url>] [--token <token>] [--limit <n>] [--json]` | Search published skills |
+| `joyhub install <coordinate> [--scope <user\|project>] [--namespace <slug>] [--version <v>] [--agent <profile>] [--dir <path>] [--force] [--registry <url>] [--token <token>] [--json]` | Install a skill |
+| `joyhub list [--agent <profile>] [--dir <path>] [--registry <url>] [--json]` | List installed skills |
+| `joyhub remove <coordinate> [--agent <profile>] [--all] [--remote] [--hard] [--namespace <slug>] [--registry <url>] [--token <token>] [--json]` | Remove a skill |
+| `joyhub doctor [--json]` | Scan project directory and rebuild local inventory |
+| `joyhub publish <path> [--namespace <slug>] [--visibility <v>] [--registry <url>] [--token <token>] [--json]` | Publish a skill |
+| `joyhub update [--check] [--json]` | Check or execute CLI self-update |
 
 ## 🔒 Security Notes
 
-- Tokens are stored only in user directory `~/.skillhub/credentials.json`
+- Tokens are stored only in user directory `~/.joyhub/credentials.json`
 - On Linux/macOS, credential file permissions are automatically set to `0600`
 - Tokens are never written to any project-local files
 - Remote delete operations require explicit confirmation or `--hard` parameter
@@ -385,10 +404,10 @@ Update mechanism:
 
 ```bash
 # Verify token validity
-skillhub whoami
+joyhub whoami
 
 # Re-login
-skillhub login --token sk_xxx
+joyhub login --token sk_xxx
 ```
 
 For structured registry failures, the CLI prints the server's public `msg` and
@@ -403,33 +422,33 @@ request ID when asking a registry operator to investigate.
 curl https://skill.xfyun.cn/api/cli/v1/skills/search?q=test&limit=1
 
 # Use alternative registry
-skillhub search test --registry https://skillhub.example.com
+joyhub search test --registry https://joyhub.example.com
 ```
 
 ### Installation Directory Conflict
 
 ```bash
 # Use --force to overwrite
-skillhub install pdf-parser --force
+joyhub install pdf-parser --force
 
 # Or remove first then install
-skillhub remove pdf-parser
-skillhub install pdf-parser
+joyhub remove pdf-parser
+joyhub install pdf-parser
 ```
 
 ### Corrupted Inventory
 
 ```bash
 # Rebuild inventory
-skillhub doctor
+joyhub doctor
 ```
 
 ## 📚 Documentation
 
-- [SkillHub Homepage](https://skill.xfyun.cn)
-- [GitHub Repository](https://github.com/iflytek/skillhub)
-- [CLI Documentation](https://github.com/iflytek/skillhub/blob/main/docs/skillhub/en/guide/cli.md)
-- [Issue Tracker](https://github.com/iflytek/skillhub/issues)
+- [JoyHub Homepage](https://skill.xfyun.cn)
+- [GitHub Repository](https://github.com/joycastle/JoyHub)
+- [CLI Documentation](https://github.com/joycastle/JoyHub/blob/main/docs/joyhub/en/guide/cli.md)
+- [Issue Tracker](https://github.com/joycastle/JoyHub/issues)
 
 ## 📄 License
 

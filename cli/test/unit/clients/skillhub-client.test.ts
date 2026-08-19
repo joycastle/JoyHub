@@ -1,9 +1,9 @@
 import { describe, expect, test } from 'bun:test'
-import { SkillHubClient } from '../../../src/clients/skillhub-client'
+import { JoyHubClient } from '../../../src/clients/skillhub-client'
 import { CliError } from '../../../src/shared/errors'
 import { EXIT } from '../../../src/shared/constants'
 
-describe('SkillHubClient', () => {
+describe('JoyHubClient', () => {
   test('uses the provided multipart file name when publishing', async () => {
     const fetchImpl = (async (_input: URL | RequestInfo, init?: RequestInit) => {
       const formData = init?.body as FormData
@@ -20,7 +20,7 @@ describe('SkillHubClient', () => {
       })
     }) as unknown as typeof fetch
 
-    const client = new SkillHubClient('http://registry.test', 'token', fetchImpl)
+    const client = new JoyHubClient('http://registry.test', 'token', fetchImpl)
     await expect(client.publish('team', new Blob(['zip'], { type: 'application/zip' }), 'PRIVATE', 'custom-skill.zip'))
       .resolves.toMatchObject({ slug: 'custom-skill' })
   })
@@ -29,7 +29,7 @@ describe('SkillHubClient', () => {
 
   test('download() throws auth error on 401', async () => {
     const fetchImpl = (async () => new Response(null, { status: 401 })) as unknown as typeof fetch
-    const client = new SkillHubClient('http://registry.test', 'token', fetchImpl)
+    const client = new JoyHubClient('http://registry.test', 'token', fetchImpl)
     const err = expect(client.download('ns', 'slug')).rejects
     await err.toBeInstanceOf(CliError)
     await err.toHaveProperty('message', 'authentication failed')
@@ -42,7 +42,7 @@ describe('SkillHubClient', () => {
       msg: 'API token is missing required scope: skill:read',
       requestId: 'req-download'
     }, { status: 403 })) as unknown as typeof fetch
-    const client = new SkillHubClient('http://registry.test', 'token', fetchImpl)
+    const client = new JoyHubClient('http://registry.test', 'token', fetchImpl)
 
     await expect(client.download('ns', 'slug')).rejects.toMatchObject({
       message: 'API token is missing required scope: skill:read',
@@ -56,7 +56,7 @@ describe('SkillHubClient', () => {
 
   test('download() uses a neutral access error for an unstructured 403', async () => {
     const fetchImpl = (async () => new Response(null, { status: 403 })) as unknown as typeof fetch
-    const client = new SkillHubClient('http://registry.test', 'token', fetchImpl)
+    const client = new JoyHubClient('http://registry.test', 'token', fetchImpl)
 
     await expect(client.download('ns', 'slug')).rejects.toMatchObject({
       message: 'access denied',
@@ -67,7 +67,7 @@ describe('SkillHubClient', () => {
 
   test('download() throws not-found error on 404', async () => {
     const fetchImpl = (async () => new Response(null, { status: 404 })) as unknown as typeof fetch
-    const client = new SkillHubClient('http://registry.test', 'token', fetchImpl)
+    const client = new JoyHubClient('http://registry.test', 'token', fetchImpl)
     const err = expect(client.download('ns', 'slug')).rejects
     await err.toBeInstanceOf(CliError)
     await err.toHaveProperty('message', 'skill or version not found')
@@ -76,7 +76,7 @@ describe('SkillHubClient', () => {
 
   test('download() throws generic error on 400', async () => {
     const fetchImpl = (async () => new Response(null, { status: 400 })) as unknown as typeof fetch
-    const client = new SkillHubClient('http://registry.test', 'token', fetchImpl)
+    const client = new JoyHubClient('http://registry.test', 'token', fetchImpl)
     const err = expect(client.download('ns', 'slug')).rejects
     await err.toBeInstanceOf(CliError)
     await err.toHaveProperty('message', 'download failed with status 400')
@@ -85,7 +85,7 @@ describe('SkillHubClient', () => {
 
   test('download() throws generic error on 500', async () => {
     const fetchImpl = (async () => new Response(null, { status: 500 })) as unknown as typeof fetch
-    const client = new SkillHubClient('http://registry.test', 'token', fetchImpl)
+    const client = new JoyHubClient('http://registry.test', 'token', fetchImpl)
     const err = expect(client.download('ns', 'slug')).rejects
     await err.toBeInstanceOf(CliError)
     await err.toHaveProperty('message', 'download failed with status 500')
@@ -94,7 +94,7 @@ describe('SkillHubClient', () => {
 
   test('download() retains its fallback while classifying 502 as a network error', async () => {
     const fetchImpl = (async () => new Response(null, { status: 502 })) as unknown as typeof fetch
-    const client = new SkillHubClient('http://registry.test', 'token', fetchImpl)
+    const client = new JoyHubClient('http://registry.test', 'token', fetchImpl)
 
     await expect(client.download('ns', 'slug')).rejects.toMatchObject({
       message: 'download failed with status 502',
@@ -105,7 +105,7 @@ describe('SkillHubClient', () => {
 
   test('download() throws network error on fetch failure', async () => {
     const fetchImpl = (async () => { throw new TypeError('fetch failed') }) as unknown as typeof fetch
-    const client = new SkillHubClient('http://registry.test', 'token', fetchImpl)
+    const client = new JoyHubClient('http://registry.test', 'token', fetchImpl)
     const err = expect(client.download('ns', 'slug')).rejects
     await err.toBeInstanceOf(CliError)
     await err.toHaveProperty('message', 'registry unreachable')
@@ -118,14 +118,14 @@ describe('SkillHubClient', () => {
     const fetchImpl = (async () => Response.json({
       data: { handle: 'alice', displayName: 'Alice', email: 'a@b.com' }
     })) as unknown as typeof fetch
-    const client = new SkillHubClient('http://registry.test', 'token', fetchImpl)
+    const client = new JoyHubClient('http://registry.test', 'token', fetchImpl)
     const result = await client.whoami()
     expect(result).toEqual({ handle: 'alice', displayName: 'Alice', email: 'a@b.com' })
   })
 
   test('whoami() throws on 401', async () => {
     const fetchImpl = (async () => new Response(null, { status: 401 })) as unknown as typeof fetch
-    const client = new SkillHubClient('http://registry.test', 'token', fetchImpl)
+    const client = new JoyHubClient('http://registry.test', 'token', fetchImpl)
     const err = expect(client.whoami()).rejects
     await err.toBeInstanceOf(CliError)
     await err.toHaveProperty('message', 'authentication failed')
@@ -142,7 +142,7 @@ describe('SkillHubClient', () => {
         limit: 20
       }
     })) as unknown as typeof fetch
-    const client = new SkillHubClient('http://registry.test', 'token', fetchImpl)
+    const client = new JoyHubClient('http://registry.test', 'token', fetchImpl)
     const result = await client.search('test', 20)
     expect(result.items).toHaveLength(1)
     expect(result.items[0]).toEqual({ namespace: 'g', slug: 's', latestVersion: '1.0', summary: 'x' })
@@ -154,7 +154,7 @@ describe('SkillHubClient', () => {
     const fetchImpl = (async () => Response.json({
       data: { items: [], total: 0, limit: 20 }
     })) as unknown as typeof fetch
-    const client = new SkillHubClient('http://registry.test', 'token', fetchImpl)
+    const client = new JoyHubClient('http://registry.test', 'token', fetchImpl)
     const result = await client.search('nothing', 20)
     expect(result.items).toHaveLength(0)
     expect(result.total).toBe(0)
@@ -170,7 +170,7 @@ describe('SkillHubClient', () => {
         data: { namespace: 'ns', slug: 'sk', version: '1.0.0', versionId: 1, fingerprint: 'abc', downloadUrl: '/dl' }
       })
     }) as unknown as typeof fetch
-    const client = new SkillHubClient('http://registry.test', 'token', fetchImpl)
+    const client = new JoyHubClient('http://registry.test', 'token', fetchImpl)
     await client.resolve('ns', 'sk')
     expect(capturedUrl).not.toContain('?version=')
   })
@@ -183,7 +183,7 @@ describe('SkillHubClient', () => {
         data: { namespace: 'ns', slug: 'sk', version: '2.0.0', versionId: 2, fingerprint: 'def', downloadUrl: '/dl' }
       })
     }) as unknown as typeof fetch
-    const client = new SkillHubClient('http://registry.test', 'token', fetchImpl)
+    const client = new JoyHubClient('http://registry.test', 'token', fetchImpl)
     await client.resolve('ns', 'sk', '2.0.0')
     expect(capturedUrl).toContain('?version=2.0.0')
   })
@@ -198,7 +198,7 @@ describe('SkillHubClient', () => {
       detail: 'internal token state',
       stack: 'internal stack trace'
     }, { status: 401 })) as unknown as typeof fetch
-    const client = new SkillHubClient('http://registry.test', 'token', fetchImpl)
+    const client = new JoyHubClient('http://registry.test', 'token', fetchImpl)
 
     const error = await client.whoami().catch((caught: unknown) => caught)
     expect(error).toBeInstanceOf(CliError)
@@ -207,7 +207,7 @@ describe('SkillHubClient', () => {
     expect((error as CliError).details).toEqual({
       registry: 'http://registry.test',
       requestId: 'req-401',
-      next: 'run `skillhub login`'
+      next: 'run `joyhub auth ensure`'
     })
   })
 
@@ -217,7 +217,7 @@ describe('SkillHubClient', () => {
       msg: 'token has been revoked',
       requestId: 'req-403'
     }, { status: 403 })) as unknown as typeof fetch
-    const client = new SkillHubClient('http://registry.test', 'token', fetchImpl)
+    const client = new JoyHubClient('http://registry.test', 'token', fetchImpl)
 
     try {
       await client.search('test', 20)
@@ -238,7 +238,7 @@ describe('SkillHubClient', () => {
       code: 403,
       requestId: 'req-fallback'
     }, { status: 403 })) as unknown as typeof fetch
-    const client = new SkillHubClient('http://registry.test', 'token', fetchImpl)
+    const client = new JoyHubClient('http://registry.test', 'token', fetchImpl)
 
     try {
       await client.search('test', 20)
@@ -259,7 +259,7 @@ describe('SkillHubClient', () => {
       status: 403,
       headers: { 'Content-Type': 'text/html' }
     })) as unknown as typeof fetch
-    const client = new SkillHubClient('http://registry.test', 'token', fetchImpl)
+    const client = new JoyHubClient('http://registry.test', 'token', fetchImpl)
 
     try {
       await client.search('test', 20)
@@ -278,7 +278,7 @@ describe('SkillHubClient', () => {
       msg: 'namespace not found',
       requestId: 'req-404'
     }, { status: 404 })) as unknown as typeof fetch
-    const client = new SkillHubClient('http://registry.test', 'token', fetchImpl)
+    const client = new JoyHubClient('http://registry.test', 'token', fetchImpl)
 
     try {
       await client.whoami()
@@ -296,7 +296,7 @@ describe('SkillHubClient', () => {
 
   test('whoami() uses the resource fallback on an unstructured 404', async () => {
     const fetchImpl = (async () => new Response(null, { status: 404 })) as unknown as typeof fetch
-    const client = new SkillHubClient('http://registry.test', 'token', fetchImpl)
+    const client = new JoyHubClient('http://registry.test', 'token', fetchImpl)
 
     await expect(client.whoami()).rejects.toMatchObject({
       message: 'resource not found',
@@ -311,7 +311,7 @@ describe('SkillHubClient', () => {
       msg: 'namespace access denied',
       requestId: 'req-download'
     }, { status: 403 })) as unknown as typeof fetch
-    const client = new SkillHubClient('http://registry.test', 'token', fetchImpl)
+    const client = new JoyHubClient('http://registry.test', 'token', fetchImpl)
 
     try {
       await client.download('team', 'private-skill')
@@ -333,7 +333,7 @@ describe('SkillHubClient', () => {
       msg: 'API token cannot access endpoint: /api/cli/v1/whoami',
       requestId: 'req-610'
     }, { status: 403 })) as unknown as typeof fetch
-    const client = new SkillHubClient('http://registry.test', 'token', fetchImpl)
+    const client = new JoyHubClient('http://registry.test', 'token', fetchImpl)
 
     await expect(client.whoami()).rejects.toMatchObject({
       message: 'API token cannot access endpoint: /api/cli/v1/whoami',
@@ -347,7 +347,7 @@ describe('SkillHubClient', () => {
 
   test('whoami() falls back to generic access denied when 403 body is invalid', async () => {
     const fetchImpl = (async () => new Response('not-json', { status: 403 })) as unknown as typeof fetch
-    const client = new SkillHubClient('http://registry.test', 'token', fetchImpl)
+    const client = new JoyHubClient('http://registry.test', 'token', fetchImpl)
 
     await expect(client.whoami()).rejects.toMatchObject({
       message: 'access denied',
@@ -363,7 +363,7 @@ describe('SkillHubClient', () => {
       requestId: 'req-500',
       detail: 'internal database error'
     }, { status: 500 })) as unknown as typeof fetch
-    const client = new SkillHubClient('http://registry.test', 'token', fetchImpl)
+    const client = new JoyHubClient('http://registry.test', 'token', fetchImpl)
 
     await expect(client.whoami()).rejects.toMatchObject({
       message: 'registry operation failed',
@@ -377,7 +377,7 @@ describe('SkillHubClient', () => {
 
   test('whoami() does not expose a raw non-JSON 500 body', async () => {
     const fetchImpl = (async () => new Response('internal stack trace', { status: 500 })) as unknown as typeof fetch
-    const client = new SkillHubClient('http://registry.test', 'token', fetchImpl)
+    const client = new JoyHubClient('http://registry.test', 'token', fetchImpl)
 
     await expect(client.whoami()).rejects.toMatchObject({
       message: 'registry returned 500',
@@ -392,7 +392,7 @@ describe('SkillHubClient', () => {
       msg: 'registry upstream unavailable',
       requestId: 'req-502'
     }, { status: 502 })) as unknown as typeof fetch
-    const client = new SkillHubClient('http://registry.test', 'token', fetchImpl)
+    const client = new JoyHubClient('http://registry.test', 'token', fetchImpl)
 
     await expect(client.search('test', 20)).rejects.toMatchObject({
       message: 'registry upstream unavailable',
@@ -406,7 +406,7 @@ describe('SkillHubClient', () => {
 
   test('search() uses the network fallback on an unstructured 502', async () => {
     const fetchImpl = (async () => new Response(null, { status: 502 })) as unknown as typeof fetch
-    const client = new SkillHubClient('http://registry.test', 'token', fetchImpl)
+    const client = new JoyHubClient('http://registry.test', 'token', fetchImpl)
 
     await expect(client.search('test', 20)).rejects.toMatchObject({
       message: 'registry returned 502',
@@ -421,14 +421,14 @@ describe('SkillHubClient', () => {
     const fetchImpl = (async () => Response.json({
       data: { ok: true, scope: 'remote', action: 'delete', namespace: 'global', slug: 'demo' }
     })) as unknown as typeof fetch
-    const client = new SkillHubClient('http://registry.test', 'token', fetchImpl)
+    const client = new JoyHubClient('http://registry.test', 'token', fetchImpl)
     const result = await client.deleteRemote('global', 'demo')
     expect(result).toEqual({ ok: true, scope: 'remote', action: 'delete', namespace: 'global', slug: 'demo' })
   })
 
   test('deleteRemote() throws on network error', async () => {
     const fetchImpl = (async () => { throw new TypeError('fetch failed') }) as unknown as typeof fetch
-    const client = new SkillHubClient('http://registry.test', 'token', fetchImpl)
+    const client = new JoyHubClient('http://registry.test', 'token', fetchImpl)
     const err = expect(client.deleteRemote('global', 'demo')).rejects
     await err.toBeInstanceOf(CliError)
     await err.toHaveProperty('message', 'registry unreachable')

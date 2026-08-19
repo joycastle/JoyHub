@@ -69,7 +69,7 @@ describe('install command — P0', () => {
     expect(result.exitCode).toBe(0)
 
     // --- metadata.json ---
-    const metaPath = join(installDir, 'pdf-parser', '.skillhub', 'metadata.json')
+    const metaPath = join(installDir, 'pdf-parser', '.joyhub', 'metadata.json')
     const meta = JSON.parse(await readFile(metaPath, 'utf-8'))
     expect(meta).toMatchObject({
       registry: registry.url,
@@ -80,7 +80,7 @@ describe('install command — P0', () => {
     expect(typeof meta.installedAt).toBe('string')
 
     // --- inventory.json ---
-    const inventoryPath = join(env.home, '.skillhub', 'inventory.json')
+    const inventoryPath = join(env.home, '.joyhub', 'inventory.json')
     const inventory = JSON.parse(await readFile(inventoryPath, 'utf-8'))
     expect(inventory.items).toBeArray()
     const item = inventory.items.find(
@@ -184,7 +184,7 @@ describe('install command — P1', () => {
     expect(result.exitCode).toBe(0)
     expect(registry.received.resolve?.version).toBe('1.0.0')
 
-    const metaPath = join(installDir, 'pdf-parser', '.skillhub', 'metadata.json')
+    const metaPath = join(installDir, 'pdf-parser', '.joyhub', 'metadata.json')
     const meta = JSON.parse(await readFile(metaPath, 'utf-8'))
     expect(meta.version).toBe('1.0.0')
   })
@@ -317,7 +317,7 @@ describe('install command — P1', () => {
 
     expect(result.exitCode).toBe(0)
 
-    const metaPath = join(installDir, 'mything', '.skillhub', 'metadata.json')
+    const metaPath = join(installDir, 'mything', '.joyhub', 'metadata.json')
     const meta = JSON.parse(await readFile(metaPath, 'utf-8'))
     expect(meta.namespace).toBe('myteam')
     expect(meta.slug).toBe('mything')
@@ -496,7 +496,7 @@ describe('install command — server errors', () => {
     expect(result.stderr).toMatch(/404|not found/i)
 
     // No metadata file should have been created at the install destination.
-    const metaPath = join(installDir, 'no-such-slug', '.skillhub', 'metadata.json')
+    const metaPath = join(installDir, 'no-such-slug', '.joyhub', 'metadata.json')
     expect(await Bun.file(metaPath).exists()).toBe(false)
   })
 
@@ -606,7 +606,7 @@ describe('install command — server errors', () => {
     )
     expect(result.exitCode).toBe(0)
     expect(await Bun.file(join(installDir, 'pdf-parser', 'SKILL.md')).exists()).toBe(true)
-    expect(await Bun.file(join(installDir, 'pdf-parser', '.skillhub', 'metadata.json')).exists()).toBe(true)
+    expect(await Bun.file(join(installDir, 'pdf-parser', '.joyhub', 'metadata.json')).exists()).toBe(true)
   })
 
   test('install --dir pointing at a regular file (not a directory) fails before download', async () => {
@@ -694,8 +694,8 @@ describe('install command — multi-agent & auto-detect', () => {
     expect(agents).toEqual(['claude-code', 'codex'])
 
     // Both metadata files exist on disk under user-level <home>/.<agent>/skills.
-    expect(await Bun.file(join(env.home, '.codex', 'skills', 'pdf-parser', '.skillhub', 'metadata.json')).exists()).toBe(true)
-    expect(await Bun.file(join(env.home, '.claude', 'skills', 'pdf-parser', '.skillhub', 'metadata.json')).exists()).toBe(true)
+    expect(await Bun.file(join(env.home, '.codex', 'skills', 'pdf-parser', '.joyhub', 'metadata.json')).exists()).toBe(true)
+    expect(await Bun.file(join(env.home, '.claude', 'skills', 'pdf-parser', '.joyhub', 'metadata.json')).exists()).toBe(true)
   })
 
   test('duplicate --agent dedupes to one target', async () => {
@@ -861,7 +861,7 @@ describe('install command — multi-agent & auto-detect', () => {
       )
       expect(result.exitCode).not.toBe(0)
       // No metadata should have been written.
-      expect(await Bun.file(join(installDir, 'pdf-parser', '.skillhub', 'metadata.json')).exists()).toBe(false)
+      expect(await Bun.file(join(installDir, 'pdf-parser', '.joyhub', 'metadata.json')).exists()).toBe(false)
     } finally {
       server.stop()
     }
@@ -972,7 +972,7 @@ describe('install command — --scope', () => {
     )
 
     expect(result.exitCode).toBe(0)
-    const metaPath = join(env.cwd, '.codex', 'skills', 'foo', '.skillhub', 'metadata.json')
+    const metaPath = join(env.cwd, '.codex', 'skills', 'foo', '.joyhub', 'metadata.json')
     const meta = JSON.parse(await readFile(metaPath, 'utf-8'))
     expect(meta.slug).toBe('foo')
   })
@@ -998,7 +998,7 @@ describe('install command — --scope', () => {
     )
 
     expect(result.exitCode).toBe(0)
-    const metaPath = join(env.home, '.codex', 'skills', 'foo', '.skillhub', 'metadata.json')
+    const metaPath = join(env.home, '.codex', 'skills', 'foo', '.joyhub', 'metadata.json')
     const meta = JSON.parse(await readFile(metaPath, 'utf-8'))
     expect(meta.slug).toBe('foo')
   })
@@ -1024,7 +1024,7 @@ describe('install command — --scope', () => {
     )
 
     expect(result.exitCode).toBe(0)
-    const metaPath = join(env.home, '.agents', 'skills', 'foo', '.skillhub', 'metadata.json')
+    const metaPath = join(env.home, '.agents', 'skills', 'foo', '.joyhub', 'metadata.json')
     const meta = JSON.parse(await readFile(metaPath, 'utf-8'))
     expect(meta.slug).toBe('foo')
   })

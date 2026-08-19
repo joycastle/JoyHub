@@ -4,7 +4,7 @@
 
 CLI releases use a PR-based flow. Running `make publish-cli` on a clean `main` branch:
 
-1. Runs local build-and-test (lint, typecheck, test, build)
+1. Runs local build-and-test (lint, typecheck, test, build, `npm pack --dry-run`)
 2. Computes the next version from the latest `cli-v*` tag on `origin`
 3. Creates a `release/cli-vX.Y.Z` branch with the version bump committed
 4. Pushes the branch and opens a PR to `main`
@@ -13,18 +13,24 @@ After the PR is merged, you manually tag and push — the tag triggers [`release
 
 ## Prerequisites
 
-### Repository Secrets
+### npm Trusted Publishing
 
-Configure in GitHub repository → Settings → Secrets and variables → Actions:
+After the package exists, configure npm Trusted Publishing for `@joycastle/joyhub-cli`:
 
-- `NPM_TOKEN`: npm token with publish permissions
-  - Generate at https://www.npmjs.com/settings/YOUR_USERNAME/tokens
-  - Use **Classic Automation Token** (bypasses 2FA automatically), or
-  - **Granular Access Token** with "Allow bypass 2FA" enabled, scoped to the package
+- GitHub organization and repository: this repository
+- Workflow filename: `release-cli.yml`
+- Environment: unset, unless the workflow is changed to use the same named environment
 
-### Repository Variables (optional)
+The workflow uses GitHub OIDC (`id-token: write`) and npm provenance. Do not configure a
+persistent `NPM_TOKEN`.
 
-- `NPM_REGISTRY`: npm registry URL (default: `https://registry.npmjs.org`)
+Trusted Publishing cannot create a package for the first time. Bootstrap the first public release
+manually from a trusted machine with an npm owner account and 2FA:
+
+```bash
+cd cli
+npm publish --access public
+```
 
 ### Local Environment
 
@@ -39,7 +45,7 @@ In [`cli/package.json`](./package.json):
 
 ```json
 {
-  "name": "@astron-team/skillhub",
+  "name": "@joycastle/joyhub-cli",
   "publishConfig": {
     "access": "public"
   }
@@ -63,7 +69,7 @@ make publish-cli-major   # major: 0.1.5 -> 1.0.0
 1. Verify `gh` CLI is installed and authenticated
 2. Verify the working tree is clean and on `main`
 3. `git pull --ff-only` from `origin/main`
-4. Run full local build-and-test (lint, typecheck, test, build)
+4. Run full local build-and-test (lint, typecheck, test, build, `npm pack --dry-run`)
 5. Compute the next version from the latest `cli-v*` tag on `origin` (via `git ls-remote`, so local orphan tags from a failed `git push origin cli-vX.Y.Z` are ignored)
 6. Verify the tag and release branch don't already exist
 7. After interactive confirmation: create release branch, commit version bump, push, and open PR
@@ -92,12 +98,13 @@ Pushing the tag triggers CI which builds, publishes to npm, and creates a GitHub
 
 1. **build-and-test**
    - Extract version from tag name (`cli-v0.1.6` → `0.1.6`) and write it into `cli/package.json`
-   - Install deps, lint, typecheck, test, build
+   - Install deps, lint, typecheck, test, build, and run `npm pack --dry-run`
    - Verify the built CLI's runtime version matches the tag
 
 2. **publish-npm**
    - Skip if the target version already exists on the registry
-   - Configure `~/.npmrc` and run `npm publish --access public`
+   - Authenticate through npm Trusted Publishing and GitHub OIDC
+   - Run `npm publish --access public --provenance`
 
 3. **create-release**
    - Package `dist/` + README + LICENSE as `tar.gz` and `zip`
@@ -106,9 +113,9 @@ Pushing the tag triggers CI which builds, publishes to npm, and creates a GitHub
 
 ### Verify Release
 
-- Workflow: https://github.com/iflytek/skillhub/actions/workflows/release-cli.yml
-- Release: https://github.com/iflytek/skillhub/releases
-- npm: `npm view @astron-team/skillhub@<version>`
+- Workflow: https://github.com/joycastle/JoyHub/actions/workflows/release-cli.yml
+- Release: https://github.com/joycastle/JoyHub/releases
+- npm: `npm view @joycastle/joyhub-cli@<version>`
 
 ## Release Audit Trail
 
@@ -164,9 +171,11 @@ A previous release attempt left a stale branch. Delete it locally and/or on orig
 
 ### npm Publish Fails
 
-- **403 with 2FA message**: `NPM_TOKEN` is not an Automation Token, or bypass 2FA is not enabled — regenerate with the correct type
-- **403 Forbidden**: Package scope doesn't match token permissions — confirm publish rights for the `@astron-team` org
-- **E404**: The registry doesn't host this scope — check `NPM_REGISTRY`
+- **First publication rejected**: Create the public scoped package manually with an npm owner
+  account and 2FA before enabling Trusted Publishing.
+- **OIDC/403 error**: Confirm npm's Trusted Publisher repository and workflow filename exactly match
+  this repository and `release-cli.yml`.
+- **Scope access denied**: Confirm the package is owned by the `@joycastle` npm organization.
 
 ### Build / Test Fails
 

@@ -13,7 +13,7 @@ import type { UpdaterRunResult } from '../../../src/platform/updater'
 //
 // Branches under test (see cli/src/commands/update.ts):
 //   1. !result.available       -> "already up to date"
-//   2. result.updated          -> "Updated skillhub X -> Y"
+//   2. result.updated          -> "Updated joyhub X -> Y"
 //   3. result.error            -> throws CliError
 //   4. available && !updated   -> "Update available" + optional next hint
 
@@ -48,7 +48,7 @@ describe('updateCommand branches', () => {
   test('updated success branch — npm-global with run() success (human)', async () => {
     const deps = buildDeps({ latest: '99.0.0', mode: 'npm-global', runResult: { success: true, output: '' } })
     const out = await updateCommand({}, deps)
-    expect(out).toContain(`Updated skillhub ${CLI_VERSION} -> 99.0.0`)
+    expect(out).toContain(`Updated joyhub ${CLI_VERSION} -> 99.0.0`)
   })
 
   test('updated success branch — npm-global with run() success (--json)', async () => {
@@ -61,7 +61,7 @@ describe('updateCommand branches', () => {
     const deps = buildDeps({ latest: '99.0.0', mode: 'npx', runResult: { success: true, output: '' } })
     const out = await updateCommand({}, deps)
     expect(out).toContain(`Update available: ${CLI_VERSION} -> 99.0.0`)
-    expect(out).toContain('npx @astron-team/skillhub')
+    expect(out).toContain('npx @joycastle/joyhub-cli')
   })
 
   test('available-not-updated branch — npx mode (--json)', async () => {
@@ -73,7 +73,7 @@ describe('updateCommand branches', () => {
     expect(parsed.from).toBe(CLI_VERSION)
     expect(parsed.to).toBe('99.0.0')
     expect(typeof parsed.next).toBe('string')
-    expect(parsed.next).toContain('npx @astron-team/skillhub')
+    expect(parsed.next).toContain('npx @joycastle/joyhub-cli')
   })
 
   test('error branch — npm-global with run() failure throws CliError', async () => {
@@ -95,7 +95,7 @@ describe('updateCommand branches', () => {
   // -------------------------------------------------------------------------
   // bun-global success branch — symmetric to npm-global success but routes
   // through `bun add -g` rather than `npm install -g`. Command-level output
-  // still uses the same "Updated skillhub X -> Y" copy, but the run dep
+  // still uses the same "Updated joyhub X -> Y" copy, but the run dep
   // receives a different argv. We assert both: (a) the command captured the
   // bun argv on the dep and (b) the output formatting matches.
   // -------------------------------------------------------------------------
@@ -111,7 +111,7 @@ describe('updateCommand branches', () => {
     }
 
     const human = await updateCommand({}, deps)
-    expect(human).toContain(`Updated skillhub ${CLI_VERSION} -> 99.0.0`)
+    expect(human).toContain(`Updated joyhub ${CLI_VERSION} -> 99.0.0`)
 
     const json = await updateCommand({ json: true }, deps)
     expect(JSON.parse(json)).toEqual({ ok: true, updated: true, from: CLI_VERSION, to: '99.0.0' })

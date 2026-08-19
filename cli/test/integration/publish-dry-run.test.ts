@@ -24,7 +24,7 @@ async function login(env: { home: string }, registryUrl: string) {
 }
 
 async function makeTempDir(...files: Array<[string, string]>) {
-  const dir = await mkdtemp(join(tmpdir(), 'skillhub-dryrun-'))
+  const dir = await mkdtemp(join(tmpdir(), 'joyhub-dryrun-'))
   for (const [name, content] of files) {
     await writeFile(join(dir, name), content)
   }
@@ -72,10 +72,44 @@ describe('publish --dry-run', () => {
 
     expect(result.exitCode).toBe(6)
     const json = JSON.parse(result.stdout)
+    expect(json.ok).toBe(false)
     expect(json.valid).toBe(false)
     expect(json.resolvedSlug).toBe('my-skill')
     expect(json.resolvedVersion).toBe('2.0.0')
     expect(json.warnings).toContain('Disallowed file extension: data.bin')
+    expect(json.namespace).toBe('global')
+    expect(json.files).toEqual(['SKILL.md'])
+  })
+
+  test('--dry-run JSON includes namespace and local file listing', async () => {
+    const env = await createTempHome()
+    registry = await startFakeRegistry({ token: 'sk_ok' })
+    await login(env, registry.url)
+
+    const dir = await makeTempDir(
+      ['SKILL.md', '---\nname: my-skill\ndescription: test\n---\n'],
+      ['README.md', '# Read me']
+    )
+    const result = await runCli([
+      'publish',
+      dir,
+      '--dry-run',
+      '--namespace',
+      'data-team',
+      '--json',
+      '--registry',
+      registry.url
+    ], {
+      HOME: env.home,
+      USERPROFILE: env.home
+    })
+
+    expect(result.exitCode).toBe(0)
+    expect(JSON.parse(result.stdout)).toMatchObject({
+      ok: true,
+      namespace: 'data-team',
+      files: ['README.md', 'SKILL.md']
+    })
   })
 
   test('--dry-run reports validation errors', async () => {

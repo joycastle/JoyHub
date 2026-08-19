@@ -34,8 +34,8 @@ function makeSkillZip(): Uint8Array {
 describe('inventory resilience', () => {
   test('list exits non-zero when inventory.json is malformed (documents current generic-error UX)', async () => {
     const env = await createTempHome()
-    await mkdir(join(env.home, '.skillhub'), { recursive: true })
-    await writeFile(join(env.home, '.skillhub', 'inventory.json'), '{ this is not JSON')
+    await mkdir(join(env.home, '.joyhub'), { recursive: true })
+    await writeFile(join(env.home, '.joyhub', 'inventory.json'), '{ this is not JSON')
 
     const result = await runCli(['list'], { HOME: env.home, USERPROFILE: env.home })
 
@@ -52,8 +52,8 @@ describe('inventory resilience', () => {
 
   test('list --json on a corrupt inventory emits a parseable error envelope (not a stack trace)', async () => {
     const env = await createTempHome()
-    await mkdir(join(env.home, '.skillhub'), { recursive: true })
-    await writeFile(join(env.home, '.skillhub', 'inventory.json'), '{"items":')
+    await mkdir(join(env.home, '.joyhub'), { recursive: true })
+    await writeFile(join(env.home, '.joyhub', 'inventory.json'), '{"items":')
 
     const result = await runCli(['list', '--json'], { HOME: env.home, USERPROFILE: env.home })
 
@@ -95,7 +95,7 @@ describe('inventory resilience', () => {
     expect(r2.exitCode).toBe(0)
 
     const inventory = JSON.parse(
-      await readFile(join(env.home, '.skillhub', 'inventory.json'), 'utf-8')
+      await readFile(join(env.home, '.joyhub', 'inventory.json'), 'utf-8')
     ) as { items: Array<{ slug: string; targets: Array<{ installDir: string }> }> }
 
     const slugs = inventory.items.map(i => i.slug).sort()

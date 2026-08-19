@@ -26,8 +26,8 @@ describe('auth commands', () => {
 
     expect(result.exitCode).toBe(0)
     expect(result.stdout).toContain('Logged in')
-    expect(await Bun.file(`${env.home}/.skillhub/config.json`).json()).toMatchObject({ registry: registry.url })
-    expect(await Bun.file(`${env.home}/.skillhub/credentials.json`).json()).toMatchObject({ tokens: { [registry.url]: 'sk_ok' } })
+    expect(await Bun.file(`${env.home}/.joyhub/config.json`).json()).toMatchObject({ registry: registry.url })
+    expect(await Bun.file(`${env.home}/.joyhub/credentials.json`).json()).toMatchObject({ tokens: { [registry.url]: 'sk_ok' } })
   })
 
   test('login fails with invalid token', async () => {
@@ -43,18 +43,19 @@ describe('auth commands', () => {
     expect(result.stderr).toContain('authentication failed')
   })
 
-  // [P0] missing token → EXIT.usage, stderr contains "token is required"
-  test('login without --token exits with usage error', async () => {
+  test('login without --token uses device flow', async () => {
     const env = await createTempHome()
     registry = await startFakeRegistry({ token: 'sk_ok' })
 
     const result = await runCli(['login', '--registry', registry.url], {
       HOME: env.home,
-      USERPROFILE: env.home
+      USERPROFILE: env.home,
+      JOYHUB_NO_BROWSER: '1'
     })
 
-    expect(result.exitCode).toBe(5) // EXIT.usage
-    expect(result.stderr).toContain('token is required')
+    expect(result.exitCode).toBe(0)
+    expect(result.stdout).toContain('Logged in')
+    expect(result.stderr).toContain('Open this URL')
   })
 
   // [P0] whoami failure must NOT write credentials
@@ -69,7 +70,7 @@ describe('auth commands', () => {
 
     expect(result.exitCode).not.toBe(0)
 
-    const credFile = Bun.file(`${env.home}/.skillhub/credentials.json`)
+    const credFile = Bun.file(`${env.home}/.joyhub/credentials.json`)
     const exists = await credFile.exists()
     if (exists) {
       const creds = await credFile.json() as { tokens?: Record<string, string> }
@@ -143,7 +144,7 @@ describe('auth commands', () => {
     })
 
     // Confirm token is present before logout
-    const before = await Bun.file(`${env.home}/.skillhub/credentials.json`).json() as { tokens: Record<string, string> }
+    const before = await Bun.file(`${env.home}/.joyhub/credentials.json`).json() as { tokens: Record<string, string> }
     expect(before.tokens[registry.url]).toBe('sk_ok')
 
     await runCli(['logout', '--registry', registry.url], {
@@ -152,7 +153,7 @@ describe('auth commands', () => {
     })
 
     // Token must be absent after logout
-    const after = await Bun.file(`${env.home}/.skillhub/credentials.json`).json() as { tokens: Record<string, string> }
+    const after = await Bun.file(`${env.home}/.joyhub/credentials.json`).json() as { tokens: Record<string, string> }
     expect(after.tokens[registry.url]).toBeUndefined()
   })
 

@@ -8,12 +8,12 @@ const FAKE_REGISTRY_A = 'http://registry-a.test'
 const FAKE_REGISTRY_B = 'http://registry-b.test'
 const INSTALLED_AT = '2024-01-15T10:00:00.000Z'
 
-/** Write inventory.json into the temp home's .skillhub dir. */
+/** Write inventory.json into the temp home's .joyhub dir. */
 async function seedInventory(home: string, items: object[]) {
-  const skillhubDir = join(home, '.skillhub')
-  await mkdir(skillhubDir, { recursive: true })
+  const joyhubDir = join(home, '.joyhub')
+  await mkdir(joyhubDir, { recursive: true })
   await writeFile(
-    join(skillhubDir, 'inventory.json'),
+    join(joyhubDir, 'inventory.json'),
     JSON.stringify({ items }, null, 2)
   )
 }
@@ -427,11 +427,11 @@ describe('list command', () => {
   })
 
   // -------------------------------------------------------------------------
-  // P1: SKILLHUB_REGISTRY env scopes list to the env-specified registry
+  // P1: JOYHUB_REGISTRY env scopes list to the env-specified registry
   // (registry priority --registry > env > config > default also applies to
   //  list, not just to network-touching commands).
   // -------------------------------------------------------------------------
-  test('SKILLHUB_REGISTRY env scopes list to that registry, hiding the other', async () => {
+  test('JOYHUB_REGISTRY env scopes list to that registry, hiding the other', async () => {
     const { home } = await createTempHome()
     const dirA = join(home, 'a', 'codex', 'one')
     const dirB = join(home, 'b', 'codex', 'two')
@@ -449,10 +449,10 @@ describe('list command', () => {
       }
     ])
 
-    // No --registry flag — scope comes from SKILLHUB_REGISTRY env.
+    // No --registry flag — scope comes from JOYHUB_REGISTRY env.
     const result = await runCli(
       ['list', '--json'],
-      { HOME: home, USERPROFILE: home, SKILLHUB_REGISTRY: FAKE_REGISTRY_B }
+      { HOME: home, USERPROFILE: home, JOYHUB_REGISTRY: FAKE_REGISTRY_B }
     )
     expect(result.exitCode).toBe(0)
     const json = JSON.parse(result.stdout) as { items: Array<{ slug: string }> }
