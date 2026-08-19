@@ -4,8 +4,23 @@ on:
   pull_request:
     paths:
       - 'cli/**'
+      - 'docs/25-agent-find-share-skills-mvp.md'
+      - 'docs/26-official-agent-skills-and-cli-release.md'
+      - 'official-agent-skills/**'
+      - 'scripts/check-cli-api-contract.py'
+      - 'scripts/contracts/joyhub-cli-api.json'
+      - 'scripts/validate-official-agent-skills.py'
+      - 'scripts/publish-cli.sh'
+      - 'scripts/tests/publish-cli-test.sh'
+      - 'server/skillhub-app/src/main/java/com/iflytek/skillhub/controller/DeviceAuthController.java'
+      - 'server/skillhub-app/src/main/java/com/iflytek/skillhub/controller/DeviceAuthWebController.java'
+      - 'server/skillhub-app/src/main/java/com/iflytek/skillhub/controller/cli/**'
+      - 'server/skillhub-app/src/main/java/com/iflytek/skillhub/dto/cli/**'
+      - 'server/skillhub-auth/src/main/java/com/iflytek/skillhub/auth/device/**'
+      - 'server/skillhub-auth/src/main/java/com/iflytek/skillhub/auth/policy/RouteSecurityPolicyRegistry.java'
       - 'Makefile'
       - '.github/workflows/pr-cli.yml'
+      - '.github/workflows/release-cli.yml'
 
 permissions:
   contents: read
@@ -34,5 +49,21 @@ jobs:
         working-directory: cli
       - run: bun run build
         working-directory: cli
+      - run: npm pack --dry-run
+        working-directory: cli
       - run: node dist/index.js version
         working-directory: cli
+
+  contracts-and-skills:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Validate official agent skills
+        run: python3 scripts/validate-official-agent-skills.py
+      - name: Check CLI/API contract acknowledgement
+        run: python3 scripts/check-cli-api-contract.py --base "${{ github.event.pull_request.base.sha }}"
+      - name: Test release helper
+        run: bash scripts/tests/publish-cli-test.sh

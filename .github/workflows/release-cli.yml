@@ -14,7 +14,7 @@ on:
         default: false
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: release-cli-${{ github.event.inputs.tag || github.ref_name }}
@@ -107,11 +107,15 @@ jobs:
         working-directory: cli
         run: bun run build
 
+      - name: Verify npm package contents
+        working-directory: cli
+        run: npm pack --dry-run
+
       - name: Verify built CLI
         working-directory: cli
         run: |
           node dist/index.js version
-          RUNTIME_VERSION=$(node dist/index.js version | sed -E 's/^SkillHub CLI //')
+          RUNTIME_VERSION=$(node dist/index.js version | sed -E 's/^JoyHub CLI //')
           if [ "$RUNTIME_VERSION" != "${{ steps.extract.outputs.version }}" ]; then
             echo "Version mismatch: runtime=$RUNTIME_VERSION, tag=${{ steps.extract.outputs.version }}"
             exit 1
@@ -132,6 +136,9 @@ jobs:
     needs: build-and-test
     runs-on: ubuntu-latest
     if: ${{ !inputs.skip_npm }}
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -142,6 +149,11 @@ jobs:
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.3.13
+
+      - name: Set up Node for npm Trusted Publishing
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
 
       - name: Set version from tag
         working-directory: cli
@@ -162,17 +174,19 @@ jobs:
         working-directory: cli
         run: bun run build
 
+      - name: Verify npm package contents
+        working-directory: cli
+        run: npm pack --dry-run
+
       - name: Check if version exists on npm
         id: check_npm
-        env:
-          NPM_REGISTRY: ${{ vars.NPM_REGISTRY || 'https://registry.npmjs.org' }}
         run: |
           PACKAGE_NAME="${{ needs.build-and-test.outputs.package_name }}"
           VERSION="${{ needs.build-and-test.outputs.version }}"
 
           # Three-state check: success (exists) / 404 (missing) / error (fail job)
           set +e
-          NPM_OUTPUT=$(npm view "${PACKAGE_NAME}@${VERSION}" version --registry "$NPM_REGISTRY" 2>&1)
+          NPM_OUTPUT=$(npm view "${PACKAGE_NAME}@${VERSION}" version --registry https://registry.npmjs.org 2>&1)
           NPM_EXIT_CODE=$?
           set -e
 
@@ -199,34 +213,18 @@ jobs:
             exit 1
           fi
 
-      - name: Configure npm authentication
-        if: steps.check_npm.outputs.exists == 'false'
-        env:
-          NPM_REGISTRY: ${{ vars.NPM_REGISTRY || 'https://registry.npmjs.org' }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          REGISTRY_HOST="${NPM_REGISTRY#http://}"
-          REGISTRY_HOST="${REGISTRY_HOST#https://}"
-          REGISTRY_HOST="${REGISTRY_HOST%/}"
-
-          cat > ~/.npmrc <<EOF
-          registry=${NPM_REGISTRY}
-          //${REGISTRY_HOST}/:_authToken=${NPM_TOKEN}
-          always-auth=true
-          EOF
-
       - name: Publish to npm
         if: steps.check_npm.outputs.exists == 'false'
         working-directory: cli
-        env:
-          NPM_REGISTRY: ${{ vars.NPM_REGISTRY || 'https://registry.npmjs.org' }}
         run: |
-          npm publish --access public --registry "$NPM_REGISTRY"
+          npm publish --access public --provenance --registry https://registry.npmjs.org
           echo "Published ${{ needs.build-and-test.outputs.package_name }}@${{ needs.build-and-test.outputs.version }}"
 
   create-release:
     needs: [build-and-test, publish-npm]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     # Only create the GitHub Release after npm publish has actually succeeded
     # (or was explicitly skipped via skip_npm=true). This prevents a
     # half-released state where Release exists but `npm install -g` fails.
@@ -248,14 +246,14 @@ jobs:
           VERSION="${{ needs.build-and-test.outputs.version }}"
 
           # Create tar.gz
-          tar -czf "skillhub-cli-${VERSION}.tar.gz" -C cli-release .
+          tar -czf "joyhub-cli-${VERSION}.tar.gz" -C cli-release .
 
           # Create zip
-          (cd cli-release && zip -r "../skillhub-cli-${VERSION}.zip" .)
+          (cd cli-release && zip -r "../joyhub-cli-${VERSION}.zip" .)
 
           # Generate checksums
-          sha256sum "skillhub-cli-${VERSION}.tar.gz" > "skillhub-cli-${VERSION}.tar.gz.sha256"
-          sha256sum "skillhub-cli-${VERSION}.zip" > "skillhub-cli-${VERSION}.zip.sha256"
+          sha256sum "joyhub-cli-${VERSION}.tar.gz" > "joyhub-cli-${VERSION}.tar.gz.sha256"
+          sha256sum "joyhub-cli-${VERSION}.zip" > "joyhub-cli-${VERSION}.zip.sha256"
 
       - name: Create GitHub Release
         env:
@@ -272,7 +270,7 @@ jobs:
 
           # Generate release notes
           cat > release-notes.md <<EOF
-          # SkillHub CLI ${VERSION}
+          # JoyHub CLI ${VERSION}
 
           ## Installation
 
@@ -289,7 +287,7 @@ jobs:
 
           ## Verify installation
           \`\`\`bash
-          skillhub version
+          joyhub version
           \`\`\`
 
           ## Changes
@@ -297,9 +295,9 @@ jobs:
           EOF
 
           gh release create "$TAG" \
-            --title "CLI ${VERSION}" \
+            --title "JoyHub CLI ${VERSION}" \
             --notes-file release-notes.md \
-            "skillhub-cli-${VERSION}.tar.gz" \
-            "skillhub-cli-${VERSION}.tar.gz.sha256" \
-            "skillhub-cli-${VERSION}.zip" \
-            "skillhub-cli-${VERSION}.zip.sha256"
+            "joyhub-cli-${VERSION}.tar.gz" \
+            "joyhub-cli-${VERSION}.tar.gz.sha256" \
+            "joyhub-cli-${VERSION}.zip" \
+            "joyhub-cli-${VERSION}.zip.sha256"
