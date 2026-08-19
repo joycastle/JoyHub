@@ -1278,6 +1278,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/web/catalog/tool-documentation-draft-from-url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Generate a reviewable Tool usage-guide draft from a public Tool page */
+        post: operations["generateToolDocumentationDraftFromUrl"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/catalog/tool-documentation-draft-from-url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Generate a reviewable Tool usage-guide draft from a public Tool page */
+        post: operations["generateToolDocumentationDraftFromUrl_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/web/catalog/tool-documentation-draft": {
         parameters: {
             query?: never;
@@ -3333,6 +3367,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/cli/v1/namespaces/publish-targets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["publishTargets_2"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/cli/v1/auth/whoami": {
         parameters: {
             query?: never;
@@ -4098,6 +4148,9 @@ export interface components {
             evidence?: string;
             source?: string;
         };
+        ToolDocumentationUrlDraftRequest: {
+            accessUrl: string;
+        };
         ApiResponseArchiveDocumentationDraftResponse: {
             /** Format: int32 */
             code?: number;
@@ -4316,6 +4369,7 @@ export interface components {
             slug?: string;
             version?: string;
             visibility?: string;
+            status?: string;
         };
         ApiResponseCliDryRunResponse: {
             /** Format: int32 */
@@ -8010,6 +8064,58 @@ export interface operations {
             };
         };
     };
+    generateToolDocumentationDraftFromUrl: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Accept-Language"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ToolDocumentationUrlDraftRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseArchiveDocumentationDraftResponse"];
+                };
+            };
+        };
+    };
+    generateToolDocumentationDraftFromUrl_1: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Accept-Language"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ToolDocumentationUrlDraftRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseArchiveDocumentationDraftResponse"];
+                };
+            };
+        };
+    };
     generateToolDocumentationDraft: {
         parameters: {
             query?: never;
@@ -11334,6 +11440,26 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ApiResponseCliSearchResponse"];
+                };
+            };
+        };
+    };
+    publishTargets_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseListPublishTargetResponse"];
                 };
             };
         };

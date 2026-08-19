@@ -129,26 +129,23 @@ curl -fsSL https://imageless.oss-cn-beijing.aliyuncs.com/runtime.sh | sh -s -- u
 /tmp/skillhub-runtime/runtime.sh down
 ```
 
-## SkillHub CLI
+## JoyHub CLI
 
-通过命令行安装和管理 Agent 技能：
+使用官方 JoyHub CLI（npm 包 `@joycastle/joyhub-cli`，命令 `joyhub`）搜索、安装和发布 Agent 技能。推荐固定版本的 `npx`，无需全局安装。官方 Agent Skill `find-skills` 与 `share-skill` 使用同一版本。
 
 ```bash
-# 安装 CLI
-npm install -g @astron-team/skillhub
+# 按需运行固定版本 CLI（无需全局安装）
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub version
 
-# 或直接运行
-npx @astron-team/skillhub@latest version
+# 首次使用：浏览器授权（无需复制 Token）
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub auth ensure
 
-# 登录
-skillhub login --token sk_xxx --registry https://skill.xfyun.cn
-
-# 搜索和安装技能
-skillhub search pdf
-skillhub install pdf-parser --agent codex
+# 搜索需要登录；结果为当前用户可见的技能
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub search pdf
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub install pdf-parser --agent codex
 
 # 查看已安装技能
-skillhub list
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub list
 ```
 
 📖 完整指南：[docs/skillhub/guide/cli.md](docs/skillhub/guide/cli.md)

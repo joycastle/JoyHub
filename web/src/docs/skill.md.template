@@ -1,17 +1,23 @@
 ---
 name: skillhub-registry
-description: Use this when you need to search, inspect, install, or publish agent skills against a SkillHub registry. Prefer the official SkillHub CLI; ClawHub compatibility is available for OpenClaw clients.
+description: Use this when you need to search, inspect, install, or publish agent skills against a JoyHub/SkillHub registry. Prefer the official JoyHub CLI and the official find-skills / share-skill skills; ClawHub compatibility is available for OpenClaw clients.
 ---
 
-# SkillHub Registry
+# JoyHub Registry
 
-Use this skill when you need to work with a SkillHub registry: search skills, inspect metadata, install a package, or publish a new version.
+Use this skill when you need to work with a JoyHub (SkillHub-compatible) registry: search skills, inspect metadata, install a package, or publish a new version.
 
-> Important: Prefer the official `skillhub` CLI for registry workflows. SkillHub exposes a native CLI and API for auth, resolution, and download behavior. The ClawHub-compatible API and `/.well-known/clawhub.json` remain available for OpenClaw clients.
+> Important: Prefer the official JoyHub CLI (`@joycastle/joyhub-cli@0.2.0`, bin `joyhub`) for registry workflows. Official agent skills `find-skills` and `share-skill` call this CLI. Do not copy tokens by hand. The ClawHub-compatible API and `/.well-known/clawhub.json` remain available for OpenClaw clients.
 
-## What SkillHub Is
+Pin every CLI invocation. Do not use unconstrained `latest`:
 
-SkillHub is an enterprise-oriented skill registry. It stores versioned skill packages, supports namespace-based skill management, and keeps `SKILL.md` compatibility with OpenSkills-style packages.
+```bash
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub <command>
+```
+
+## What The Registry Is
+
+JoyHub is an enterprise-oriented skill registry based on SkillHub architecture. It stores versioned skill packages, supports namespace-based skill management, and keeps `SKILL.md` compatibility with OpenSkills-style packages.
 
 Key facts:
 
@@ -19,31 +25,33 @@ Key facts:
 - The official CLI accepts `@namespace/skill_slug`, `namespace/skill_slug`, and the compatible `namespace--skill_slug` form.
 - ClawHub-compatible clients use a `{namespace}--{skill_slug}` slug.
 - `latest` always means the latest published version, never draft or pending review.
-- Public skills in `@global` can be downloaded anonymously.
+- Search is authenticated. Unauthenticated search returns `401`; do not fall back to anonymous search.
 - If no namespace is specified, it defaults to `@global`.
 - `{skill_slug}` can be used instead of `global--{skill_slug}`
-- Team namespace skills and non-public skills require authentication.
+- Visible search results match the current user's JoyHub Web visibility (platform role and namespace RBAC).
 
 ## Configure The CLI
 
-Point `skillhub` at the SkillHub base URL:
+Point `joyhub` at the registry base URL:
 
 ```bash
-export SKILLHUB_REGISTRY=${SKILLHUB_PUBLIC_BASE_URL}
+export JOYHUB_REGISTRY=${SKILLHUB_PUBLIC_BASE_URL}
 ```
 
 Alternatively, use the `--registry` parameter every time, for example:
 
 ```bash
-npx @astron-team/skillhub@latest install my-skill --registry ${SKILLHUB_PUBLIC_BASE_URL}
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 \
+  joyhub install my-skill --registry ${SKILLHUB_PUBLIC_BASE_URL}
 ```
 
-
-If you need authenticated access, provide an API token:
+On first use, bind the CLI with Device Flow. Do not ask the user to paste a token:
 
 ```bash
-skillhub login --token sk_your_api_token_here
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub auth ensure --json
 ```
+
+Credentials are stored in `~/.joyhub/credentials.json` (mode `0600`), isolated by registry URL. Tokens must not appear in stdout, logs, or follow-up prompts.
 
 Optional local check:
 
@@ -59,9 +67,9 @@ Expected response:
 
 ## Coordinate Rules - IMPORTANT
 
-SkillHub supports these naming forms:
+The registry supports these naming forms:
 
-| SkillHub coordinate | Canonical slug for ClawHub-compatible clients |
+| Registry coordinate | Canonical slug for ClawHub-compatible clients |
 |---|---|
 | `@global/my-skill` | `my-skill` |
 | `@team-name/my-skill` | `team-name--my-skill` |
@@ -75,70 +83,70 @@ Rules:
 Examples:
 
 ```bash
-npx @astron-team/skillhub@latest install my-skill
-npx @astron-team/skillhub@latest install my-skill --version 1.2.0
-npx @astron-team/skillhub@latest install team-name/my-skill
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub install my-skill
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub install my-skill --version 1.2.0
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub install @team-name/my-skill
 ```
 
 ## Common Workflows
 
-### Search
+Run `joyhub auth ensure --json` before search, install, or publish.
+
+### Search (`find-skills`)
 
 ```bash
-npx @astron-team/skillhub@latest search email
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 \
+  joyhub search --query "email" --limit 10 --json
 ```
 
-Use an empty query when you want a broad listing:
+Use an empty query when you want a broad listing of skills the current user can see:
 
 ```bash
-npx @astron-team/skillhub@latest search ""
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 \
+  joyhub search --query "" --limit 50 --json
 ```
 
-### Find A Skill
-
-```bash
-skillhub search my-skill
-skillhub search team-name/my-skill
-```
+Install only after the user chooses an exact coordinate. Do not auto-install from a fuzzy search.
 
 ### Install
 
 ```bash
-skillhub install my-skill
-skillhub install my-skill --version 1.2.0
-skillhub install team-name/my-skill
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub install my-skill
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub install my-skill --version 1.2.0
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub install @team-name/my-skill
 ```
 
-### Publish
+### Publish (`share-skill`)
 
-Prepare a skill package directory, then publish it:
+Prepare a skill package directory, dry-run, then publish only after the user confirms the namespace and version:
 
 ```bash
-skillhub publish ./my-skill
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 \
+  joyhub publish ./my-skill --namespace my-team --dry-run --json
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 \
+  joyhub publish ./my-skill --namespace my-team --json
 ```
 
 Publishing requires authentication and sufficient permissions in the target namespace.
 
 ## Authentication And Visibility
 
-Download and search permissions depend on namespace and visibility:
+CLI search always requires a valid login. The server returns skills the current user is allowed to see.
 
-- `@global` + `PUBLIC`: anonymous search, inspect, and download are allowed.
-- Team namespace + `PUBLIC`: authentication required for download.
 - `NAMESPACE_ONLY`: authenticated namespace members only.
 - `PRIVATE`: owner or explicitly authorized users only.
 - Publish, star, and other write operations always require authentication.
 
-If a request fails with `403`, check:
+If a request fails with `401`, run `joyhub auth ensure --json` and retry. If a request fails with `403`, check:
 
 - whether the skill belongs to a team namespace,
 - whether the skill is `NAMESPACE_ONLY` or `PRIVATE`,
-- whether your token is valid,
+- whether the login is valid,
 - whether you have namespace publish permissions.
 
 ## Skill Package Contract
 
-SkillHub expects OpenSkills-style packages with `SKILL.md` as the entry point.
+The registry expects OpenSkills-style packages with `SKILL.md` as the entry point.
 
 ## Publishing Guidance
 

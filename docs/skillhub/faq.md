@@ -53,20 +53,16 @@ spring:
 
 ## Q: 如何使用 CLI 工具管理技能包？
 
-A: SkillHub 兼容 OpenClaw CLI，使用 `npx clawhub` 命令即可操作：
+A: 使用官方 JoyHub CLI（`@joycastle/joyhub-cli@0.2.0`，命令 `joyhub`），无需全局安装。搜索需要登录。Codex / Claude Code 也可使用官方 Skill `find-skills` / `share-skill`。
 
 ```bash
-# 配置注册中心地址
-export CLAWHUB_REGISTRY=http://your-skillhub-host:8080
+export JOYHUB_REGISTRY=http://your-skillhub-host:8080
 
-# 搜索技能包
-npx clawhub search email
-
-# 安装技能包
-npx clawhub install my-skill
-
-# 发布技能包
-npx clawhub publish ./my-skill
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub auth ensure
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub search email
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub install my-skill
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 \
+  joyhub publish ./my-skill --namespace my-team
 ```
 
 ## Q: 如何配置 HTTPS？
@@ -134,7 +130,7 @@ curl -fsSL https://imageless.oss-cn-beijing.aliyuncs.com/runtime.sh | sh -s -- u
 
 ## Q: 如何搜索或操作指定命名空间中的技能包（Skill）？
 
-A: 使用 OpenClaw CLI 命令行工具时，可以通过 `<namespace>--<skill-name>` 的格式来指定命名空间进行操作（例如搜索、安装）。如果在网页端搜索遇到问题，也可以尝试通过先导出技能、再导入到目标命名空间的方式来完成跨空间操作。
+A: JoyHub CLI 使用 `@{namespace}/{skill}`（或 `namespace/skill`）。例如 `joyhub install @my-team/pdf-parser`。OpenClaw CLI 兼容层仍可使用 `<namespace>--<skill-name>`。如果在网页端搜索遇到问题，也可以尝试先导出技能、再导入到目标命名空间。
 
 ## Q: 推荐的部署方式是什么？可以自己拉镜像手动部署吗？
 
@@ -194,7 +190,7 @@ A: SkillHub 内置安全扫描能力。其中扫描接入、任务编排、审�
 
 A: `scanner/Dockerfile` 中直接执行 `pip install cisco-ai-skill-scanner`，未锁定版本，因此构建镜像时会拉取 PyPI 上的最新版本。如需固定版本，可在二次开发时自行锁定。
 
-## Q: 使用 CLI `skillhub publish` 报错 `registry returned 400` 怎么排查？
+## Q: 使用 CLI `joyhub publish` 报错 `registry returned 400` 怎么排查？
 
 A: 400 通常是后端校验未通过。常见原因：
 
@@ -251,7 +247,7 @@ A:
 docker image inspect ghcr.io/iflytek/skillhub-server:latest --format '{{index .Config.Labels "org.opencontainers.image.version"}}'
 ```
 
-- 查看 CLI 版本：`skillhub version`。
+- 查看 CLI 版本：`npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub version`。
 - 如需定制（如修改 logo 等），建议基于最新代码进行二次开发并自行构建 docker 镜像。
 
 ## Q: 页面能打开，但登录 / 注册接口返回 502？
@@ -314,14 +310,16 @@ target_dir=/opt/skillhub-skills
 
 # 逐个安装
 for skill in skill-a skill-b skill-c; do
-  skillhub install "$skill" --dir "$target_dir"
+  npx --yes --package=@joycastle/joyhub-cli@0.2.0 \
+    joyhub install "$skill" --dir "$target_dir"
 done
 
 # 或从清单文件读取（每行一个技能名）
-xargs -a skills.txt -I {} skillhub install "{}" --dir "$target_dir"
+xargs -a skills.txt -I {} npx --yes --package=@joycastle/joyhub-cli@0.2.0 \
+  joyhub install "{}" --dir "$target_dir"
 ```
 
-自 **SkillHub Server v0.2.12** 起，公开技能支持匿名搜索与安装；如果配置了无效的 Bearer Token，命令会直接失败而不再回退匿名访问，遇到这种情况请更新凭据或先移除无效 Token。
+JoyHub CLI 搜索需要认证，不会回退为匿名搜索。无效 Token 会失败并应通过 `joyhub auth ensure` 重新绑定。
 
 ## Q: 遇到问题怎么办？
 

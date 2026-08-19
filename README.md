@@ -125,26 +125,23 @@ curl -fsSL https://imageless.oss-cn-beijing.aliyuncs.com/runtime.sh | sh -s -- u
 
 If deployment runs into problems, clear the existing runtime home and retry.
 
-## SkillHub CLI
+## JoyHub CLI
 
-Install and manage Agent skills from the command line:
+Search, install, and publish Agent skills with the official JoyHub CLI (`@joycastle/joyhub-cli`, bin `joyhub`). Prefer the pinned `npx` command; a global install is not required. Official agent skills `find-skills` and `share-skill` use the same pin.
 
 ```bash
-# Install CLI
-npm install -g @astron-team/skillhub
+# Run the pinned CLI (no global install)
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub version
 
-# Or run directly
-npx @astron-team/skillhub@latest version
+# First use: browser Device Flow (no token copy)
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub auth ensure
 
-# Login
-skillhub login --token sk_xxx --registry https://skill.xfyun.cn
-
-# Search and install skills
-skillhub search pdf
-skillhub install pdf-parser --agent codex
+# Search requires login; results are skills you can see
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub search pdf
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub install pdf-parser --agent codex
 
 # List installed skills
-skillhub list
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub list
 ```
 
 📖 Full guide: [docs/skillhub/en/guide/cli.md](docs/skillhub/en/guide/cli.md)

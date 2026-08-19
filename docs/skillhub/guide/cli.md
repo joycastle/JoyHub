@@ -1,37 +1,34 @@
-# SkillHub CLI
+# JoyHub CLI
 
-SkillHub CLI 是 SkillHub 的第一方命令行工具，用于搜索、安装、管理和发布 Agent 技能包。
+JoyHub CLI 是 JoyHub 的官方命令行工具，用于搜索、安装、管理和发布 Agent 技能包。官方 Agent Skill `find-skills` 与 `share-skill` 通过同一 CLI 完成认证、搜索、安装和发布。
 
-## 安装
+## 运行方式
+
+推荐使用固定兼容版本 `0.2.0` 的 `npx` 按需运行，不要求全局安装：
 
 ```bash
-# 通过 npm 全局安装
-npm install -g @astron-team/skillhub
-
-# 或使用 npx 直接运行（无需安装）
-npx @astron-team/skillhub@latest version
-
-# 或通过 Bun 全局安装
-bun add -g @astron-team/skillhub
+npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub version
 ```
+
+需要 Node.js 和 npm。官方 Skill 必须固定 `@joycastle/joyhub-cli@0.2.0`，不要改用无约束的 `latest`。下文示例使用二进制名 `joyhub`；等价写法是在命令前加上 `npx --yes --package=@joycastle/joyhub-cli@0.2.0`。
 
 ## 快速开始
 
 ```bash
-# 登录
-skillhub login --token sk_xxx
+# 首次使用：浏览器授权（无需复制 Token）
+joyhub auth ensure
 
-# 搜索技能
-skillhub search pdf
+# 搜索需要登录；结果为当前用户可见的技能
+joyhub search pdf
 
 # 安装技能到 Agent 目录
-skillhub install pdf-parser --agent codex
+joyhub install pdf-parser --agent codex
 
 # 查看已安装技能
-skillhub list
+joyhub list
 
 # 发布技能
-skillhub publish ./my-skill --namespace myspace
+joyhub publish ./my-skill --namespace myspace
 ```
 
 ## Registry 配置
@@ -39,28 +36,28 @@ skillhub publish ./my-skill --namespace myspace
 当前生效的 registry 按以下优先级解析：
 
 1. `--registry <url>` 命令行参数
-2. `SKILLHUB_REGISTRY` 环境变量
-3. 用户配置文件 `~/.skillhub/config.json` 中的 `registry` 字段
+2. `JOYHUB_REGISTRY` 环境变量
+3. 用户配置文件 `~/.joyhub/config.json` 中的 `registry` 字段
 4. 默认值 `https://skill.xfyun.cn`
 
 ```bash
 # 临时使用其他 registry
-skillhub search pdf --registry https://skillhub.example.com
+joyhub search pdf --registry https://skillhub.example.com
 
 # 通过环境变量设置（Linux/macOS）
-export SKILLHUB_REGISTRY=https://skillhub.example.com
+export JOYHUB_REGISTRY=https://skillhub.example.com
 ```
 
 **Windows PowerShell:**
 
 ```powershell
-$env:SKILLHUB_REGISTRY="https://skillhub.example.com"
+$env:JOYHUB_REGISTRY="https://skillhub.example.com"
 ```
 
 **Windows CMD:**
 
 ```cmd
-set SKILLHUB_REGISTRY=https://skillhub.example.com
+set JOYHUB_REGISTRY=https://skillhub.example.com
 ```
 
 ## 认证
@@ -68,57 +65,63 @@ set SKILLHUB_REGISTRY=https://skillhub.example.com
 Token 按以下优先级解析：
 
 1. `--token <token>` 命令行参数
-2. `SKILLHUB_TOKEN` 环境变量
-3. `~/.skillhub/credentials.json` 中存储的 token（按 registry 区分）
+2. `JOYHUB_TOKEN` 环境变量
+3. `~/.joyhub/credentials.json` 中存储的 token（按 registry 区分）
 
 ### 登录
 
 ```bash
-# 使用 API token 登录
-skillhub login --token sk_xxx
+# 浏览器 Device Flow（推荐；Token 由 CLI 写入 ~/.joyhub/credentials.json）
+joyhub auth ensure
+
+# Agent / 官方 Skill 使用的机器可读结果
+joyhub auth ensure --json
+
+# CI 等场景仍可用 API token
+joyhub login --token sk_xxx
 
 # 指定 registry 登录
-skillhub login --token sk_xxx --registry https://skillhub.example.com
+joyhub login --token sk_xxx --registry https://skillhub.example.com
 ```
 
-`login` 会验证 token 有效性，然后将 token 存储到 `~/.skillhub/credentials.json`，同时将 registry 写入 `~/.skillhub/config.json`。
-
-API Token 请求被拒绝时，CLI 会显示服务端返回的具体原因和 `Request ID`。排查问题时可使用该 ID 对照服务端日志；非 API Token 的授权失败仍只显示通用信息。
+`auth ensure` 会校验当前 registry 的本地凭证：有效则直接继续；缺失、过期或被撤销时打开完整授权地址。无法打开浏览器时会输出可点击授权地址和一次性验证码。`login --token` 会验证 token 有效性，然后将 token 存储到 `~/.joyhub/credentials.json`，同时将 registry 写入 `~/.joyhub/config.json`。未提供 `--token` 时，`login` 使用与 `auth ensure` 相同的 Device Flow。
 
 ### 查看当前身份
 
 ```bash
-skillhub whoami
+joyhub whoami
 
 # 指定 registry 查看
-skillhub whoami --registry https://skillhub.example.com
+joyhub whoami --registry https://skillhub.example.com
 
 # 临时使用其他 token
-skillhub whoami --token sk_other
+joyhub whoami --token sk_other
 ```
 
 ### 登出
 
 ```bash
-skillhub logout
+joyhub logout
 
 # 登出指定 registry
-skillhub logout --registry https://skillhub.example.com
+joyhub logout --registry https://skillhub.example.com
 ```
 
 登出只删除对应 registry 的 token，保留 registry 配置和安装记录。
 
 ## 搜索
 
+搜索需要认证。未登录时服务端返回 `401`，请先运行 `joyhub auth ensure`。官方 Skill `find-skills` 在搜索前会调用 `joyhub auth ensure --json`。搜索结果只包含当前用户有权查看的技能，不会回退为匿名搜索。
+
 ```bash
 # 关键词搜索
-skillhub search pdf
+joyhub search pdf
 
 # 列出所有技能（空字符串查询）
-skillhub search "" --limit 50
+joyhub search "" --limit 50
 
 # JSON 输出
-skillhub search pdf --json
+joyhub search pdf --json
 ```
 
 输出格式：`namespace/slug  version  summary`
@@ -130,34 +133,34 @@ skillhub search pdf --json
 
 ```bash
 # 安装到自动探测的 Agent 目录
-skillhub install pdf-parser
+joyhub install pdf-parser
 
 # 等价的 namespace 坐标
-skillhub install team/my-skill
-skillhub install @team/my-skill
-skillhub install team--my-skill
+joyhub install team/my-skill
+joyhub install @team/my-skill
+joyhub install team--my-skill
 
 # 显式指定安装范围
-skillhub install pdf-parser --scope user
-skillhub install pdf-parser --scope project --agent codex
+joyhub install pdf-parser --scope user
+joyhub install pdf-parser --scope project --agent codex
 
 # 为裸 slug 指定 namespace
-skillhub install pdf-parser --namespace myspace
+joyhub install pdf-parser --namespace myspace
 
 # 指定版本
-skillhub install pdf-parser --version 1.2.0
+joyhub install pdf-parser --version 1.2.0
 
 # 安装到指定 Agent
-skillhub install pdf-parser --agent codex
+joyhub install pdf-parser --agent codex
 
 # 安装到多个 Agent
-skillhub install pdf-parser --agent codex --agent claude-code
+joyhub install pdf-parser --agent codex --agent claude-code
 
 # 安装到自定义目录
-skillhub install pdf-parser --dir ~/.claude/skills
+joyhub install pdf-parser --dir ~/.claude/skills
 
 # 强制覆盖已存在的安装
-skillhub install pdf-parser --force
+joyhub install pdf-parser --force
 ```
 
 ### 安装目标解析
@@ -205,7 +208,7 @@ CLI 按以下逻辑确定安装位置：
 ```
 .codex/skills/pdf-parser/
 ├── ...                          # 技能包解压后的文件
-└── .skillhub/
+└── .joyhub/
     └── metadata.json            # 安装元数据
 ```
 
@@ -228,46 +231,46 @@ CLI 按以下逻辑确定安装位置：
 
 ```bash
 # 列出所有已安装技能
-skillhub list
+joyhub list
 
 # 按 Agent 过滤
-skillhub list --agent codex
+joyhub list --agent codex
 
 # 按多个 Agent 过滤
-skillhub list --agent codex --agent claude-code
+joyhub list --agent codex --agent claude-code
 
 # 按目录过滤
-skillhub list --dir ~/.codex/skills
+joyhub list --dir ~/.codex/skills
 
 # JSON 输出
-skillhub list --json
+joyhub list --json
 ```
 
 ### 删除技能
 
 ```bash
 # 裸 slug 删除所有 namespace 中的同名本地安装
-skillhub remove pdf-parser
+joyhub remove pdf-parser
 
 # 显式 namespace 坐标只删除该 namespace
-skillhub remove myspace/pdf-parser
-skillhub remove @myspace/pdf-parser
-skillhub remove myspace--pdf-parser
+joyhub remove myspace/pdf-parser
+joyhub remove @myspace/pdf-parser
+joyhub remove myspace--pdf-parser
 
 # 使用 namespace 参数进行等价的精确本地删除
-skillhub remove pdf-parser --namespace myspace
+joyhub remove pdf-parser --namespace myspace
 
 # 只删除指定 Agent 的安装
-skillhub remove pdf-parser --agent codex
+joyhub remove pdf-parser --agent codex
 
 # 删除所有目标（跳过交互确认）
-skillhub remove pdf-parser --all
+joyhub remove pdf-parser --all
 
 # 删除远程技能（需要认证，会弹出确认提示）
-skillhub remove pdf-parser --remote --namespace myspace
+joyhub remove pdf-parser --remote --namespace myspace
 
 # 跳过远程删除确认
-skillhub remove pdf-parser --remote --hard --namespace myspace
+joyhub remove pdf-parser --remote --hard --namespace myspace
 ```
 
 > 参数互斥规则：
@@ -278,12 +281,12 @@ skillhub remove pdf-parser --remote --hard --namespace myspace
 ### 重建本地清单
 
 ```bash
-skillhub doctor
+joyhub doctor
 ```
 
 `doctor` 执行以下操作：
 
-1. 扫描 `<cwd>/.<agent>/skills/<slug>/.skillhub/metadata.json`
+1. 扫描 `<cwd>/.<agent>/skills/<slug>/.joyhub/metadata.json`
 2. 按 `registry + namespace + slug` 分组
 3. 备份旧的 `inventory.json`（如果存在）
 4. 写入新的 `inventory.json`
@@ -294,13 +297,13 @@ skillhub doctor
 
 ```bash
 # 发布目录（自动打包为 zip）
-skillhub publish ./my-skill --namespace myspace
+joyhub publish ./my-skill --namespace myspace
 
 # 发布已有的 zip 文件
-skillhub publish ./my-skill.zip --namespace myspace
+joyhub publish ./my-skill.zip --namespace myspace
 
 # 指定可见性
-skillhub publish ./my-skill --namespace myspace --visibility private
+joyhub publish ./my-skill --namespace myspace --visibility private
 ```
 
 可见性选项：
@@ -314,29 +317,28 @@ skillhub publish ./my-skill --namespace myspace --visibility private
 
 ```bash
 # 检查是否有新版本
-skillhub update --check
+joyhub update --check
 
 # 执行更新
-skillhub update
+joyhub update
 ```
 
 更新机制：
-- 通过 npm 全局安装：自动执行 `npm install -g @astron-team/skillhub@latest`
-- 通过 Bun 全局安装：自动执行 `bun add -g @astron-team/skillhub@latest`
-- 通过 npx 运行：提示手动更新命令
-- 未知安装方式：提示手动更新
+- 官方 Skill 与推荐用法固定 `@joycastle/joyhub-cli@0.2.0`，不要改用 `latest`
+- 若曾全局安装：`npm install -g @joycastle/joyhub-cli@0.2.0` 或 `bun add -g @joycastle/joyhub-cli@0.2.0`
+- 通过 npx 运行：使用 pinned 命令重新拉取 `0.2.0`
 
 ## 环境变量
 
 | 变量 | 说明 | 优先级 |
 |------|------|--------|
-| `SKILLHUB_REGISTRY` | 默认 registry URL | 低于 `--registry` 参数 |
-| `SKILLHUB_TOKEN` | API token | 低于 `--token` 参数，高于存储的 token |
+| `JOYHUB_REGISTRY` | 默认 registry URL | 低于 `--registry` 参数 |
+| `JOYHUB_TOKEN` | API token | 低于 `--token` 参数，高于存储的 token |
 
 ## 本地文件结构
 
 ```
-~/.skillhub/
+~/.joyhub/
 ├── config.json           # 用户配置（registry、defaultAgent 等）
 ├── credentials.json      # API tokens（按 registry 存储，权限 0600）
 └── inventory.json        # 已安装技能清单
@@ -391,12 +393,12 @@ skillhub update
 所有命令都支持 `--json` 参数，输出机器可读的 JSON 格式：
 
 ```bash
-skillhub search pdf --json
-skillhub list --json
-skillhub whoami --json
-skillhub install pdf-parser --json
-skillhub remove pdf-parser --json
-skillhub doctor --json
+joyhub search pdf --json
+joyhub list --json
+joyhub whoami --json
+joyhub install pdf-parser --json
+joyhub remove pdf-parser --json
+joyhub doctor --json
 ```
 
 成功响应格式：
@@ -417,7 +419,7 @@ skillhub doctor --json
   "exitCode": 2,
   "details": {
     "registry": "https://skill.xfyun.cn",
-    "next": "run `skillhub login`"
+    "next": "run `joyhub auth ensure`"
   }
 }
 ```
@@ -438,8 +440,8 @@ skillhub doctor --json
 ### help
 
 ```bash
-skillhub help
-skillhub help install
+joyhub help
+joyhub help install
 ```
 
 显示帮助信息。
@@ -447,24 +449,32 @@ skillhub help install
 ### version
 
 ```bash
-skillhub version
-skillhub version --json
+joyhub version
+joyhub version --json
 ```
 
 显示 CLI 版本。
 
+### auth ensure
+
+```bash
+joyhub auth ensure [--registry <url>] [--json]
+```
+
+校验本地登录态；无效时发起浏览器 Device Flow。官方 Skill `find-skills` / `share-skill` 每次执行前调用 `joyhub auth ensure --json`。
+
 ### login
 
 ```bash
-skillhub login --token <token> [--registry <url>] [--json]
+joyhub login [--token <token>] [--registry <url>] [--json]
 ```
 
-保存 token 和 registry 配置。
+保存 token 和 registry 配置。未提供 `--token` 时走 Device Flow。
 
 ### logout
 
 ```bash
-skillhub logout [--registry <url>] [--json]
+joyhub logout [--registry <url>] [--json]
 ```
 
 删除指定 registry 的 token。
@@ -472,7 +482,7 @@ skillhub logout [--registry <url>] [--json]
 ### whoami
 
 ```bash
-skillhub whoami [--registry <url>] [--token <token>] [--json]
+joyhub whoami [--registry <url>] [--token <token>] [--json]
 ```
 
 验证当前 token 并显示用户信息。
@@ -480,7 +490,7 @@ skillhub whoami [--registry <url>] [--token <token>] [--json]
 ### search
 
 ```bash
-skillhub search <query> [--registry <url>] [--limit <n>] [--json]
+joyhub search <query> [--registry <url>] [--limit <n>] [--json]
 ```
 
 搜索已发布的技能。
@@ -488,7 +498,7 @@ skillhub search <query> [--registry <url>] [--limit <n>] [--json]
 ### install
 
 ```bash
-skillhub install <coordinate> [options]
+joyhub install <coordinate> [options]
 ```
 
 `<coordinate>` 支持裸 slug（`my-skill`，解析为 `global/my-skill`）以及
@@ -510,7 +520,7 @@ namespace 形式。裸 slug 可通过 `--namespace team` 选择非 global namesp
 ### list
 
 ```bash
-skillhub list [options]
+joyhub list [options]
 ```
 
 选项：
@@ -522,7 +532,7 @@ skillhub list [options]
 ### remove
 
 ```bash
-skillhub remove <coordinate> [options]
+joyhub remove <coordinate> [options]
 ```
 
 选项：
@@ -542,7 +552,7 @@ skillhub remove <coordinate> [options]
 ### doctor
 
 ```bash
-skillhub doctor [--json]
+joyhub doctor [--json]
 ```
 
 扫描项目目录，重建本地清单。
@@ -550,7 +560,7 @@ skillhub doctor [--json]
 ### publish
 
 ```bash
-skillhub publish <path> [options]
+joyhub publish <path> [options]
 ```
 
 选项：
@@ -563,14 +573,14 @@ skillhub publish <path> [options]
 ### update
 
 ```bash
-skillhub update [--check] [--json]
+joyhub update [--check] [--json]
 ```
 
 检查或执行 CLI 自更新。
 
 ## 安全说明
 
-- Token 只存储在用户目录 `~/.skillhub/credentials.json`
+- Token 只存储在用户目录 `~/.joyhub/credentials.json`
 - 在 Linux/macOS 上，凭据文件权限自动设置为 `0600`
 - 不会将 token 写入任何项目本地文件
 - 远程删除操作需要显式确认或 `--hard` 参数
@@ -581,11 +591,11 @@ skillhub update [--check] [--json]
 ### 认证失败
 
 ```bash
-# 验证 token 是否有效
-skillhub whoami
+# 验证当前登录态
+joyhub whoami
 
-# 重新登录
-skillhub login --token sk_xxx
+# 重新绑定（浏览器授权，无需复制 Token）
+joyhub auth ensure
 ```
 
 ### 网络错误
@@ -595,25 +605,25 @@ skillhub login --token sk_xxx
 curl https://skill.xfyun.cn/api/cli/v1/skills/search?q=test&limit=1
 
 # 使用其他 registry
-skillhub search test --registry https://skillhub.example.com
+joyhub search test --registry https://skillhub.example.com
 ```
 
 ### 安装目录冲突
 
 ```bash
 # 使用 --force 覆盖
-skillhub install pdf-parser --force
+joyhub install pdf-parser --force
 
 # 或先删除再安装
-skillhub remove pdf-parser
-skillhub install pdf-parser
+joyhub remove pdf-parser
+joyhub install pdf-parser
 ```
 
 ### 清单损坏
 
 ```bash
 # 重建清单
-skillhub doctor
+joyhub doctor
 ```
 
 ## 本地开发验证
@@ -632,18 +642,18 @@ cd ..
 make dev-all
 
 # 3. 配置 CLI 连接本地服务（Linux/macOS）
-export SKILLHUB_REGISTRY=http://localhost:8080
+export JOYHUB_REGISTRY=http://localhost:8080
 
 # Windows PowerShell:
-# $env:SKILLHUB_REGISTRY="http://localhost:8080"
+# $env:JOYHUB_REGISTRY="http://localhost:8080"
 
 # Windows CMD:
-# set SKILLHUB_REGISTRY=http://localhost:8080
+# set JOYHUB_REGISTRY=http://localhost:8080
 
 # 4. 测试命令
-skillhub search test
-skillhub install example-skill --agent codex
-skillhub list
+joyhub search test
+joyhub install example-skill --agent codex
+joyhub list
 ```
 
 ## 相关链接
