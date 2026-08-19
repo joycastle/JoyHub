@@ -37,19 +37,31 @@ public class SkillDocumentationTranslationEventListener {
     @Async("skillhubEventExecutor")
     @TransactionalEventListener
     public void onSkillPublished(SkillPublishedEvent event) {
+        if (!warmupEnabled()) {
+            return;
+        }
         translationService.warmChineseDocumentation(event.skillId(), event.versionId(), event.publisherId());
     }
 
-    @Scheduled(fixedDelayString = "${joyhub.ai.translation-backfill-delay-ms:120000}")
+    @Scheduled(
+            initialDelayString = "${joyhub.ai.translation-backfill-delay-ms:8640000000}",
+            fixedDelayString = "${joyhub.ai.translation-backfill-delay-ms:8640000000}")
     public void backfillExistingDocumentation() {
-        if (properties == null || !properties.isEnabled()
-                || properties.getApiKey() == null || properties.getApiKey().isBlank()) {
+        if (!warmupEnabled()) {
             return;
         }
         for (Long versionId : translationRepository.findPublishedVersionIdsMissingLanguage(
                 SkillDocumentationTranslationService.CHINESE, BACKFILL_BATCH)) {
             skillVersionRepository.findById(versionId).ifPresent(this::warmQuietly);
         }
+    }
+
+    private boolean warmupEnabled() {
+        return properties != null
+                && properties.isDocumentationTranslationWarmupEnabled()
+                && properties.isEnabled()
+                && properties.getApiKey() != null
+                && !properties.getApiKey().isBlank();
     }
 
     private void warmQuietly(SkillVersion version) {

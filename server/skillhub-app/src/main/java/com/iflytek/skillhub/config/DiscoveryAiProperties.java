@@ -18,6 +18,7 @@ public class DiscoveryAiProperties {
     private int readTimeoutMs = 90000;
     private int conversationTtlMinutes = 30;
     private int conversationMaxTurns = 6;
+    private boolean documentationTranslationWarmupEnabled = false;
 
     public boolean isEnabled() {
         return enabled;
@@ -113,5 +114,13 @@ public class DiscoveryAiProperties {
 
     public void setConversationMaxTurns(int conversationMaxTurns) {
         this.conversationMaxTurns = conversationMaxTurns;
+    }
+
+    public boolean isDocumentationTranslationWarmupEnabled() {
+        return documentationTranslationWarmupEnabled;
+    }
+
+    public void setDocumentationTranslationWarmupEnabled(boolean documentationTranslationWarmupEnabled) {
+        this.documentationTranslationWarmupEnabled = documentationTranslationWarmupEnabled;
     }
 }

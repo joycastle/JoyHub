@@ -232,6 +232,7 @@ joyhub:
     read-timeout-ms: ${JOYHUB_AI_READ_TIMEOUT_MS:90000}
     conversation-ttl-minutes: ${JOYHUB_AI_CONVERSATION_TTL_MINUTES:30}
     conversation-max-turns: ${JOYHUB_AI_CONVERSATION_MAX_TURNS:6}
+    documentation-translation-warmup-enabled: ${JOYHUB_AI_DOCUMENTATION_TRANSLATION_WARMUP_ENABLED:false}
   feishu:
     department-sync:
       enabled: ${JOYHUB_FEISHU_DEPARTMENT_SYNC_ENABLED:true}

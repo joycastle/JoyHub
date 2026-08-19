@@ -2,6 +2,7 @@ package com.iflytek.skillhub.listener;
 
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 import com.iflytek.skillhub.config.DiscoveryAiProperties;
 import com.iflytek.skillhub.domain.event.SkillPublishedEvent;
@@ -36,13 +37,24 @@ class SkillDocumentationTranslationEventListenerTest {
 
     @Test
     void warmsChineseDocumentationWhenASkillIsPublished() {
+        when(properties.isDocumentationTranslationWarmupEnabled()).thenReturn(true);
+        when(properties.isEnabled()).thenReturn(true);
+        when(properties.getApiKey()).thenReturn("test-key");
+
         listener.onSkillPublished(new SkillPublishedEvent(9L, 20L, "publisher-1"));
 
         verify(translationService).warmChineseDocumentation(9L, 20L, "publisher-1");
     }
 
     @Test
-    void skipsBackfillWhenAiIsDisabled() {
+    void skipsPublishWarmupWhenDisabled() {
+        listener.onSkillPublished(new SkillPublishedEvent(9L, 20L, "publisher-1"));
+
+        verifyNoInteractions(translationService);
+    }
+
+    @Test
+    void skipsBackfillWhenWarmupIsDisabled() {
         listener.backfillExistingDocumentation();
 
         verifyNoInteractions(translationRepository, skillVersionRepository, translationService);
