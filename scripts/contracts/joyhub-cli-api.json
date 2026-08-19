@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "package": {
+    "name": "@joycastle/joyhub-cli",
+    "version": "0.2.0",
+    "bin": "joyhub"
+  },
+  "commands": [
+    "auth ensure --json",
+    "search --query <query> --limit <n> --json",
+    "namespaces --publishable --json",
+    "install <coordinate> --agent <agent> --scope <scope> --json",
+    "publish <directory> --namespace <slug> --dry-run --json",
+    "publish <directory> --namespace <slug> --json"
+  ],
+  "api": [
+    {
+      "id": "device-code",
+      "method": "POST",
+      "path": "/api/v1/auth/device/code"
+    },
+    {
+      "id": "device-token",
+      "method": "POST",
+      "path": "/api/v1/auth/device/token"
+    },
+    {
+      "id": "whoami",
+      "method": "GET",
+      "path": "/api/cli/v1/auth/whoami"
+    },
+    {
+      "id": "search",
+      "method": "GET",
+      "path": "/api/cli/v1/skills/search"
+    },
+    {
+      "id": "publish-targets",
+      "method": "GET",
+      "path": "/api/cli/v1/namespaces/publish-targets"
+    },
+    {
+      "id": "resolve",
+      "method": "GET",
+      "path": "/api/cli/v1/skills/{namespace}/{slug}/resolve"
+    },
+    {
+      "id": "download-latest",
+      "method": "GET",
+      "path": "/api/cli/v1/skills/{namespace}/{slug}/download"
+    },
+    {
+      "id": "download-version",
+      "method": "GET",
+      "path": "/api/cli/v1/skills/{namespace}/{slug}/versions/{version}/download"
+    },
+    {
+      "id": "publish-validate",
+      "method": "POST",
+      "path": "/api/cli/v1/skills/{namespace}/publish/validate"
+    },
+    {
+      "id": "publish",
+      "method": "POST",
+      "path": "/api/cli/v1/skills/{namespace}/publish"
+    }
+  ],
+  "driftPaths": [
+    "cli/src/clients/",
+    "cli/src/commands/",
+    "cli/src/index.ts",
+    "server/skillhub-app/src/main/java/com/iflytek/skillhub/controller/DeviceAuthController.java",
+    "server/skillhub-app/src/main/java/com/iflytek/skillhub/controller/DeviceAuthWebController.java",
+    "server/skillhub-app/src/main/java/com/iflytek/skillhub/controller/cli/",
+    "server/skillhub-app/src/main/java/com/iflytek/skillhub/dto/cli/",
+    "server/skillhub-auth/src/main/java/com/iflytek/skillhub/auth/device/",
+    "server/skillhub-auth/src/main/java/com/iflytek/skillhub/auth/policy/RouteSecurityPolicyRegistry.java"
+  ]
+}
