@@ -31,7 +31,7 @@ export function getBaseUrl(): string {
 }
 
 export function buildInstallCommand(namespace: string, slug: string, baseUrl: string): string {
-  return `npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub install "@${namespace}/${slug}" --registry "${baseUrl}"`
+  return `npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub install "@${namespace}/${slug}" --registry "${baseUrl}"`
 }
 
 export function buildClawhubInstallCommand(namespace: string, slug: string, baseUrl: string): string {

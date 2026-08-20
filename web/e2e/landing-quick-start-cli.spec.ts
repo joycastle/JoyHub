@@ -27,7 +27,7 @@ test.describe('Landing Quick Start CLI Tab (Real API)', () => {
     await expect(
       page.getByText('Run JoyHub CLI on demand without a global install.'),
     ).toBeVisible()
-    await expect(page.getByText('npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub auth ensure', { exact: true })).toBeVisible()
+    await expect(page.getByText('npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub auth ensure', { exact: true })).toBeVisible()
   })
 
   test('agent and human tabs keep their original commands', async ({ page }) => {
@@ -42,7 +42,7 @@ test.describe('Landing Quick Start CLI Tab (Real API)', () => {
 
     await humanTab.click()
     await expect(humanTab).toHaveAttribute('aria-pressed', 'true')
-    await expect(page.getByText('npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub search --query <keyword>', { exact: true })).toBeVisible()
+    await expect(page.getByText('npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub search --query <keyword>', { exact: true })).toBeVisible()
 
     await agentTab.click()
     await expect(agentTab).toHaveAttribute('aria-pressed', 'true')

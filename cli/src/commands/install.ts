@@ -115,7 +115,16 @@ export async function installCommand(
   })
 
   if (options.json) {
-    return JSON.stringify({ ok: true, namespace, slug, installed: result.installed })
+    return JSON.stringify({
+      ok: true,
+      namespace,
+      slug,
+      coordinate: `@${namespace}/${slug}`,
+      version: result.version,
+      installed: result.installed
+    })
   }
-  return result.installed.map(i => `Installed ${namespace}/${slug} -> ${i.dir} (${i.agent})`).join('\n')
+  return result.installed
+    .map(i => `Installed @${namespace}/${slug}@${result.version} -> ${i.dir} (${i.agent})`)
+    .join('\n')
 }

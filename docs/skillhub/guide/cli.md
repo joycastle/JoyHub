@@ -7,10 +7,10 @@ JoyHub CLI 是 JoyHub 的官方命令行工具，用于搜索、安装、管理�
 推荐使用固定兼容版本 `0.2.0` 的 `npx` 按需运行，不要求全局安装：
 
 ```bash
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub version
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub version
 ```
 
-需要 Node.js 和 npm。官方 Skill 必须固定 `@joycastle/joyhub-cli@0.2.0`，不要改用无约束的 `latest`。下文示例使用二进制名 `joyhub`；等价写法是在命令前加上 `npx --yes --package=@joycastle/joyhub-cli@0.2.0`。
+需要 Node.js 和 npm。官方 Skill 必须固定 `@toolnets/joyhub-cli@0.2.0`，不要改用无约束的 `latest`。下文示例使用二进制名 `joyhub`；等价写法是在命令前加上 `npx --yes --package=@toolnets/joyhub-cli@0.2.0`。
 
 ## 快速开始
 
@@ -324,8 +324,8 @@ joyhub update
 ```
 
 更新机制：
-- 官方 Skill 与推荐用法固定 `@joycastle/joyhub-cli@0.2.0`，不要改用 `latest`
-- 若曾全局安装：`npm install -g @joycastle/joyhub-cli@0.2.0` 或 `bun add -g @joycastle/joyhub-cli@0.2.0`
+- 官方 Skill 与推荐用法固定 `@toolnets/joyhub-cli@0.2.0`，不要改用 `latest`
+- 若曾全局安装：`npm install -g @toolnets/joyhub-cli@0.2.0` 或 `bun add -g @toolnets/joyhub-cli@0.2.0`
 - 通过 npx 运行：使用 pinned 命令重新拉取 `0.2.0`
 
 ## 环境变量

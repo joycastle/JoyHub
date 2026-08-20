@@ -128,23 +128,23 @@ In the browser, you can add the `X-Mock-User-Id` header via a browser extension 
 
 ## Install the CLI Tool
 
-Use the JoyHub CLI (`@joycastle/joyhub-cli@0.2.0`, command `joyhub`). A global install is not required. Official agent skills `find-skills` / `share-skill` call the same CLI. Search requires login.
+Use the JoyHub CLI (`@toolnets/joyhub-cli@0.2.0`, command `joyhub`). A global install is not required. Official agent skills `find-skills` / `share-skill` call the same CLI. Search requires login.
 
 ```bash
 # Point the CLI at your registry
 export JOYHUB_REGISTRY=http://localhost:8080
 
 # First use: browser Device Flow (no token copy)
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub auth ensure
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub auth ensure
 
 # Search skill packages
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub search email
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub search email
 
 # Install a skill package
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub install my-skill
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub install my-skill
 
 # Publish a skill package
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub publish ./my-skill --namespace my-team
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub publish ./my-skill --namespace my-team
 ```
 
 ## Publish Your First Skill Package
@@ -169,13 +169,13 @@ my-skill/
 # Configure the registry
 export JOYHUB_REGISTRY=http://localhost:8080
 
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub auth ensure
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub auth ensure
 
 # Dry-run, then publish (official share-skill also requires confirmation)
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 \
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 \
   joyhub publish ./my-skill --namespace my-team --dry-run
 
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 \
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 \
   joyhub publish ./my-skill --namespace my-team
 ```
 
@@ -207,16 +207,16 @@ Administrators will receive a notification and the skill package will be officia
 
 ```bash
 export JOYHUB_REGISTRY=http://localhost:8080
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub auth ensure
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub auth ensure
 
 # Search skill packages (login required)
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub search pdf
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub search pdf
 
 # Install a skill package
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub install pdf-parser
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub install pdf-parser
 
 # Install a skill from a specific namespace
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub install @my-team/pdf-parser
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub install @my-team/pdf-parser
 ```
 
 ### Using the Web UI

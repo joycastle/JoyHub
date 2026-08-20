@@ -58,12 +58,12 @@ Ensure skill package conforms to SkillHub specification:
 
 ```bash
 export JOYHUB_REGISTRY=http://localhost:8080
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub auth ensure
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub auth ensure
 
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 \
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 \
   joyhub publish ./my-skill --namespace my-team --dry-run
 
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 \
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 \
   joyhub publish ./my-skill --namespace my-team
 ```
 

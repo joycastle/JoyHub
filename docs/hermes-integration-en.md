@@ -9,7 +9,7 @@ This guide explains how to install skills from SkillHub into [NousResearch Herme
 | Component | Validated version | Notes |
 |-----------|-------------------|-------|
 | SkillHub Server | `v0.2.13` | Public or self-hosted registry |
-| JoyHub CLI | `0.2.0` | npm package `@joycastle/joyhub-cli` |
+| JoyHub CLI | `0.2.0` | npm package `@toolnets/joyhub-cli` |
 | Hermes Agent | `0.18.2` | Upstream tag [`v2026.7.7.2`](https://github.com/NousResearch/hermes-agent/tree/v2026.7.7.2) |
 
 Validation date: 2026-07-17.
@@ -31,7 +31,7 @@ SkillHub registry
 2. Install Node.js / npm. Run the pinned JoyHub CLI on demand; a global install is not required:
 
 ```bash
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub version
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub version
 hermes version
 ```
 
@@ -52,10 +52,10 @@ export JOYHUB_REGISTRY=https://skillhub.your-company.com
 Search requires login. On first use, run `joyhub auth ensure` (browser Device Flow; no token copy):
 
 ```bash
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 \
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 \
   joyhub auth ensure --registry "$JOYHUB_REGISTRY"
 
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 \
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 \
   joyhub whoami --registry "$JOYHUB_REGISTRY"
 ```
 

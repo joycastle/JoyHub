@@ -134,7 +134,10 @@ describe('resolveEffectiveScope', () => {
 
 describe('installCommand dependency injection', () => {
   function fakeInstallSkill(): NonNullable<InstallCommandDeps['installSkill']> {
-    return async () => ({ installed: [{ agent: 'codex', dir: '/home/u/.codex/skills/foo' }] })
+    return async () => ({
+      version: '1.2.3',
+      installed: [{ agent: 'codex', dir: '/home/u/.codex/skills/foo' }]
+    })
   }
 
   function fakeResolveInstallTargets(): NonNullable<InstallCommandDeps['resolveInstallTargets']> {
@@ -153,7 +156,10 @@ describe('installCommand dependency injection', () => {
       resolveInstallTargets: fakeResolveInstallTargets(),
       installSkill: async (options) => {
         received = options
-        return { installed: [{ agent: 'codex', dir: '/home/u/.codex/skills/my-skill' }] }
+        return {
+          version: '1.2.3',
+          installed: [{ agent: 'codex', dir: '/home/u/.codex/skills/my-skill' }]
+        }
       }
     }
 
@@ -176,7 +182,7 @@ describe('installCommand dependency injection', () => {
       resolveInstallTargets: fakeResolveInstallTargets(),
       installSkill: async () => {
         installCalls += 1
-        return { installed: [] }
+        return { version: '1.2.3', installed: [] }
       }
     }
 

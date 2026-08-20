@@ -50,7 +50,7 @@ test.describe('Public Skill Detail Anonymous Access (Real API)', () => {
       ? current.skill.slug
       : `${current.skill.namespace}--${current.skill.slug}`
     await expect(page.getByRole('tab', { name: 'JoyHub CLI' })).toHaveAttribute('aria-selected', 'true')
-    await expect(page.getByText(new RegExp(`npx --yes --package=@joycastle/joyhub-cli@0\\.2\\.0 joyhub install "@${escapeRegExp(current.skill.namespace)}/${escapeRegExp(current.skill.slug)}" --registry`))).toBeVisible()
+    await expect(page.getByText(new RegExp(`npx --yes --package=@toolnets/joyhub-cli@0\\.2\\.0 joyhub install "@${escapeRegExp(current.skill.namespace)}/${escapeRegExp(current.skill.slug)}" --registry`))).toBeVisible()
     await page.getByRole('tab', { name: 'ClawHub CLI' }).click()
     await expect(page.getByText(new RegExp(`npx clawhub install ${escapeRegExp(clawhubTarget)} --registry`))).toBeVisible()
     await expect(page.getByRole('button', { name: 'Copy' }).first()).toBeVisible()

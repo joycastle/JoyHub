@@ -13,7 +13,7 @@ describe('NpmRegistryClient', () => {
     })
 
     await expect(client.latestVersion()).resolves.toBe('1.2.3')
-    expect(requestedUrl).toBe('https://registry.npmmirror.com/%40joycastle%2Fjoyhub-cli/latest')
+    expect(requestedUrl).toBe('https://registry.npmmirror.com/%40toolnets%2Fjoyhub-cli/latest')
   })
 
   test('uses JoyHub registry override before npm registry env vars', async () => {
@@ -29,7 +29,7 @@ describe('NpmRegistryClient', () => {
     })
 
     await expect(client.latestVersion()).resolves.toBe('1.2.3')
-    expect(requestedUrl).toBe('https://joyhub-registry.example.test/npm/%40joycastle%2Fjoyhub-cli/latest')
+    expect(requestedUrl).toBe('https://joyhub-registry.example.test/npm/%40toolnets%2Fjoyhub-cli/latest')
   })
 
   test('resolves registry env names case-insensitively for Windows compatibility', async () => {
@@ -43,7 +43,7 @@ describe('NpmRegistryClient', () => {
     })
 
     await expect(client.latestVersion()).resolves.toBe('1.2.3')
-    expect(requestedUrl).toBe('https://windows-env.example.test/%40joycastle%2Fjoyhub-cli/latest')
+    expect(requestedUrl).toBe('https://windows-env.example.test/%40toolnets%2Fjoyhub-cli/latest')
   })
 
   test('ignores empty registry env values before falling back', async () => {
@@ -59,7 +59,7 @@ describe('NpmRegistryClient', () => {
     })
 
     await expect(client.latestVersion()).resolves.toBe('1.2.3')
-    expect(requestedUrl).toBe('https://registry.example.test/%40joycastle%2Fjoyhub-cli/latest')
+    expect(requestedUrl).toBe('https://registry.example.test/%40toolnets%2Fjoyhub-cli/latest')
   })
 
   test('uses the default npm registry when no registry is configured', async () => {
@@ -71,7 +71,7 @@ describe('NpmRegistryClient', () => {
     const client = new NpmRegistryClient(successfulFetch, 10_000, {})
 
     await expect(client.latestVersion()).resolves.toBe('1.2.3')
-    expect(requestedUrl).toBe('https://registry.npmjs.org/%40joycastle%2Fjoyhub-cli/latest')
+    expect(requestedUrl).toBe('https://registry.npmjs.org/%40toolnets%2Fjoyhub-cli/latest')
   })
 
   test('classifies network failures as CLI errors', async () => {
@@ -109,7 +109,7 @@ describe('NpmRegistryClient', () => {
   })
 
   test('rejects registry responses without a version', async () => {
-    const failingFetch = (async () => Response.json({ name: '@joycastle/joyhub-cli' })) as unknown as typeof fetch
+    const failingFetch = (async () => Response.json({ name: '@toolnets/joyhub-cli' })) as unknown as typeof fetch
     const client = new NpmRegistryClient(failingFetch, 10_000, {
       npm_config_registry: 'https://registry.example.test'
     })

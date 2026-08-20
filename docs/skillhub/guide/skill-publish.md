@@ -58,12 +58,12 @@ SkillHub 提供了类似 npm 的发布体验，但增加了企业级的权限控
 
 ```bash
 export JOYHUB_REGISTRY=http://localhost:8080
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub auth ensure
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub auth ensure
 
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 \
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 \
   joyhub publish ./my-skill --namespace my-team --dry-run
 
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 \
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 \
   joyhub publish ./my-skill --namespace my-team
 ```
 

@@ -108,6 +108,7 @@ describe('publish --dry-run', () => {
     expect(JSON.parse(result.stdout)).toMatchObject({
       ok: true,
       namespace: 'data-team',
+      visibility: 'public',
       files: ['README.md', 'SKILL.md']
     })
   })
@@ -171,12 +172,13 @@ describe('publish --dry-run', () => {
     await login(env, registry.url)
 
     const dir = await makeTempDir(['SKILL.md', '---\nname: test\ndescription: test\n---\n'])
-    await runCli(['publish', dir, '--dry-run', '--visibility', 'private', '--registry', registry.url], {
+    const result = await runCli(['publish', dir, '--dry-run', '--visibility', 'private', '--json', '--registry', registry.url], {
       HOME: env.home,
       USERPROFILE: env.home
     })
 
     expect(registry.received.validate!.visibility).toBe('PRIVATE')
+    expect(JSON.parse(result.stdout).visibility).toBe('private')
   })
 
   test('--dry-run requires authentication', async () => {

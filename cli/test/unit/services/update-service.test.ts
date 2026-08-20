@@ -13,7 +13,7 @@ describe('UpdateService', () => {
     const result = await service.update({ checkOnly: false })
 
     expect(result.updated).toBe(false)
-    expect(result.next).toContain('npx @joycastle/joyhub-cli@latest')
+    expect(result.next).toContain('npx @toolnets/joyhub-cli@latest')
   })
 
   test('npm-global install mode runs npm update', async () => {
@@ -28,7 +28,7 @@ describe('UpdateService', () => {
     const result = await service.update({ checkOnly: false })
 
     expect(result.updated).toBe(true)
-    expect(executed).toEqual(['npm', 'install', '-g', '@joycastle/joyhub-cli@latest'])
+    expect(executed).toEqual(['npm', 'install', '-g', '@toolnets/joyhub-cli@latest'])
   })
 
   test('bun-global install mode runs bun update', async () => {
@@ -43,7 +43,7 @@ describe('UpdateService', () => {
     const result = await service.update({ checkOnly: false })
 
     expect(result.updated).toBe(true)
-    expect(executed).toEqual(['bun', 'add', '-g', '@joycastle/joyhub-cli@latest'])
+    expect(executed).toEqual(['bun', 'add', '-g', '@toolnets/joyhub-cli@latest'])
   })
 
   test('unknown install mode only suggests next command', async () => {

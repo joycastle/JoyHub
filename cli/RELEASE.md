@@ -15,7 +15,7 @@ After the PR is merged, you manually tag and push — the tag triggers [`release
 
 ### npm Trusted Publishing
 
-After the package exists, configure npm Trusted Publishing for `@joycastle/joyhub-cli`:
+After the package exists, configure npm Trusted Publishing for `@toolnets/joyhub-cli`:
 
 - GitHub organization and repository: this repository
 - Workflow filename: `release-cli.yml`
@@ -45,7 +45,7 @@ In [`cli/package.json`](./package.json):
 
 ```json
 {
-  "name": "@joycastle/joyhub-cli",
+  "name": "@toolnets/joyhub-cli",
   "publishConfig": {
     "access": "public"
   }
@@ -115,7 +115,7 @@ Pushing the tag triggers CI which builds, publishes to npm, and creates a GitHub
 
 - Workflow: https://github.com/joycastle/JoyHub/actions/workflows/release-cli.yml
 - Release: https://github.com/joycastle/JoyHub/releases
-- npm: `npm view @joycastle/joyhub-cli@<version>`
+- npm: `npm view @toolnets/joyhub-cli@<version>`
 
 ## Release Audit Trail
 

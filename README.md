@@ -127,21 +127,21 @@ If deployment runs into problems, clear the existing runtime home and retry.
 
 ## JoyHub CLI
 
-Search, install, and publish Agent skills with the official JoyHub CLI (`@joycastle/joyhub-cli`, bin `joyhub`). Prefer the pinned `npx` command; a global install is not required. Official agent skills `find-skills` and `share-skill` use the same pin.
+Search, install, and publish Agent skills with the official JoyHub CLI (`@toolnets/joyhub-cli`, bin `joyhub`). Prefer the pinned `npx` command; a global install is not required. Official agent skills `find-skills` and `share-skill` use the same pin.
 
 ```bash
 # Run the pinned CLI (no global install)
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub version
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub version
 
 # First use: browser Device Flow (no token copy)
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub auth ensure
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub auth ensure
 
 # Search requires login; results are skills you can see
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub search pdf
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub install pdf-parser --agent codex
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub search pdf
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub install pdf-parser --agent codex
 
 # List installed skills
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub list
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub list
 ```
 
 📖 Full guide: [docs/skillhub/en/guide/cli.md](docs/skillhub/en/guide/cli.md)

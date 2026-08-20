@@ -6,13 +6,13 @@ JoyHub CLI is the official command-line tool for JoyHub, designed for searching,
 
 ```bash
 # Install globally via npm
-npm install -g @joycastle/joyhub-cli
+npm install -g @toolnets/joyhub-cli
 
 # Or run directly with npx
-npx @joycastle/joyhub-cli@latest version
+npx @toolnets/joyhub-cli@latest version
 
 # Or install globally via Bun
-bun add -g @joycastle/joyhub-cli
+bun add -g @toolnets/joyhub-cli
 ```
 
 ## 🚀 Quick Start
@@ -352,8 +352,8 @@ joyhub update
 ```
 
 Update mechanism:
-- Installed via npm globally: Auto-executes `npm install -g @joycastle/joyhub-cli@latest`
-- Installed via Bun globally: Auto-executes `bun add -g @joycastle/joyhub-cli@latest`
+- Installed via npm globally: Auto-executes `npm install -g @toolnets/joyhub-cli@latest`
+- Installed via Bun globally: Auto-executes `bun add -g @toolnets/joyhub-cli@latest`
 - Run via npx: Prompts manual update command
 - Unknown installation method: Prompts manual update
 

@@ -9,7 +9,7 @@ Use the pinned JoyHub CLI through `npx`; do not install it globally and do not r
 version with `latest`.
 
 ```bash
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub auth ensure --json
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub auth ensure --json
 ```
 
 ## Safety rules
@@ -32,7 +32,7 @@ npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub auth ensure --json
 3. List the namespaces JoyHub says are publishable:
 
    ```bash
-   npx --yes --package=@joycastle/joyhub-cli@0.2.0 \
+   npx --yes --package=@toolnets/joyhub-cli@0.2.0 \
      joyhub namespaces --publishable --json
    ```
 
@@ -42,9 +42,13 @@ npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub auth ensure --json
    repository, account, or previous conversation.
 4. Run validation only for the selected namespace:
 
+   Use `public` unless the user requested `namespace-only` or `private`. Pass the same explicit
+   visibility to both dry-run and publish so the reviewed operation cannot drift.
+
    ```bash
-   npx --yes --package=@joycastle/joyhub-cli@0.2.0 \
-     joyhub publish "<directory>" --namespace "<slug>" --dry-run --json
+   npx --yes --package=@toolnets/joyhub-cli@0.2.0 \
+     joyhub publish "<directory>" --namespace "<slug>" \
+       --visibility "<visibility>" --dry-run --json
    ```
 
 5. Parse stdout as JSON. Stop if validation fails or JoyHub rejects namespace access. Otherwise,
@@ -57,8 +61,9 @@ npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub auth ensure --json
 7. Only after confirmation, publish with the same directory and namespace:
 
    ```bash
-   npx --yes --package=@joycastle/joyhub-cli@0.2.0 \
-     joyhub publish "<directory>" --namespace "<slug>" --json
+   npx --yes --package=@toolnets/joyhub-cli@0.2.0 \
+     joyhub publish "<directory>" --namespace "<slug>" \
+       --visibility "<visibility>" --json
    ```
 
 8. Parse the result as JSON and report the exact coordinate, version, and actual lifecycle status

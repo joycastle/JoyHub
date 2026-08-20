@@ -49,13 +49,13 @@ SkillHub 使用 PostgreSQL 全文搜索，支持：
 
 ```bash
 export JOYHUB_REGISTRY=http://localhost:8080
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub auth ensure
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub auth ensure
 
 # 搜索需要登录；结果为当前用户可见的技能
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub search pdf
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub search pdf
 
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub install pdf-parser
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub install @my-team/pdf-parser
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub install pdf-parser
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub install @my-team/pdf-parser
 ```
 
 在 Codex / Claude Code 中也可以使用官方 Skill `find-skills`，由 Agent 调用同一 JoyHub CLI。

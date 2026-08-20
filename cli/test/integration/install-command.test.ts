@@ -98,7 +98,7 @@ describe('install command — P0', () => {
   // P0 — --json output shape
   // -------------------------------------------------------------------------
 
-  test('--json output matches { ok, namespace, slug, installed }', async () => {
+  test('--json output includes coordinate, version, and installed targets', async () => {
     const env = await createTempHome()
     registry = await startFakeRegistry({
       token: 'sk_ok',
@@ -1052,6 +1052,7 @@ describe('install command — --scope', () => {
     expect(result.exitCode).toBe(0)
     const parsed = JSON.parse(result.stdout)
     expect(parsed).toMatchObject({ ok: true, namespace: 'global', slug: 'foo' })
+    expect(parsed).toMatchObject({ coordinate: '@global/foo', version: '1.0.0' })
     expect(parsed.installed[0]).toHaveProperty('agent')
     expect(parsed.installed[0]).toHaveProperty('dir')
     expect(parsed.installed[0]).not.toHaveProperty('scope')

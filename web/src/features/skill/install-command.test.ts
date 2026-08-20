@@ -57,14 +57,14 @@ describe('install-command', () => {
   it('uses the plain slug for the global namespace', () => {
     expect(buildInstallTarget('global', 'my-skill')).toBe('my-skill')
     expect(buildInstallCommand('global', 'my-skill', 'https://skill.xfyun.cn')).toBe(
-      'npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub install "@global/my-skill" --registry "https://skill.xfyun.cn"',
+      'npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub install "@global/my-skill" --registry "https://skill.xfyun.cn"',
     )
   })
 
   it('prefixes non-global namespaces in the install target', () => {
     expect(buildInstallTarget('team-alpha', 'my-skill')).toBe('team-alpha--my-skill')
     expect(buildInstallCommand('team-alpha', 'my-skill', 'https://skill.xfyun.cn')).toBe(
-      'npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub install "@team-alpha/my-skill" --registry "https://skill.xfyun.cn"',
+      'npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub install "@team-alpha/my-skill" --registry "https://skill.xfyun.cn"',
     )
   })
 
@@ -136,7 +136,7 @@ describe('install-command', () => {
     expect(html).toContain('skillDetail.installMethodClawhub')
     expect(html).toContain('skillDetail.installMethodJoyhub')
     expect(html).toContain('aria-selected="true"')
-    expect(html).toContain('npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub install &quot;@team-alpha/meeting-minutes-generator&quot; --registry &quot;https://app.example.com&quot;')
+    expect(html).toContain('npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub install &quot;@team-alpha/meeting-minutes-generator&quot; --registry &quot;https://app.example.com&quot;')
     expect(html).not.toContain('npx clawhub install team-alpha--meeting-minutes-generator --registry https://app.example.com')
   })
 })

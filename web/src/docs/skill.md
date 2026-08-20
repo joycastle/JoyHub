@@ -7,12 +7,12 @@ description: Use this when you need to search, inspect, install, or publish agen
 
 Use this skill when you need to work with a JoyHub (SkillHub-compatible) registry: search skills, inspect metadata, install a package, or publish a new version.
 
-> Important: Prefer the official JoyHub CLI (`@joycastle/joyhub-cli@0.2.0`, bin `joyhub`) for registry workflows. Official agent skills `find-skills` and `share-skill` call this CLI. Do not copy tokens by hand. The ClawHub-compatible API and `/.well-known/clawhub.json` remain available for OpenClaw clients.
+> Important: Prefer the official JoyHub CLI (`@toolnets/joyhub-cli@0.2.0`, bin `joyhub`) for registry workflows. Official agent skills `find-skills` and `share-skill` call this CLI. Do not copy tokens by hand. The ClawHub-compatible API and `/.well-known/clawhub.json` remain available for OpenClaw clients.
 
 Pin every CLI invocation. Do not use unconstrained `latest`:
 
 ```bash
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub <command>
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub <command>
 ```
 
 ## What The Registry Is
@@ -41,14 +41,14 @@ export JOYHUB_REGISTRY=https://skillhub.your-company.com
 Alternatively, use the `--registry` parameter every time, for example:
 
 ```bash
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 \
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 \
   joyhub install my-skill --registry https://skillhub.your-company.com
 ```
 
 On first use, bind the CLI with Device Flow. Do not ask the user to paste a token:
 
 ```bash
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub auth ensure --json
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub auth ensure --json
 ```
 
 Credentials are stored in `~/.joyhub/credentials.json` (mode `0600`), isolated by registry URL. Tokens must not appear in stdout, logs, or follow-up prompts.
@@ -83,9 +83,9 @@ Rules:
 Examples:
 
 ```bash
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub install my-skill
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub install my-skill --version 1.2.0
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub install @team-name/my-skill
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub install my-skill
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub install my-skill --version 1.2.0
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub install @team-name/my-skill
 ```
 
 ## Common Workflows
@@ -95,14 +95,14 @@ Run `joyhub auth ensure --json` before search, install, or publish.
 ### Search (`find-skills`)
 
 ```bash
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 \
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 \
   joyhub search --query "email" --limit 10 --json
 ```
 
 Use an empty query when you want a broad listing of skills the current user can see:
 
 ```bash
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 \
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 \
   joyhub search --query "" --limit 50 --json
 ```
 
@@ -111,9 +111,9 @@ Install only after the user chooses an exact coordinate. Do not auto-install fro
 ### Install
 
 ```bash
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub install my-skill
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub install my-skill --version 1.2.0
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub install @team-name/my-skill
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub install my-skill
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub install my-skill --version 1.2.0
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub install @team-name/my-skill
 ```
 
 ### Publish (`share-skill`)
@@ -121,9 +121,9 @@ npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub install @team-name/my-ski
 Prepare a skill package directory, dry-run, then publish only after the user confirms the namespace and version:
 
 ```bash
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 \
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 \
   joyhub publish ./my-skill --namespace my-team --dry-run --json
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 \
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 \
   joyhub publish ./my-skill --namespace my-team --json
 ```
 
