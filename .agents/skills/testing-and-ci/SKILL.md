@@ -77,7 +77,7 @@ GitHub Actions workflows in `.github/workflows/`:
 | `pr-e2e.yml` | PR | E2E smoke tests against staging |
 | `pr-batch-test-deploy.yml` | workflow_dispatch | Batch test and deploy |
 | `publish-images.yml` | release published / workflow_dispatch | Build and publish Docker images to GHCR |
-| `deploy-docs.yml` | push to docs | Deploy documentation site |
+| `deploy-docs.yml` | workflow_dispatch | Manually deploy documentation site |
 | `issue-triage.yml` | issues | Auto-triage incoming issues |
 | `issue-backlog-rescore.yml` | cron (every 6h) | Rescore backlog issues |
 | `release-notes.yml` | workflow_dispatch | Generate release notes |
