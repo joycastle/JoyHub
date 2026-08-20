@@ -16,6 +16,7 @@ PACKAGE_JSON = ROOT / "cli/package.json"
 EXPECTED_PACKAGE = "@toolnets/joyhub-cli"
 EXPECTED_VERSION = "0.2.0"
 EXPECTED_BIN = "joyhub"
+EXPECTED_REGISTRY = "https://joyhub.toolnets.net"
 NPX_PREFIX = (
     f"npx --yes --package={EXPECTED_PACKAGE}@{EXPECTED_VERSION} {EXPECTED_BIN}"
 )
@@ -29,18 +30,18 @@ EXPECTED_COMMANDS = [
 ]
 
 REQUIRED_SKILLS = {
-    "find-skills": {
-        "commands": ("auth ensure --json", "search", "install"),
-        "gates": ("explicit user choice", "Do not run an install command until"),
+    "find-skills-joyhub": {
+        "commands": ("auth ensure", "search", "install"),
+        "gates": ("明确选择", "在用户明确确认这两项选择前，禁止执行安装命令"),
     },
-    "share-skill": {
+    "share-skill-joyhub": {
         "commands": (
-            "auth ensure --json",
-            "namespaces --publishable --json",
+            "auth ensure",
+            "namespaces --publishable",
             "publish",
             "--dry-run",
         ),
-        "gates": ("explicit confirmation", "Only after confirmation"),
+        "gates": ("明确确认", "只有在用户确认后"),
     },
 }
 
@@ -91,6 +92,8 @@ def main() -> int:
         errors.append("contract schemaVersion must be 1")
     if contract.get("package") != expected_package:
         errors.append(f"contract package must equal {expected_package}")
+    if contract.get("defaultRegistry") != EXPECTED_REGISTRY:
+        errors.append(f"contract defaultRegistry must be {EXPECTED_REGISTRY}")
     if contract.get("commands") != EXPECTED_COMMANDS:
         errors.append("contract commands do not match the official skill command surface")
 
@@ -142,19 +145,34 @@ def main() -> int:
 
         if frontmatter.get("name") != skill_name:
             errors.append(f"{path}: frontmatter name must be {skill_name}")
-        if not frontmatter.get("description"):
+        description = frontmatter.get("description")
+        if not description:
             errors.append(f"{path}: frontmatter description is required")
-        if NPX_PREFIX not in re.sub(r"\\\n\s*", "", text):
+        elif not description.isascii():
+            errors.append(f"{path}: frontmatter description must be English")
+        normalized_text = re.sub(r"[ \t]*\\\n[ \t]*", " ", text)
+        if NPX_PREFIX not in normalized_text:
             errors.append(f"{path}: missing pinned npx invocation")
+        command_lines = re.findall(
+            rf"{re.escape(NPX_PREFIX)}[^\n]*",
+            normalized_text,
+        )
+        for command_line in command_lines:
+            registry_arg = f"--registry {EXPECTED_REGISTRY}"
+            if registry_arg not in command_line:
+                errors.append(
+                    f"{path}: every pinned npx command must include "
+                    f"{registry_arg!r}: {command_line}"
+                )
         for command in requirements["commands"]:
             if command not in text:
                 errors.append(f"{path}: missing command contract {command!r}")
         for gate in requirements["gates"]:
             if gate not in text:
                 errors.append(f"{path}: missing user gate {gate!r}")
-        if "stdout as JSON" not in text:
+        if "将 CLI 标准输出解析为 JSON" not in text:
             errors.append(f"{path}: must require JSON stdout parsing")
-        if "Never read" not in text or "credentials.json" not in text:
+        if "禁止读取" not in text or "credentials.json" not in text:
             errors.append(f"{path}: must forbid credential reads")
         for label, pattern in BANNED_PATTERNS.items():
             if pattern.search(text):

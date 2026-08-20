@@ -58,7 +58,7 @@ npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub install pdf-parser
 npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub install @my-team/pdf-parser
 ```
 
-In Codex / Claude Code you can also use the official `find-skills` skill, which calls the same JoyHub CLI.
+In Codex / Claude Code you can also use the official `find-skills-joyhub` skill, which calls the same JoyHub CLI.
 
 ### Using Web UI to Search
 

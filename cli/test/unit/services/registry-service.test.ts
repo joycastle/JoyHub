@@ -8,7 +8,7 @@ describe('registry-service', () => {
     expect(resolveRegistry({}, { JOYHUB_REGISTRY: 'https://env.example.com' }, { registry: 'https://config.example.com' }))
       .toBe('https://env.example.com')
     expect(resolveRegistry({}, {}, { registry: 'https://config.example.com' })).toBe('https://config.example.com')
-    expect(resolveRegistry({}, {}, {})).toBe('https://skill.xfyun.cn')
+    expect(resolveRegistry({}, {}, {})).toBe('https://joyhub.toolnets.net')
   })
 
   test('resolves token by cli arg, env, credentials order', () => {

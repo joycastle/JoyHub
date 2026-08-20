@@ -58,7 +58,7 @@ npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub install pdf-parser
 npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub install @my-team/pdf-parser
 ```
 
-在 Codex / Claude Code 中也可以使用官方 Skill `find-skills`，由 Agent 调用同一 JoyHub CLI。
+在 Codex / Claude Code 中也可以使用官方 Skill `find-skills-joyhub`，由 Agent 调用同一 JoyHub CLI。
 
 ### 使用 Web UI 搜索
 

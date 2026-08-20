@@ -53,7 +53,7 @@ spring:
 
 ## Q: How do I use the CLI tool to manage skill packages?
 
-A: Use the official JoyHub CLI (`@toolnets/joyhub-cli@0.2.0`, command `joyhub`). A global install is not required. Search requires login. Codex / Claude Code can also use the official `find-skills` / `share-skill` skills.
+A: Use the official JoyHub CLI (`@toolnets/joyhub-cli@0.2.0`, command `joyhub`). A global install is not required. Search requires login. Codex / Claude Code can also use the official `find-skills-joyhub` / `share-skill-joyhub` skills.
 
 ```bash
 export JOYHUB_REGISTRY=http://your-skillhub-host:8080

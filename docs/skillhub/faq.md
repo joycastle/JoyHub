@@ -53,7 +53,7 @@ spring:
 
 ## Q: 如何使用 CLI 工具管理技能包？
 
-A: 使用官方 JoyHub CLI（`@toolnets/joyhub-cli@0.2.0`，命令 `joyhub`），无需全局安装。搜索需要登录。Codex / Claude Code 也可使用官方 Skill `find-skills` / `share-skill`。
+A: 使用官方 JoyHub CLI（`@toolnets/joyhub-cli@0.2.0`，命令 `joyhub`），无需全局安装。搜索需要登录。Codex / Claude Code 也可使用官方 Skill `find-skills-joyhub` / `share-skill-joyhub`。
 
 ```bash
 export JOYHUB_REGISTRY=http://your-skillhub-host:8080

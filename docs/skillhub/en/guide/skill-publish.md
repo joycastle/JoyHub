@@ -67,7 +67,7 @@ npx --yes --package=@toolnets/joyhub-cli@0.2.0 \
   joyhub publish ./my-skill --namespace my-team
 ```
 
-In Codex / Claude Code you can also use the official `share-skill` skill: dry-run first, then publish only after the user confirms.
+In Codex / Claude Code you can also use the official `share-skill-joyhub` skill: dry-run first, then publish only after the user confirms.
 
 3. **Publish via Web UI**
 

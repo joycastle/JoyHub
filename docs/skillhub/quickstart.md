@@ -128,7 +128,7 @@ curl -H "X-Mock-User-Id: local-admin" http://localhost:8080/api/v1/auth/me
 
 ## 安装 CLI 工具
 
-推荐使用 JoyHub CLI（`@toolnets/joyhub-cli@0.2.0`，命令 `joyhub`）。无需全局安装。官方 Agent Skill `find-skills` / `share-skill` 调用同一 CLI。搜索需要登录。
+推荐使用 JoyHub CLI（`@toolnets/joyhub-cli@0.2.0`，命令 `joyhub`）。无需全局安装。官方 Agent Skill `find-skills-joyhub` / `share-skill-joyhub` 调用同一 CLI。搜索需要登录。
 
 ```bash
 # 配置 JoyHub 注册中心地址
@@ -171,7 +171,7 @@ export JOYHUB_REGISTRY=http://localhost:8080
 
 npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub auth ensure
 
-# dry-run 校验后再正式发布（官方 share-skill 也要求先确认）
+# dry-run 校验后再正式发布（官方 share-skill-joyhub 也要求先确认）
 npx --yes --package=@toolnets/joyhub-cli@0.2.0 \
   joyhub publish ./my-skill --namespace my-team --dry-run
 

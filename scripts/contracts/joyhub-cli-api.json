@@ -5,6 +5,7 @@
     "version": "0.2.0",
     "bin": "joyhub"
   },
+  "defaultRegistry": "https://joyhub.toolnets.net",
   "commands": [
     "auth ensure --json",
     "search --query <query> --limit <n> --json",
@@ -77,6 +78,7 @@
     "cli/src/index.ts",
     "cli/src/platform/archive.ts",
     "cli/src/services/",
+    "cli/src/shared/constants.ts",
     "server/skillhub-app/src/main/java/com/iflytek/skillhub/controller/DeviceAuthController.java",
     "server/skillhub-app/src/main/java/com/iflytek/skillhub/controller/DeviceAuthWebController.java",
     "server/skillhub-app/src/main/java/com/iflytek/skillhub/controller/cli/",
