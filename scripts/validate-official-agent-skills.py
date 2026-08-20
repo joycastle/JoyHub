@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SKILLS_DIR = ROOT / "official-agent-skills"
 CONTRACT_PATH = ROOT / "scripts/contracts/joyhub-cli-api.json"
 PACKAGE_JSON = ROOT / "cli/package.json"
-EXPECTED_PACKAGE = "@joycastle/joyhub-cli"
+EXPECTED_PACKAGE = "@toolnets/joyhub-cli"
 EXPECTED_VERSION = "0.2.0"
 EXPECTED_BIN = "joyhub"
 NPX_PREFIX = (
@@ -24,8 +24,8 @@ EXPECTED_COMMANDS = [
     "search --query <query> --limit <n> --json",
     "namespaces --publishable --json",
     "install <coordinate> --agent <agent> --scope <scope> --json",
-    "publish <directory> --namespace <slug> --dry-run --json",
-    "publish <directory> --namespace <slug> --json",
+    "publish <directory> --namespace <slug> --visibility <visibility> --dry-run --json",
+    "publish <directory> --namespace <slug> --visibility <visibility> --json",
 ]
 
 REQUIRED_SKILLS = {
@@ -132,6 +132,7 @@ def main() -> int:
 
     for skill_name, requirements in REQUIRED_SKILLS.items():
         path = SKILLS_DIR / skill_name / "SKILL.md"
+        metadata_path = SKILLS_DIR / skill_name / "agents" / "openai.yaml"
         try:
             text = path.read_text(encoding="utf-8")
             frontmatter = parse_frontmatter(text, path)
@@ -158,6 +159,27 @@ def main() -> int:
         for label, pattern in BANNED_PATTERNS.items():
             if pattern.search(text):
                 errors.append(f"{path}: contains banned pattern ({label})")
+
+        try:
+            metadata = metadata_path.read_text(encoding="utf-8")
+        except OSError as exc:
+            errors.append(f"cannot load {metadata_path}: {exc}")
+            continue
+        if "interface:" not in metadata:
+            errors.append(f"{metadata_path}: missing interface metadata")
+        if not re.search(r"^\s+display_name:\s+.+$", metadata, re.MULTILINE):
+            errors.append(f"{metadata_path}: display_name is required")
+        if not re.search(r"^\s+short_description:\s+.+$", metadata, re.MULTILINE):
+            errors.append(f"{metadata_path}: short_description is required")
+        prompt_match = re.search(
+            r"^\s+default_prompt:\s+[\"']?(.*?)[\"']?\s*$",
+            metadata,
+            re.MULTILINE,
+        )
+        if not prompt_match or f"${skill_name}" not in prompt_match.group(1):
+            errors.append(
+                f"{metadata_path}: default_prompt must mention ${skill_name}"
+            )
 
     for error in errors:
         fail(error)

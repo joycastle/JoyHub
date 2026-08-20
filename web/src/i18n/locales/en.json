@@ -166,7 +166,7 @@
       },
       "cli": {
         "description": "Run JoyHub CLI on demand without a global install.",
-        "command": "npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub auth ensure"
+        "command": "npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub auth ensure"
       },
       "agent": {
         "description": "Send a prompt to your Agent to set up the SkillHub Registry",
@@ -175,7 +175,7 @@
       },
       "human": {
         "description": "Use the CLI tool to install Skills",
-        "command": "npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub search --query <keyword>"
+        "command": "npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub search --query <keyword>"
       },
       "steps": {
         "configureEnv": {

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Share a JoyHub Skill"
+  short_description: "Validate and publish a local skill to JoyHub"
+  default_prompt: "Use $share-skill to validate and publish this local skill to JoyHub."

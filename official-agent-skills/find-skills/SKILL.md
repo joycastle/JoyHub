@@ -9,7 +9,7 @@ Use the pinned JoyHub CLI through `npx`; do not install it globally and do not r
 version with `latest`.
 
 ```bash
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub auth ensure --json
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub auth ensure --json
 ```
 
 ## Safety rules
@@ -31,7 +31,7 @@ npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub auth ensure --json
 3. Search with structured output:
 
    ```bash
-   npx --yes --package=@joycastle/joyhub-cli@0.2.0 \
+   npx --yes --package=@toolnets/joyhub-cli@0.2.0 \
      joyhub search --query "<query>" --limit 10 --json
    ```
 
@@ -46,15 +46,15 @@ npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub auth ensure --json
 
    ```bash
    # Codex project or user scope
-   npx --yes --package=@joycastle/joyhub-cli@0.2.0 \
+   npx --yes --package=@toolnets/joyhub-cli@0.2.0 \
      joyhub install "@namespace/skill" --agent codex --scope project --json
-   npx --yes --package=@joycastle/joyhub-cli@0.2.0 \
+   npx --yes --package=@toolnets/joyhub-cli@0.2.0 \
      joyhub install "@namespace/skill" --agent codex --scope user --json
 
    # Claude Code project or user scope
-   npx --yes --package=@joycastle/joyhub-cli@0.2.0 \
+   npx --yes --package=@toolnets/joyhub-cli@0.2.0 \
      joyhub install "@namespace/skill" --agent claude-code --scope project --json
-   npx --yes --package=@joycastle/joyhub-cli@0.2.0 \
+   npx --yes --package=@toolnets/joyhub-cli@0.2.0 \
      joyhub install "@namespace/skill" --agent claude-code --scope user --json
    ```
 

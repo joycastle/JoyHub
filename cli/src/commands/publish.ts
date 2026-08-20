@@ -63,10 +63,22 @@ export async function publishCommand(path: string, options: PublishCommandOption
 
     if (options.json) {
       if (!result.valid) {
-        process.stdout.write(JSON.stringify({ ok: false, ...result, namespace, files }) + '\n')
+        process.stdout.write(JSON.stringify({
+          ok: false,
+          ...result,
+          namespace,
+          visibility: visibility.toLowerCase(),
+          files
+        }) + '\n')
         throw new CliError('validation failed', EXIT.validation)
       }
-      return JSON.stringify({ ok: true, ...result, namespace, files })
+      return JSON.stringify({
+        ok: true,
+        ...result,
+        namespace,
+        visibility: visibility.toLowerCase(),
+        files
+      })
     }
 
     const lines: string[] = []

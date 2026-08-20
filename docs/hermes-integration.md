@@ -9,7 +9,7 @@
 | 组件 | 已验证版本 | 说明 |
 |------|------------|------|
 | SkillHub Server | `v0.2.13` | 公开或自托管 registry |
-| JoyHub CLI | `0.2.0` | npm 包 `@joycastle/joyhub-cli` |
+| JoyHub CLI | `0.2.0` | npm 包 `@toolnets/joyhub-cli` |
 | Hermes Agent | `0.18.2` | 上游 tag [`v2026.7.7.2`](https://github.com/NousResearch/hermes-agent/tree/v2026.7.7.2) |
 
 验证日期：2026-07-17。
@@ -31,7 +31,7 @@ SkillHub registry
 2. 已安装 Node.js / npm。按需运行固定版本 JoyHub CLI，无需全局安装：
 
 ```bash
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub version
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub version
 hermes version
 ```
 
@@ -52,10 +52,10 @@ export JOYHUB_REGISTRY=https://skillhub.your-company.com
 搜索需要登录。首次使用运行 `joyhub auth ensure`（浏览器 Device Flow，无需复制 Token）：
 
 ```bash
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 \
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 \
   joyhub auth ensure --registry "$JOYHUB_REGISTRY"
 
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 \
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 \
   joyhub whoami --registry "$JOYHUB_REGISTRY"
 ```
 

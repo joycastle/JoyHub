@@ -166,7 +166,7 @@
       },
       "cli": {
         "description": "按需运行 JoyHub CLI，无需全局安装",
-        "command": "npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub auth ensure"
+        "command": "npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub auth ensure"
       },
       "agent": {
         "description": "发送提示词给你的 Agent，以设置SkillHub Registry",
@@ -175,7 +175,7 @@
       },
       "human": {
         "description": "使用CLI工具安装Skills",
-        "command": "npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub search --query <keyword>"
+        "command": "npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub search --query <keyword>"
       },
       "steps": {
         "configureEnv": {

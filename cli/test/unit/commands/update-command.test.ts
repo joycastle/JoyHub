@@ -61,7 +61,7 @@ describe('updateCommand branches', () => {
     const deps = buildDeps({ latest: '99.0.0', mode: 'npx', runResult: { success: true, output: '' } })
     const out = await updateCommand({}, deps)
     expect(out).toContain(`Update available: ${CLI_VERSION} -> 99.0.0`)
-    expect(out).toContain('npx @joycastle/joyhub-cli')
+    expect(out).toContain('npx @toolnets/joyhub-cli')
   })
 
   test('available-not-updated branch — npx mode (--json)', async () => {
@@ -73,7 +73,7 @@ describe('updateCommand branches', () => {
     expect(parsed.from).toBe(CLI_VERSION)
     expect(parsed.to).toBe('99.0.0')
     expect(typeof parsed.next).toBe('string')
-    expect(parsed.next).toContain('npx @joycastle/joyhub-cli')
+    expect(parsed.next).toContain('npx @toolnets/joyhub-cli')
   })
 
   test('error branch — npm-global with run() failure throws CliError', async () => {

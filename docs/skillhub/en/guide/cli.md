@@ -7,10 +7,10 @@ JoyHub CLI is the official command-line tool for JoyHub. Use it to search, insta
 Prefer the pinned compatible release `0.2.0` via `npx`. A global install is not required:
 
 ```bash
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub version
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub version
 ```
 
-Node.js and npm are required. Official skills must pin `@joycastle/joyhub-cli@0.2.0` and must not switch to unconstrained `latest`. Examples below use the `joyhub` binary; the equivalent invocation prefixes the command with `npx --yes --package=@joycastle/joyhub-cli@0.2.0`.
+Node.js and npm are required. Official skills must pin `@toolnets/joyhub-cli@0.2.0` and must not switch to unconstrained `latest`. Examples below use the `joyhub` binary; the equivalent invocation prefixes the command with `npx --yes --package=@toolnets/joyhub-cli@0.2.0`.
 
 ## Quick Start
 
@@ -325,8 +325,8 @@ joyhub update
 ```
 
 Update mechanism:
-- Official skills and the recommended path pin `@joycastle/joyhub-cli@0.2.0` and must not switch to `latest`
-- If you previously installed globally: `npm install -g @joycastle/joyhub-cli@0.2.0` or `bun add -g @joycastle/joyhub-cli@0.2.0`
+- Official skills and the recommended path pin `@toolnets/joyhub-cli@0.2.0` and must not switch to `latest`
+- If you previously installed globally: `npm install -g @toolnets/joyhub-cli@0.2.0` or `bun add -g @toolnets/joyhub-cli@0.2.0`
 - Via npx: re-run the pinned `0.2.0` command so npm cache/download picks up that version
 
 ## Environment Variables

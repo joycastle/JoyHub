@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "package": {
-    "name": "@joycastle/joyhub-cli",
+    "name": "@toolnets/joyhub-cli",
     "version": "0.2.0",
     "bin": "joyhub"
   },
@@ -10,8 +10,8 @@
     "search --query <query> --limit <n> --json",
     "namespaces --publishable --json",
     "install <coordinate> --agent <agent> --scope <scope> --json",
-    "publish <directory> --namespace <slug> --dry-run --json",
-    "publish <directory> --namespace <slug> --json"
+    "publish <directory> --namespace <slug> --visibility <visibility> --dry-run --json",
+    "publish <directory> --namespace <slug> --visibility <visibility> --json"
   ],
   "api": [
     {
@@ -55,6 +55,11 @@
       "path": "/api/cli/v1/skills/{namespace}/{slug}/versions/{version}/download"
     },
     {
+      "id": "delete",
+      "method": "DELETE",
+      "path": "/api/cli/v1/skills/{namespace}/{slug}"
+    },
+    {
       "id": "publish-validate",
       "method": "POST",
       "path": "/api/cli/v1/skills/{namespace}/publish/validate"
@@ -66,14 +71,19 @@
     }
   ],
   "driftPaths": [
+    "cli/src/agents/",
     "cli/src/clients/",
     "cli/src/commands/",
     "cli/src/index.ts",
+    "cli/src/platform/archive.ts",
+    "cli/src/services/",
     "server/skillhub-app/src/main/java/com/iflytek/skillhub/controller/DeviceAuthController.java",
     "server/skillhub-app/src/main/java/com/iflytek/skillhub/controller/DeviceAuthWebController.java",
     "server/skillhub-app/src/main/java/com/iflytek/skillhub/controller/cli/",
     "server/skillhub-app/src/main/java/com/iflytek/skillhub/dto/cli/",
+    "server/skillhub-app/src/main/java/com/iflytek/skillhub/service/cli/",
     "server/skillhub-auth/src/main/java/com/iflytek/skillhub/auth/device/",
-    "server/skillhub-auth/src/main/java/com/iflytek/skillhub/auth/policy/RouteSecurityPolicyRegistry.java"
+    "server/skillhub-auth/src/main/java/com/iflytek/skillhub/auth/policy/RouteSecurityPolicyRegistry.java",
+    "server/skillhub-auth/src/main/java/com/iflytek/skillhub/auth/token/ApiTokenScopeService.java"
   ]
 }

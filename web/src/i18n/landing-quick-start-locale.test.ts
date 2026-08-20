@@ -15,10 +15,10 @@ describe('landing quick start locales', () => {
 
   it('exposes the on-demand JoyHub CLI command in both locales', () => {
     expect(zh.landing.quickStart.tabs.cli).toBe('CLI')
-    expect(zh.landing.quickStart.cli.command).toBe('npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub auth ensure')
+    expect(zh.landing.quickStart.cli.command).toBe('npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub auth ensure')
     expect(zh.landing.quickStart.cli.description).toBe('按需运行 JoyHub CLI，无需全局安装')
     expect(en.landing.quickStart.tabs.cli).toBe('CLI')
-    expect(en.landing.quickStart.cli.command).toBe('npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub auth ensure')
+    expect(en.landing.quickStart.cli.command).toBe('npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub auth ensure')
     expect(en.landing.quickStart.cli.description).toBe('Run JoyHub CLI on demand without a global install.')
   })
 })

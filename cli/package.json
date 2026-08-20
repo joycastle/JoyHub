@@ -1,5 +1,5 @@
 {
-  "name": "@joycastle/joyhub-cli",
+  "name": "@toolnets/joyhub-cli",
   "version": "0.2.0",
   "description": "Manage and install JoyHub skills for AI coding agents",
   "keywords": [
@@ -15,7 +15,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/joycastle/JoyHub.git",
+    "url": "git+https://github.com/joycastle/JoyHub.git",
     "directory": "cli"
   },
   "license": "Apache-2.0",
@@ -23,7 +23,7 @@
   "type": "module",
   "packageManager": "bun@1.3.13",
   "bin": {
-    "joyhub": "./dist/index.js"
+    "joyhub": "dist/index.js"
   },
   "files": [
     "dist",

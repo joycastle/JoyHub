@@ -53,15 +53,15 @@ spring:
 
 ## Q: How do I use the CLI tool to manage skill packages?
 
-A: Use the official JoyHub CLI (`@joycastle/joyhub-cli@0.2.0`, command `joyhub`). A global install is not required. Search requires login. Codex / Claude Code can also use the official `find-skills` / `share-skill` skills.
+A: Use the official JoyHub CLI (`@toolnets/joyhub-cli@0.2.0`, command `joyhub`). A global install is not required. Search requires login. Codex / Claude Code can also use the official `find-skills` / `share-skill` skills.
 
 ```bash
 export JOYHUB_REGISTRY=http://your-skillhub-host:8080
 
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub auth ensure
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub search email
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub install my-skill
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 \
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub auth ensure
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub search email
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub install my-skill
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 \
   joyhub publish ./my-skill --namespace my-team
 ```
 
@@ -247,7 +247,7 @@ A:
 docker image inspect ghcr.io/iflytek/skillhub-server:latest --format '{{index .Config.Labels "org.opencontainers.image.version"}}'
 ```
 
-- Check the CLI version: `npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub version`.
+- Check the CLI version: `npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub version`.
 - For customization (e.g. changing the logo), it is recommended to fork the latest code, modify it, and build your own Docker image.
 
 ## Q: The page loads, but the login / register APIs return 502?
@@ -310,12 +310,12 @@ target_dir=/opt/skillhub-skills
 
 # install one by one
 for skill in skill-a skill-b skill-c; do
-  npx --yes --package=@joycastle/joyhub-cli@0.2.0 \
+  npx --yes --package=@toolnets/joyhub-cli@0.2.0 \
     joyhub install "$skill" --dir "$target_dir"
 done
 
 # or read from a manifest file (one skill name per line)
-xargs -a skills.txt -I {} npx --yes --package=@joycastle/joyhub-cli@0.2.0 \
+xargs -a skills.txt -I {} npx --yes --package=@toolnets/joyhub-cli@0.2.0 \
   joyhub install "{}" --dir "$target_dir"
 ```
 

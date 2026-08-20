@@ -53,15 +53,15 @@ spring:
 
 ## Q: 如何使用 CLI 工具管理技能包？
 
-A: 使用官方 JoyHub CLI（`@joycastle/joyhub-cli@0.2.0`，命令 `joyhub`），无需全局安装。搜索需要登录。Codex / Claude Code 也可使用官方 Skill `find-skills` / `share-skill`。
+A: 使用官方 JoyHub CLI（`@toolnets/joyhub-cli@0.2.0`，命令 `joyhub`），无需全局安装。搜索需要登录。Codex / Claude Code 也可使用官方 Skill `find-skills` / `share-skill`。
 
 ```bash
 export JOYHUB_REGISTRY=http://your-skillhub-host:8080
 
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub auth ensure
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub search email
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub install my-skill
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 \
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub auth ensure
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub search email
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub install my-skill
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 \
   joyhub publish ./my-skill --namespace my-team
 ```
 
@@ -247,7 +247,7 @@ A:
 docker image inspect ghcr.io/iflytek/skillhub-server:latest --format '{{index .Config.Labels "org.opencontainers.image.version"}}'
 ```
 
-- 查看 CLI 版本：`npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub version`。
+- 查看 CLI 版本：`npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub version`。
 - 如需定制（如修改 logo 等），建议基于最新代码进行二次开发并自行构建 docker 镜像。
 
 ## Q: 页面能打开，但登录 / 注册接口返回 502？
@@ -310,12 +310,12 @@ target_dir=/opt/skillhub-skills
 
 # 逐个安装
 for skill in skill-a skill-b skill-c; do
-  npx --yes --package=@joycastle/joyhub-cli@0.2.0 \
+  npx --yes --package=@toolnets/joyhub-cli@0.2.0 \
     joyhub install "$skill" --dir "$target_dir"
 done
 
 # 或从清单文件读取（每行一个技能名）
-xargs -a skills.txt -I {} npx --yes --package=@joycastle/joyhub-cli@0.2.0 \
+xargs -a skills.txt -I {} npx --yes --package=@toolnets/joyhub-cli@0.2.0 \
   joyhub install "{}" --dir "$target_dir"
 ```
 

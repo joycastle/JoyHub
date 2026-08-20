@@ -9,12 +9,12 @@
 - 提供两个官方 Skill：`find-skills` 和 `share-skill`。
 - MVP 仅支持 Codex、Claude Code 等本地 Agent 工具；Hermes 集成放入后续迭代。
 - 两个 Skill 不直接访问 JoyHub API，统一通过 JoyHub 自有 CLI 执行认证、搜索、安装和发布。
-- CLI 以公开 Scoped Package `@joycastle/joyhub-cli` 发布到 npm，bin 为 `joyhub`；Skill 使用
+- CLI 以公开 Scoped Package `@toolnets/joyhub-cli` 发布到 npm，bin 为 `joyhub`；Skill 使用
   固定兼容版本 `0.2.0` 的 `npx` 按需运行，不要求用户全局安装。
 - 用户首次使用任一 Skill 时完成一次浏览器授权；后续两个 Skill 复用同一登录态。
 - 搜索前必须登录，不区分公开和内部 Skill；服务端统一返回当前用户有权查看的全部 Skill。
 - 本期复用现有 Device Flow，不新增独立 Agent Token 或 Agent Tool。
-- 不使用原项目的 `@astron-team/skillhub` 包名；正式包名为 `@joycastle/joyhub-cli`。
+- 不使用原项目的 `@astron-team/skillhub` 包名；正式包名为 `@toolnets/joyhub-cli`。
 
 ## 2. 背景与目标
 
@@ -54,7 +54,7 @@ MVP 目标是让用户在 Agent 中直接使用自然语言：
 ### 3.3 前置条件与待定项
 
 - 本地环境需要 Node.js 和 npm，并能够访问配置的 npm Registry。
-- npm 包固定为 `@joycastle/joyhub-cli`，二进制命令固定为 `joyhub`。
+- npm 包固定为 `@toolnets/joyhub-cli`，二进制命令固定为 `joyhub`。
 - 首次发布前必须确认团队拥有 `@joycastle` npm Scope；不得使用原项目的 `@astron-team` Scope。
 - 官方 Skill 固定使用经过联调的 CLI `0.2.0`，不直接使用无约束的 `latest`。
 
@@ -100,7 +100,7 @@ sequenceDiagram
 
 ```bash
 npx --yes \
-  --package=@joycastle/joyhub-cli@0.2.0 \
+  --package=@toolnets/joyhub-cli@0.2.0 \
   joyhub auth ensure --json
 ```
 
@@ -132,9 +132,9 @@ JoyHub 用户身份、平台角色和 Namespace RBAC 决定。
 命令契约：
 
 ```bash
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 \
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 \
   joyhub search --query "<query>" --limit <n> --json
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 \
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 \
   joyhub install "@<namespace>/<skill>" --dir "<target>" --json
 ```
 
@@ -158,10 +158,12 @@ npx --yes --package=@joycastle/joyhub-cli@0.2.0 \
 命令契约：
 
 ```bash
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 \
-  joyhub publish "<directory>" --namespace "<slug>" --dry-run --json
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 \
-  joyhub publish "<directory>" --namespace "<slug>" --json
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 \
+  joyhub publish "<directory>" --namespace "<slug>" \
+    --visibility "<visibility>" --dry-run --json
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 \
+  joyhub publish "<directory>" --namespace "<slug>" \
+    --visibility "<visibility>" --json
 ```
 
 要求：
@@ -169,6 +171,7 @@ npx --yes --package=@joycastle/joyhub-cli@0.2.0 \
 - 服务端按 Namespace `OWNER`、`ADMIN`、`MEMBER` 角色和 Namespace 状态校验发布权限。
 - `FROZEN` 或 `ARCHIVED` Namespace 不允许发布。
 - Skill 使用 `@{namespace_slug}/{skill_slug}` 坐标，不使用客户端自定义映射。
+- dry-run 和正式发布必须显式传入同一可见性；用户未指定时默认 `public`。
 - 未经用户确认，不执行正式发布。
 
 ## 6. Token 存储与安全
@@ -192,7 +195,7 @@ MVP 使用 JoyHub 自有凭证目录：
 - CLI 作为两个官方 Skill 的唯一执行入口，必须覆盖认证、搜索、安装和发布完整流程。
 - Device Flow 服务端能力已存在，本期重点是将 CLI 的 `login/auth ensure` 接入该流程。
 - CLI 所使用的 API 应形成稳定、版本化的契约；接口变化必须同步更新 CLI。
-- CLI 以公开 Scoped Package 发布，包名为 `@joycastle/joyhub-cli`，bin 名为 `joyhub`。
+- CLI 以公开 Scoped Package 发布，包名为 `@toolnets/joyhub-cli`，bin 名为 `joyhub`。
 - 首个版本通过 npm 账号和 2FA 完成公开发布；后续使用 npm Trusted Publishing 与 GitHub
   Actions OIDC 自动发布，不长期保存 npm 发布 Token。
 - npm 发布前必须执行 lint、typecheck、test、build 和 `npm pack --dry-run`。

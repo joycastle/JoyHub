@@ -1,7 +1,7 @@
 # Official Agent Skills and JoyHub CLI Release
 
 This guide covers the two checked-in official agent skills and the release controls for
-`@joycastle/joyhub-cli`. The supported CLI compatibility pin is `0.2.0`; the executable is
+`@toolnets/joyhub-cli`. The supported CLI compatibility pin is `0.2.0`; the executable is
 `joyhub`.
 
 ## Official skills
@@ -14,7 +14,7 @@ This guide covers the two checked-in official agent skills and the release contr
 Both skills invoke:
 
 ```bash
-npx --yes --package=@joycastle/joyhub-cli@0.2.0 joyhub auth ensure --json
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub auth ensure --json
 ```
 
 They must not read JoyHub credentials, request tokens, call the API directly, or silently switch to
@@ -56,9 +56,10 @@ make validate-official-agent-skills
 the npm package pin, and CLI-facing endpoints. It avoids inferring an API contract from fragile
 source-text matching.
 
-The PR workflow watches CLI clients and commands, CLI-facing controllers, Device Flow, and route
-security policy. If one of those boundary files changes, the same PR must update the manifest to
-record that the contract was reviewed:
+The PR workflow runs for every pull request so required CLI checks are always reported. The
+contract checker identifies changes to CLI clients and commands, CLI-facing controllers, Device
+Flow, and route security policy. If one of those boundary files changes, the same PR must update
+the manifest to record that the contract was reviewed:
 
 ```bash
 make check-cli-api-contract
@@ -83,7 +84,7 @@ workflow repeats it before publication.
 ### First public publication
 
 npm Trusted Publishing cannot create a package for the first time. A package owner must first
-publish `@joycastle/joyhub-cli` publicly from a trusted local machine using an npm account with 2FA:
+publish `@toolnets/joyhub-cli` publicly from a trusted local machine using an npm account with 2FA:
 
 ```bash
 cd cli

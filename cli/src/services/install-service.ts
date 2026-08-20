@@ -52,7 +52,10 @@ async function preflightInstallTargets(
   return preparedTargets
 }
 
-export async function installSkill(options: InstallOptions): Promise<{ installed: Array<{ agent: string; dir: string }> }> {
+export async function installSkill(options: InstallOptions): Promise<{
+  version: string
+  installed: Array<{ agent: string; dir: string }>
+}> {
   const preparedTargets = await preflightInstallTargets(options.targets, options.slug, options.force)
   const client = new JoyHubClient(options.registry, options.token)
   const resolved = await client.resolve(options.namespace, options.slug, options.version)
@@ -122,5 +125,5 @@ export async function installSkill(options: InstallOptions): Promise<{ installed
     installed.push({ agent: target.agent, dir: skillDir })
   }
 
-  return { installed }
+  return { version: resolved.version, installed }
 }
