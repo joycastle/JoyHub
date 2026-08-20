@@ -1,4 +1,4 @@
-# JoyHub Agent `find-skills` / `share-skill` MVP Spec
+# JoyHub Agent `find-skills-joyhub` / `share-skill-joyhub` MVP Spec
 
 > 状态：Draft（待评审）  
 > 版本：v1.0  
@@ -6,7 +6,7 @@
 
 ## 1. 决策摘要
 
-- 提供两个官方 Skill：`find-skills` 和 `share-skill`。
+- 提供两个官方 Skill：`find-skills-joyhub` 和 `share-skill-joyhub`。
 - MVP 仅支持 Codex、Claude Code 等本地 Agent 工具；Hermes 集成放入后续迭代。
 - 两个 Skill 不直接访问 JoyHub API，统一通过 JoyHub 自有 CLI 执行认证、搜索、安装和发布。
 - CLI 以公开 Scoped Package `@toolnets/joyhub-cli` 发布到 npm，bin 为 `joyhub`；Skill 使用
@@ -34,8 +34,8 @@ MVP 目标是让用户在 Agent 中直接使用自然语言：
 ### 3.1 本期包含
 
 - Codex、Claude Code 等能够执行本地命令的 Agent。
-- `find-skills`：自然语言搜索、结果推荐、用户选择后安装。
-- `share-skill`：本地校验、dry-run、选择 Namespace、用户确认后发布。
+- `find-skills-joyhub`：自然语言搜索、结果推荐、用户选择后安装。
+- `share-skill-joyhub`：本地校验、dry-run、选择 Namespace、用户确认后发布。
 - CLI 首次浏览器授权、登录态检查、凭证复用和失效重登。
 - CLI 与当前 JoyHub 搜索、安装、发布及 Namespace RBAC 能力同步。
 - JoyHub 自有 npm 包的命名、构建、公开发布及版本兼容策略。
@@ -71,7 +71,7 @@ sequenceDiagram
     participant B as 浏览器
 
     U->>A: 用自然语言查找或分享 Skill
-    A->>S: 调用 find-skills / share-skill
+    A->>S: 调用 find-skills-joyhub / share-skill-joyhub
     S->>N: npx 获取兼容版本 CLI
     N-->>S: 从本地缓存复用或按需下载
     S->>C: joyhub auth ensure --json
@@ -101,7 +101,7 @@ sequenceDiagram
 ```bash
 npx --yes \
   --package=@toolnets/joyhub-cli@0.2.0 \
-  joyhub auth ensure --json
+  joyhub auth ensure --registry https://joyhub.toolnets.net --json
 ```
 
 CLI 行为：
@@ -118,7 +118,7 @@ CLI 行为：
 首次授权一次性申请 `skill:read` 和 `skill:publish`。实际可见范围和可发布 Namespace 仍由
 JoyHub 用户身份、平台角色和 Namespace RBAC 决定。
 
-### 5.2 `find-skills`
+### 5.2 `find-skills-joyhub`
 
 流程：
 
@@ -133,9 +133,11 @@ JoyHub 用户身份、平台角色和 Namespace RBAC 决定。
 
 ```bash
 npx --yes --package=@toolnets/joyhub-cli@0.2.0 \
-  joyhub search --query "<query>" --limit <n> --json
+  joyhub search --query "<query>" --limit <n> \
+    --registry https://joyhub.toolnets.net --json
 npx --yes --package=@toolnets/joyhub-cli@0.2.0 \
-  joyhub install "@<namespace>/<skill>" --dir "<target>" --json
+  joyhub install "@<namespace>/<skill>" --dir "<target>" \
+    --registry https://joyhub.toolnets.net --json
 ```
 
 要求：
@@ -144,7 +146,7 @@ npx --yes --package=@toolnets/joyhub-cli@0.2.0 \
 - 搜索请求未认证时返回 `401`，CLI 自动进入一次绑定流程。
 - 安装前需要用户选择具体 Skill；不得仅根据模糊搜索结果自动安装。
 
-### 5.3 `share-skill`
+### 5.3 `share-skill-joyhub`
 
 流程：
 
@@ -160,10 +162,12 @@ npx --yes --package=@toolnets/joyhub-cli@0.2.0 \
 ```bash
 npx --yes --package=@toolnets/joyhub-cli@0.2.0 \
   joyhub publish "<directory>" --namespace "<slug>" \
-    --visibility "<visibility>" --dry-run --json
+    --visibility "<visibility>" --dry-run \
+    --registry https://joyhub.toolnets.net --json
 npx --yes --package=@toolnets/joyhub-cli@0.2.0 \
   joyhub publish "<directory>" --namespace "<slug>" \
-    --visibility "<visibility>" --json
+    --visibility "<visibility>" \
+    --registry https://joyhub.toolnets.net --json
 ```
 
 要求：
@@ -228,10 +232,10 @@ MVP 使用 JoyHub 自有凭证目录：
 - [ ] 首次调用通过 `npx` 获取自有 npm 包，并自动打开 JoyHub 授权页。
 - [ ] 公开 npm 包无需 npm 登录即可下载和执行。
 - [ ] 用户完成一次授权后，原搜索任务自动继续，无需复制 Token。
-- [ ] 随后调用 `share-skill` 不再打开授权页。
+- [ ] 随后调用 `share-skill-joyhub` 不再打开授权页。
 - [ ] 搜索结果与同一用户在 JoyHub Web 端的可见范围一致。
 - [ ] 用户选择 Skill 后，可安装到 Codex 或 Claude Code 对应目录。
-- [ ] `share-skill` 在正式发布前展示 dry-run 结果并等待用户确认。
+- [ ] `share-skill-joyhub` 在正式发布前展示 dry-run 结果并等待用户确认。
 - [ ] 无目标 Namespace 权限时发布失败，且不会产生 Skill 版本。
 - [ ] Token 缺失、过期或被撤销时能重新绑定。
 - [ ] CLI 和 Skill 的输出及日志中不包含 Token。

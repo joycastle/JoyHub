@@ -67,7 +67,7 @@ npx --yes --package=@toolnets/joyhub-cli@0.2.0 \
   joyhub publish ./my-skill --namespace my-team
 ```
 
-在 Codex / Claude Code 中也可以使用官方 Skill `share-skill`：先 dry-run，用户确认后再发布。
+在 Codex / Claude Code 中也可以使用官方 Skill `share-skill-joyhub`：先 dry-run，用户确认后再发布。
 
 3. **使用 Web UI 发布**
 

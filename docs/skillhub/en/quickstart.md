@@ -128,7 +128,7 @@ In the browser, you can add the `X-Mock-User-Id` header via a browser extension 
 
 ## Install the CLI Tool
 
-Use the JoyHub CLI (`@toolnets/joyhub-cli@0.2.0`, command `joyhub`). A global install is not required. Official agent skills `find-skills` / `share-skill` call the same CLI. Search requires login.
+Use the JoyHub CLI (`@toolnets/joyhub-cli@0.2.0`, command `joyhub`). A global install is not required. Official agent skills `find-skills-joyhub` / `share-skill-joyhub` call the same CLI. Search requires login.
 
 ```bash
 # Point the CLI at your registry
@@ -171,7 +171,7 @@ export JOYHUB_REGISTRY=http://localhost:8080
 
 npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub auth ensure
 
-# Dry-run, then publish (official share-skill also requires confirmation)
+# Dry-run, then publish (official share-skill-joyhub also requires confirmation)
 npx --yes --package=@toolnets/joyhub-cli@0.2.0 \
   joyhub publish ./my-skill --namespace my-team --dry-run
 

@@ -1,6 +1,6 @@
 # JoyHub CLI
 
-JoyHub CLI 是 JoyHub 的官方命令行工具，用于搜索、安装、管理和发布 Agent 技能包。官方 Agent Skill `find-skills` 与 `share-skill` 通过同一 CLI 完成认证、搜索、安装和发布。
+JoyHub CLI 是 JoyHub 的官方命令行工具，用于搜索、安装、管理和发布 Agent 技能包。官方 Agent Skill `find-skills-joyhub` 与 `share-skill-joyhub` 通过同一 CLI 完成认证、搜索、安装和发布。
 
 ## 运行方式
 
@@ -38,7 +38,7 @@ joyhub publish ./my-skill --namespace myspace
 1. `--registry <url>` 命令行参数
 2. `JOYHUB_REGISTRY` 环境变量
 3. 用户配置文件 `~/.joyhub/config.json` 中的 `registry` 字段
-4. 默认值 `https://skill.xfyun.cn`
+4. 默认值 `https://joyhub.toolnets.net`
 
 ```bash
 # 临时使用其他 registry
@@ -111,7 +111,7 @@ joyhub logout --registry https://skillhub.example.com
 
 ## 搜索
 
-搜索需要认证。未登录时服务端返回 `401`，请先运行 `joyhub auth ensure`。官方 Skill `find-skills` 在搜索前会调用 `joyhub auth ensure --json`。搜索结果只包含当前用户有权查看的技能，不会回退为匿名搜索。
+搜索需要认证。未登录时服务端返回 `401`，请先运行 `joyhub auth ensure`。官方 Skill `find-skills-joyhub` 在搜索前会调用 `joyhub auth ensure --json`。搜索结果只包含当前用户有权查看的技能，不会回退为匿名搜索。
 
 ```bash
 # 关键词搜索
@@ -216,7 +216,7 @@ CLI 按以下逻辑确定安装位置：
 
 ```json
 {
-  "registry": "https://skill.xfyun.cn",
+  "registry": "https://joyhub.toolnets.net",
   "namespace": "global",
   "slug": "pdf-parser",
   "version": "1.0.0",
@@ -348,7 +348,7 @@ joyhub update
 
 ```json
 {
-  "registry": "https://skill.xfyun.cn",
+  "registry": "https://joyhub.toolnets.net",
   "defaultAgent": "codex",
   "lastUpdateCheckAt": "2026-04-28T06:00:00.000Z"
 }
@@ -359,7 +359,7 @@ joyhub update
 ```json
 {
   "tokens": {
-    "https://skill.xfyun.cn": "sk_xxx",
+    "https://joyhub.toolnets.net": "sk_xxx",
     "https://skillhub.example.com": "sk_yyy"
   }
 }
@@ -371,7 +371,7 @@ joyhub update
 {
   "items": [
     {
-      "registry": "https://skill.xfyun.cn",
+      "registry": "https://joyhub.toolnets.net",
       "namespace": "global",
       "slug": "pdf-parser",
       "version": "1.0.0",
@@ -418,7 +418,7 @@ joyhub doctor --json
   "message": "error message",
   "exitCode": 2,
   "details": {
-    "registry": "https://skill.xfyun.cn",
+    "registry": "https://joyhub.toolnets.net",
     "next": "run `joyhub auth ensure`"
   }
 }
@@ -461,7 +461,7 @@ joyhub version --json
 joyhub auth ensure [--registry <url>] [--json]
 ```
 
-校验本地登录态；无效时发起浏览器 Device Flow。官方 Skill `find-skills` / `share-skill` 每次执行前调用 `joyhub auth ensure --json`。
+校验本地登录态；无效时发起浏览器 Device Flow。官方 Skill `find-skills-joyhub` / `share-skill-joyhub` 每次执行前调用 `joyhub auth ensure --json`。
 
 ### login
 
@@ -602,7 +602,7 @@ joyhub auth ensure
 
 ```bash
 # 检查 registry 是否可访问
-curl https://skill.xfyun.cn/api/cli/v1/skills/search?q=test&limit=1
+curl https://joyhub.toolnets.net/api/cli/v1/skills/search?q=test&limit=1
 
 # 使用其他 registry
 joyhub search test --registry https://skillhub.example.com
@@ -658,7 +658,7 @@ joyhub list
 
 ## 相关链接
 
-- [SkillHub 主页](https://skill.xfyun.cn)
+- [SkillHub 主页](https://joyhub.toolnets.net)
 - [GitHub 仓库](https://github.com/iflytek/skillhub)
 - [问题反馈](https://github.com/iflytek/skillhub/issues)
 

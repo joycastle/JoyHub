@@ -41,7 +41,7 @@ The active registry is resolved in the following priority order:
 1. `--registry <url>` command-line argument
 2. `JOYHUB_REGISTRY` environment variable
 3. `registry` in `~/.joyhub/config.json`
-4. Default value `https://skill.xfyun.cn`
+4. Default value `https://joyhub.toolnets.net`
 
 ```bash
 # Temporarily use another registry
@@ -244,7 +244,7 @@ For a custom path or an unsupported Agent directory, use `--dir` to specify the 
 
 ```json
 {
-  "registry": "https://skill.xfyun.cn",
+  "registry": "https://joyhub.toolnets.net",
   "namespace": "global",
   "slug": "pdf-parser",
   "version": "1.0.0",
@@ -419,7 +419,7 @@ request ID when asking a registry operator to investigate.
 
 ```bash
 # Check if registry is accessible
-curl https://skill.xfyun.cn/api/cli/v1/skills/search?q=test&limit=1
+curl https://joyhub.toolnets.net/api/cli/v1/skills/search?q=test&limit=1
 
 # Use alternative registry
 joyhub search test --registry https://joyhub.example.com
@@ -445,7 +445,7 @@ joyhub doctor
 
 ## 📚 Documentation
 
-- [JoyHub Homepage](https://skill.xfyun.cn)
+- [JoyHub Homepage](https://joyhub.toolnets.net)
 - [GitHub Repository](https://github.com/joycastle/JoyHub)
 - [CLI Documentation](https://github.com/joycastle/JoyHub/blob/main/docs/joyhub/en/guide/cli.md)
 - [Issue Tracker](https://github.com/joycastle/JoyHub/issues)

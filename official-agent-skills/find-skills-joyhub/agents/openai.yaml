@@ -1,4 +1,4 @@
 interface:
   display_name: "Find JoyHub Skills"
   short_description: "Search and install authorized JoyHub skills"
-  default_prompt: "Use $find-skills to find and install a JoyHub skill for my task."
+  default_prompt: "Use $find-skills-joyhub to find and install a JoyHub skill for my task."

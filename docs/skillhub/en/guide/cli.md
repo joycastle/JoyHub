@@ -1,6 +1,6 @@
 # JoyHub CLI
 
-JoyHub CLI is the official command-line tool for JoyHub. Use it to search, install, manage, and publish Agent skill packages. The official agent skills `find-skills` and `share-skill` call the same CLI for authentication, search, install, and publish.
+JoyHub CLI is the official command-line tool for JoyHub. Use it to search, install, manage, and publish Agent skill packages. The official agent skills `find-skills-joyhub` and `share-skill-joyhub` call the same CLI for authentication, search, install, and publish.
 
 ## How to run
 
@@ -38,7 +38,7 @@ The active registry is resolved in the following priority order:
 1. `--registry <url>` command-line argument
 2. `JOYHUB_REGISTRY` environment variable
 3. `registry` in `~/.joyhub/config.json`
-4. Default value `https://skill.xfyun.cn`
+4. Default value `https://joyhub.toolnets.net`
 
 ```bash
 # Temporarily use another registry
@@ -111,7 +111,7 @@ Logout only removes the token for the specified registry, preserving registry co
 
 ## Search
 
-Search requires authentication. Unauthenticated requests return `401`; run `joyhub auth ensure` first. The official `find-skills` skill calls `joyhub auth ensure --json` before search. Results include only skills the current user can see; the CLI does not fall back to anonymous search.
+Search requires authentication. Unauthenticated requests return `401`; run `joyhub auth ensure` first. The official `find-skills-joyhub` skill calls `joyhub auth ensure --json` before search. Results include only skills the current user can see; the CLI does not fall back to anonymous search.
 
 ```bash
 # Keyword search
@@ -217,7 +217,7 @@ For a custom path or an unsupported Agent directory, use `--dir` to specify the 
 
 ```json
 {
-  "registry": "https://skill.xfyun.cn",
+  "registry": "https://joyhub.toolnets.net",
   "namespace": "global",
   "slug": "pdf-parser",
   "version": "1.0.0",
@@ -349,7 +349,7 @@ Update mechanism:
 
 ```json
 {
-  "registry": "https://skill.xfyun.cn",
+  "registry": "https://joyhub.toolnets.net",
   "defaultAgent": "codex",
   "lastUpdateCheckAt": "2026-04-28T06:00:00.000Z"
 }
@@ -360,7 +360,7 @@ Update mechanism:
 ```json
 {
   "tokens": {
-    "https://skill.xfyun.cn": "sk_xxx",
+    "https://joyhub.toolnets.net": "sk_xxx",
     "https://skillhub.example.com": "sk_yyy"
   }
 }
@@ -372,7 +372,7 @@ Update mechanism:
 {
   "items": [
     {
-      "registry": "https://skill.xfyun.cn",
+      "registry": "https://joyhub.toolnets.net",
       "namespace": "global",
       "slug": "pdf-parser",
       "version": "1.0.0",
@@ -419,7 +419,7 @@ Error response format:
   "message": "error message",
   "exitCode": 2,
   "details": {
-    "registry": "https://skill.xfyun.cn",
+    "registry": "https://joyhub.toolnets.net",
     "next": "run `joyhub auth ensure`"
   }
 }
@@ -462,7 +462,7 @@ Display CLI version.
 joyhub auth ensure [--registry <url>] [--json]
 ```
 
-Validate the local login. If the token is missing or invalid, start browser Device Flow. Official `find-skills` / `share-skill` skills call `joyhub auth ensure --json` before each run.
+Validate the local login. If the token is missing or invalid, start browser Device Flow. Official `find-skills-joyhub` / `share-skill-joyhub` skills call `joyhub auth ensure --json` before each run.
 
 ### login
 
@@ -605,7 +605,7 @@ joyhub auth ensure
 
 ```bash
 # Check if registry is accessible
-curl https://skill.xfyun.cn/api/cli/v1/skills/search?q=test&limit=1
+curl https://joyhub.toolnets.net/api/cli/v1/skills/search?q=test&limit=1
 
 # Use alternative registry
 joyhub search test --registry https://skillhub.example.com
@@ -661,7 +661,7 @@ joyhub list
 
 ## Related Links
 
-- [SkillHub Homepage](https://skill.xfyun.cn)
+- [SkillHub Homepage](https://joyhub.toolnets.net)
 - [GitHub Repository](https://github.com/iflytek/skillhub)
 - [Issue Tracker](https://github.com/iflytek/skillhub/issues)
 

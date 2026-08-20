@@ -6,29 +6,32 @@ This guide covers the two checked-in official agent skills and the release contr
 
 ## Official skills
 
-- `official-agent-skills/find-skills/SKILL.md` searches first and installs only after the user
+- `official-agent-skills/find-skills-joyhub/SKILL.md` searches first and installs only after the user
   chooses an exact coordinate and target.
-- `official-agent-skills/share-skill/SKILL.md` validates with `--dry-run`, shows the result, and
+- `official-agent-skills/share-skill-joyhub/SKILL.md` validates with `--dry-run`, shows the result, and
   publishes only after a separate user confirmation.
 
 Both skills invoke:
 
 ```bash
-npx --yes --package=@toolnets/joyhub-cli@0.2.0 joyhub auth ensure --json
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 \
+  joyhub auth ensure --registry https://joyhub.toolnets.net --json
 ```
 
-They must not read JoyHub credentials, request tokens, call the API directly, or silently switch to
-`latest`. CLI stdout is parsed as JSON and authentication errors stop the workflow.
+Every network command explicitly passes `--registry https://joyhub.toolnets.net`; the skills must
+not depend on the general-purpose CLI's fallback registry. They must not read JoyHub credentials,
+request tokens, call the API directly, or silently switch to `latest`. CLI stdout is parsed as JSON
+and authentication errors stop the workflow.
 
 ### Install for Codex
 
 Copy or link each complete skill directory into one of:
 
 ```text
-<project>/.codex/skills/find-skills/
-<project>/.codex/skills/share-skill/
-~/.codex/skills/find-skills/
-~/.codex/skills/share-skill/
+<project>/.codex/skills/find-skills-joyhub/
+<project>/.codex/skills/share-skill-joyhub/
+~/.codex/skills/find-skills-joyhub/
+~/.codex/skills/share-skill-joyhub/
 ```
 
 Use project paths for repository-local availability and home paths for user-wide availability.
@@ -38,10 +41,10 @@ Use project paths for repository-local availability and home paths for user-wide
 Copy or link each complete skill directory into one of:
 
 ```text
-<project>/.claude/skills/find-skills/
-<project>/.claude/skills/share-skill/
-~/.claude/skills/find-skills/
-~/.claude/skills/share-skill/
+<project>/.claude/skills/find-skills-joyhub/
+<project>/.claude/skills/share-skill-joyhub/
+~/.claude/skills/find-skills-joyhub/
+~/.claude/skills/share-skill-joyhub/
 ```
 
 Validate the checked-in skills before distribution:
