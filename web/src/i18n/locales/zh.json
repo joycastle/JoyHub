@@ -520,7 +520,7 @@
     "codeLabel": "用户码",
     "codeHint": "格式: XXXX-XXXX (支持粘贴)",
     "incompleteCode": "请输入完整的 8 位用户码",
-    "success": "设备授权成功！",
+    "success": "设备授权成功，即将返回首页。",
     "denied": "已拒绝设备授权。",
     "defaultError": "授权失败，请检查用户码是否正确",
     "submitting": "授权中...",

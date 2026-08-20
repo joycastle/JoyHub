@@ -29,7 +29,7 @@ export default defineConfig({
       process.env.VITE_SKILLHUB_GOVERNANCE_ENABLED ?? 'false',
     ),
     'import.meta.env.VITE_SKILLHUB_API_TOKENS_ENABLED': JSON.stringify(
-      process.env.VITE_SKILLHUB_API_TOKENS_ENABLED ?? 'false',
+      process.env.VITE_SKILLHUB_API_TOKENS_ENABLED ?? 'true',
     ),
   },
   plugins: [react()],
