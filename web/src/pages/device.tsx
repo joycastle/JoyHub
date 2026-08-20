@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from '@tanstack/react-router'
 import { Card } from '@/shared/ui/card'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
@@ -37,6 +38,7 @@ function initialCodeParts(): [string, string] {
 
 export function DeviceAuthPage() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const [initialPart1, initialPart2] = initialCodeParts()
   const [part1, setPart1] = useState(initialPart1)
   const [part2, setPart2] = useState(initialPart2)
@@ -96,7 +98,9 @@ export function DeviceAuthPage() {
       setMessage({ type: 'success', text: t('device.success') })
       setPart1('')
       setPart2('')
-      input1Ref.current?.focus()
+      window.setTimeout(() => {
+        void navigate({ to: '/', replace: true })
+      }, 1500)
     } catch (error) {
       setMessage({
         type: 'error',

@@ -520,7 +520,7 @@
     "codeLabel": "User Code",
     "codeHint": "Format: XXXX-XXXX (paste supported)",
     "incompleteCode": "Please enter the complete 8-digit user code",
-    "success": "Device authorized successfully!",
+    "success": "Device authorized successfully. Returning to the home page.",
     "denied": "Device authorization denied.",
     "defaultError": "Authorization failed, please check the user code",
     "submitting": "Authorizing...",
