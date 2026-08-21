@@ -104,6 +104,23 @@ class RouteSecurityPolicyRegistryTest {
     }
 
     @Test
+    void authorizationPolicies_shouldKeepRepositoryDisplayCatalogAnonymous() {
+        boolean matchedV1 = registry.authorizationPolicies().stream()
+                .anyMatch(policy -> policy.method() == HttpMethod.GET
+                        && "/api/v1/repositories".equals(policy.pattern())
+                        && policy.accessLevel() == RouteSecurityPolicyRegistry.AccessLevel.PERMIT_ALL);
+        boolean matchedWeb = registry.authorizationPolicies().stream()
+                .anyMatch(policy -> policy.method() == HttpMethod.GET
+                        && "/api/web/repositories".equals(policy.pattern())
+                        && policy.accessLevel() == RouteSecurityPolicyRegistry.AccessLevel.PERMIT_ALL);
+
+        assertTrue(matchedV1);
+        assertTrue(matchedWeb);
+        assertTrue(registry.authorizeApiToken("GET", "/api/v1/repositories", Set.of()).allowed());
+        assertTrue(registry.authorizeApiToken("GET", "/api/web/repositories", Set.of()).allowed());
+    }
+
+    @Test
     void authorizationPolicies_shouldNotDeclareNamespaceBundleDownloadRoutes() {
         String v1Route = "/api/v1/namespaces/*/skills/" + "download";
         String webRoute = "/api/web/namespaces/*/skills/" + "download";

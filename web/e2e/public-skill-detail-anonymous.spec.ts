@@ -55,4 +55,19 @@ test.describe('Public Skill Detail Anonymous Access (Real API)', () => {
     await expect(page.getByText(new RegExp(`npx clawhub install ${escapeRegExp(clawhubTarget)} --registry`))).toBeVisible()
     await expect(page.getByRole('button', { name: 'Copy' }).first()).toBeVisible()
   })
+
+  test('opens a shared public skill URL without a repository permission error', async ({ page }) => {
+    const current = latestSeed(seeded!)
+    const repositoryResponsePromise = page.waitForResponse((response) => (
+      response.request().method() === 'GET'
+        && new URL(response.url()).pathname === '/api/web/repositories'
+    ))
+
+    await page.goto(`/space/${current.skill.namespace}/${current.skill.slug}?returnTo=%2Fskills%3Fq%3D%26sort%3Dnewest%26page%3D0`)
+
+    const repositoryResponse = await repositoryResponsePromise
+    expect(repositoryResponse.ok()).toBe(true)
+    await expect(page.getByRole('heading', { name: current.skillName, exact: true })).toBeVisible()
+    await expect(page.getByText("You don't have permission for this action", { exact: true })).toHaveCount(0)
+  })
 })
