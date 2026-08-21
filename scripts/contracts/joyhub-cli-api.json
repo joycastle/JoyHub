@@ -6,6 +6,7 @@
     "bin": "joyhub"
   },
   "defaultRegistry": "https://joyhub.toolnets.net",
+  "authorizationPolicyReview": "Public repository display reads remain outside the CLI/API contract.",
   "commands": [
     "auth ensure --json",
     "search --query <query> --limit <n> --json",
