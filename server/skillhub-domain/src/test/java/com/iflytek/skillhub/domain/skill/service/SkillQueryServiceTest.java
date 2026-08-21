@@ -331,6 +331,35 @@ class SkillQueryServiceTest {
     }
 
     @Test
+    void testListFiles_ShouldAllowPublishedFilesForArchivedPublicSkill() throws Exception {
+        String namespaceSlug = "global";
+        String skillSlug = "archived-skill";
+        String version = "1.0.0";
+        String viewerId = "viewer-1";
+
+        Namespace namespace = new Namespace(namespaceSlug, "Global", "owner-1");
+        setId(namespace, 1L);
+        Skill skill = new Skill(1L, skillSlug, "owner-1", SkillVisibility.PUBLIC);
+        setId(skill, 1L);
+        skill.setStatus(SkillStatus.ARCHIVED);
+        skill.setLatestVersionId(11L);
+        SkillVersion published = new SkillVersion(1L, version, "owner-1");
+        setId(published, 11L);
+        published.setStatus(SkillVersionStatus.PUBLISHED);
+        SkillFile file = new SkillFile(11L, "SKILL.md", 100L, "text/markdown", "hash", "storage-key");
+
+        when(namespaceRepository.findBySlug(namespaceSlug)).thenReturn(Optional.of(namespace));
+        when(skillRepository.findByNamespaceIdAndSlug(1L, skillSlug)).thenReturn(List.of(skill));
+        when(skillVersionRepository.findBySkillIdAndVersion(1L, version)).thenReturn(Optional.of(published));
+        when(skillFileRepository.findByVersionId(11L)).thenReturn(List.of(file));
+        when(objectStorageService.exists("storage-key")).thenReturn(true);
+
+        List<SkillFile> result = service.listFiles(namespaceSlug, skillSlug, version, viewerId, Map.of());
+
+        assertEquals(List.of("SKILL.md"), result.stream().map(SkillFile::getFilePath).toList());
+    }
+
+    @Test
     void testListFiles_ShouldRejectDraftVersion() throws Exception {
         String namespaceSlug = "test-ns";
         String skillSlug = "test-skill";
@@ -831,6 +860,22 @@ class SkillQueryServiceTest {
     }
 
     @Test
+    void testResolveVersion_ShouldKeepArchivedPublicSkillNonInstallableForRegularViewer() throws Exception {
+        Namespace namespace = new Namespace("global", "Global", "owner-1");
+        setId(namespace, 1L);
+        Skill skill = new Skill(1L, "archived-skill", "owner-1", SkillVisibility.PUBLIC);
+        setId(skill, 12L);
+        skill.setStatus(SkillStatus.ARCHIVED);
+        skill.setLatestVersionId(103L);
+
+        when(namespaceRepository.findBySlug("global")).thenReturn(Optional.of(namespace));
+        when(skillRepository.findByNamespaceIdAndSlug(1L, "archived-skill")).thenReturn(List.of(skill));
+
+        assertThrows(DomainForbiddenException.class, () ->
+                service.resolveVersion("global", "archived-skill", null, null, null, "viewer-1", Map.of()));
+    }
+
+    @Test
     void testResolveVersion_ShouldRejectAnonymousPrivateAndNamespaceOnlyWhenRolesAreMissing() throws Exception {
         Namespace namespace = new Namespace("global", "Global", "owner-1");
         setId(namespace, 1L);
@@ -1310,6 +1355,39 @@ class SkillQueryServiceTest {
                 skillSlug,
                 userId,
                 userNsRoles,
+                PageRequest.of(0, 10)
+        );
+
+        assertEquals(List.of("1.0.0"),
+                result.getContent().stream().map(SkillVersion::getVersion).toList());
+    }
+
+    @Test
+    void testListVersions_ShouldReturnPublishedForArchivedPublicSkill() throws Exception {
+        String namespaceSlug = "global";
+        String skillSlug = "archived-skill";
+        String viewerId = "viewer-1";
+
+        Namespace namespace = new Namespace(namespaceSlug, "Global", "owner-1");
+        setId(namespace, 1L);
+        Skill skill = new Skill(1L, skillSlug, "owner-1", SkillVisibility.PUBLIC);
+        setId(skill, 1L);
+        skill.setStatus(SkillStatus.ARCHIVED);
+        skill.setLatestVersionId(11L);
+        SkillVersion published = new SkillVersion(1L, "1.0.0", "owner-1");
+        setId(published, 11L);
+        published.setStatus(SkillVersionStatus.PUBLISHED);
+
+        when(namespaceRepository.findBySlug(namespaceSlug)).thenReturn(Optional.of(namespace));
+        when(skillRepository.findByNamespaceIdAndSlug(1L, skillSlug)).thenReturn(List.of(skill));
+        when(skillVersionRepository.findBySkillIdAndStatus(1L, SkillVersionStatus.PUBLISHED))
+                .thenReturn(List.of(published));
+
+        Page<SkillVersion> result = service.listVersions(
+                namespaceSlug,
+                skillSlug,
+                viewerId,
+                Map.of(),
                 PageRequest.of(0, 10)
         );
 
