@@ -222,7 +222,7 @@ describe('resolveInstallTargets', () => {
   })
 
   test('deduplicates a symlinked detected target and the generic user target', async () => {
-    const home = await mkdtemp(join(tmpdir(), 'skillhub-resolver-home-'))
+    const home = await mkdtemp(join(tmpdir(), 'joyhub-resolver-home-'))
     const genericRoot = join(home, '.agents', 'skills')
     const codexRoot = join(home, '.codex', 'skills')
     const codex: AgentCandidate = {

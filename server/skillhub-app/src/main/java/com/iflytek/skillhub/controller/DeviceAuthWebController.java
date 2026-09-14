@@ -58,5 +58,25 @@ public class DeviceAuthWebController extends BaseApiController {
         return ok("response.success.updated", new MessageResponse("Device authorized successfully"));
     }
 
+    @PostMapping("/deny")
+    public ApiResponse<MessageResponse> denyDevice(
+        @RequestBody AuthorizeRequest request,
+        @AuthenticationPrincipal PlatformPrincipal principal,
+        HttpServletRequest httpRequest
+    ) {
+        deviceAuthService.denyDeviceCode(request.userCode());
+        auditLogService.record(
+            principal.userId(),
+            "DEVICE_DENY",
+            "DEVICE_CODE",
+            null,
+            requestIdAccessor.current(),
+            httpRequest.getRemoteAddr(),
+            httpRequest.getHeader("User-Agent"),
+            "{\"userCode\":\"" + request.userCode() + "\"}"
+        );
+        return ok("response.success.updated", new MessageResponse("Device authorization denied"));
+    }
+
     public record AuthorizeRequest(String userCode) {}
 }

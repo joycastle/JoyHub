@@ -72,6 +72,16 @@ class DeviceAuthServiceTest {
     }
 
     @Test
+    void pollTokenReturnsAccessDeniedForRejectedCode() {
+        when(valueOperations.get("device:code:" + DEVICE_CODE))
+            .thenReturn(storedDeviceCode(DeviceCodeStatus.DENIED, null));
+
+        DeviceTokenResponse response = service.pollToken(DEVICE_CODE);
+
+        assertThat(response.error()).isEqualTo("access_denied");
+    }
+
+    @Test
     void pollTokenRedeemsAuthorizedCodeFromUntypedMap() {
         when(valueOperations.get("device:code:" + DEVICE_CODE))
             .thenReturn(storedDeviceCode(DeviceCodeStatus.AUTHORIZED, "usr_1"));
@@ -102,5 +112,17 @@ class DeviceAuthServiceTest {
         service.authorizeDeviceCode(USER_CODE, "usr_1");
 
         verify(valueOperations).set(startsWith("device:code:"), any(DeviceCodeData.class), anyLong(), any());
+    }
+
+    @Test
+    void denyDeviceCodeMarksPendingCodeDeniedAndRemovesUserCode() {
+        when(valueOperations.get("device:usercode:" + USER_CODE)).thenReturn(DEVICE_CODE);
+        when(valueOperations.get("device:code:" + DEVICE_CODE))
+            .thenReturn(storedDeviceCode(DeviceCodeStatus.PENDING, null));
+
+        service.denyDeviceCode(USER_CODE);
+
+        verify(valueOperations).set(startsWith("device:code:"), any(DeviceCodeData.class), anyLong(), any());
+        verify(redisTemplate).delete("device:usercode:" + USER_CODE);
     }
 }

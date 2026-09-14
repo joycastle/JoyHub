@@ -15,9 +15,9 @@ afterEach(() => {
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** Write a minimal inventory.json under <home>/.skillhub/ */
+/** Write a minimal inventory.json under <home>/.joyhub/ */
 async function seedInventory(home: string, items: object[]) {
-  const dir = `${home}/.skillhub`
+  const dir = `${home}/.joyhub`
   await mkdir(dir, { recursive: true })
   await writeFile(`${dir}/inventory.json`, JSON.stringify({ items }, null, 2))
 }
@@ -389,7 +389,7 @@ describe('remove command — local remove (P1)', () => {
     )
     expect(result.exitCode).toBe(0)
 
-    const inv = JSON.parse(await Bun.file(`${env.home}/.skillhub/inventory.json`).text()) as {
+    const inv = JSON.parse(await Bun.file(`${env.home}/.joyhub/inventory.json`).text()) as {
       items: Array<{ slug: string; targets: Array<{ agent: string }> }>
     }
     const survived = inv.items.find(i => i.slug === 'keep-others')
@@ -456,7 +456,7 @@ describe('remove command — local remove (P1)', () => {
     expect(await pathExists(teamDir)).toBe(false)
     expect(await pathExists(otherDir)).toBe(true)
 
-    const inv = JSON.parse(await Bun.file(`${env.home}/.skillhub/inventory.json`).text()) as {
+    const inv = JSON.parse(await Bun.file(`${env.home}/.joyhub/inventory.json`).text()) as {
       items: Array<{ namespace: string; slug: string; targets: Array<{ installDir: string }> }>
     }
     expect(inv.items.map(item => item.namespace).sort()).toEqual(['global', 'other'])
@@ -519,7 +519,7 @@ describe('remove command — local remove (P1)', () => {
     expect(await pathExists(teamDir)).toBe(false)
     expect(await pathExists(otherDir)).toBe(false)
 
-    const inv = JSON.parse(await Bun.file(`${env.home}/.skillhub/inventory.json`).text()) as {
+    const inv = JSON.parse(await Bun.file(`${env.home}/.joyhub/inventory.json`).text()) as {
       items: object[]
     }
     expect(inv.items).toEqual([])

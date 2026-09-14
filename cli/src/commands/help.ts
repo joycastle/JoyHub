@@ -3,75 +3,85 @@ import { printResult } from '../shared/output'
 export const commands = {
   help: {
     summary: 'Show available commands',
-    usage: 'skillhub help [command] [--json]',
-    examples: ['skillhub help', 'skillhub help install', 'skillhub help --json']
+    usage: 'joyhub help [command] [--json]',
+    examples: ['joyhub help', 'joyhub help install', 'joyhub help --json']
   },
   version: {
     summary: 'Show installed CLI version',
-    usage: 'skillhub version [--json]',
-    examples: ['skillhub version', 'skillhub version --json']
+    usage: 'joyhub version [--json]',
+    examples: ['joyhub version', 'joyhub version --json']
+  },
+  auth: {
+    summary: 'Ensure a valid JoyHub login',
+    usage: 'joyhub auth ensure [--registry <url>] [--json]',
+    examples: ['joyhub auth ensure', 'joyhub auth ensure --json']
   },
   login: {
     summary: 'Save registry and token',
-    usage: 'skillhub login [--token <token>] [--registry <url>] [--json]',
-    examples: ['skillhub login --token sk_xxx', 'skillhub login --registry https://skillhub.example.com']
+    usage: 'joyhub login [--token <token>] [--registry <url>] [--json]',
+    examples: ['joyhub login --token jh_xxx', 'joyhub login --registry https://joyhub.example.com']
   },
   logout: {
     summary: 'Remove local token',
-    usage: 'skillhub logout [--registry <url>] [--json]',
-    examples: ['skillhub logout']
+    usage: 'joyhub logout [--registry <url>] [--json]',
+    examples: ['joyhub logout']
   },
   whoami: {
     summary: 'Verify current token',
-    usage: 'skillhub whoami [--token <token>] [--registry <url>] [--json]',
-    examples: ['skillhub whoami', 'skillhub whoami --json']
+    usage: 'joyhub whoami [--token <token>] [--registry <url>] [--json]',
+    examples: ['joyhub whoami', 'joyhub whoami --json']
   },
   search: {
     summary: 'Search published skills',
-    usage: 'skillhub search [query] [--limit <n>] [--registry <url>] [--token <token>] [--json]',
-    examples: ['skillhub search', 'skillhub search pdf', 'skillhub search pdf --token sk_xxx']
+    usage: 'joyhub search [query] [--query <query>] [--limit <n>] [--registry <url>] [--token <token>] [--json]',
+    examples: ['joyhub search --query pdf', 'joyhub search pdf --token jh_xxx']
+  },
+  namespaces: {
+    summary: 'List namespaces',
+    usage: 'joyhub namespaces --publishable [--registry <url>] [--token <token>] [--json]',
+    examples: ['joyhub namespaces --publishable --json']
   },
   install: {
     summary: 'Install a skill locally',
-    usage: 'skillhub install <coordinate> [--scope <user|project>] [--namespace <slug>] [--version <v>] [--agent <profile>] [--dir <path>] [--force] [--json]',
+    usage: 'joyhub install <coordinate> [--scope <user|project>] [--namespace <slug>] [--version <v>] [--agent <profile>] [--dir <path>] [--force] [--json]',
     examples: [
-      'skillhub install pdf-parser',
-      'skillhub install team/my-skill',
-      'skillhub install @team/my-skill',
-      'skillhub install team--my-skill',
-      'skillhub install pdf-parser --scope user',
-      'skillhub install pdf-parser --scope project --agent codex'
+      'joyhub install pdf-parser',
+      'joyhub install team/my-skill',
+      'joyhub install @team/my-skill',
+      'joyhub install team--my-skill',
+      'joyhub install pdf-parser --scope user',
+      'joyhub install pdf-parser --scope project --agent codex'
     ]
   },
   list: {
     summary: 'List local installs',
-    usage: 'skillhub list [--agent <profile>] [--dir <path>] [--registry <url>] [--json]',
-    examples: ['skillhub list', 'skillhub list --agent codex']
+    usage: 'joyhub list [--agent <profile>] [--dir <path>] [--registry <url>] [--json]',
+    examples: ['joyhub list', 'joyhub list --agent codex']
   },
   remove: {
     summary: 'Remove local or remote skill',
-    usage: 'skillhub remove <coordinate> [--agent <profile>] [--all] [--remote] [--hard] [--namespace <slug>] [--json]',
+    usage: 'joyhub remove <coordinate> [--agent <profile>] [--all] [--remote] [--hard] [--namespace <slug>] [--json]',
     examples: [
-      'skillhub remove pdf-parser',
-      'skillhub remove team/my-skill',
-      'skillhub remove my-skill --namespace team',
-      'skillhub remove pdf-parser --remote --hard'
+      'joyhub remove pdf-parser',
+      'joyhub remove team/my-skill',
+      'joyhub remove my-skill --namespace team',
+      'joyhub remove pdf-parser --remote --hard'
     ]
   },
   doctor: {
     summary: 'Scan project and merge into local inventory (preserves entries outside scan scope)',
-    usage: 'skillhub doctor [--json]',
-    examples: ['skillhub doctor', 'skillhub doctor --json']
+    usage: 'joyhub doctor [--json]',
+    examples: ['joyhub doctor', 'joyhub doctor --json']
   },
   publish: {
     summary: 'Publish a local skill package',
-    usage: 'skillhub publish <path> [--namespace <slug>] [--visibility <public|namespace-only|private>] [--registry <url>] [--json]',
-    examples: ['skillhub publish ./my-skill', 'skillhub publish ./my-skill --namespace myspace']
+    usage: 'joyhub publish <path> [--namespace <slug>] [--visibility <public|namespace-only|private>] [--registry <url>] [--json]',
+    examples: ['joyhub publish ./my-skill', 'joyhub publish ./my-skill --namespace myspace']
   },
   update: {
     summary: 'Check or update CLI itself',
-    usage: 'skillhub update [--check] [--json]',
-    examples: ['skillhub update --check', 'skillhub update']
+    usage: 'joyhub update [--check] [--json]',
+    examples: ['joyhub update --check', 'joyhub update']
   }
 } as const
 

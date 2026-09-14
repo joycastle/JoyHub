@@ -37,7 +37,7 @@ export async function removeLocalSkill(options: RemoveLocalOptions): Promise<Rem
   )
   if (items.length === 0) {
     throw new CliError(`skill not found locally: ${options.slug}`, EXIT.generic, {
-      next: 'run `skillhub list` to see installed skills'
+      next: 'run `joyhub list` to see installed skills'
     })
   }
 
@@ -58,7 +58,7 @@ export async function removeLocalSkill(options: RemoveLocalOptions): Promise<Rem
     if (!target.rootDir || !isPathUnder(target.installDir, target.rootDir)) {
       throw new CliError(`unsafe remove path: ${target.installDir} is not under ${target.rootDir ?? 'unknown root'}`, EXIT.filesystem, {
         path: target.installDir,
-        next: 'verify inventory integrity with `skillhub doctor`'
+        next: 'verify inventory integrity with `joyhub doctor`'
       })
     }
 

@@ -298,7 +298,7 @@ public class SkillQueryService {
             Map<Long, NamespaceRole> userNsRoles) {
         Namespace namespace = findNamespace(namespaceSlug);
         Skill skill = resolveVisibleSkill(namespace.getId(), skillSlug, currentUserId);
-        assertPublishedAccessible(namespace, skill, currentUserId, userNsRoles);
+        assertPublishedContentReadable(namespace, skill, currentUserId, userNsRoles);
         SkillVersion skillVersion = findVersion(skill, version);
         assertPreviewAccessible(skill, skillVersion, version, currentUserId, userNsRoles);
 
@@ -328,7 +328,7 @@ public class SkillQueryService {
 
         Namespace namespace = findNamespace(namespaceSlug);
         Skill skill = resolveVisibleSkill(namespace.getId(), skillSlug, currentUserId);
-        assertPublishedAccessible(namespace, skill, currentUserId, userNsRoles);
+        assertPublishedContentReadable(namespace, skill, currentUserId, userNsRoles);
 
         SkillVersion from = findVersion(skill, fromVersion);
         SkillVersion to = findVersion(skill, toVersion);
@@ -387,7 +387,7 @@ public class SkillQueryService {
             Map<Long, NamespaceRole> userNsRoles) {
         Namespace namespace = findNamespace(namespaceSlug);
         Skill skill = resolveVisibleSkill(namespace.getId(), skillSlug, currentUserId);
-        assertPublishedAccessible(namespace, skill, currentUserId, userNsRoles);
+        assertPublishedContentReadable(namespace, skill, currentUserId, userNsRoles);
 
         SkillVersion skillVersion = findVersion(skill, version);
         assertPreviewAccessible(skill, skillVersion, version, currentUserId, userNsRoles);
@@ -403,7 +403,7 @@ public class SkillQueryService {
             Map<Long, NamespaceRole> userNsRoles) {
         Namespace namespace = findNamespace(namespaceSlug);
         Skill skill = resolveVisibleSkill(namespace.getId(), skillSlug, currentUserId);
-        assertPublishedAccessible(namespace, skill, currentUserId, userNsRoles);
+        assertPublishedContentReadable(namespace, skill, currentUserId, userNsRoles);
         SkillVersion skillVersion = resolveVersionEntity(skill, null, tagName, null);
         return availableFiles(skillVersion.getId());
     }
@@ -424,7 +424,7 @@ public class SkillQueryService {
             Map<Long, NamespaceRole> userNsRoles) {
         Namespace namespace = findNamespace(namespaceSlug);
         Skill skill = resolveVisibleSkill(namespace.getId(), skillSlug, currentUserId);
-        assertPublishedAccessible(namespace, skill, currentUserId, userNsRoles);
+        assertPublishedContentReadable(namespace, skill, currentUserId, userNsRoles);
 
         SkillVersion skillVersion = findVersion(skill, version);
         assertPreviewAccessible(skill, skillVersion, version, currentUserId, userNsRoles);
@@ -452,7 +452,7 @@ public class SkillQueryService {
             Map<Long, NamespaceRole> userNsRoles) {
         Namespace namespace = findNamespace(namespaceSlug);
         Skill skill = resolveVisibleSkill(namespace.getId(), skillSlug, currentUserId);
-        assertPublishedAccessible(namespace, skill, currentUserId, userNsRoles);
+        assertPublishedContentReadable(namespace, skill, currentUserId, userNsRoles);
         SkillVersion skillVersion = resolveVersionEntity(skill, null, tagName, null);
         SkillFile file = findFile(skillVersion, filePath);
         return readFileContent(file);
@@ -465,7 +465,7 @@ public class SkillQueryService {
                                            Pageable pageable) {
         Namespace namespace = findNamespace(namespaceSlug);
         Skill skill = resolveVisibleSkill(namespace.getId(), skillSlug, currentUserId);
-        assertPublishedAccessible(namespace, skill, currentUserId, userNsRoles);
+        assertPublishedContentReadable(namespace, skill, currentUserId, userNsRoles);
         List<SkillVersion> visibleVersions;
         if (canManageRestrictedSkill(skill, currentUserId, userNsRoles)) {
             visibleVersions = skillVersionRepository.findBySkillId(skill.getId()).stream()
@@ -823,14 +823,24 @@ public class SkillQueryService {
             Skill skill,
             String currentUserId,
             Map<Long, NamespaceRole> userNsRoles) {
-        if (namespace.getStatus() == NamespaceStatus.ARCHIVED && !isNamespaceMember(skill.getNamespaceId(), currentUserId, userNsRoles)) {
-            throw new DomainForbiddenException("error.namespace.archived", namespace.getSlug());
-        }
+        assertPublishedContentReadable(namespace, skill, currentUserId, userNsRoles);
         if (skill.getStatus() != SkillStatus.ACTIVE && !canManageRestrictedSkill(skill, currentUserId, userNsRoles)) {
             throw new DomainForbiddenException("error.skill.access.denied", skill.getSlug());
         }
-        if (skill.isHidden() && !canManageRestrictedSkill(skill, currentUserId, userNsRoles)) {
-            throw new DomainForbiddenException("error.skill.access.denied", skill.getSlug());
+    }
+
+    /**
+     * Allows published metadata and packaged files to remain inspectable after a skill is archived.
+     * Installation still uses {@link #assertPublishedAccessible(Namespace, Skill, String, Map)} and
+     * therefore remains blocked for callers who cannot manage the archived skill.
+     */
+    private void assertPublishedContentReadable(
+            Namespace namespace,
+            Skill skill,
+            String currentUserId,
+            Map<Long, NamespaceRole> userNsRoles) {
+        if (namespace.getStatus() == NamespaceStatus.ARCHIVED && !isNamespaceMember(skill.getNamespaceId(), currentUserId, userNsRoles)) {
+            throw new DomainForbiddenException("error.namespace.archived", namespace.getSlug());
         }
         if (!visibilityChecker.canAccess(skill, currentUserId, userNsRoles)) {
             throw new DomainForbiddenException("error.skill.access.denied", skill.getSlug());

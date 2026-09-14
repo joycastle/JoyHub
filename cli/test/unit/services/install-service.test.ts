@@ -58,7 +58,7 @@ describe('installSkill', () => {
 
   test('fails when target skill directory already exists without metadata', async () => {
     globalThis.fetch = installFetch({ 'SKILL.md': '# Demo' })
-    const rootDir = await mkdtemp(join(tmpdir(), 'skillhub-install-root-'))
+    const rootDir = await mkdtemp(join(tmpdir(), 'joyhub-install-root-'))
     const skillDir = join(rootDir, 'demo')
     await mkdir(skillDir, { recursive: true })
     await writeFile(join(skillDir, 'local.txt'), 'keep')
@@ -74,9 +74,9 @@ describe('installSkill', () => {
 
   test('preflights all targets before writing when a later target is occupied', async () => {
     globalThis.fetch = installFetch({ 'SKILL.md': '# Demo' })
-    const home = await mkdtemp(join(tmpdir(), 'skillhub-install-home-'))
-    const firstRoot = await mkdtemp(join(tmpdir(), 'skillhub-install-first-root-'))
-    const secondRoot = await mkdtemp(join(tmpdir(), 'skillhub-install-second-root-'))
+    const home = await mkdtemp(join(tmpdir(), 'joyhub-install-home-'))
+    const firstRoot = await mkdtemp(join(tmpdir(), 'joyhub-install-first-root-'))
+    const secondRoot = await mkdtemp(join(tmpdir(), 'joyhub-install-second-root-'))
     const firstSkillDir = join(firstRoot, 'demo')
     const secondSkillDir = join(secondRoot, 'demo')
     await mkdir(secondSkillDir, { recursive: true })
@@ -94,13 +94,13 @@ describe('installSkill', () => {
     })).rejects.toThrow(`skill already installed at ${secondSkillDir}`)
 
     expect(await exists(firstSkillDir)).toBe(false)
-    expect(await exists(join(home, '.skillhub', 'inventory.json'))).toBe(false)
+    expect(await exists(join(home, '.joyhub', 'inventory.json'))).toBe(false)
   })
 
   test('rejects canonical target aliases before writing any installation', async () => {
     globalThis.fetch = installFetch({ 'SKILL.md': '# Demo' })
-    const home = await mkdtemp(join(tmpdir(), 'skillhub-install-home-'))
-    const targetParent = await mkdtemp(join(tmpdir(), 'skillhub-install-targets-'))
+    const home = await mkdtemp(join(tmpdir(), 'joyhub-install-home-'))
+    const targetParent = await mkdtemp(join(tmpdir(), 'joyhub-install-targets-'))
     const genericRoot = join(targetParent, 'generic')
     const codexRoot = join(targetParent, 'codex')
     const skillDir = join(genericRoot, 'demo')
@@ -121,7 +121,7 @@ describe('installSkill', () => {
       })).rejects.toThrow('multiple install targets resolve to')
 
       expect(await exists(skillDir)).toBe(false)
-      expect(await exists(join(home, '.skillhub', 'inventory.json'))).toBe(false)
+      expect(await exists(join(home, '.joyhub', 'inventory.json'))).toBe(false)
     } finally {
       await rm(home, { recursive: true, force: true })
       await rm(targetParent, { recursive: true, force: true })
@@ -130,8 +130,8 @@ describe('installSkill', () => {
 
   test('force replaces the old skill directory instead of overlaying files', async () => {
     globalThis.fetch = installFetch({ 'SKILL.md': '# New' })
-    const home = await mkdtemp(join(tmpdir(), 'skillhub-install-home-'))
-    const rootDir = await mkdtemp(join(tmpdir(), 'skillhub-install-root-'))
+    const home = await mkdtemp(join(tmpdir(), 'joyhub-install-home-'))
+    const rootDir = await mkdtemp(join(tmpdir(), 'joyhub-install-root-'))
     const skillDir = join(rootDir, 'demo')
     await mkdir(skillDir, { recursive: true })
     await writeFile(join(skillDir, 'stale.txt'), 'old')
@@ -151,12 +151,12 @@ describe('installSkill', () => {
 
   test('force removes stale inventory records that point at the replaced install directory', async () => {
     globalThis.fetch = installFetch({ 'SKILL.md': '# Team Demo' })
-    const home = await mkdtemp(join(tmpdir(), 'skillhub-install-home-'))
-    const rootDir = await mkdtemp(join(tmpdir(), 'skillhub-install-root-'))
+    const home = await mkdtemp(join(tmpdir(), 'joyhub-install-home-'))
+    const rootDir = await mkdtemp(join(tmpdir(), 'joyhub-install-root-'))
     const skillDir = join(rootDir, 'demo')
     await mkdir(skillDir, { recursive: true })
-    const inventoryPath = join(home, '.skillhub', 'inventory.json')
-    await mkdir(join(home, '.skillhub'), { recursive: true })
+    const inventoryPath = join(home, '.joyhub', 'inventory.json')
+    await mkdir(join(home, '.joyhub'), { recursive: true })
     await writeFile(inventoryPath, JSON.stringify({
       items: [{
         registry: 'http://registry.test',
@@ -190,13 +190,13 @@ describe('installSkill', () => {
 
   test('force keeps old installation and inventory when replacement extraction fails', async () => {
     globalThis.fetch = installFetchWithDownloadResponse(new Response(new TextEncoder().encode('not a zip'), { status: 200 }))
-    const home = await mkdtemp(join(tmpdir(), 'skillhub-install-home-'))
-    const rootDir = await mkdtemp(join(tmpdir(), 'skillhub-install-root-'))
+    const home = await mkdtemp(join(tmpdir(), 'joyhub-install-home-'))
+    const rootDir = await mkdtemp(join(tmpdir(), 'joyhub-install-root-'))
     const skillDir = join(rootDir, 'demo')
     await mkdir(skillDir, { recursive: true })
     await writeFile(join(skillDir, 'SKILL.md'), '# Old')
-    const inventoryPath = join(home, '.skillhub', 'inventory.json')
-    await mkdir(join(home, '.skillhub'), { recursive: true })
+    const inventoryPath = join(home, '.joyhub', 'inventory.json')
+    await mkdir(join(home, '.joyhub'), { recursive: true })
     await writeFile(inventoryPath, JSON.stringify({
       items: [{
         registry: 'http://registry.test',
@@ -233,7 +233,7 @@ describe('installSkill', () => {
       status: 200,
       headers: { 'Content-Length': String(100 * 1024 * 1024 + 1) }
     }))
-    const rootDir = await mkdtemp(join(tmpdir(), 'skillhub-install-root-'))
+    const rootDir = await mkdtemp(join(tmpdir(), 'joyhub-install-root-'))
 
     await expect(installSkill({
       registry: 'http://registry.test',

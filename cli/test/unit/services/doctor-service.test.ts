@@ -14,7 +14,7 @@ type InventoryFile = {
 
 async function setupSkillDir(cwd: string, agentDir: string, slug: string, metadata: Record<string, string>) {
   const skillDir = join(cwd, agentDir, 'skills', slug)
-  const metaDir = join(skillDir, '.skillhub')
+  const metaDir = join(skillDir, '.joyhub')
   await mkdir(metaDir, { recursive: true })
   await writeFile(join(metaDir, 'metadata.json'), JSON.stringify(metadata))
   return skillDir
@@ -50,7 +50,7 @@ describe('doctor-service', () => {
     const result = await runDoctor(cwd, home)
     expect(result.itemsScanned).toBe(0)
     expect(result.skipped).toHaveLength(1)
-    expect(result.skipped[0]!.reason).toBe('no .skillhub directory')
+    expect(result.skipped[0]!.reason).toBe('no .joyhub directory')
   })
 
   test('detects version conflicts', async () => {
@@ -107,7 +107,7 @@ describe('doctor-service', () => {
     expect(result.targetsScanned).toBe(1)
   })
 
-  test('skips symlinked .skillhub directories', async () => {
+  test('skips symlinked .joyhub directories', async () => {
     const cwd = await mkdtemp(join(tmpdir(), 'doctor-test-'))
     const home = await mkdtemp(join(tmpdir(), 'doctor-home-'))
 
@@ -123,11 +123,11 @@ describe('doctor-service', () => {
       agent: 'codex',
       installedAt: '2026-04-20T12:00:00Z'
     }))
-    await symlink(realMetaDir, join(skillDir, '.skillhub'))
+    await symlink(realMetaDir, join(skillDir, '.joyhub'))
 
     const result = await runDoctor(cwd, home)
     expect(result.itemsScanned).toBe(0)
-    expect(result.skipped.some(s => s.reason === '.skillhub is not a regular directory')).toBe(true)
+    expect(result.skipped.some(s => s.reason === '.joyhub is not a regular directory')).toBe(true)
   })
 
   test('merges scan results with existing inventory', async () => {
@@ -135,8 +135,8 @@ describe('doctor-service', () => {
     const home = await mkdtemp(join(tmpdir(), 'doctor-home-'))
 
     // Pre-seed old inventory with one item NOT in current cwd
-    const inventoryPath = join(home, '.skillhub', 'inventory.json')
-    await mkdir(join(home, '.skillhub'), { recursive: true })
+    const inventoryPath = join(home, '.joyhub', 'inventory.json')
+    await mkdir(join(home, '.joyhub'), { recursive: true })
     await writeFile(inventoryPath, JSON.stringify({
       items: [
         {
@@ -196,8 +196,8 @@ describe('doctor-service', () => {
     const installDir = join(cwd, '.codex', 'skills', 'pdf-parser')
 
     // Pre-seed old inventory with pdf-parser v1.0.0 at specific installDir
-    const inventoryPath = join(home, '.skillhub', 'inventory.json')
-    await mkdir(join(home, '.skillhub'), { recursive: true })
+    const inventoryPath = join(home, '.joyhub', 'inventory.json')
+    await mkdir(join(home, '.joyhub'), { recursive: true })
     await writeFile(inventoryPath, JSON.stringify({
       items: [
         {
@@ -246,8 +246,8 @@ describe('doctor-service', () => {
     const home = await mkdtemp(join(tmpdir(), 'doctor-home-'))
 
     // Pre-seed old inventory with image-resizer at /external/proj (NOT in cwd)
-    const inventoryPath = join(home, '.skillhub', 'inventory.json')
-    await mkdir(join(home, '.skillhub'), { recursive: true })
+    const inventoryPath = join(home, '.joyhub', 'inventory.json')
+    await mkdir(join(home, '.joyhub'), { recursive: true })
     await writeFile(inventoryPath, JSON.stringify({
       items: [
         {

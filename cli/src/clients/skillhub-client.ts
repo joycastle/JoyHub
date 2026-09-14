@@ -42,6 +42,7 @@ export interface PublishResponse {
   slug: string
   version: string
   visibility: string
+  status: string
 }
 
 export interface DryRunResponse {
@@ -52,6 +53,28 @@ export interface DryRunResponse {
   resolvedVersion: string | null
 }
 
+export interface DeviceCodeResponse {
+  deviceCode: string
+  userCode: string
+  verificationUri: string
+  expiresIn: number
+  interval: number
+}
+
+export interface DeviceTokenResponse {
+  accessToken: string | null
+  tokenType: string | null
+  error: string | null
+}
+
+export interface PublishTarget {
+  id: number
+  slug: string
+  displayName: string
+  currentUserRole: string
+  supportedResourceTypes: string[]
+}
+
 interface PublicErrorFields {
   msg?: string
   requestId?: string
@@ -59,7 +82,7 @@ interface PublicErrorFields {
 
 type ErrorResponseKind = 'json' | 'download'
 
-export class SkillHubClient {
+export class JoyHubClient {
   constructor(
     readonly registry: string,
     readonly token?: string,
@@ -73,6 +96,18 @@ export class SkillHubClient {
   async search(query: string, limit: number): Promise<SearchResponse> {
     const params = new URLSearchParams({ q: query, limit: String(limit) })
     return this.getJson(`/skills/search?${params}`)
+  }
+
+  async requestDeviceCode(): Promise<DeviceCodeResponse> {
+    return this.postJson('/api/v1/auth/device/code')
+  }
+
+  async pollDeviceToken(deviceCode: string): Promise<DeviceTokenResponse> {
+    return this.postJson('/api/v1/auth/device/token', { deviceCode })
+  }
+
+  async publishTargets(): Promise<PublishTarget[]> {
+    return this.getJson('/namespaces/publish-targets')
   }
 
   async resolve(namespace: string, slug: string, version?: string): Promise<ResolveResponse> {
@@ -172,7 +207,7 @@ export class SkillHubClient {
     if (response.status === 401) {
       fallback = 'authentication failed'
       exitCode = EXIT.auth
-      details.next = 'run `skillhub login`'
+      details.next = 'run `joyhub auth ensure`'
     } else if (response.status === 403) {
       fallback = 'access denied'
       exitCode = EXIT.auth
@@ -189,7 +224,7 @@ export class SkillHubClient {
         : `registry returned ${response.status}`
     }
 
-    return new CliError(publicFields.msg ?? fallback, exitCode, details)
+    return new CliError(publicFields.msg ?? fallback, exitCode, details, response.status)
   }
 
   private async readPublicErrorFields(response: Response): Promise<PublicErrorFields> {
@@ -215,6 +250,23 @@ export class SkillHubClient {
 
   private headers(): HeadersInit {
     return this.token ? { Authorization: `Bearer ${this.token}` } : {}
+  }
+
+  private async postJson<T>(url: string, body?: Record<string, unknown>): Promise<T> {
+    let response: Response
+    try {
+      response = await this.fetchImpl(`${this.registry}${url}`, {
+        method: 'POST',
+        headers: body ? { 'Content-Type': 'application/json' } : {},
+        ...(body ? { body: JSON.stringify(body) } : {})
+      })
+    } catch {
+      throw new CliError('registry unreachable', EXIT.network, {
+        registry: this.registry,
+        next: 'check network or pass --registry'
+      })
+    }
+    return this.handleJsonResponse<T>(response)
   }
 
   private async deleteJson<T>(path: string): Promise<T> {

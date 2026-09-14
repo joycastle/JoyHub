@@ -1,4 +1,4 @@
-import { SkillHubClient } from '../clients/skillhub-client'
+import { JoyHubClient } from '../clients/skillhub-client'
 import { ConfigStore } from '../stores/config-store'
 import { CredentialsStore } from '../stores/credentials-store'
 import { resolveRegistry, resolveToken } from '../services/registry-service'
@@ -17,9 +17,9 @@ export async function whoamiCommand(options: WhoamiCommandOptions): Promise<stri
   const registry = resolveRegistry(options, process.env, await configStore.read())
   const token = resolveToken(options, process.env, await credentialsStore.getToken(registry))
   if (!token) {
-    throw new CliError('not logged in', EXIT.auth, { registry, next: 'run `skillhub login`' })
+    throw new CliError('not logged in', EXIT.auth, { registry, next: 'run `joyhub auth ensure`' })
   }
-  const user = await new SkillHubClient(registry, token).whoami()
+  const user = await new JoyHubClient(registry, token).whoami()
   return options.json
     ? JSON.stringify({ ok: true, registry, handle: user.handle, displayName: user.displayName })
     : `Registry: ${registry}\nHandle: ${user.handle}\nName: ${user.displayName}`

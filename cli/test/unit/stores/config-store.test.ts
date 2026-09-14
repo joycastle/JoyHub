@@ -5,7 +5,7 @@ import { join } from 'node:path'
 import { ConfigStore } from '../../../src/stores/config-store'
 
 function makeTempHome() {
-  return mkdtemp(join(tmpdir(), 'skillhub-store-test-'))
+  return mkdtemp(join(tmpdir(), 'joyhub-store-test-'))
 }
 
 describe('ConfigStore', () => {

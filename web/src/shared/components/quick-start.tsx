@@ -140,17 +140,17 @@ export function QuickStartSection({ variant = 'page', ns = 'landing' }: QuickSta
   const baseUrl = useMemo(() => getAppBaseUrl(), [])
 
   const envCode = `# Linux/macOS
-export SKILLHUB_REGISTRY=${baseUrl}
+export JOYHUB_REGISTRY=${baseUrl}
 
 # Windows PowerShell
-$env:SKILLHUB_REGISTRY = '${baseUrl}'`
+$env:JOYHUB_REGISTRY = '${baseUrl}'`
 
   const installCode = t(`${ns}.quickStart.steps.installSkills.code`, {
-    defaultValue: '# 搜索技能\nskillhub search <keyword>\n\n# 安装技能\nskillhub install <skill>',
+    defaultValue: '# 搜索技能\njoyhub search --query <keyword>\n\n# 安装技能\njoyhub install <skill>',
   })
 
   const publishCode = t(`${ns}.quickStart.steps.publishSkills.code`, {
-    defaultValue: '# 发布技能\nskillhub publish ./my-skill\n\n# 或使用网页界面\n# 点击"发布技能"',
+    defaultValue: '# 发布技能\njoyhub publish ./my-skill\n\n# 或使用网页界面\n# 点击"发布技能"',
   })
 
   const steps: CodeBlockProps[] = [

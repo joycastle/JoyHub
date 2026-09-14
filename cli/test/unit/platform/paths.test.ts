@@ -13,7 +13,7 @@ describe('userStateDir', () => {
 
 describe('applyCredentialPermissions', () => {
   test('sets 0o600 on unix', async () => {
-    const tempDir = await mkdtemp(join(tmpdir(), 'skillhub-test-'))
+    const tempDir = await mkdtemp(join(tmpdir(), 'joyhub-test-'))
     const tempFile = join(tempDir, 'credential.json')
     await writeFile(tempFile, '{}')
 

@@ -1,4 +1,4 @@
-.PHONY: build build-backend build-backend-app build-builtin-skills build-cli build-frontend build-runner build-web check clean cli-install db-reset deployment-down deployment-smoke deployment-up dev dev-all dev-all-down dev-all-reset dev-down dev-logs dev-server dev-server-restart dev-status dev-web docs-build docs-dev docs-preview generate-api help lint-cli lint-web namespace-smoke parallel-down parallel-init parallel-sync parallel-up pr publish-cli publish-cli-major publish-cli-minor staging staging-down staging-logs test test-backend test-backend-app test-builtin-skills test-cli test-e2e-frontend test-e2e-smoke-frontend test-frontend test-redis-cluster test-runner test-web typecheck-cli typecheck-web validate-release-config web-deps web-install web-install-ci
+.PHONY: build build-backend build-backend-app build-builtin-skills build-cli build-frontend build-runner build-web check check-cli-api-contract clean cli-install db-reset deployment-down deployment-smoke deployment-up dev dev-all dev-all-down dev-all-reset dev-down dev-logs dev-server dev-server-restart dev-status dev-web docs-build docs-dev docs-preview generate-api help lint-cli lint-web namespace-smoke pack-cli-dry-run parallel-down parallel-init parallel-sync parallel-up pr publish-cli publish-cli-major publish-cli-minor staging staging-down staging-logs test test-backend test-backend-app test-builtin-skills test-cli test-e2e-frontend test-e2e-smoke-frontend test-frontend test-official-agent-skills test-publish-cli test-redis-cluster test-runner test-web typecheck-cli typecheck-web validate-official-agent-skills validate-release-config web-deps web-install web-install-ci
 
 DEV_DIR := .dev
 DEV_SERVER_PID := $(DEV_DIR)/server.pid
@@ -307,6 +307,22 @@ lint-cli: ## CLI 代码检查
 
 typecheck-cli: ## CLI 类型检查
 	cd cli && bun run typecheck
+
+pack-cli-dry-run: ## 安装依赖、构建并验证 CLI npm 发布文件清单
+	$(MAKE) cli-install
+	$(MAKE) build-cli
+	cd cli && npm pack --dry-run
+
+validate-official-agent-skills: ## 校验官方 Agent Skills 的契约和安全门禁
+	python3 scripts/validate-official-agent-skills.py
+
+test-official-agent-skills: validate-official-agent-skills ## 运行官方 Agent Skills 确定性校验
+
+check-cli-api-contract: ## 校验 CLI/API 契约清单（CI 可传 BASE_REF）
+	python3 scripts/check-cli-api-contract.py $(if $(BASE_REF),--base "$(BASE_REF)",)
+
+test-publish-cli: ## 运行 CLI 发布脚本测试
+	bash scripts/tests/publish-cli-test.sh
 
 publish-cli: ## 发布 CLI（patch 版本）- 本地 build+test → 推 release 分支 → 开 PR，合并后手动 tag 触发 CI
 	./scripts/publish-cli.sh patch

@@ -29,7 +29,7 @@ export async function runDoctor(cwd: string, home?: string): Promise<DoctorResul
   const skipped: DoctorResult['skipped'] = []
   const conflicts: DoctorResult['conflicts'] = []
 
-  // Scan <cwd>/.*/skills/<slug>/.skillhub/metadata.json
+  // Scan <cwd>/.*/skills/<slug>/.joyhub/metadata.json
   const entries = await scanMetadata(cwd, skipped)
 
   // Group by registry + namespace + slug
@@ -165,18 +165,18 @@ async function scanMetadata(cwd: string, skipped: DoctorResult['skipped']): Prom
         skipped.push({ path: slugPath, reason: 'cannot stat' })
         continue
       }
-      const skillhubDir = join(slugPath, '.skillhub')
+      const joyhubDir = join(slugPath, '.joyhub')
       try {
-        const skillhubSt = await lstat(skillhubDir)
-        if (skillhubSt.isSymbolicLink() || !skillhubSt.isDirectory()) {
-          skipped.push({ path: slugPath, reason: '.skillhub is not a regular directory' })
+        const joyhubSt = await lstat(joyhubDir)
+        if (joyhubSt.isSymbolicLink() || !joyhubSt.isDirectory()) {
+          skipped.push({ path: slugPath, reason: '.joyhub is not a regular directory' })
           continue
         }
       } catch {
-        skipped.push({ path: slugPath, reason: 'no .skillhub directory' })
+        skipped.push({ path: slugPath, reason: 'no .joyhub directory' })
         continue
       }
-      const metadataPath = join(skillhubDir, 'metadata.json')
+      const metadataPath = join(joyhubDir, 'metadata.json')
       try {
         const content = await readFile(metadataPath, 'utf-8')
         const metadata = JSON.parse(content) as MetadataJson
@@ -186,7 +186,7 @@ async function scanMetadata(cwd: string, skipped: DoctorResult['skipped']): Prom
         }
         results.push({ metadata, installDir: slugPath })
       } catch {
-        skipped.push({ path: slugPath, reason: 'no .skillhub/metadata.json' })
+        skipped.push({ path: slugPath, reason: 'no .joyhub/metadata.json' })
       }
     }
   }

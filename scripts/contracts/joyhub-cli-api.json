@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "package": {
+    "name": "@toolnets/joyhub-cli",
+    "version": "0.2.0",
+    "bin": "joyhub"
+  },
+  "defaultRegistry": "https://joyhub.toolnets.net",
+  "authorizationPolicyReview": "Public repository display reads remain outside the CLI/API contract.",
+  "commands": [
+    "auth ensure --json",
+    "search --query <query> --limit <n> --json",
+    "namespaces --publishable --json",
+    "install <coordinate> --agent <agent> --scope <scope> --json",
+    "publish <directory> --namespace <slug> --visibility <visibility> --dry-run --json",
+    "publish <directory> --namespace <slug> --visibility <visibility> --json"
+  ],
+  "api": [
+    {
+      "id": "device-code",
+      "method": "POST",
+      "path": "/api/v1/auth/device/code"
+    },
+    {
+      "id": "device-token",
+      "method": "POST",
+      "path": "/api/v1/auth/device/token"
+    },
+    {
+      "id": "whoami",
+      "method": "GET",
+      "path": "/api/cli/v1/auth/whoami"
+    },
+    {
+      "id": "search",
+      "method": "GET",
+      "path": "/api/cli/v1/skills/search"
+    },
+    {
+      "id": "publish-targets",
+      "method": "GET",
+      "path": "/api/cli/v1/namespaces/publish-targets"
+    },
+    {
+      "id": "resolve",
+      "method": "GET",
+      "path": "/api/cli/v1/skills/{namespace}/{slug}/resolve"
+    },
+    {
+      "id": "download-latest",
+      "method": "GET",
+      "path": "/api/cli/v1/skills/{namespace}/{slug}/download"
+    },
+    {
+      "id": "download-version",
+      "method": "GET",
+      "path": "/api/cli/v1/skills/{namespace}/{slug}/versions/{version}/download"
+    },
+    {
+      "id": "delete",
+      "method": "DELETE",
+      "path": "/api/cli/v1/skills/{namespace}/{slug}"
+    },
+    {
+      "id": "publish-validate",
+      "method": "POST",
+      "path": "/api/cli/v1/skills/{namespace}/publish/validate"
+    },
+    {
+      "id": "publish",
+      "method": "POST",
+      "path": "/api/cli/v1/skills/{namespace}/publish"
+    }
+  ],
+  "driftPaths": [
+    "cli/src/agents/",
+    "cli/src/clients/",
+    "cli/src/commands/",
+    "cli/src/index.ts",
+    "cli/src/platform/archive.ts",
+    "cli/src/services/",
+    "cli/src/shared/constants.ts",
+    "server/skillhub-app/src/main/java/com/iflytek/skillhub/controller/DeviceAuthController.java",
+    "server/skillhub-app/src/main/java/com/iflytek/skillhub/controller/DeviceAuthWebController.java",
+    "server/skillhub-app/src/main/java/com/iflytek/skillhub/controller/cli/",
+    "server/skillhub-app/src/main/java/com/iflytek/skillhub/dto/cli/",
+    "server/skillhub-app/src/main/java/com/iflytek/skillhub/service/cli/",
+    "server/skillhub-auth/src/main/java/com/iflytek/skillhub/auth/device/",
+    "server/skillhub-auth/src/main/java/com/iflytek/skillhub/auth/policy/RouteSecurityPolicyRegistry.java",
+    "server/skillhub-auth/src/main/java/com/iflytek/skillhub/auth/token/ApiTokenScopeService.java"
+  ]
+}

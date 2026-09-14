@@ -12,10 +12,12 @@ import { searchCommand } from './commands/search'
 import { updateCommand } from './commands/update'
 import { versionCommand } from './commands/version'
 import { whoamiCommand } from './commands/whoami'
+import { authEnsureCommand } from './commands/auth'
+import { namespacesCommand, type NamespacesCommandOptions } from './commands/namespaces'
 import { CliError } from './shared/errors'
 import { renderError } from './shared/output'
 
-const cli = cac('skillhub')
+const cli = cac('joyhub')
 
 /** Normalize cac's repeatable option: string | string[] | undefined -> string[] | undefined */
 function toArray(val: string | string[] | undefined): string[] | undefined {
@@ -95,7 +97,7 @@ function exitWithCliError(error: CliError, json: boolean, humanOutput?: string):
 
 function exitUnknownCommand(command: string, json: boolean): never {
   const suggestions = findCommandSuggestions(command)
-  const lines = [`unknown command "${command}" for "skillhub"`, '']
+  const lines = [`unknown command "${command}" for "joyhub"`, '']
 
   if (suggestions.length > 0) {
     lines.push(`Did you mean ${suggestions.length === 1 ? 'this' : 'one of these'}?`)
@@ -103,21 +105,21 @@ function exitUnknownCommand(command: string, json: boolean): never {
     lines.push('')
   }
 
-  lines.push('Usage:  skillhub <command> [flags]', '')
+  lines.push('Usage:  joyhub <command> [flags]', '')
   lines.push(renderCommandDirectory(), '')
-  lines.push('Run "skillhub help" for more information.')
-  return exitWithCliError(new CliError(`unknown command "${command}" for "skillhub"`, 5), json, lines.join('\n'))
+  lines.push('Run "joyhub help" for more information.')
+  return exitWithCliError(new CliError(`unknown command "${command}" for "joyhub"`, 5), json, lines.join('\n'))
 }
 
 function exitUnknownFlag(flag: string, json: boolean): never {
   return exitWithCliError(new CliError(`unknown flag: ${flag}`, 5), json, [
     `unknown flag: ${flag}`,
     '',
-    'Usage:  skillhub <command> [flags]',
+    'Usage:  joyhub <command> [flags]',
     '',
     renderCommandDirectory(),
     '',
-    'Run "skillhub help" for more information.'
+    'Run "joyhub help" for more information.'
   ].join('\n'))
 }
 
@@ -142,9 +144,9 @@ function handleCliParseError(error: unknown, json: boolean): never {
       return exitWithCliError(new CliError('missing required argument', 5), json, [
         'Error: missing required argument',
         '',
-        `Usage:  skillhub ${cmdName}`,
+        `Usage:  joyhub ${cmdName}`,
         '',
-        `Run "skillhub help ${firstWord}" for more information.`
+        `Run "joyhub help ${firstWord}" for more information.`
       ].join('\n'))
     }
 
@@ -204,6 +206,19 @@ cli
   })
 
 cli
+  .command('auth <action>', 'Manage JoyHub authentication')
+  .option('--registry <url>', 'Registry URL')
+  .option('--json', 'Output JSON')
+  .action((action: string, options: { registry?: string; json?: boolean }) => {
+    return runCommand(() => {
+      if (action !== 'ensure') {
+        throw new CliError(`unknown auth action: ${action}`, 5)
+      }
+      return authEnsureCommand(options)
+    }, Boolean(options.json))
+  })
+
+cli
   .command('logout', 'Remove local token')
   .option('--registry <url>', 'Registry URL')
   .option('--json', 'Output JSON')
@@ -222,12 +237,23 @@ cli
 
 cli
   .command('search [query]', 'Search published skills')
+  .option('--query <query>', 'Search query')
   .option('--registry <url>', 'Registry URL')
   .option('--token <token>', 'API token')
   .option('--limit <n>', 'Max results', { default: 20 })
   .option('--json', 'Output JSON')
-  .action((query: string | undefined, options: { registry?: string; token?: string; limit?: number; json?: boolean }) => {
-    return runCommand(() => searchCommand(query ?? '', options), Boolean(options.json))
+  .action((query: string | undefined, options: { query?: string; registry?: string; token?: string; limit?: number; json?: boolean }) => {
+    return runCommand(() => searchCommand(options.query ?? query ?? '', options), Boolean(options.json))
+  })
+
+cli
+  .command('namespaces', 'List namespaces')
+  .option('--publishable', 'List namespaces available for publishing')
+  .option('--registry <url>', 'Registry URL')
+  .option('--token <token>', 'API token')
+  .option('--json', 'Output JSON')
+  .action((options: NamespacesCommandOptions) => {
+    return runCommand(() => namespacesCommand(options), Boolean(options.json))
   })
 
 cli

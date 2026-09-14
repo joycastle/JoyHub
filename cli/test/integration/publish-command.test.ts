@@ -29,7 +29,7 @@ async function login(env: { home: string }, registryUrl: string) {
 }
 
 async function makeTempDir(...files: Array<[string, string]>) {
-  const dir = await mkdtemp(join(tmpdir(), 'skillhub-publish-dir-'))
+  const dir = await mkdtemp(join(tmpdir(), 'joyhub-publish-dir-'))
   for (const [name, content] of files) {
     await writeFile(join(dir, name), content)
   }
@@ -37,7 +37,7 @@ async function makeTempDir(...files: Array<[string, string]>) {
 }
 
 async function makeTempZip(name: string) {
-  const dir = await mkdtemp(join(tmpdir(), 'skillhub-publish-zip-'))
+  const dir = await mkdtemp(join(tmpdir(), 'joyhub-publish-zip-'))
   const zipPath = join(dir, name)
   const bytes = zipSync({ 'SKILL.md': new TextEncoder().encode('# Demo') })
   await writeFile(zipPath, bytes)
@@ -45,7 +45,7 @@ async function makeTempZip(name: string) {
 }
 
 async function makeTempTxt(name: string) {
-  const dir = await mkdtemp(join(tmpdir(), 'skillhub-publish-txt-'))
+  const dir = await mkdtemp(join(tmpdir(), 'joyhub-publish-txt-'))
   const txtPath = join(dir, name)
   await writeFile(txtPath, 'not a zip')
   return txtPath
@@ -213,8 +213,10 @@ describe('publish command — P1', () => {
     const json = JSON.parse(result.stdout)
     expect(json.ok).toBe(true)
     expect(json.namespace).toBe('global')
+    expect(json.coordinate).toBe(`@global/${json.slug}`)
     expect(typeof json.slug).toBe('string')
     expect(typeof json.version).toBe('string')
+    expect(json.status).toBe('PENDING_REVIEW')
     expect(typeof json.visibility).toBe('string')
     expect(json.detailUrl).toContain(registry.url)
     expect(json.detailUrl).toContain('global')
@@ -287,7 +289,7 @@ describe('publish command — content shape', () => {
     try {
       await login(env, server.url)
 
-      const dir = await mkdtemp(join(tmpdir(), 'skillhub-publish-nested-'))
+      const dir = await mkdtemp(join(tmpdir(), 'joyhub-publish-nested-'))
       await writeFile(join(dir, 'SKILL.md'), '# nested')
       await mkdir(join(dir, 'references'), { recursive: true })
       await writeFile(join(dir, 'references', 'a.md'), 'aa')
@@ -327,7 +329,7 @@ describe('publish command — content shape', () => {
     try {
       await login(env, server.url)
 
-      const dir = await mkdtemp(join(tmpdir(), 'skillhub-publish-hidden-'))
+      const dir = await mkdtemp(join(tmpdir(), 'joyhub-publish-hidden-'))
       await writeFile(join(dir, 'SKILL.md'), '# h')
       await writeFile(join(dir, '.DS_Store'), 'macos junk')
       await writeFile(join(dir, '.editorconfig'), 'root = true\n')
@@ -359,7 +361,7 @@ describe('publish command — content shape', () => {
     registry = await startFakeRegistry({ token: 'sk_ok' })
     await login(env, registry.url)
 
-    const dir = await mkdtemp(join(tmpdir(), 'skillhub-publish-empty-'))
+    const dir = await mkdtemp(join(tmpdir(), 'joyhub-publish-empty-'))
 
     const result = await runCli(['publish', dir, '--registry', registry.url], {
       HOME: env.home, USERPROFILE: env.home

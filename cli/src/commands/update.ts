@@ -56,7 +56,7 @@ export async function updateCommand(
     return printResult(
       json
         ? { ok: true, updated: true, from: result.currentVersion, to: result.latestVersion }
-        : `Updated skillhub ${result.currentVersion} -> ${result.latestVersion}`,
+        : `Updated joyhub ${result.currentVersion} -> ${result.latestVersion}`,
       json
     )
   }

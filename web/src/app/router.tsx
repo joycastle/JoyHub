@@ -19,7 +19,6 @@ import { CATALOG_RESOURCE_KINDS } from '@/entities/catalog-resource/catalog-reso
 // Capture original URL before TanStack Router rewrites it
 const ORIGINAL_URL_SEARCH = typeof window !== 'undefined' ? window.location.search : ''
 
-// Export for use in cli-auth page
 export { ORIGINAL_URL_SEARCH }
 
 function createLazyRouteComponent<TModule extends Record<string, unknown>>(
@@ -94,7 +93,7 @@ const MyStarsPage = createLazyRouteComponent(() => import('@/pages/dashboard/sta
 const MySubscriptionsPage = createLazyRouteComponent(() => import('@/pages/dashboard/subscriptions'), 'MySubscriptionsPage')
 const NotificationsPage = createLazyRouteComponent(() => import('@/pages/notifications'), 'NotificationsPage')
 const TokensPage = createLazyRouteComponent(() => import('@/pages/dashboard/tokens'), 'TokensPage')
-const CliAuthPage = createLazyRouteComponent(() => import('@/pages/cli-auth'), 'CliAuthPage')
+const DeviceAuthPage = createLazyRouteComponent(() => import('@/pages/device'), 'DeviceAuthPage')
 const SecuritySettingsPage = createLazyRouteComponent(
   () => import('@/pages/settings/security'),
   'SecuritySettingsPage',
@@ -419,19 +418,16 @@ const dashboardTokensRoute = createRoute({
 const cliAuthRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: 'cli/auth',
-  beforeLoad: () => {
+  beforeLoad: async (ctx) => {
     if (!isApiTokensEnabled()) {
       throw redirect({ to: '/' })
     }
+    await requireAuth(ctx)
   },
-  component: CliAuthPage,
+  component: DeviceAuthPage,
   validateSearch: (search: Record<string, unknown>): Record<string, string> => {
-    // Preserve all CLI auth parameters - use empty string instead of undefined to prevent TanStack Router from removing them
     return {
-      redirect_uri: typeof search.redirect_uri === 'string' ? search.redirect_uri : '',
-      label_b64: typeof search.label_b64 === 'string' ? search.label_b64 : '',
-      label: typeof search.label === 'string' ? search.label : '',
-      state: typeof search.state === 'string' ? search.state : '',
+      user_code: typeof search.user_code === 'string' ? search.user_code : '',
     }
   },
 })

@@ -16,8 +16,8 @@ async function exists(path: string): Promise<boolean> {
 
 describe('removeLocalSkill', () => {
   test('bare slug removes all current-registry installs with the same slug across namespaces', async () => {
-    const home = await mkdtemp(join(tmpdir(), 'skillhub-remove-home-'))
-    const root = await mkdtemp(join(tmpdir(), 'skillhub-remove-root-'))
+    const home = await mkdtemp(join(tmpdir(), 'joyhub-remove-home-'))
+    const root = await mkdtemp(join(tmpdir(), 'joyhub-remove-root-'))
     const globalDir = join(root, 'codex', 'demo')
     const teamDir = join(root, 'claude', 'demo')
     await mkdir(globalDir, { recursive: true })
@@ -52,8 +52,8 @@ describe('removeLocalSkill', () => {
   })
 
   test('namespace filter removes only the matching same-slug install', async () => {
-    const home = await mkdtemp(join(tmpdir(), 'skillhub-remove-home-'))
-    const root = await mkdtemp(join(tmpdir(), 'skillhub-remove-root-'))
+    const home = await mkdtemp(join(tmpdir(), 'joyhub-remove-home-'))
+    const root = await mkdtemp(join(tmpdir(), 'joyhub-remove-root-'))
     const globalDir = join(root, 'codex', 'demo')
     const teamDir = join(root, 'claude', 'demo')
     await mkdir(globalDir, { recursive: true })
@@ -93,7 +93,7 @@ describe('removeLocalSkill', () => {
   })
 
   test('throws on path traversal in installDir', async () => {
-    const home = await mkdtemp(join(tmpdir(), 'skillhub-remove-traversal-'))
+    const home = await mkdtemp(join(tmpdir(), 'joyhub-remove-traversal-'))
 
     const store = new InventoryStore(home)
     await store.write({

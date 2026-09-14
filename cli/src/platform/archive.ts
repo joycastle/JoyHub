@@ -118,6 +118,14 @@ export async function createZip(dirPath: string): Promise<Blob> {
   return new Blob([zipped.buffer as ArrayBuffer], { type: 'application/zip' })
 }
 
+export async function listZipFiles(blob: Blob): Promise<string[]> {
+  const files = unzipSync(new Uint8Array(await blob.arrayBuffer()))
+  return Object.keys(files)
+    .filter(name => !name.endsWith('/'))
+    .map(name => name.replace(/\\/g, '/'))
+    .sort()
+}
+
 async function collectFiles(basePath: string, currentPath: string, entries: Record<string, Uint8Array>): Promise<void> {
   const items = await readdir(currentPath, { withFileTypes: true })
   for (const item of items) {

@@ -117,9 +117,9 @@ describe('whoami command', () => {
 
     const { mkdir, writeFile } = await import('node:fs/promises')
     const { join } = await import('node:path')
-    await mkdir(join(home, '.skillhub'), { recursive: true })
+    await mkdir(join(home, '.joyhub'), { recursive: true })
     await writeFile(
-      join(home, '.skillhub', 'credentials.json'),
+      join(home, '.joyhub', 'credentials.json'),
       JSON.stringify({ tokens: { [registry.url]: 'sk_old_revoked' } })
     )
 
@@ -129,17 +129,17 @@ describe('whoami command', () => {
   })
 
   // ---------------------------------------------------------------------------
-  // P1 — Token priority --token > SKILLHUB_TOKEN > stored, end-to-end via
+  // P1 — Token priority --token > JOYHUB_TOKEN > stored, end-to-end via
   // whoami. Cross-checks the auth-resolution suite by verifying the wired
   // contract on this specific command.
   // ---------------------------------------------------------------------------
-  test('--token wins over SKILLHUB_TOKEN env on whoami', async () => {
+  test('--token wins over JOYHUB_TOKEN env on whoami', async () => {
     registry = await startFakeRegistry({
       token: 'sk_winner',
       user: { handle: 'winner', displayName: 'W' }
     })
     const { home } = await createTempHome()
-    const env = { HOME: home, USERPROFILE: home, SKILLHUB_TOKEN: 'sk_loser_env' }
+    const env = { HOME: home, USERPROFILE: home, JOYHUB_TOKEN: 'sk_loser_env' }
 
     const result = await runCli(
       ['whoami', '--token', 'sk_winner', '--registry', registry.url],

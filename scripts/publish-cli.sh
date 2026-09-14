@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-# Release entrypoint for the SkillHub CLI.
+# Release entrypoint for the JoyHub CLI.
 #
-# Runs local build-and-test (lint, typecheck, test, build), bumps the version
+# Runs local build-and-test (lint, typecheck, test, build, npm pack dry-run), bumps the version
 # in cli/package.json, pushes a release branch, and opens a PR to main.
 # Tagging is done manually after the PR is merged — the tag push triggers
 # `release-cli.yml` which builds and publishes to npm.
@@ -218,6 +218,9 @@ log_stage "running tests"
 log_stage "running build"
 (cd "$CLI_DIR" && bun run build)
 
+log_stage "checking npm package contents"
+(cd "$CLI_DIR" && npm pack --dry-run)
+
 log_stage "build-and-test passed"
 
 # Reset only the codegen file that build-and-test regenerates. We rewrite
@@ -259,7 +262,7 @@ CLEANUP_STAGE="pushed"
 log_stage "opening pull request"
 PR_BODY="Bumps CLI version to \`$NEW_VERSION\`.
 
-Local build-and-test passed (lint, typecheck, test, build).
+Local build-and-test passed (lint, typecheck, test, build, npm pack --dry-run).
 
 After merging, tag and push to trigger the release:
 \`\`\`bash

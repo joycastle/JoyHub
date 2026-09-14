@@ -34,7 +34,14 @@ public class ApiTokenScopeService {
         }
 
         try {
-            List<String> scopes = objectMapper.readValue(scopeJson, STRING_LIST);
+            var node = objectMapper.readTree(scopeJson);
+            for (int depth = 0; node.isTextual() && depth < 16; depth++) {
+                node = objectMapper.readTree(node.textValue());
+            }
+            if (!node.isArray()) {
+                return Set.of();
+            }
+            List<String> scopes = objectMapper.convertValue(node, STRING_LIST);
             Set<String> normalized = new LinkedHashSet<>();
             for (String scope : scopes) {
                 if (scope != null) {

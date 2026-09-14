@@ -77,7 +77,7 @@ describe('cross-process concurrency on inventory.json', () => {
     expect(await Bun.file(join(dirB, 'second', 'SKILL.md')).exists()).toBe(true)
 
     const inv = JSON.parse(
-      await readFile(join(env.home, '.skillhub', 'inventory.json'), 'utf-8')
+      await readFile(join(env.home, '.joyhub', 'inventory.json'), 'utf-8')
     ) as { items: Array<{ slug: string }> }
     const slugs = inv.items.map(i => i.slug).sort()
     // Today: at least one slug always lands; under the lost-update race
@@ -122,7 +122,7 @@ describe('cross-process concurrency on inventory.json', () => {
     expect([0, 4]).toContain(otherCode) // other either succeeded or got conflict
 
     const inv = JSON.parse(
-      await readFile(join(env.home, '.skillhub', 'inventory.json'), 'utf-8')
+      await readFile(join(env.home, '.joyhub', 'inventory.json'), 'utf-8')
     ) as { items: Array<{ slug: string; targets: Array<{ installDir: string }> }> }
     const item = inv.items.find(i => i.slug === 'race')
     expect(item).toBeDefined()
@@ -141,9 +141,9 @@ describe('cross-process concurrency on inventory.json', () => {
     // Plant a stale lock file: PID 1 (init, never the same as our test
     // child, and won't match the spawned subprocess's PID), with a very
     // old timestamp so the store treats it as stale.
-    const skillhubDir = join(env.home, '.skillhub')
-    await mkdir(skillhubDir, { recursive: true })
-    const lockPath = join(skillhubDir, 'inventory.json.lock')
+    const joyhubDir = join(env.home, '.joyhub')
+    await mkdir(joyhubDir, { recursive: true })
+    const lockPath = join(joyhubDir, 'inventory.json.lock')
     const ancientTimestamp = Date.now() - 600_000 // 10 minutes ago — past the 30s stale threshold
     await writeFile(lockPath, JSON.stringify({ pid: 1, timestamp: ancientTimestamp }))
 
@@ -157,7 +157,7 @@ describe('cross-process concurrency on inventory.json', () => {
     expect(result.exitCode).toBe(0)
 
     const inv = JSON.parse(
-      await readFile(join(skillhubDir, 'inventory.json'), 'utf-8')
+      await readFile(join(joyhubDir, 'inventory.json'), 'utf-8')
     ) as { items: Array<{ slug: string }> }
     expect(inv.items.find(i => i.slug === 'after-stale')).toBeDefined()
   })

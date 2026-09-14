@@ -10,7 +10,7 @@ describe('version command', () => {
   test('prints human readable version', async () => {
     const result = await runCli(['version'])
     expect(result.exitCode).toBe(0)
-    expect(result.stdout).toContain('SkillHub CLI')
+    expect(result.stdout).toContain('JoyHub CLI')
     expect(result.stdout).toContain(CLI_VERSION)
     expect(result.stderr).toBe('')
   })
@@ -25,7 +25,7 @@ describe('version command', () => {
   })
 
   test('built npm artifact runs on node without Bun runtime', async () => {
-    const dir = await mkdtemp(join(tmpdir(), 'skillhub-node-build-'))
+    const dir = await mkdtemp(join(tmpdir(), 'joyhub-node-build-'))
     const outfile = join(dir, 'index.js')
     await writeFile(join(dir, 'package.json'), JSON.stringify({ type: 'module' }))
 
@@ -51,7 +51,7 @@ describe('version command', () => {
     ])
 
     expect(exitCode).toBe(0)
-    expect(stdout).toContain('SkillHub CLI')
+    expect(stdout).toContain('JoyHub CLI')
     expect(stderr).toBe('')
   })
 })

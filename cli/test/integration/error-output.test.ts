@@ -2,12 +2,22 @@ import { describe, expect, test } from 'bun:test'
 import { runCli } from '../helpers/run-cli'
 
 describe('cli error output', () => {
+  test('unsupported auth action uses structured error handling', async () => {
+    const result = await runCli(['auth', 'bogus', '--json'])
+    expect(result.exitCode).toBe(5)
+    expect(JSON.parse(result.stderr)).toEqual({
+      ok: false,
+      message: 'unknown auth action: bogus',
+      exitCode: 5
+    })
+  })
+
   test('prints gh-style help for unknown commands', async () => {
     const result = await runCli(['foo'])
 
     expect(result.exitCode).toBe(5)
-    expect(result.stderr).toContain('unknown command "foo" for "skillhub"')
-    expect(result.stderr).toContain('Usage:  skillhub <command> [flags]')
+    expect(result.stderr).toContain('unknown command "foo" for "joyhub"')
+    expect(result.stderr).toContain('Usage:  joyhub <command> [flags]')
     expect(result.stderr).toContain('Available commands:')
     expect(result.stderr).toContain('help       Show available commands')
     expect(result.stderr).toContain('publish    Publish a local skill package')
@@ -17,7 +27,7 @@ describe('cli error output', () => {
     const result = await runCli(['foo', '--bad'])
 
     expect(result.exitCode).toBe(5)
-    expect(result.stderr).toContain('unknown command "foo" for "skillhub"')
+    expect(result.stderr).toContain('unknown command "foo" for "joyhub"')
     expect(result.stderr).not.toContain('unknown flag: --bad')
   })
 
@@ -27,7 +37,7 @@ describe('cli error output', () => {
     expect(result.exitCode).toBe(5)
     expect(JSON.parse(result.stderr)).toEqual({
       ok: false,
-      message: 'unknown command "foo" for "skillhub"',
+      message: 'unknown command "foo" for "joyhub"',
       exitCode: 5
     })
   })
@@ -36,7 +46,7 @@ describe('cli error output', () => {
     const result = await runCli(['serch'])
 
     expect(result.exitCode).toBe(5)
-    expect(result.stderr).toContain('unknown command "serch" for "skillhub"')
+    expect(result.stderr).toContain('unknown command "serch" for "joyhub"')
     expect(result.stderr).toContain('Did you mean this?')
     expect(result.stderr).toContain('    search')
   })
@@ -46,7 +56,7 @@ describe('cli error output', () => {
 
     expect(result.exitCode).toBe(5)
     expect(result.stderr).toContain('unknown flag: --badflag')
-    expect(result.stderr).toContain('Usage:  skillhub <command> [flags]')
+    expect(result.stderr).toContain('Usage:  joyhub <command> [flags]')
     expect(result.stderr).toContain('Available commands:')
     expect(result.stderr).toContain('version    Show installed CLI version')
   })
@@ -67,8 +77,8 @@ describe('cli error output', () => {
 
     expect(result.exitCode).toBe(5)
     expect(result.stderr).toContain('Error: missing required argument')
-    expect(result.stderr).toContain('Usage:  skillhub install <coordinate>')
-    expect(result.stderr).toContain('Run "skillhub help install" for more information.')
+    expect(result.stderr).toContain('Usage:  joyhub install <coordinate>')
+    expect(result.stderr).toContain('Run "joyhub help install" for more information.')
   })
 
   test('prints parse errors as json when --json is requested', async () => {

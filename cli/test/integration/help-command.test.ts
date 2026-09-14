@@ -5,7 +5,7 @@ describe('help command', () => {
   test('prints detailed help for install', async () => {
     const result = await runCli(['help', 'install'])
     expect(result.exitCode).toBe(0)
-    expect(result.stdout).toContain('Usage: skillhub install <coordinate>')
+    expect(result.stdout).toContain('Usage: joyhub install <coordinate>')
     expect(result.stdout).toContain('--agent <profile>')
     expect(result.stdout).toContain('@team/my-skill')
     expect(result.stdout).toContain('team/my-skill')
@@ -15,9 +15,9 @@ describe('help command', () => {
   test('prints namespaced local remove contract in command help', async () => {
     const result = await runCli(['help', 'remove'])
     expect(result.exitCode).toBe(0)
-    expect(result.stdout).toContain('Usage: skillhub remove <coordinate>')
-    expect(result.stdout).toContain('skillhub remove team/my-skill')
-    expect(result.stdout).toContain('skillhub remove my-skill --namespace team')
+    expect(result.stdout).toContain('Usage: joyhub remove <coordinate>')
+    expect(result.stdout).toContain('joyhub remove team/my-skill')
+    expect(result.stdout).toContain('joyhub remove my-skill --namespace team')
   })
 
   test('prints namespaced local remove contract in --help', async () => {
@@ -30,11 +30,11 @@ describe('help command', () => {
   test('prints search help with optional query', async () => {
     const result = await runCli(['help', 'search'])
     expect(result.exitCode).toBe(0)
-    expect(result.stdout).toContain('Usage: skillhub search [query]')
-    expect(result.stdout).toContain('skillhub search')
+    expect(result.stdout).toContain('Usage: joyhub search [query]')
+    expect(result.stdout).toContain('joyhub search')
   })
 
-  // P1: bare `skillhub help` (no topic) prints the directory of all commands
+  // P1: bare `joyhub help` (no topic) prints the directory of all commands
   test('bare help lists all commands in human format', async () => {
     const result = await runCli(['help'])
     expect(result.exitCode).toBe(0)
@@ -44,7 +44,7 @@ describe('help command', () => {
     }
   })
 
-  // P1: `skillhub help --json` is wired in cac but the --json flag is consumed
+  // P1: `joyhub help --json` is wired in cac but the --json flag is consumed
   // by the action wrapper and never reaches helpCommand's args. Today this
   // makes the JSON branch unreachable from the CLI surface (helpCommand always
   // sees [] or [topic] without --json). We document the current human-only
@@ -69,10 +69,10 @@ describe('help command', () => {
     let isJson = true
     try { JSON.parse(result.stdout) } catch { isJson = false }
     expect(isJson).toBe(false)
-    expect(result.stdout).toContain('Usage: skillhub install')
+    expect(result.stdout).toContain('Usage: joyhub install')
   })
 
-  // P1: `skillhub help <unknown>` currently crashes inside helpCommand because
+  // P1: `joyhub help <unknown>` currently crashes inside helpCommand because
   // `commands[topic]` is undefined and `detail.usage` dereferences undefined.
   // We assert non-zero exit so that a future fix to graceful handling does not
   // regress silently. TODO source bug: cli/src/commands/help.ts:75 should

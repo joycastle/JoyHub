@@ -149,8 +149,9 @@ public class ApiTokenService {
 
     @Transactional
     public void touchLastUsed(ApiToken token) {
-        token.setLastUsedAt(currentTime());
-        tokenRepo.save(token);
+        Instant lastUsedAt = currentTime();
+        token.setLastUsedAt(lastUsedAt);
+        tokenRepo.updateLastUsedAt(token.getId(), lastUsedAt);
     }
 
     private String sha256(String input) {

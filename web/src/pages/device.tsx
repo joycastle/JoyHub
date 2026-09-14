@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from '@tanstack/react-router'
 import { Card } from '@/shared/ui/card'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
@@ -17,10 +18,30 @@ async function authorizeDevice(userCode: string): Promise<void> {
   })
 }
 
+async function denyDevice(userCode: string): Promise<void> {
+  await fetchJson<void>('/api/v1/device/deny', {
+    method: 'POST',
+    headers: getCsrfHeaders({
+      'Content-Type': 'application/json',
+    }),
+    body: JSON.stringify({ userCode }),
+  })
+}
+
+function initialCodeParts(): [string, string] {
+  const raw = typeof window === 'undefined'
+    ? ''
+    : new URLSearchParams(window.location.search).get('user_code') ?? ''
+  const normalized = raw.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 8)
+  return [normalized.slice(0, 4), normalized.slice(4, 8)]
+}
+
 export function DeviceAuthPage() {
   const { t } = useTranslation()
-  const [part1, setPart1] = useState('')
-  const [part2, setPart2] = useState('')
+  const navigate = useNavigate()
+  const [initialPart1, initialPart2] = initialCodeParts()
+  const [part1, setPart1] = useState(initialPart1)
+  const [part2, setPart2] = useState(initialPart2)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
@@ -77,7 +98,32 @@ export function DeviceAuthPage() {
       setMessage({ type: 'success', text: t('device.success') })
       setPart1('')
       setPart2('')
-      input1Ref.current?.focus()
+      window.setTimeout(() => {
+        void navigate({ to: '/', replace: true })
+      }, 1500)
+    } catch (error) {
+      setMessage({
+        type: 'error',
+        text: truncateErrorMessage(error instanceof Error ? error.message : t('device.defaultError')) ?? t('device.defaultError'),
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleDeny = async () => {
+    if (part1.length !== 4 || part2.length !== 4) {
+      setMessage({ type: 'error', text: t('device.incompleteCode') })
+      return
+    }
+
+    setIsSubmitting(true)
+    setMessage(null)
+    try {
+      await denyDevice(`${part1}-${part2}`)
+      setMessage({ type: 'success', text: t('device.denied') })
+      setPart1('')
+      setPart2('')
     } catch (error) {
       setMessage({
         type: 'error',
@@ -146,13 +192,22 @@ export function DeviceAuthPage() {
             </div>
           )}
 
-          <Button
-            type="submit"
-            className="w-full"
-            disabled={isSubmitting || part1.length !== 4 || part2.length !== 4}
-          >
-            {isSubmitting ? t('device.submitting') : t('device.submit')}
-          </Button>
+          <div className="grid grid-cols-2 gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleDeny}
+              disabled={isSubmitting || part1.length !== 4 || part2.length !== 4}
+            >
+              {t('device.deny')}
+            </Button>
+            <Button
+              type="submit"
+              disabled={isSubmitting || part1.length !== 4 || part2.length !== 4}
+            >
+              {isSubmitting ? t('device.submitting') : t('device.submit')}
+            </Button>
+          </div>
         </form>
 
         <div className="text-center text-sm text-muted-foreground">

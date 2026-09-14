@@ -27,10 +27,12 @@ spring:
 skillhub:
   auth:
     api-tokens:
-      enabled: ${SKILLHUB_API_TOKENS_ENABLED:false}
+      enabled: ${SKILLHUB_API_TOKENS_ENABLED:true}
     mock:
       enabled: false
     web-base-url: ${SKILLHUB_WEB_BASE_URL:http://localhost:3000}
+  device-auth:
+    verification-uri: ${DEVICE_AUTH_VERIFICATION_URI:${SKILLHUB_WEB_BASE_URL:http://localhost:3000}/cli/auth}
   publish:
     max-single-file-size: 52428800 # 50MB for local OpenClaw-style bundles
   governance:

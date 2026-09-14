@@ -67,8 +67,8 @@ describe('version upgrade flow', () => {
     expect(r1.exitCode).toBe(0)
 
     const skillFile = join(installDir, 'pdf-parser', 'SKILL.md')
-    const metaPath = join(installDir, 'pdf-parser', '.skillhub', 'metadata.json')
-    const inventoryPath = join(env.home, '.skillhub', 'inventory.json')
+    const metaPath = join(installDir, 'pdf-parser', '.joyhub', 'metadata.json')
+    const inventoryPath = join(env.home, '.joyhub', 'inventory.json')
 
     {
       const meta = JSON.parse(await readFile(metaPath, 'utf-8'))
@@ -156,7 +156,7 @@ describe('version upgrade flow', () => {
     expect(registry.received.resolve?.slug).toBe('pdf-parser')
     expect(registry.received.resolve?.version).toBe('1.5.0')
 
-    const meta = JSON.parse(await readFile(join(installDir, 'pdf-parser', '.skillhub', 'metadata.json'), 'utf-8'))
+    const meta = JSON.parse(await readFile(join(installDir, 'pdf-parser', '.joyhub', 'metadata.json'), 'utf-8'))
     expect(meta.version).toBe('1.5.0')
   })
 })

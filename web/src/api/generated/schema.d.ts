@@ -4311,6 +4311,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/cli/v1/namespaces/publish-targets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["publishTargets_2"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/cli/v1/auth/whoami": {
         parameters: {
             query?: never;
@@ -5566,6 +5582,7 @@ export interface components {
             slug?: string;
             version?: string;
             visibility?: string;
+            status?: string;
         };
         ApiResponseCliDryRunResponse: {
             /** Format: int32 */
@@ -14507,6 +14524,26 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ApiResponseCliSearchResponse"];
+                };
+            };
+        };
+    };
+    publishTargets_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseListPublishTargetResponse"];
                 };
             };
         };

@@ -1,6 +1,6 @@
 import { ConfigStore } from '../stores/config-store'
 import { CredentialsStore } from '../stores/credentials-store'
-import { SkillHubClient } from '../clients/skillhub-client'
+import { JoyHubClient } from '../clients/skillhub-client'
 import { resolveRegistry, resolveToken } from '../services/registry-service'
 import { removeLocalSkill } from '../services/remove-service'
 import { CliError } from '../shared/errors'
@@ -50,7 +50,7 @@ export async function removeCommand(skillNameArg: string, options: RemoveCommand
       throw new CliError('non-interactive remote delete requires --hard', EXIT.usage)
     }
 
-    const client = new SkillHubClient(registry, token)
+    const client = new JoyHubClient(registry, token)
     await client.deleteRemote(namespace, slug)
 
     if (options.json) {
