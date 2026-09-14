@@ -89,6 +89,8 @@ vi.mock('@/api/client', () => ({
   },
   buildApiUrl: (value: string) => value,
   WEB_API_PREFIX: '/api/web',
+  sharingTargetsApi: { list: vi.fn() },
+  skillSharingApi: { list: vi.fn(), replace: vi.fn() },
 }))
 
 vi.mock('@/shared/lib/date-time', () => ({

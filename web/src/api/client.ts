@@ -59,6 +59,8 @@ import type {
   UnifiedResourceSearchItem,
   RecommendedResource,
   UnifiedResourceSearchType,
+  SharingTarget,
+  SkillSharingResponse,
 } from './types'
 import type { ResourceCategoryCode } from '@/shared/lib/resource-category'
 import { ApiError } from '@/shared/lib/api-error'
@@ -547,6 +549,33 @@ export const skillLifecycleApi = {
       }),
       body: JSON.stringify({ version }),
     })
+  },
+}
+
+export const sharingTargetsApi = {
+  async list(): Promise<SharingTarget[]> {
+    return fetchJson<SharingTarget[]>(`${WEB_API_PREFIX}/sharing-targets`)
+  },
+}
+
+export const skillSharingApi = {
+  async list(namespace: string, slug: string): Promise<SkillSharingResponse> {
+    const cleanNamespace = normalizeNamespaceSlug(namespace)
+    return fetchJson<SkillSharingResponse>(
+      `${WEB_API_PREFIX}/skills/${cleanNamespace}/${encodeURIComponent(slug)}/sharing`,
+    )
+  },
+
+  async replace(namespace: string, slug: string, namespaceIds: number[], restricted: boolean): Promise<SkillSharingResponse> {
+    const cleanNamespace = normalizeNamespaceSlug(namespace)
+    return fetchJson<SkillSharingResponse>(
+      `${WEB_API_PREFIX}/skills/${cleanNamespace}/${encodeURIComponent(slug)}/sharing`,
+      {
+        method: 'PUT',
+        headers: await ensureCsrfHeaders({ 'Content-Type': 'application/json' }),
+        body: JSON.stringify({ namespaceIds, restricted }),
+      },
+    )
   },
 }
 

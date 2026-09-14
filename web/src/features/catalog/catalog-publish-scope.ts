@@ -5,11 +5,11 @@ export interface CatalogPublishScope {
   visibleDepartmentIds: number[]
 }
 
-export function resolveCatalogPublishScope(target: PublishTarget | undefined): CatalogPublishScope {
-  if (!target || target.slug === 'global') {
+export function resolveCatalogPublishScope(target: PublishTarget | undefined, selectedDepartmentIds: number[] = [], restrictPublicLibrary = false): CatalogPublishScope {
+  if (!target || (target.slug === 'global' && !restrictPublicLibrary)) {
     return { visibilityScope: 'COMPANY', visibleDepartmentIds: [] }
   }
-  return { visibilityScope: 'DEPARTMENTS', visibleDepartmentIds: [target.id] }
+  return { visibilityScope: 'DEPARTMENTS', visibleDepartmentIds: [...new Set([...(target.slug === 'global' ? [] : [target.id]), ...selectedDepartmentIds])] }
 }
 
 export function catalogPublishScopeHint(target: PublishTarget | undefined): string {

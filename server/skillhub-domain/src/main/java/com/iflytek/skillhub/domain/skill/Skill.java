@@ -57,6 +57,9 @@ public class Skill {
     @Column(nullable = false)
     private boolean hidden = false;
 
+    @Column(name = "sharing_restricted", nullable = false)
+    private boolean sharingRestricted = false;
+
     @Column(name = "hidden_at")
     private Instant hiddenAt;
 
@@ -170,6 +173,10 @@ public class Skill {
         return hidden;
     }
 
+    public boolean isSharingRestricted() {
+        return sharingRestricted;
+    }
+
     public Instant getHiddenAt() {
         return hiddenAt;
     }
@@ -257,6 +264,10 @@ public class Skill {
 
     public void setHidden(boolean hidden) {
         this.hidden = hidden;
+    }
+
+    public void setSharingRestricted(boolean sharingRestricted) {
+        this.sharingRestricted = sharingRestricted;
     }
 
     public void setHiddenAt(Instant hiddenAt) {

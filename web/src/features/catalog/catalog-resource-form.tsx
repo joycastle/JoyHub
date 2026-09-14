@@ -6,6 +6,7 @@ import { CATALOG_RESOURCE_KINDS, catalogKindLabel } from '@/entities/catalog-res
 import { useCreateCatalogResource, useUpdateCatalogResource } from './use-catalog-queries'
 import { usePublishSkill, useSearchSkills } from '@/shared/hooks/use-skill-queries'
 import { usePublishTargets } from '@/shared/hooks/use-publish-targets'
+import { useSharingTargets } from '@/shared/hooks/use-sharing-targets'
 import { resolveDefaultPublishTarget } from '@/shared/lib/publish-targets'
 import { Button } from '@/shared/ui/button'
 import { Input } from '@/shared/ui/input'
@@ -41,6 +42,9 @@ export function CatalogResourceForm({ onCreated, initialKind, resource, onboardi
   const createMutation = useCreateCatalogResource()
   const updateMutation = useUpdateCatalogResource()
   const { data: publishTargets = [] } = usePublishTargets()
+  const { data: sharingTargets = [], isError: sharingTargetsFailed } = useSharingTargets()
+  const [visibleDepartmentIds, setVisibleDepartmentIds] = useState<number[]>(() => resource?.visibleDepartments?.flatMap((department) => department.id === undefined ? [] : [department.id]) ?? [])
+  const [restrictPublicLibrary, setRestrictPublicLibrary] = useState(() => resource?.visibilityScope === 'DEPARTMENTS')
   const [kind, setKind] = useState<CatalogResourceKind>(() => resource?.kind ?? initialKind ?? 'ONLINE_TOOL')
   const [artifact, setArtifact] = useState<File>()
   const [hostingMode, setHostingMode] = useState<OnlineToolHostingMode>(() => {
@@ -101,7 +105,11 @@ export function CatalogResourceForm({ onCreated, initialKind, resource, onboardi
     const requestedVersion = String(form.get('version') ?? '').trim()
     const publishRequested = !isEditing && form.get('publish') === 'on'
     const publishTarget = publishTargets.find((target) => target.id === primaryDepartmentId)
-    const publishScope = resolveCatalogPublishScope(publishTarget)
+    const publishScope = resolveCatalogPublishScope(publishTarget, visibleDepartmentIds, restrictPublicLibrary)
+    if (publishScope.visibilityScope === 'DEPARTMENTS' && publishScope.visibleDepartmentIds.length === 0) {
+      setLocalSkillError(t('catalogPublish.selectSharingDepartment', { defaultValue: '请至少选择一个可使用的部门。' }))
+      return
+    }
     // Catalog's long-standing Agent lifecycle requires at least one scenario.
     // The new single-choice category is its replacement, so keep the legacy
     // field populated until the aggregate itself is migrated.
@@ -326,7 +334,6 @@ export function CatalogResourceForm({ onCreated, initialKind, resource, onboardi
           <Input id="localSkill" className="mt-2" type="file" accept=".zip,application/zip" onChange={(event) => setLocalSkillFile(event.target.files?.[0])} />
           <p className="mt-1 text-xs text-muted-foreground">ZIP 内须包含 SKILL.md；会使用平台原有的安全校验和发布流程。</p>
           {localSkillFile ? <div className="mt-4"><Label htmlFor="skillVisibility">Skill 可见范围</Label><Select value={skillVisibility} onValueChange={setSkillVisibility}><SelectTrigger id="skillVisibility" className="mt-2"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="WAREHOUSE">项目空间内可见</SelectItem><SelectItem value="PRIVATE">仅自己可见</SelectItem></SelectContent></Select><p className="mt-2 text-xs text-muted-foreground">Skill 会与 Agent 发布到同一个项目空间。</p></div> : null}
-          {localSkillError ? <p className="mt-2 text-sm text-destructive">{localSkillError}</p> : null}
         </div>
       </section> : null}
 
@@ -345,7 +352,7 @@ export function CatalogResourceForm({ onCreated, initialKind, resource, onboardi
       </section>
 
       <section data-onboarding-target="resource-scope" className="space-y-5 rounded-2xl border bg-card p-6">
-        <div><h2 className="text-xl font-semibold">所属项目空间</h2><p className="mt-1 text-sm text-muted-foreground">选择负责维护这项内容的空间。全员可见的内容发到「所有人」，团队内容发到对应项目空间。</p></div>
+        <div><h2 className="text-xl font-semibold">所属项目空间</h2><p className="mt-1 text-sm text-muted-foreground">{t('catalogPublish.ownershipSharingHint', { defaultValue: '选择负责维护这项内容的空间，再指定哪些部门可以使用。' })}</p></div>
         <div className="max-w-xl">
           <Label htmlFor="primaryDepartmentId">部门 *</Label>
           <Select value={primaryDepartmentId === undefined ? undefined : String(primaryDepartmentId)} onValueChange={(value) => setPrimaryDepartmentId(Number(value))}>
@@ -354,11 +361,25 @@ export function CatalogResourceForm({ onCreated, initialKind, resource, onboardi
               {publishTargets.map((item) => <SelectItem key={item.id} value={String(item.id)}>{item.displayName}</SelectItem>)}
             </SelectContent>
           </Select>
-          <p className="mt-2 text-xs text-muted-foreground">{catalogPublishScopeHint(publishTargets.find((target) => target.id === primaryDepartmentId))}</p>
+          {!(restrictPublicLibrary && publishTargets.find((target) => target.id === primaryDepartmentId)?.slug === 'global') && <p className="mt-2 text-xs text-muted-foreground">{catalogPublishScopeHint(publishTargets.find((target) => target.id === primaryDepartmentId))}</p>}
         </div>
+        {publishTargets.find((target) => target.id === primaryDepartmentId)?.slug === 'global' && <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={restrictPublicLibrary} onChange={(event) => setRestrictPublicLibrary(event.target.checked)} />
+          {t('catalogPublish.restrictPublicLibrary', { defaultValue: '仅指定部门可用' })}
+        </label>}
+        {primaryDepartmentId !== undefined && (publishTargets.find((target) => target.id === primaryDepartmentId)?.slug !== 'global' || restrictPublicLibrary) && <fieldset className="space-y-3">
+          <legend className="text-sm font-medium">{t('catalogPublish.sharedDepartments', { defaultValue: '指定使用部门（可多选）' })}</legend>
+          <p className="text-xs text-muted-foreground">{t('catalogPublish.sharedDepartmentsHint', { defaultValue: '所属部门默认可用。额外选中的部门全体成员可查看和使用，维护权限不变。' })}</p>
+          {sharingTargetsFailed && <p role="alert" className="text-sm text-destructive">{t('catalogPublish.sharingTargetsFailed', { defaultValue: '部门列表加载失败，请刷新后重试。已有授权不会被清空。' })}</p>}
+          <div className="flex flex-wrap gap-4">{sharingTargets.map((department) => <label key={department.id} className="flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={department.id === primaryDepartmentId || visibleDepartmentIds.includes(department.id)} disabled={department.id === primaryDepartmentId} onChange={(event) => setVisibleDepartmentIds((current) => event.target.checked ? [...current, department.id] : current.filter((id) => id !== department.id))} />
+            {department.displayName}
+          </label>)}</div>
+        </fieldset>}
       </section>
 
       <div data-onboarding-target="resource-submit" className="flex items-center justify-between rounded-2xl border bg-card p-5">
+        {localSkillError ? <p role="alert" className="text-sm text-destructive">{localSkillError}</p> : null}
         {isEditing ? <p className="text-sm text-muted-foreground">{isManagedStatic && artifact && resource?.status === 'PUBLISHED' ? t('catalogPublish.updateDeployHint') : '保存修改不会改变当前的发布状态。'}</p> : <label className="flex items-center gap-3 text-sm"><input name="publish" type="checkbox" defaultChecked /> {isManagedStatic ? t('catalogPublish.publishAndDeploy') : '填写完成后直接发布'}</label>}
         <Button type="submit" size="lg" disabled={createMutation.isPending || updateMutation.isPending || publishSkillMutation.isPending || primaryDepartmentId === undefined}>
           {createMutation.isPending || updateMutation.isPending || publishSkillMutation.isPending ? t('catalogPublish.deploying') : isEditing && isManagedStatic && artifact && resource?.status === 'PUBLISHED' ? t('catalogPublish.saveAndDeploy') : isEditing ? '保存修改' : isManagedStatic ? t('catalogPublish.saveResource') : '保存资源'}

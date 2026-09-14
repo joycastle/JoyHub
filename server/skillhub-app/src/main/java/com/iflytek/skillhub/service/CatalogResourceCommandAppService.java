@@ -159,12 +159,26 @@ public class CatalogResourceCommandAppService {
             CatalogViewer viewer) {
         validateAccessUrl(request.accessUrl());
         Namespace publishTarget = requirePublishTargetAccess(request.primaryDepartmentId(), viewer);
-        CatalogVisibilityScope visibilityScope = "global".equals(publishTarget.getSlug())
+        boolean publicLibrary = "global".equals(publishTarget.getSlug());
+        CatalogVisibilityScope visibilityScope = publicLibrary && request.visibilityScope() != CatalogVisibilityScope.DEPARTMENTS
                 ? CatalogVisibilityScope.COMPANY
                 : CatalogVisibilityScope.DEPARTMENTS;
-        Set<Long> visibleDepartmentIds = visibilityScope == CatalogVisibilityScope.DEPARTMENTS
-                ? Set.of(publishTarget.getId())
-                : Set.of();
+        Set<Long> visibleDepartmentIds = new java.util.HashSet<>();
+        if (visibilityScope == CatalogVisibilityScope.DEPARTMENTS) {
+            if (!publicLibrary) {
+                visibleDepartmentIds.add(publishTarget.getId());
+            }
+            for (Long departmentId : safeLongSet(request.visibleDepartmentIds())) {
+                namespaceRepository.findById(departmentId)
+                        .filter(candidate -> candidate.getStatus() == NamespaceStatus.ACTIVE)
+                        .filter(candidate -> !"global".equals(candidate.getSlug()))
+                        .orElseThrow(() -> CatalogDomainException.badRequest("error.catalog.department.invalid"));
+                visibleDepartmentIds.add(departmentId);
+            }
+            if (visibleDepartmentIds.isEmpty()) {
+                throw CatalogDomainException.badRequest("error.catalog.department.invalid");
+            }
+        }
         validateResourceLinks(safeLongSet(request.relatedResourceIds()), currentResourceId);
         validateSkillLinks(safeLongSet(request.relatedSkillIds()));
 

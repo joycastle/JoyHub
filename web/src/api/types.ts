@@ -437,6 +437,12 @@ export interface SkillDetail {
   resolutionMode?: string
 }
 
+export type SharingTarget = Required<components['schemas']['SharingTargetResponse']>
+
+export type SkillSharingResponse = Omit<Required<components['schemas']['SkillSharingResponse']>, 'departments'> & {
+  departments: SharingTarget[]
+}
+
 export interface SubmitPromotionRequest {
   sourceSkillId: number
   sourceVersionId: number

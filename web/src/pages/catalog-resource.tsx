@@ -195,7 +195,7 @@ export function CatalogResourcePage() {
           { label: '版本', value: resource.version ? `v${resource.version}` : '—' },
           { label: '归属部门', value: <span className="inline-flex items-center gap-1.5"><Building2 className="h-3.5 w-3.5" />{resource.department?.name || '所有人'}</span> },
           { label: '维护者', value: <span className="inline-flex items-center gap-1.5"><UserRound className="h-3.5 w-3.5" />{resource.owner?.displayName || resource.owner?.id || '—'}</span> },
-          { label: '可见范围', value: resource.visibilityScope === 'COMPANY' ? '所有人' : resource.department?.name || '项目空间' },
+          { label: '可见范围', value: resource.visibilityScope === 'COMPANY' ? '所有人' : resource.visibleDepartments?.map((department) => department.name).filter(Boolean).join('、') || resource.department?.name || '项目空间' },
           { label: '访问次数', value: formatCompactCount(stats.data?.viewCount ?? 0) },
           { label: '使用次数', value: formatCompactCount(stats.data?.useCount ?? 0) },
           { label: '下载次数', value: formatCompactCount(stats.data?.downloadCount ?? 0) },

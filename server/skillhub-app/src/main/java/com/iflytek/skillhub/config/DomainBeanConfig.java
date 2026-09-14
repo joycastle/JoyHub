@@ -4,6 +4,8 @@ import com.iflytek.skillhub.catalog.domain.CatalogResourcePolicy;
 import com.iflytek.skillhub.catalog.domain.CatalogResourceRepository;
 import com.iflytek.skillhub.catalog.domain.CatalogResourceService;
 import com.iflytek.skillhub.domain.skill.VisibilityChecker;
+import com.iflytek.skillhub.domain.skill.SkillVisibleNamespaceRepository;
+import com.iflytek.skillhub.domain.namespace.NamespaceRepository;
 import com.iflytek.skillhub.domain.skill.metadata.SkillMetadataParser;
 import com.iflytek.skillhub.domain.skill.validation.SkillPackageValidator;
 import org.springframework.context.annotation.Bean;
@@ -41,8 +43,9 @@ public class DomainBeanConfig {
     }
 
     @Bean
-    public VisibilityChecker visibilityChecker() {
-        return new VisibilityChecker();
+    public VisibilityChecker visibilityChecker(SkillVisibleNamespaceRepository visibleNamespaceRepository,
+                                               NamespaceRepository namespaceRepository) {
+        return new VisibilityChecker(visibleNamespaceRepository, namespaceRepository);
     }
 
     @Bean

@@ -7,6 +7,16 @@ function target(id: number, slug: string): PublishTarget {
 }
 
 describe('catalog publish scope', () => {
+  it('allows a public-library resource to be restricted to selected departments', () => {
+    expect(resolveCatalogPublishScope(target(1, 'global'), [8, 9], true)).toEqual({
+      visibilityScope: 'DEPARTMENTS', visibleDepartmentIds: [8, 9],
+    })
+  })
+  it('shares with several departments while retaining the maintenance department', () => {
+    expect(resolveCatalogPublishScope(target(8, 'lab'), [9, 10, 8])).toEqual({
+      visibilityScope: 'DEPARTMENTS', visibleDepartmentIds: [8, 9, 10],
+    })
+  })
   it('makes the public library visible to the whole company', () => {
     expect(resolveCatalogPublishScope(target(1, 'global'))).toEqual({
       visibilityScope: 'COMPANY',

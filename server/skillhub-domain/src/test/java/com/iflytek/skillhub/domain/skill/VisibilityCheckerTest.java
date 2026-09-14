@@ -1,9 +1,14 @@
 package com.iflytek.skillhub.domain.skill;
 
 import com.iflytek.skillhub.domain.namespace.NamespaceRole;
+import com.iflytek.skillhub.domain.namespace.Namespace;
+import com.iflytek.skillhub.domain.namespace.NamespaceRepository;
+import com.iflytek.skillhub.domain.namespace.NamespaceType;
+import org.mockito.Mockito;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.Set;
 
@@ -188,5 +193,50 @@ class VisibilityCheckerTest {
     void testEmptyPlatformRolesDoNotGrantAccess() {
         boolean canAccess = checker.canAccess(privateSkill, OTHER_USER_ID, Map.of(), Set.of());
         assertFalse(canAccess);
+    }
+
+    @Test
+    void explicitDepartmentGrantNarrowsPublicSkillToSelectedMembers() throws Exception {
+        SkillVisibleNamespaceRepository grants = Mockito.mock(SkillVisibleNamespaceRepository.class);
+        setId(publicSkill, 99L);
+        Mockito.when(grants.findNamespaceIdsBySkillId(99L)).thenReturn(java.util.List.of(2L));
+        VisibilityChecker sharedChecker = new VisibilityChecker(grants);
+
+        assertFalse(sharedChecker.canAccess(publicSkill, null, Map.of()));
+        assertTrue(sharedChecker.canAccess(publicSkill, OTHER_USER_ID, Map.of(2L, NamespaceRole.MEMBER)));
+        assertFalse(sharedChecker.canAccess(publicSkill, OTHER_USER_ID, Map.of(3L, NamespaceRole.MEMBER)));
+    }
+
+    @Test
+    void explicitDepartmentGrantDoesNotRemoveOwnerOrMaintenanceAdminAccess() throws Exception {
+        SkillVisibleNamespaceRepository grants = Mockito.mock(SkillVisibleNamespaceRepository.class);
+        setId(publicSkill, 100L);
+        Mockito.when(grants.findNamespaceIdsBySkillId(100L)).thenReturn(java.util.List.of(2L));
+        VisibilityChecker sharedChecker = new VisibilityChecker(grants);
+
+        assertTrue(sharedChecker.canAccess(publicSkill, OWNER_ID, Map.of()));
+        assertTrue(sharedChecker.canAccess(publicSkill, ADMIN_USER_ID, Map.of(NAMESPACE_ID, NamespaceRole.ADMIN)));
+    }
+
+    @Test
+    void restrictedGlobalSkillDoesNotTreatGlobalMembershipAsASelectedDepartment() throws Exception {
+        SkillVisibleNamespaceRepository grants = Mockito.mock(SkillVisibleNamespaceRepository.class);
+        NamespaceRepository namespaces = Mockito.mock(NamespaceRepository.class);
+        Namespace global = new Namespace("global", "Global", "admin");
+        global.setType(NamespaceType.GLOBAL);
+        Mockito.when(namespaces.findById(NAMESPACE_ID)).thenReturn(java.util.Optional.of(global));
+        setId(publicSkill, 101L);
+        publicSkill.setSharingRestricted(true);
+        Mockito.when(grants.findNamespaceIdsBySkillId(101L)).thenReturn(java.util.List.of(2L));
+        VisibilityChecker sharedChecker = new VisibilityChecker(grants, namespaces);
+
+        assertFalse(sharedChecker.canAccess(publicSkill, OTHER_USER_ID, Map.of(NAMESPACE_ID, NamespaceRole.MEMBER)));
+        assertTrue(sharedChecker.canAccess(publicSkill, OTHER_USER_ID, Map.of(2L, NamespaceRole.MEMBER)));
+    }
+
+    private static void setId(Skill skill, Long id) throws Exception {
+        Field field = Skill.class.getDeclaredField("id");
+        field.setAccessible(true);
+        field.set(skill, id);
     }
 }

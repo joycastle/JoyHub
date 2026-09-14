@@ -119,9 +119,18 @@ public class PostgresFullTextQueryService implements SearchQueryService {
         sql.append("WHERE 1=1 ");
 
         // Visibility filtering
-        sql.append("AND (d.visibility = 'PUBLIC' ");
+        sql.append("AND (");
+        // An empty grant list preserves the existing public-library behavior.
+        // Once grants exist, PUBLIC is narrowed to the maintenance namespace
+        // and the explicitly shared departments below.
+        sql.append("(d.visibility = 'PUBLIC' AND s.sharing_restricted = FALSE AND NOT EXISTS (SELECT 1 "
+                + "FROM skill_visible_namespace svn_public WHERE svn_public.skill_id = d.skill_id)) ");
         if (query.visibilityScope().userId() != null) {
-            sql.append("OR (d.visibility = 'NAMESPACE_ONLY' AND d.namespace_id IN :memberNamespaceIds) ");
+            sql.append("OR (d.visibility = 'NAMESPACE_ONLY' AND d.namespace_id IN :memberNamespaceIds "
+                    + "AND (n.type <> 'GLOBAL' OR s.sharing_restricted = FALSE)) ");
+            sql.append("OR (d.visibility = 'PUBLIC' AND n.type <> 'GLOBAL' AND d.namespace_id IN :memberNamespaceIds) ");
+            sql.append("OR EXISTS (SELECT 1 FROM skill_visible_namespace svn "
+                    + "WHERE svn.skill_id = d.skill_id AND svn.namespace_id IN :memberNamespaceIds) ");
         }
         sql.append(") ");
 

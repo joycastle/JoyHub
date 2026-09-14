@@ -12,6 +12,7 @@ import type { SkillFile } from '@/api/types'
 import { InstallCommand } from '@/features/skill/install-command'
 import { ShareButton } from '@/features/skill/share-button'
 import { SkillLabelPanel } from '@/features/skill/skill-label-panel'
+import { SkillSharingPanel } from '@/features/skill/skill-sharing-panel'
 import {
   getOverviewCollapseMaxHeight,
   OVERVIEW_COLLAPSE_DESKTOP_MAX_HEIGHT,
@@ -1118,6 +1119,12 @@ export function SkillDetailPage() {
           initialLabels={skill.labels ?? []}
           canManage={canManageLabels}
           isSuperAdmin={hasRole('SUPER_ADMIN')}
+        />
+
+        <SkillSharingPanel
+          namespace={namespace}
+          slug={slug}
+          canManage={Boolean(skill.canManageLifecycle || hasRole('SUPER_ADMIN'))}
         />
 
         {skill.canManageLifecycle && (

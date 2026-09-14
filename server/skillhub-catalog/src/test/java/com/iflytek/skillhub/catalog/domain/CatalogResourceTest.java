@@ -11,6 +11,18 @@ class CatalogResourceTest {
     private final CatalogResourcePolicy policy = new CatalogResourcePolicy();
 
     @Test
+    void sharingGrantsUseButNotManagementAndRevocationRemovesAccess() {
+        CatalogResource resource = new CatalogResource(draft(
+                "shared-agent", "# 使用说明", CatalogVisibilityScope.DEPARTMENTS, Set.of(6L, 7L)), "owner");
+        resource.publish(Instant.now());
+        assertThat(policy.canView(resource, "recipient", Set.of(7L), false)).isTrue();
+        assertThat(policy.canManage(resource, "recipient", false)).isFalse();
+        assertThat(policy.canView(resource, "outsider", Set.of(8L), false)).isFalse();
+        resource.update(draft("shared-agent", "# 使用说明", CatalogVisibilityScope.DEPARTMENTS, Set.of(6L)));
+        assertThat(policy.canView(resource, "recipient", Set.of(7L), false)).isFalse();
+    }
+
+    @Test
     void publishedDepartmentResourceIsVisibleOnlyToAllowedDepartment() {
         CatalogResource resource = new CatalogResource(draft(
                 "department-agent", "# 使用说明", CatalogVisibilityScope.DEPARTMENTS, Set.of(6L)), "owner");

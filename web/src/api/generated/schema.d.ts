@@ -132,6 +132,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/skills/{namespace}/{slug}/sharing": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list"];
+        put: operations["replace"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/skills/{namespace}/{slug}/sharing-targets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_1"];
+        put: operations["replace_1"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/web/skills/{namespace}/{slug}/sharing-targets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_2"];
+        put: operations["replace_2"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/web/skills/{namespace}/{slug}/sharing": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_3"];
+        put: operations["replace_3"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/web/skills/{namespace}/{slug}/labels/{labelSlug}": {
         parameters: {
             query?: never;
@@ -432,6 +496,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/tokens/{id}/expiration": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["updateExpiration"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/users/{userId}/status": {
         parameters: {
             query?: never;
@@ -656,6 +736,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/skills/{namespace}/{slug}/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["submitReport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/web/skills/{namespace}/{slug}/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["submitReport_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/web/skills/{namespace}/{slug}/confirm-publish": {
         parameters: {
             query?: never;
@@ -778,6 +890,134 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["publish_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/web/reviews/{id}/withdraw": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["withdrawReview_2"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reviews/{id}/withdraw": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["withdrawReview_3"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reviews/{id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["rejectReview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/web/reviews/{id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["rejectReview_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/web/reviews/{id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["approveReview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reviews/{id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["approveReview_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listReviews"];
+        put?: never;
+        post: operations["submitReview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/web/reviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listReviews_1"];
+        put?: never;
+        post: operations["submitReview_1"];
         delete?: never;
         options?: never;
         head?: never;
@@ -982,6 +1222,102 @@ export interface paths {
         put?: never;
         /** Archive an owned resource */
         post: operations["archive_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/promotions/{id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["rejectPromotion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/web/promotions/{id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["rejectPromotion_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/promotions/{id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["approvePromotion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/web/promotions/{id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["approvePromotion_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/promotions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listPromotions"];
+        put?: never;
+        post: operations["submitPromotion"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/web/promotions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listPromotions_1"];
+        put?: never;
+        post: operations["submitPromotion_1"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1244,6 +1580,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/governance/notifications/{id}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["markNotificationRead"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/web/governance/notifications/{id}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["markNotificationRead_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/discovery/assist": {
         parameters: {
             query?: never;
@@ -1272,6 +1640,40 @@ export interface paths {
         put?: never;
         /** Ask the permission-aware JoyHub discovery assistant */
         post: operations["assist_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/web/catalog/tool-documentation-draft-from-url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Generate a reviewable Tool usage-guide draft from a public Tool page */
+        post: operations["generateToolDocumentationDraftFromUrl"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/catalog/tool-documentation-draft-from-url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Generate a reviewable Tool usage-guide draft from a public Tool page */
+        post: operations["generateToolDocumentationDraftFromUrl_1"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1552,6 +1954,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/tokens": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_6"];
+        put?: never;
+        post: operations["create_2"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/stars/{canonicalSlug}": {
         parameters: {
             query?: never;
@@ -1616,6 +2034,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/device/authorize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["authorizeDevice"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/deployable-applications": {
         parameters: {
             query?: never;
@@ -1626,7 +2060,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** Enable static deployment for an existing Catalog resource */
-        post: operations["create_2"];
+        post: operations["create_3"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1695,6 +2129,38 @@ export interface paths {
         put?: never;
         /** Take a deployed application offline without deleting releases */
         post: operations["offline_4"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/device/token": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["pollToken"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/device/code": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["requestDeviceCode"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1813,6 +2279,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/skill-reports/{reportId}/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["resolveReport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/skill-reports/{reportId}/dismiss": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["dismissReport"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/search/rebuild": {
         parameters: {
             query?: never;
@@ -1839,6 +2337,38 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["regenerate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/profile-reviews/{id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["reject"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/profile-reviews/{id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["approve"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2421,6 +2951,230 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/sharing-targets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listSharingTargets"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/web/sharing-targets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listSharingTargets_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/web/reviews/{id}/skill-detail": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getReviewSkillDetail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reviews/{id}/skill-detail": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getReviewSkillDetail_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/web/reviews/{id}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getReviewFile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reviews/{id}/file": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getReviewFile_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/web/reviews/{id}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["downloadReviewVersion"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reviews/{id}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["downloadReviewVersion_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reviews/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getReviewDetail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/web/reviews/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getReviewDetail_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/web/reviews/pending": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listPendingReviews"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reviews/pending": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listPendingReviews_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reviews/my-submissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listMySubmissions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/web/reviews/my-submissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listMySubmissions_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/resources/{resourceId}/stats": {
         parameters: {
             query?: never;
@@ -2657,6 +3411,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/web/promotions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getPromotionDetail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/promotions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["getPromotionDetail_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/web/promotions/pending": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listPendingPromotions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/promotions/pending": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listPendingPromotions_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/web/notifications/unread-count": {
         parameters: {
             query?: never;
@@ -2728,7 +3546,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list"];
+        get: operations["list_4"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2744,7 +3562,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["list_1"];
+        get: operations["list_5"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2937,6 +3755,134 @@ export interface paths {
             cookie?: never;
         };
         get: operations["listVisibleLabels_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/web/governance/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["summary"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/governance/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["summary_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/web/governance/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["notifications"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/governance/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["notifications_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/governance/inbox": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["inbox"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/web/governance/inbox": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["inbox_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/web/governance/activity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["activity"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/governance/activity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["activity_1"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3221,6 +4167,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/skill-reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["listReports"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/search/documents": {
         parameters: {
             query?: never;
@@ -3245,6 +4207,22 @@ export interface paths {
             cookie?: never;
         };
         get: operations["document"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/profile-reviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_7"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3509,6 +4487,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/tokens/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["revoke"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/skills/id/{skillId}": {
         parameters: {
             query?: never;
@@ -3579,6 +4573,29 @@ export interface components {
             versionId?: number;
             /** Format: date-time */
             createdAt?: string;
+        };
+        SkillSharingRequest: {
+            namespaceIds: number[];
+            restricted: boolean;
+        };
+        ApiResponseSkillSharingResponse: {
+            /** Format: int32 */
+            code?: number;
+            msg?: string;
+            data?: components["schemas"]["SkillSharingResponse"];
+            /** Format: date-time */
+            timestamp?: string;
+            requestId?: string;
+        };
+        SharingTargetResponse: {
+            /** Format: int64 */
+            id?: number;
+            slug?: string;
+            displayName?: string;
+        };
+        SkillSharingResponse: {
+            departments?: components["schemas"]["SharingTargetResponse"][];
+            restricted?: boolean;
         };
         ApiResponseSkillLabelDto: {
             /** Format: int32 */
@@ -3831,6 +4848,27 @@ export interface components {
             /** Format: date-time */
             updatedAt?: string;
         };
+        TokenExpirationUpdateRequest: {
+            expiresAt?: string;
+        };
+        ApiResponseTokenSummaryResponse: {
+            /** Format: int32 */
+            code?: number;
+            msg?: string;
+            data?: components["schemas"]["TokenSummaryResponse"];
+            /** Format: date-time */
+            timestamp?: string;
+            requestId?: string;
+        };
+        TokenSummaryResponse: {
+            /** Format: int64 */
+            id?: number;
+            name?: string;
+            tokenPrefix?: string;
+            createdAt?: string;
+            expiresAt?: string;
+            lastUsedAt?: string;
+        };
         AdminUserStatusUpdateRequest: {
             status: string;
         };
@@ -3937,6 +4975,24 @@ export interface components {
             version: string;
             targetVisibility: string;
         };
+        SkillReportSubmitRequest: {
+            reason?: string;
+            details?: string;
+        };
+        ApiResponseSkillReportMutationResponse: {
+            /** Format: int32 */
+            code?: number;
+            msg?: string;
+            data?: components["schemas"]["SkillReportMutationResponse"];
+            /** Format: date-time */
+            timestamp?: string;
+            requestId?: string;
+        };
+        SkillReportMutationResponse: {
+            /** Format: int64 */
+            reportId?: number;
+            status?: string;
+        };
         ConfirmPublishRequest: {
             version: string;
         };
@@ -3993,6 +5049,41 @@ export interface components {
             timestamp?: string;
             requestId?: string;
         };
+        ReviewActionRequest: {
+            comment?: string;
+        };
+        ApiResponseReviewTaskResponse: {
+            /** Format: int32 */
+            code?: number;
+            msg?: string;
+            data?: components["schemas"]["ReviewTaskResponse"];
+            /** Format: date-time */
+            timestamp?: string;
+            requestId?: string;
+        };
+        ReviewTaskResponse: {
+            /** Format: int64 */
+            id?: number;
+            /** Format: int64 */
+            skillVersionId?: number;
+            namespace?: string;
+            skillSlug?: string;
+            version?: string;
+            status?: string;
+            submittedBy?: string;
+            submittedByName?: string;
+            reviewedBy?: string;
+            reviewedByName?: string;
+            reviewComment?: string;
+            /** Format: date-time */
+            submittedAt?: string;
+            /** Format: date-time */
+            reviewedAt?: string;
+        };
+        ReviewTaskRequest: {
+            /** Format: int64 */
+            skillVersionId?: number;
+        };
         ApiResponseResourceActionResponse: {
             /** Format: int32 */
             code?: number;
@@ -4006,6 +5097,58 @@ export interface components {
             resourceId?: string;
             action?: string;
             status?: string;
+        };
+        PromotionActionRequest: {
+            comment?: string;
+        };
+        ApiResponsePromotionResponseDto: {
+            /** Format: int32 */
+            code?: number;
+            msg?: string;
+            data?: components["schemas"]["PromotionResponseDto"];
+            /** Format: date-time */
+            timestamp?: string;
+            requestId?: string;
+        };
+        PromotionResponseDto: {
+            /** Format: int64 */
+            id?: number;
+            /** Format: int64 */
+            sourceSkillId?: number;
+            sourceSkillDisplayName?: string;
+            sourceSkillSummary?: string;
+            sourceNamespace?: string;
+            sourceSkillSlug?: string;
+            sourceVersion?: string;
+            /** Format: int32 */
+            sourceVersionFileCount?: number;
+            /** Format: int64 */
+            sourceVersionTotalSize?: number;
+            /** Format: int64 */
+            sourceSkillDownloadCount?: number;
+            /** Format: int32 */
+            sourceSkillStarCount?: number;
+            targetNamespace?: string;
+            /** Format: int64 */
+            targetSkillId?: number;
+            status?: string;
+            submittedBy?: string;
+            submittedByName?: string;
+            reviewedBy?: string;
+            reviewedByName?: string;
+            reviewComment?: string;
+            /** Format: date-time */
+            submittedAt?: string;
+            /** Format: date-time */
+            reviewedAt?: string;
+        };
+        PromotionRequestDto: {
+            /** Format: int64 */
+            sourceSkillId?: number;
+            /** Format: int64 */
+            sourceVersionId?: number;
+            /** Format: int64 */
+            targetNamespaceId?: number;
         };
         TransferOwnershipRequest: {
             newOwnerId: string;
@@ -4057,6 +5200,28 @@ export interface components {
         NamespaceLifecycleRequest: {
             reason?: string;
         };
+        ApiResponseGovernanceNotificationResponse: {
+            /** Format: int32 */
+            code?: number;
+            msg?: string;
+            data?: components["schemas"]["GovernanceNotificationResponse"];
+            /** Format: date-time */
+            timestamp?: string;
+            requestId?: string;
+        };
+        GovernanceNotificationResponse: {
+            /** Format: int64 */
+            id?: number;
+            category?: string;
+            entityType?: string;
+            /** Format: int64 */
+            entityId?: number;
+            title?: string;
+            bodyJson?: string;
+            status?: string;
+            createdAt?: string;
+            readAt?: string;
+        };
         DiscoveryAssistRequest: {
             question: string;
             language?: string;
@@ -4098,6 +5263,9 @@ export interface components {
             evidence?: string;
             source?: string;
         };
+        ToolDocumentationUrlDraftRequest: {
+            accessUrl: string;
+        };
         ApiResponseArchiveDocumentationDraftResponse: {
             /** Format: int32 */
             code?: number;
@@ -4123,6 +5291,29 @@ export interface components {
             scenarios?: string[];
             existingDocumentation?: string;
         };
+        TokenCreateRequest: {
+            name: string;
+            scopes?: string[];
+            expiresAt?: string;
+        };
+        ApiResponseTokenCreateResponse: {
+            /** Format: int32 */
+            code?: number;
+            msg?: string;
+            data?: components["schemas"]["TokenCreateResponse"];
+            /** Format: date-time */
+            timestamp?: string;
+            requestId?: string;
+        };
+        TokenCreateResponse: {
+            token?: string;
+            /** Format: int64 */
+            id?: number;
+            name?: string;
+            tokenPrefix?: string;
+            createdAt?: string;
+            expiresAt?: string;
+        };
         ClawHubStarResponse: {
             ok?: boolean;
             starred?: boolean;
@@ -4135,6 +5326,9 @@ export interface components {
         };
         ClawHubDeleteResponse: {
             ok?: boolean;
+        };
+        AuthorizeRequest: {
+            userCode?: string;
         };
         CreateDeployableApplicationRequest: {
             /** Format: int64 */
@@ -4212,6 +5406,41 @@ export interface components {
         CreateDeploymentReleaseRequest: {
             version: string;
         };
+        TokenRequest: {
+            deviceCode?: string;
+        };
+        ApiResponseDeviceTokenResponse: {
+            /** Format: int32 */
+            code?: number;
+            msg?: string;
+            data?: components["schemas"]["DeviceTokenResponse"];
+            /** Format: date-time */
+            timestamp?: string;
+            requestId?: string;
+        };
+        DeviceTokenResponse: {
+            accessToken?: string;
+            tokenType?: string;
+            error?: string;
+        };
+        ApiResponseDeviceCodeResponse: {
+            /** Format: int32 */
+            code?: number;
+            msg?: string;
+            data?: components["schemas"]["DeviceCodeResponse"];
+            /** Format: date-time */
+            timestamp?: string;
+            requestId?: string;
+        };
+        DeviceCodeResponse: {
+            deviceCode?: string;
+            userCode?: string;
+            verificationUri?: string;
+            /** Format: int32 */
+            expiresIn?: number;
+            /** Format: int32 */
+            interval?: number;
+        };
         AdminSkillMutationResponse: {
             /** Format: int64 */
             skillId?: number;
@@ -4228,6 +5457,10 @@ export interface components {
             /** Format: date-time */
             timestamp?: string;
             requestId?: string;
+        };
+        AdminSkillReportActionRequest: {
+            comment?: string;
+            disposition?: string;
         };
         ApiResponseResourceSearchDocumentResponse: {
             /** Format: int32 */
@@ -4264,6 +5497,23 @@ export interface components {
             updatedAt?: string;
             categoryCode?: string;
             categorySource?: string;
+        };
+        ProfileReviewRejectRequest: {
+            comment: string;
+        };
+        ApiResponseProfileReviewMutationResponse: {
+            /** Format: int32 */
+            code?: number;
+            msg?: string;
+            data?: components["schemas"]["ProfileReviewMutationResponse"];
+            /** Format: date-time */
+            timestamp?: string;
+            requestId?: string;
+        };
+        ProfileReviewMutationResponse: {
+            /** Format: int64 */
+            id?: number;
+            status?: string;
         };
         AdminLabelCreateRequest: {
             slug: string;
@@ -4633,6 +5883,51 @@ export interface components {
             ownerPreviewReviewComment?: string;
             resolutionMode?: string;
         };
+        ApiResponseListSharingTargetResponse: {
+            /** Format: int32 */
+            code?: number;
+            msg?: string;
+            data?: components["schemas"]["SharingTargetResponse"][];
+            /** Format: date-time */
+            timestamp?: string;
+            requestId?: string;
+        };
+        ApiResponseReviewSkillDetailResponse: {
+            /** Format: int32 */
+            code?: number;
+            msg?: string;
+            data?: components["schemas"]["ReviewSkillDetailResponse"];
+            /** Format: date-time */
+            timestamp?: string;
+            requestId?: string;
+        };
+        ReviewSkillDetailResponse: {
+            skill?: components["schemas"]["SkillDetailResponse"];
+            versions?: components["schemas"]["SkillVersionResponse"][];
+            files?: components["schemas"]["SkillFileResponse"][];
+            documentationPath?: string;
+            documentationContent?: string;
+            downloadUrl?: string;
+            activeVersion?: string;
+        };
+        ApiResponsePageResponseReviewTaskResponse: {
+            /** Format: int32 */
+            code?: number;
+            msg?: string;
+            data?: components["schemas"]["PageResponseReviewTaskResponse"];
+            /** Format: date-time */
+            timestamp?: string;
+            requestId?: string;
+        };
+        PageResponseReviewTaskResponse: {
+            items?: components["schemas"]["ReviewTaskResponse"][];
+            /** Format: int64 */
+            total?: number;
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+        };
         ApiResponseResourceStatsResponse: {
             /** Format: int32 */
             code?: number;
@@ -4769,6 +6064,24 @@ export interface components {
             slug?: string;
             displayName?: string;
             defaultRepository?: boolean;
+        };
+        ApiResponsePageResponsePromotionResponseDto: {
+            /** Format: int32 */
+            code?: number;
+            msg?: string;
+            data?: components["schemas"]["PageResponsePromotionResponseDto"];
+            /** Format: date-time */
+            timestamp?: string;
+            requestId?: string;
+        };
+        PageResponsePromotionResponseDto: {
+            items?: components["schemas"]["PromotionResponseDto"][];
+            /** Format: int64 */
+            total?: number;
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
         };
         ApiResponseMapStringLong: {
             /** Format: int32 */
@@ -4931,6 +6244,100 @@ export interface components {
             canRestore?: boolean;
             canDelete?: boolean;
         };
+        ApiResponseGovernanceSummaryResponse: {
+            /** Format: int32 */
+            code?: number;
+            msg?: string;
+            data?: components["schemas"]["GovernanceSummaryResponse"];
+            /** Format: date-time */
+            timestamp?: string;
+            requestId?: string;
+        };
+        GovernanceSummaryResponse: {
+            /** Format: int64 */
+            pendingReviews?: number;
+            /** Format: int64 */
+            pendingPromotions?: number;
+            /** Format: int64 */
+            pendingReports?: number;
+            /** Format: int64 */
+            unreadNotifications?: number;
+        };
+        ApiResponsePageResponseGovernanceNotificationResponse: {
+            /** Format: int32 */
+            code?: number;
+            msg?: string;
+            data?: components["schemas"]["PageResponseGovernanceNotificationResponse"];
+            /** Format: date-time */
+            timestamp?: string;
+            requestId?: string;
+        };
+        PageResponseGovernanceNotificationResponse: {
+            items?: components["schemas"]["GovernanceNotificationResponse"][];
+            /** Format: int64 */
+            total?: number;
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+        };
+        ApiResponsePageResponseGovernanceInboxItemResponse: {
+            /** Format: int32 */
+            code?: number;
+            msg?: string;
+            data?: components["schemas"]["PageResponseGovernanceInboxItemResponse"];
+            /** Format: date-time */
+            timestamp?: string;
+            requestId?: string;
+        };
+        GovernanceInboxItemResponse: {
+            type?: string;
+            /** Format: int64 */
+            id?: number;
+            title?: string;
+            subtitle?: string;
+            timestamp?: string;
+            namespace?: string;
+            skillSlug?: string;
+        };
+        PageResponseGovernanceInboxItemResponse: {
+            items?: components["schemas"]["GovernanceInboxItemResponse"][];
+            /** Format: int64 */
+            total?: number;
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+        };
+        ApiResponsePageResponseGovernanceActivityItemResponse: {
+            /** Format: int32 */
+            code?: number;
+            msg?: string;
+            data?: components["schemas"]["PageResponseGovernanceActivityItemResponse"];
+            /** Format: date-time */
+            timestamp?: string;
+            requestId?: string;
+        };
+        GovernanceActivityItemResponse: {
+            /** Format: int64 */
+            id?: number;
+            action?: string;
+            actorUserId?: string;
+            actorDisplayName?: string;
+            targetType?: string;
+            targetId?: string;
+            details?: string;
+            timestamp?: string;
+        };
+        PageResponseGovernanceActivityItemResponse: {
+            items?: components["schemas"]["GovernanceActivityItemResponse"][];
+            /** Format: int64 */
+            total?: number;
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+        };
         ApiResponsePageResponseCatalogResourceSummaryResponse: {
             /** Format: int32 */
             code?: number;
@@ -4987,6 +6394,24 @@ export interface components {
             fieldPolicies?: {
                 [key: string]: components["schemas"]["FieldPolicyResponse"];
             };
+        };
+        ApiResponsePageResponseTokenSummaryResponse: {
+            /** Format: int32 */
+            code?: number;
+            msg?: string;
+            data?: components["schemas"]["PageResponseTokenSummaryResponse"];
+            /** Format: date-time */
+            timestamp?: string;
+            requestId?: string;
+        };
+        PageResponseTokenSummaryResponse: {
+            items?: components["schemas"]["TokenSummaryResponse"][];
+            /** Format: int64 */
+            total?: number;
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
         };
         ClawHubSkillListResponse: {
             items?: components["schemas"]["SkillListItem"][];
@@ -5195,6 +6620,43 @@ export interface components {
             /** Format: int32 */
             size?: number;
         };
+        AdminSkillReportSummaryResponse: {
+            /** Format: int64 */
+            id?: number;
+            /** Format: int64 */
+            skillId?: number;
+            namespace?: string;
+            skillSlug?: string;
+            skillDisplayName?: string;
+            reporterId?: string;
+            reason?: string;
+            details?: string;
+            status?: string;
+            handledBy?: string;
+            handleComment?: string;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            handledAt?: string;
+        };
+        ApiResponsePageResponseAdminSkillReportSummaryResponse: {
+            /** Format: int32 */
+            code?: number;
+            msg?: string;
+            data?: components["schemas"]["PageResponseAdminSkillReportSummaryResponse"];
+            /** Format: date-time */
+            timestamp?: string;
+            requestId?: string;
+        };
+        PageResponseAdminSkillReportSummaryResponse: {
+            items?: components["schemas"]["AdminSkillReportSummaryResponse"][];
+            /** Format: int64 */
+            total?: number;
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+        };
         ApiResponsePageResponseResourceSearchDocumentResponse: {
             /** Format: int32 */
             code?: number;
@@ -5212,6 +6674,41 @@ export interface components {
             page?: number;
             /** Format: int32 */
             size?: number;
+        };
+        ApiResponsePageResponseProfileReviewSummaryResponse: {
+            /** Format: int32 */
+            code?: number;
+            msg?: string;
+            data?: components["schemas"]["PageResponseProfileReviewSummaryResponse"];
+            /** Format: date-time */
+            timestamp?: string;
+            requestId?: string;
+        };
+        PageResponseProfileReviewSummaryResponse: {
+            items?: components["schemas"]["ProfileReviewSummaryResponse"][];
+            /** Format: int64 */
+            total?: number;
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+        };
+        ProfileReviewSummaryResponse: {
+            /** Format: int64 */
+            id?: number;
+            userId?: string;
+            username?: string;
+            currentDisplayName?: string;
+            requestedDisplayName?: string;
+            status?: string;
+            machineResult?: string;
+            reviewerId?: string;
+            reviewerName?: string;
+            reviewComment?: string;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: date-time */
+            reviewedAt?: string;
         };
         ApiResponsePageResponseAuditLogItemResponse: {
             /** Format: int32 */
@@ -5846,6 +7343,206 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ApiResponseMessageResponse"];
+                };
+            };
+        };
+    };
+    list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                namespace: string;
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseSkillSharingResponse"];
+                };
+            };
+        };
+    };
+    replace: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                namespace: string;
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SkillSharingRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseSkillSharingResponse"];
+                };
+            };
+        };
+    };
+    list_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                namespace: string;
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseSkillSharingResponse"];
+                };
+            };
+        };
+    };
+    replace_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                namespace: string;
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SkillSharingRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseSkillSharingResponse"];
+                };
+            };
+        };
+    };
+    list_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                namespace: string;
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseSkillSharingResponse"];
+                };
+            };
+        };
+    };
+    replace_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                namespace: string;
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SkillSharingRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseSkillSharingResponse"];
+                };
+            };
+        };
+    };
+    list_3: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                namespace: string;
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseSkillSharingResponse"];
+                };
+            };
+        };
+    };
+    replace_3: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                namespace: string;
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SkillSharingRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseSkillSharingResponse"];
                 };
             };
         };
@@ -6594,6 +8291,32 @@ export interface operations {
             };
         };
     };
+    updateExpiration: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TokenExpirationUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseTokenSummaryResponse"];
+                };
+            };
+        };
+    };
     updateUserStatus: {
         parameters: {
             query?: never;
@@ -6978,6 +8701,60 @@ export interface operations {
             };
         };
     };
+    submitReport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                namespace: string;
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SkillReportSubmitRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseSkillReportMutationResponse"];
+                };
+            };
+        };
+    };
+    submitReport_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                namespace: string;
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SkillReportSubmitRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseSkillReportMutationResponse"];
+                };
+            };
+        };
+    };
     confirmPublish: {
         parameters: {
             query?: never;
@@ -7202,6 +8979,254 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ApiResponsePublishResponse"];
+                };
+            };
+        };
+    };
+    withdrawReview_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    withdrawReview_3: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    rejectReview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ReviewActionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseReviewTaskResponse"];
+                };
+            };
+        };
+    };
+    rejectReview_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ReviewActionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseReviewTaskResponse"];
+                };
+            };
+        };
+    };
+    approveReview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ReviewActionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseReviewTaskResponse"];
+                };
+            };
+        };
+    };
+    approveReview_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ReviewActionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseReviewTaskResponse"];
+                };
+            };
+        };
+    };
+    listReviews: {
+        parameters: {
+            query: {
+                status: string;
+                namespaceId?: number;
+                page?: number;
+                size?: number;
+                sortDirection?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponsePageResponseReviewTaskResponse"];
+                };
+            };
+        };
+    };
+    submitReview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewTaskRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseReviewTaskResponse"];
+                };
+            };
+        };
+    };
+    listReviews_1: {
+        parameters: {
+            query: {
+                status: string;
+                namespaceId?: number;
+                page?: number;
+                size?: number;
+                sortDirection?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponsePageResponseReviewTaskResponse"];
+                };
+            };
+        };
+    };
+    submitReview_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewTaskRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseReviewTaskResponse"];
                 };
             };
         };
@@ -7470,6 +9495,210 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ApiResponseResourceActionResponse"];
+                };
+            };
+        };
+    };
+    rejectPromotion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PromotionActionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponsePromotionResponseDto"];
+                };
+            };
+        };
+    };
+    rejectPromotion_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PromotionActionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponsePromotionResponseDto"];
+                };
+            };
+        };
+    };
+    approvePromotion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PromotionActionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponsePromotionResponseDto"];
+                };
+            };
+        };
+    };
+    approvePromotion_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PromotionActionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponsePromotionResponseDto"];
+                };
+            };
+        };
+    };
+    listPromotions: {
+        parameters: {
+            query?: {
+                status?: "PENDING" | "APPROVED" | "REJECTED";
+                page?: number;
+                size?: number;
+                sortBy?: "reviewedAt";
+                sortDirection?: "ASC" | "DESC";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponsePageResponsePromotionResponseDto"];
+                };
+            };
+        };
+    };
+    submitPromotion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PromotionRequestDto"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponsePromotionResponseDto"];
+                };
+            };
+        };
+    };
+    listPromotions_1: {
+        parameters: {
+            query?: {
+                status?: "PENDING" | "APPROVED" | "REJECTED";
+                page?: number;
+                size?: number;
+                sortBy?: "reviewedAt";
+                sortDirection?: "ASC" | "DESC";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponsePageResponsePromotionResponseDto"];
+                };
+            };
+        };
+    };
+    submitPromotion_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PromotionRequestDto"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponsePromotionResponseDto"];
                 };
             };
         };
@@ -7962,6 +10191,50 @@ export interface operations {
             };
         };
     };
+    markNotificationRead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseGovernanceNotificationResponse"];
+                };
+            };
+        };
+    };
+    markNotificationRead_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseGovernanceNotificationResponse"];
+                };
+            };
+        };
+    };
     assist: {
         parameters: {
             query?: never;
@@ -8006,6 +10279,58 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ApiResponseDiscoveryAssistResponse"];
+                };
+            };
+        };
+    };
+    generateToolDocumentationDraftFromUrl: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Accept-Language"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ToolDocumentationUrlDraftRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseArchiveDocumentationDraftResponse"];
+                };
+            };
+        };
+    };
+    generateToolDocumentationDraftFromUrl_1: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Accept-Language"?: string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ToolDocumentationUrlDraftRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseArchiveDocumentationDraftResponse"];
                 };
             };
         };
@@ -8530,6 +10855,53 @@ export interface operations {
             };
         };
     };
+    list_6: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponsePageResponseTokenSummaryResponse"];
+                };
+            };
+        };
+    };
+    create_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TokenCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseTokenCreateResponse"];
+                };
+            };
+        };
+    };
     starSkill_2: {
         parameters: {
             query?: never;
@@ -8674,7 +11046,31 @@ export interface operations {
             };
         };
     };
-    create_2: {
+    authorizeDevice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AuthorizeRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseMessageResponse"];
+                };
+            };
+        };
+    };
+    create_3: {
         parameters: {
             query?: never;
             header?: never;
@@ -8794,6 +11190,50 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ApiResponseDeployableApplicationResponse"];
+                };
+            };
+        };
+    };
+    pollToken: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TokenRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseDeviceTokenResponse"];
+                };
+            };
+        };
+    };
+    requestDeviceCode: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseDeviceCodeResponse"];
                 };
             };
         };
@@ -8960,6 +11400,58 @@ export interface operations {
             };
         };
     };
+    resolveReport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                reportId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["AdminSkillReportActionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseSkillReportMutationResponse"];
+                };
+            };
+        };
+    };
+    dismissReport: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                reportId: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["AdminSkillReportActionRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseSkillReportMutationResponse"];
+                };
+            };
+        };
+    };
     rebuildAll: {
         parameters: {
             query?: never;
@@ -8999,6 +11491,54 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ApiResponseResourceSearchDocumentResponse"];
+                };
+            };
+        };
+    };
+    reject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfileReviewRejectRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseProfileReviewMutationResponse"];
+                };
+            };
+        };
+    };
+    approve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseProfileReviewMutationResponse"];
                 };
             };
         };
@@ -10035,6 +12575,320 @@ export interface operations {
             };
         };
     };
+    listSharingTargets: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseListSharingTargetResponse"];
+                };
+            };
+        };
+    };
+    listSharingTargets_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseListSharingTargetResponse"];
+                };
+            };
+        };
+    };
+    getReviewSkillDetail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseReviewSkillDetailResponse"];
+                };
+            };
+        };
+    };
+    getReviewSkillDetail_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseReviewSkillDetailResponse"];
+                };
+            };
+        };
+    };
+    getReviewFile: {
+        parameters: {
+            query: {
+                path: string;
+            };
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+        };
+    };
+    getReviewFile_1: {
+        parameters: {
+            query: {
+                path: string;
+            };
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+        };
+    };
+    downloadReviewVersion: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+        };
+    };
+    downloadReviewVersion_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+        };
+    };
+    getReviewDetail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseReviewTaskResponse"];
+                };
+            };
+        };
+    };
+    getReviewDetail_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseReviewTaskResponse"];
+                };
+            };
+        };
+    };
+    listPendingReviews: {
+        parameters: {
+            query: {
+                namespaceId: number;
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponsePageResponseReviewTaskResponse"];
+                };
+            };
+        };
+    };
+    listPendingReviews_1: {
+        parameters: {
+            query: {
+                namespaceId: number;
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponsePageResponseReviewTaskResponse"];
+                };
+            };
+        };
+    };
+    listMySubmissions: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponsePageResponseReviewTaskResponse"];
+                };
+            };
+        };
+    };
+    listMySubmissions_1: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponsePageResponseReviewTaskResponse"];
+                };
+            };
+        };
+    };
     stats: {
         parameters: {
             query?: never;
@@ -10359,6 +13213,96 @@ export interface operations {
             };
         };
     };
+    getPromotionDetail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponsePromotionResponseDto"];
+                };
+            };
+        };
+    };
+    getPromotionDetail_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponsePromotionResponseDto"];
+                };
+            };
+        };
+    };
+    listPendingPromotions: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponsePageResponsePromotionResponseDto"];
+                };
+            };
+        };
+    };
+    listPendingPromotions_1: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponsePageResponsePromotionResponseDto"];
+                };
+            };
+        };
+    };
     unreadCount: {
         parameters: {
             query?: never;
@@ -10439,7 +13383,7 @@ export interface operations {
             };
         };
     };
-    list: {
+    list_4: {
         parameters: {
             query?: {
                 category?: string;
@@ -10463,7 +13407,7 @@ export interface operations {
             };
         };
     };
-    list_1: {
+    list_5: {
         parameters: {
             query?: {
                 category?: string;
@@ -10757,6 +13701,186 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ApiResponseListSkillLabelDto"];
+                };
+            };
+        };
+    };
+    summary: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseGovernanceSummaryResponse"];
+                };
+            };
+        };
+    };
+    summary_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseGovernanceSummaryResponse"];
+                };
+            };
+        };
+    };
+    notifications: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponsePageResponseGovernanceNotificationResponse"];
+                };
+            };
+        };
+    };
+    notifications_1: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponsePageResponseGovernanceNotificationResponse"];
+                };
+            };
+        };
+    };
+    inbox: {
+        parameters: {
+            query?: {
+                type?: string;
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponsePageResponseGovernanceInboxItemResponse"];
+                };
+            };
+        };
+    };
+    inbox_1: {
+        parameters: {
+            query?: {
+                type?: string;
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponsePageResponseGovernanceInboxItemResponse"];
+                };
+            };
+        };
+    };
+    activity: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponsePageResponseGovernanceActivityItemResponse"];
+                };
+            };
+        };
+    };
+    activity_1: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponsePageResponseGovernanceActivityItemResponse"];
                 };
             };
         };
@@ -11164,6 +14288,30 @@ export interface operations {
             };
         };
     };
+    listReports: {
+        parameters: {
+            query?: {
+                status?: string;
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponsePageResponseAdminSkillReportSummaryResponse"];
+                };
+            };
+        };
+    };
     documents: {
         parameters: {
             query?: {
@@ -11208,6 +14356,31 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ApiResponseResourceSearchDocumentResponse"];
+                };
+            };
+        };
+    };
+    list_7: {
+        parameters: {
+            query?: {
+                status?: string;
+                page?: number;
+                size?: number;
+                sortDirection?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponsePageResponseProfileReviewSummaryResponse"];
                 };
             };
         };
@@ -11584,6 +14757,26 @@ export interface operations {
                 content: {
                     "*/*": components["schemas"]["ApiResponseMessageResponse"];
                 };
+            };
+        };
+    };
+    revoke: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

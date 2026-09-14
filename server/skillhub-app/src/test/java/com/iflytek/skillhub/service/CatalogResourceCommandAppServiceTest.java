@@ -66,7 +66,49 @@ class CatalogResourceCommandAppServiceTest {
     }
 
     @Test
-    void createDerivesDepartmentVisibilityFromTheSelectedPublishTarget() {
+    void publicLibraryCanRestrictUseToSelectedDepartments() {
+        Namespace library = mock(Namespace.class);
+        given(library.getId()).willReturn(42L);
+        given(library.getSlug()).willReturn("global");
+        given(library.getStatus()).willReturn(NamespaceStatus.ACTIVE);
+        given(namespaceRepository.findById(42L)).willReturn(java.util.Optional.of(library));
+        Namespace recipient = mock(Namespace.class);
+        given(recipient.getStatus()).willReturn(NamespaceStatus.ACTIVE);
+        given(recipient.getSlug()).willReturn("bf");
+        given(namespaceRepository.findById(999L)).willReturn(java.util.Optional.of(recipient));
+        CatalogResourceService resourceService = mock(CatalogResourceService.class);
+        CatalogResourceRepository resources = mock(CatalogResourceRepository.class);
+        CatalogResource created = mock(CatalogResource.class);
+        given(created.getKind()).willReturn(CatalogResourceKind.ONLINE_TOOL);
+        given(created.getId()).willReturn(8L);
+        given(resourceService.create(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyString(),
+                org.mockito.ArgumentMatchers.anyBoolean())).willReturn(created);
+        service = new CatalogResourceCommandAppService(resourceService, resources, namespaceRepository,
+                mock(SkillRepository.class), mock(UserAccountRepository.class), mock(CatalogResourceProjectionAssembler.class),
+                mock(ResourceSearchDocumentSyncService.class), mock(ResourceCategoryAppService.class));
+        service.create(request(42L), viewer(Set.of(42L)));
+        ArgumentCaptor<CatalogResourceDraft> draft = ArgumentCaptor.forClass(CatalogResourceDraft.class);
+        verify(resourceService).create(draft.capture(), org.mockito.ArgumentMatchers.eq("user-1"),
+                org.mockito.ArgumentMatchers.eq(false));
+        org.assertj.core.api.Assertions.assertThat(draft.getValue().visibilityScope()).isEqualTo(CatalogVisibilityScope.DEPARTMENTS);
+        org.assertj.core.api.Assertions.assertThat(draft.getValue().visibleNamespaceIds()).containsExactly(999L);
+    }
+
+    @Test
+    void createRejectsUnknownSharingDepartment() {
+        Namespace department = mock(Namespace.class);
+        given(department.getId()).willReturn(42L);
+        given(department.getSlug()).willReturn("lab");
+        given(department.getStatus()).willReturn(NamespaceStatus.ACTIVE);
+        given(namespaceRepository.findById(42L)).willReturn(java.util.Optional.of(department));
+        assertThatThrownBy(() -> service.create(request(42L), viewer(Set.of(42L))))
+                .isInstanceOfSatisfying(CatalogDomainException.class,
+                        exception -> org.assertj.core.api.Assertions.assertThat(exception.code())
+                                .isEqualTo("error.catalog.department.invalid"));
+    }
+
+    @Test
+    void createSharesWithSelectedDepartmentOutsideOwnersMembership() {
         CatalogResourceService resourceService = mock(CatalogResourceService.class);
         CatalogResourceRepository resourceRepository = mock(CatalogResourceRepository.class);
         CatalogResource created = mock(CatalogResource.class);
@@ -75,6 +117,10 @@ class CatalogResourceCommandAppServiceTest {
         given(department.getSlug()).willReturn("lab");
         given(department.getStatus()).willReturn(NamespaceStatus.ACTIVE);
         given(namespaceRepository.findById(42L)).willReturn(java.util.Optional.of(department));
+        Namespace recipient = mock(Namespace.class);
+        given(recipient.getStatus()).willReturn(NamespaceStatus.ACTIVE);
+        given(recipient.getSlug()).willReturn("bf");
+        given(namespaceRepository.findById(999L)).willReturn(java.util.Optional.of(recipient));
         given(resourceRepository.findBySlug("report-tool")).willReturn(java.util.Optional.empty());
         given(created.getKind()).willReturn(CatalogResourceKind.ONLINE_TOOL);
         given(created.getId()).willReturn(8L);
@@ -93,7 +139,7 @@ class CatalogResourceCommandAppServiceTest {
                 org.mockito.ArgumentMatchers.eq(false));
         org.assertj.core.api.Assertions.assertThat(draft.getValue().visibilityScope())
                 .isEqualTo(CatalogVisibilityScope.DEPARTMENTS);
-        org.assertj.core.api.Assertions.assertThat(draft.getValue().visibleNamespaceIds()).containsExactly(42L);
+        org.assertj.core.api.Assertions.assertThat(draft.getValue().visibleNamespaceIds()).containsExactlyInAnyOrder(42L, 999L);
     }
 
     @Test
