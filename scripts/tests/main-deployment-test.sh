@@ -25,6 +25,8 @@ grep -Fq 'cancel-in-progress: false' "${workflow}" || fail "Production deploymen
 grep -Fq 'packages: write' "${workflow}" || fail "Deployment must publish packages"
 grep -Fq 'environment: production' "${workflow}" || fail "Deployment must use the production environment"
 grep -Fq 'platforms: linux/arm64' "${workflow}" || fail "Production images must target the ARM64 host"
+grep -Fq 'runs-on: ubuntu-24.04-arm' "${workflow}" || fail "Production images must build on native ARM64 runners"
+! grep -Fq 'docker/setup-qemu-action' "${workflow}" || fail "Native ARM64 image builds must not use QEMU emulation"
 grep -Fq 'persist-credentials: false' "${workflow}" || fail "Checkout credentials must not persist"
 grep -Fq 'PROD_SSH_KNOWN_HOSTS' "${workflow}" || fail "Pinned SSH host keys are required"
 grep -Fq 'joyhub-deployment-runner' "${workflow}" || fail "Runner image must deploy with the application"
