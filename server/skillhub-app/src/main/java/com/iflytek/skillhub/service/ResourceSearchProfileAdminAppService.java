@@ -35,7 +35,7 @@ public class ResourceSearchProfileAdminAppService {
 
     @Transactional
     public ResourceSearchDocumentResponse requestRegeneration(String resourceType, Long resourceId) {
-        ResourceSearchDocumentEntity document = repository.findByResourceTypeAndResourceId(normalize(resourceType), resourceId)
+        ResourceSearchDocumentEntity document = repository.findForRegeneration(normalize(resourceType), resourceId)
                 .orElseThrow(() -> new IllegalArgumentException("Resource search document does not exist"));
         document.requestRegeneration();
         return toResponse(repository.save(document));

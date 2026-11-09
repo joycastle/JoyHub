@@ -11,11 +11,13 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import java.time.Instant;
+import org.hibernate.annotations.DynamicUpdate;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 /** Durable, aggregate-neutral projection used by unified resource discovery. */
 @Entity
+@DynamicUpdate
 @Table(name = "resource_search_document")
 public class ResourceSearchDocumentEntity {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY) private Long id;
@@ -50,6 +52,12 @@ public class ResourceSearchDocumentEntity {
     @Column(name = "prompt_version", length = 32) private String promptVersion;
     @Column(name = "generated_at") private Instant generatedAt;
     @Column(name = "updated_at", nullable = false) private Instant updatedAt;
+
+    @Column(name = "generation_attempts", nullable = false) private int generationAttempts;
+    @Column(name = "generation_error_code", length = 64) private String generationErrorCode;
+    @Column(name = "generation_next_retry_at") private Instant generationNextRetryAt;
+    @Column(name = "generation_lease_token", length = 36) private String generationLeaseToken;
+    @Column(name = "generation_lease_until") private Instant generationLeaseUntil;
 
     protected ResourceSearchDocumentEntity() { }
 
@@ -94,9 +102,7 @@ public class ResourceSearchDocumentEntity {
         this.searchEnabled = enabled;
         if (changed) {
             this.profileText = String.join("\n", title, summary == null ? "" : summary);
-            this.generationStatus = "PENDING";
-            this.semanticVector = null;
-            this.generatedAt = null;
+            requestRegeneration();
         }
     }
 
@@ -119,6 +125,10 @@ public class ResourceSearchDocumentEntity {
         this.semanticVector = semanticVector;
         this.generationStatus = "READY";
         this.generatedAt = Instant.now();
+        this.generationErrorCode = null;
+        this.generationNextRetryAt = null;
+        this.generationLeaseToken = null;
+        this.generationLeaseUntil = null;
     }
 
     public void markGenerationFailed() {
@@ -127,8 +137,37 @@ public class ResourceSearchDocumentEntity {
 
     public void requestRegeneration() {
         this.generationStatus = "PENDING";
+        this.generationAttempts = 0;
+        this.generationErrorCode = null;
+        this.generationNextRetryAt = null;
+        this.generationLeaseToken = null;
+        this.generationLeaseUntil = null;
         this.semanticVector = null;
         this.generatedAt = null;
+    }
+
+    public boolean canClaimGeneration(Instant now) {
+        if (!searchEnabled || generationLeaseUntil != null && generationLeaseUntil.isAfter(now)) return false;
+        return "PENDING".equals(generationStatus) || "FAILED".equals(generationStatus)
+                && generationNextRetryAt != null && !generationNextRetryAt.isAfter(now);
+    }
+
+    public void claimGeneration(String token, Instant leaseUntil) {
+        generationAttempts++;
+        generationLeaseToken = token;
+        generationLeaseUntil = leaseUntil;
+    }
+
+    public boolean ownsGeneration(String token, String expectedHash) {
+        return searchEnabled && token.equals(generationLeaseToken) && expectedHash.equals(sourceHash);
+    }
+
+    public void failGeneration(String errorCode, Instant nextRetryAt) {
+        generationStatus = "FAILED";
+        generationErrorCode = errorCode;
+        generationNextRetryAt = nextRetryAt;
+        generationLeaseToken = null;
+        generationLeaseUntil = null;
     }
 
     /** Records a human-selected category; subsequent AI generations must preserve it. */
@@ -152,6 +191,12 @@ public class ResourceSearchDocumentEntity {
         }
     }
 
+    public Long getId() { return id; }
+    public int getGenerationAttempts() { return generationAttempts; }
+    public String getGenerationErrorCode() { return generationErrorCode; }
+    public Instant getGenerationNextRetryAt() { return generationNextRetryAt; }
+    public String getGenerationLeaseToken() { return generationLeaseToken; }
+    public Instant getGenerationLeaseUntil() { return generationLeaseUntil; }
     public Long getResourceId() { return resourceId; }
     public String getResourceType() { return resourceType; }
     public String getTitle() { return title; }
