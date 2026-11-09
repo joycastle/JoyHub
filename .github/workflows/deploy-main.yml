@@ -4,6 +4,11 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      inspect_ai_only:
+        description: Read-only AI profile diagnostics
+        type: boolean
+        default: false
 
 concurrency:
   group: production-main
@@ -15,6 +20,7 @@ permissions:
 
 jobs:
   validate:
+    if: ${{ github.event_name != 'workflow_dispatch' || !inputs.inspect_ai_only }}
     name: Validate Main
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -184,3 +190,35 @@ jobs:
             echo "- Image tag: \`main-${GITHUB_SHA}\`"
             echo "- Commit: \`${GITHUB_SHA}\`"
           } >> "${GITHUB_STEP_SUMMARY}"
+
+  inspect-ai:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.inspect_ai_only }}
+    name: Read-only AI diagnostics
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: production
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Inspect model configuration and retry error codes
+        env:
+          PROD_SSH_HOST: ${{ secrets.PROD_SSH_HOST }}
+          PROD_SSH_USER: ${{ secrets.PROD_SSH_USER }}
+          PROD_SSH_PORT: ${{ secrets.PROD_SSH_PORT }}
+          PROD_SSH_KEY: ${{ secrets.PROD_SSH_KEY }}
+          PROD_SSH_KNOWN_HOSTS: ${{ secrets.PROD_SSH_KNOWN_HOSTS }}
+        run: |
+          diagnostic_key="${RUNNER_TEMP}/ai-inspect.key"
+          diagnostic_hosts="${RUNNER_TEMP}/ai-inspect.known_hosts"
+          trap 'rm -f "$diagnostic_key" "$diagnostic_hosts"' EXIT
+          printf '%s\n' "$PROD_SSH_KEY" > "$diagnostic_key"
+          printf '%s\n' "$PROD_SSH_KNOWN_HOSTS" > "$diagnostic_hosts"
+          chmod 600 "$diagnostic_key" "$diagnostic_hosts"
+          ssh -i "$diagnostic_key" -o BatchMode=yes -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes -o UserKnownHostsFile="$diagnostic_hosts" \
+            -o ConnectTimeout=10 -p "${PROD_SSH_PORT:-22}" \
+            "${PROD_SSH_USER:-joyhub-deploy}@${PROD_SSH_HOST}" 'bash -s' \
+            < scripts/inspect-ai-profiles-remote.sh
