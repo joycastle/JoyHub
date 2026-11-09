@@ -272,13 +272,16 @@ public class OpenAiResponsesClient implements DiscoveryAiClient {
             return parseSearchProfile(objectMapper, requestWithFallback(SEARCH_PROFILE_INSTRUCTIONS,
                     objectMapper.writeValueAsString(input), safetyIdentifier).text());
         } catch (JsonProcessingException exception) {
-            throw new IllegalStateException("Could not parse search profile response", exception);
+            throw new AiRelayException("PROFILE_INVALID_JSON", true);
         }
     }
 
     static ResourceSearchProfile parseSearchProfile(ObjectMapper mapper, String text) {
         try {
-            JsonNode node = mapper.readTree(text);
+            JsonNode node = mapper.readTree(stripJsonFence(text));
+            if (node == null || !node.isObject()) {
+                throw new AiRelayException("PROFILE_INVALID_JSON", true);
+            }
             List<ResourceSearchProfile.Capability> capabilities = new ArrayList<>();
             for (JsonNode capability : node.path("capabilities")) {
                 String value = capability.path("value").asText().trim();
@@ -293,7 +296,7 @@ public class OpenAiResponsesClient implements DiscoveryAiClient {
                     stringList(node.path("searchTerms")), node.path("companyRelevance").asText("GENERAL"),
                     ResourceCategoryCode.fromExternal(node.path("categoryCode").asText(null)));
         } catch (JsonProcessingException exception) {
-            throw new IllegalStateException("Could not parse search profile response", exception);
+            throw new AiRelayException("PROFILE_INVALID_JSON", true);
         }
     }
 
@@ -371,7 +374,7 @@ public class OpenAiResponsesClient implements DiscoveryAiClient {
                     .build();
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                throw new IllegalStateException("AI relay returned HTTP " + response.statusCode());
+                throw relayHttpFailure(response.statusCode(), response.body(), response.headers().firstValue("Retry-After").orElse(null));
             }
             return parseResponseBody(response.body(), model);
         } catch (InterruptedException exception) {
@@ -380,6 +383,44 @@ public class OpenAiResponsesClient implements DiscoveryAiClient {
         } catch (IOException exception) {
             throw new IllegalStateException("AI relay request failed", exception);
         }
+    }
+
+    static AiRelayException relayHttpFailure(int status, String body, String retryAfterHeader) {
+        String code = "AI_HTTP_" + status;
+        boolean retryable = status == 408 || status == 409 || status == 425 || status == 429 || status >= 500;
+        try {
+            JsonNode errorRoot = new ObjectMapper().readTree(body);
+            String relayCode = (errorRoot.has("error") ? errorRoot.path("error") : errorRoot).path("code").asText("");
+            if (java.util.Set.of("insufficient_quota", "credit_balance_exhausted",
+                    "organization_spend_limit_exceeded", "project_spend_limit_exceeded",
+                    "organization_usage_limit_exceeded").contains(relayCode)) {
+                code = "AI_QUOTA_EXHAUSTED";
+                retryable = false;
+            } else if (java.util.Set.of("invalid_api_key", "authentication_error").contains(relayCode)) {
+                code = "AI_AUTH_FAILED";
+                retryable = false;
+            } else if ("model_not_found".equals(relayCode)) {
+                code = "AI_MODEL_NOT_FOUND";
+                retryable = false;
+            }
+        } catch (Exception ignored) {
+            // Only allowlisted codes are retained; relay content must never reach logs or storage.
+        }
+        Duration retryAfter = Duration.ZERO;
+        if (retryAfterHeader != null) {
+            try {
+                retryAfter = Duration.ofSeconds(Math.max(0, Long.parseLong(retryAfterHeader.trim())));
+            } catch (NumberFormatException ignored) {
+                try {
+                    retryAfter = Duration.between(java.time.Instant.now(), java.time.ZonedDateTime.parse(
+                            retryAfterHeader, java.time.format.DateTimeFormatter.RFC_1123_DATE_TIME).toInstant());
+                    if (retryAfter.isNegative()) retryAfter = Duration.ZERO;
+                } catch (java.time.format.DateTimeParseException invalidDate) {
+                    // Use scheduler backoff when Retry-After is malformed.
+                }
+            }
+        }
+        return new AiRelayException(code, retryable, retryAfter);
     }
 
     private URI responseUri() {
@@ -406,7 +447,7 @@ public class OpenAiResponsesClient implements DiscoveryAiClient {
         ObjectMapper mapper = new ObjectMapper();
         String trimmed = body == null ? "" : body.trim();
         if (trimmed.isEmpty()) {
-            throw new IllegalStateException("AI relay returned an empty response");
+            throw new AiRelayException("AI_EMPTY_RESPONSE", true);
         }
         if (trimmed.startsWith("{")) {
             return parseJsonResponse(mapper, trimmed, requestedModel);
@@ -433,15 +474,15 @@ public class OpenAiResponsesClient implements DiscoveryAiClient {
                 } else if ("response.output_text.done".equals(type)) {
                     doneText = event.path("text").asText();
                 } else if ("error".equals(type)) {
-                    throw new IllegalStateException("AI relay returned an error event");
+                    throw relayHttpFailure(502, payload, null);
                 }
             } catch (JsonProcessingException exception) {
-                throw new IllegalStateException("AI relay returned invalid event data", exception);
+                throw new AiRelayException("AI_INVALID_EVENT", true);
             }
         }
         String answer = doneText != null && !doneText.isBlank() ? doneText : deltas.toString();
         if (answer.isBlank()) {
-            throw new IllegalStateException("AI relay response contained no output text");
+            throw new AiRelayException("AI_NO_OUTPUT_TEXT", true);
         }
         return new ParsedResponse(answer.trim(), actualModel);
     }
@@ -562,7 +603,7 @@ public class OpenAiResponsesClient implements DiscoveryAiClient {
         try {
             JsonNode root = mapper.readTree(body);
             if (root.has("error")) {
-                throw new IllegalStateException("AI relay returned an error response");
+                throw relayHttpFailure(502, body, null);
             }
             String actualModel = root.path("model").asText(requestedModel);
             for (JsonNode output : root.path("output")) {
@@ -578,9 +619,9 @@ public class OpenAiResponsesClient implements DiscoveryAiClient {
                     }
                 }
             }
-            throw new IllegalStateException("AI relay response contained no output text");
+            throw new AiRelayException("AI_NO_OUTPUT_TEXT", true);
         } catch (JsonProcessingException exception) {
-            throw new IllegalStateException("AI relay returned invalid JSON", exception);
+            throw new AiRelayException("AI_INVALID_JSON", true);
         }
     }
 

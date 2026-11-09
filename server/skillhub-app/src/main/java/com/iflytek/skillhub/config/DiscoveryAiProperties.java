@@ -9,7 +9,7 @@ public class DiscoveryAiProperties {
     private boolean enabled;
     private String baseUrl = "https://codex.cheergame.net";
     private String apiKey = "";
-    private String model = "gpt-5.6-terra";
+    private String model = "gpt-6.1-terra";
     private String translationModel = "Luna";
     private String fallbackModel = "";
     private String reasoningEffort = "medium";

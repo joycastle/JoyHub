@@ -55,7 +55,7 @@ class OpenAiResponsesClientTest {
         assertThatThrownBy(() -> OpenAiResponsesClient.parseResponseBody(
                 "{\"model\":\"gpt-5.6-sol\",\"output\":[]}", "gpt-5.6-sol"))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("no output text");
+                .hasMessage("AI_NO_OUTPUT_TEXT");
     }
 
     @Test
@@ -143,4 +143,31 @@ class OpenAiResponsesClientTest {
                 "{\"categoryCode\":\"made_up\"}").categoryCode())
                 .isEqualTo(ResourceCategoryCode.OTHER);
     }
+    @Test
+    void parsesFencedProfileJsonAndRejectsInvalidShapes() {
+        ResourceSearchProfile profile = OpenAiResponsesClient.parseSearchProfile(new ObjectMapper(),
+                "```json\n{\"categoryCode\":\"CREATIVE_MEDIA\",\"searchTerms\":[\"image generation\"]}\n```");
+        assertThat(profile.categoryCode()).isEqualTo(ResourceCategoryCode.CREATIVE_MEDIA);
+        assertThat(profile.searchTerms()).containsExactly("image generation");
+        for (String invalid : java.util.List.of("null", "[]", "not json", "")) {
+            assertThatThrownBy(() -> OpenAiResponsesClient.parseSearchProfile(new ObjectMapper(), invalid))
+                    .isInstanceOf(AiRelayException.class).hasMessage("PROFILE_INVALID_JSON");
+        }
+    }
+
+    @Test
+    void retriesTemporaryRelayFailuresButStopsOnConfigurationAndQuotaErrors() {
+        assertThat(OpenAiResponsesClient.relayHttpFailure(503, "upstream unavailable", null).retryable()).isTrue();
+        AiRelayException limited = OpenAiResponsesClient.relayHttpFailure(429, "{}", "120");
+        assertThat(limited.retryable()).isTrue();
+        assertThat(limited.retryAfter()).isEqualTo(java.time.Duration.ofMinutes(2));
+        assertThat(OpenAiResponsesClient.relayHttpFailure(401, "secret response body", null).retryable()).isFalse();
+        assertThat(OpenAiResponsesClient.relayHttpFailure(400, "{}", null).retryable()).isFalse();
+        AiRelayException quota = OpenAiResponsesClient.relayHttpFailure(429,
+                "{\"error\":{\"code\":\"insufficient_quota\",\"message\":\"secret-key\"}}", null);
+        assertThat(quota.retryable()).isFalse();
+        assertThat(quota.code()).isEqualTo("AI_QUOTA_EXHAUSTED");
+        assertThat(quota.getMessage()).doesNotContain("secret-key");
+    }
+
 }
