@@ -30,6 +30,13 @@ responses; valid JSON enclosed in a Markdown code fence is accepted. `LEGACY_UNK
 means the old worker did not retain a cause. An old FAILED record alone cannot prove
 whether the relay timed out, rejected authentication, or returned invalid JSON.
 
+Successful Responses envelopes may include `"error": null`. The client accepts that
+field and only rejects a non-null error. Earlier clients treated the mere presence
+of `error` as a failure, including completed responses with valid output, and recorded
+`AI_HTTP_502` locally. That code alone therefore does not prove an upstream HTTP 502.
+After deploying this fix and checking the runtime model override, explicitly
+regenerate affected FAILED documents whose four-attempt budget has been exhausted.
+
 Read-only investigation example (run through the operator's authorized database
 access; do not export credentials or documentation):
 
