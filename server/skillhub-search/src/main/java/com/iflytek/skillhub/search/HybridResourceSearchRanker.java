@@ -68,11 +68,9 @@ public class HybridResourceSearchRanker {
                     .toList();
         }
 
-        List<ResourceSearchIntent> alternatives = interpreter.retrievalQueries(intent.normalizedQuery()).stream()
-                .filter(query -> !query.equals(intent.normalizedQuery())).map(interpreter::interpret).toList();
         List<RankedResource> scored = documents.stream()
                 .filter(document -> matchesStructuredConstraints(intent, document))
-                .map(document -> scoreAlternatives(intent, alternatives, document))
+                .map(document -> score(intent, document))
                 .toList();
         boolean hasStrongLexicalResult = scored.stream().anyMatch(RankedResource::strongLexicalMatch);
         double bestSemanticScore = scored.stream()
@@ -85,23 +83,6 @@ public class HybridResourceSearchRanker {
                 .sorted(ordering())
                 .limit(limit)
                 .toList();
-    }
-
-    private RankedResource scoreAlternatives(ResourceSearchIntent intent, List<ResourceSearchIntent> alternatives,
-                                             ResourceSearchDocument document) {
-        RankedResource best = score(intent, document);
-        for (ResourceSearchIntent alternative : alternatives) {
-            RankedResource alternate = score(alternative, document);
-            // Literal names and exact employee phrasing retain priority over expansions.
-            double score = alternate.score() * 0.90D;
-            if (score > best.score()) {
-                best = new RankedResource(document, score, alternate.semanticScore(), alternate.lexicalScore(),
-                        best.strongLexicalMatch() || alternate.strongLexicalMatch());
-            } else if (alternate.strongLexicalMatch()) {
-                best = new RankedResource(document, best.score(), best.semanticScore(), best.lexicalScore(), true);
-            }
-        }
-        return best;
     }
 
     private boolean qualifies(ResourceSearchIntent intent,

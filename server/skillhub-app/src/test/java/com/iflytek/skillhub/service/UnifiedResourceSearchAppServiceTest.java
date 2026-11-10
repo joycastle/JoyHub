@@ -60,46 +60,6 @@ class UnifiedResourceSearchAppServiceTest {
     }
 
     @Test
-    void generatedQueryTypeWordsDoNotHideOtherwiseVisibleSkillCandidates() {
-        given(skillSearchAppService.searchInstallableLatest(
-                null, null, "newest", 0, 500, List.of(), "user-1", Map.of()))
-                .willReturn(new SkillSearchAppService.SearchResponse(
-                        List.of(skill(1L, "image-generator", "Image generation", "Image generation capability")), 1, 0, 500));
-        given(catalogSearchAppService.search(
-                eq(null), eq(null), eq(null), eq(null), eq(null), eq(null), eq(viewer), any(Pageable.class)))
-                .willReturn(new PageResponse<>(List.of(
-                        catalog(33L, "image-tool", "ONLINE_TOOL", "Image generation tool", "Image generation capability")),
-                        1, 0, 500));
-
-        var result = service.searchForDiscovery("image generation tools", UnifiedResourceSearchType.ALL,
-                24, "user-1", Map.of(), viewer, Set.of());
-
-        assertThat(result.items()).extracting(item -> item.resourceType())
-                .containsExactlyInAnyOrder("SKILL", "TOOL");
-    }
-
-    @Test
-    void structuredCapabilityValuesParticipateInHighSignalMatching() {
-        ResourceSearchDocumentEntity document = ResourceSearchDocumentEntity.basic(
-                "SKILL", 1L, null, "user-1", "Asset Studio", "asset-studio", "美术资源处理。",
-                "[]", "INSTALL", "PUBLIC", "PUBLISHED", "支持迁移图片风格。", "hash");
-        document.applyGeneratedProfile(
-                "[{\"value\":\"图像风格迁移\",\"evidence\":\"支持迁移图片风格\",\"confidence\":0.9}]",
-                "[]", "[]", "[]", "[]", "[]", "GENERAL", "美术资源处理", "test", "test", null,
-                ResourceCategoryCode.CREATIVE_MEDIA);
-        given(searchDocumentRepository.findBySearchEnabledTrue()).willReturn(List.of(document));
-        given(skillSearchAppService.searchInstallableLatest(
-                null, null, "newest", 0, 500, List.of(), "user-1", Map.of()))
-                .willReturn(new SkillSearchAppService.SearchResponse(
-                        List.of(skill(1L, "asset-studio", "Asset Studio", "美术资源处理。")), 1, 0, 500));
-
-        var result = service.searchSkills("图像风格迁移", null, List.of(), null, "relevance",
-                0, 12, "user-1", Map.of());
-
-        assertThat(result.items()).singleElement().extracting(SkillSummaryResponse::slug).isEqualTo("asset-studio");
-    }
-
-    @Test
     void searchRanksEveryResourceTypeInOnePoolAndRejectsUnrelatedTools() {
         given(skillSearchAppService.searchInstallableLatest(
                 null, null, "newest", 0, 500, List.of(), "user-1", Map.of()))
