@@ -29,6 +29,47 @@ class OpenAiResponsesClientTest {
     }
 
     @Test
+    void acceptsCompletedResponseWithNullError() {
+        String body = """
+                {
+                  "model": "gpt-6.1-terra",
+                  "status": "completed",
+                  "error": null,
+                  "output": [{
+                    "type": "message",
+                    "content": [{"type": "output_text", "text": "{\\\"categoryCode\\\":\\\"CREATIVE_MEDIA\\\"}"}]
+                  }]
+                }
+                """;
+
+        OpenAiResponsesClient.ParsedResponse response =
+                OpenAiResponsesClient.parseResponseBody(body, "gpt-6.1-terra");
+        ResourceSearchProfile profile = OpenAiResponsesClient.parseSearchProfile(
+                new ObjectMapper(), response.text());
+
+        assertThat(response.model()).isEqualTo("gpt-6.1-terra");
+        assertThat(profile.categoryCode()).isEqualTo(ResourceCategoryCode.CREATIVE_MEDIA);
+    }
+
+    @Test
+    void rejectsNonNullResponseErrorEvenWhenOutputIsPresent() {
+        String body = """
+                {
+                  "error": {"code": "model_not_found", "message": "private relay detail"},
+                  "output": [{
+                    "type": "message",
+                    "content": [{"type": "output_text", "text": "Partial output"}]
+                  }]
+                }
+                """;
+
+        assertThatThrownBy(() -> OpenAiResponsesClient.parseResponseBody(body, "gpt-6.1-terra"))
+                .isInstanceOf(AiRelayException.class)
+                .hasMessage("AI_MODEL_NOT_FOUND")
+                .hasMessageNotContaining("private relay detail");
+    }
+
+    @Test
     void parsesServerSentEventsReturnedByRelay() {
         String body = """
                 event: response.created

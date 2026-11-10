@@ -602,7 +602,7 @@ public class OpenAiResponsesClient implements DiscoveryAiClient {
     private static ParsedResponse parseJsonResponse(ObjectMapper mapper, String body, String requestedModel) {
         try {
             JsonNode root = mapper.readTree(body);
-            if (root.has("error")) {
+            if (root.hasNonNull("error")) {
                 throw relayHttpFailure(502, body, null);
             }
             String actualModel = root.path("model").asText(requestedModel);
