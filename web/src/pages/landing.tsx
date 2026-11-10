@@ -18,7 +18,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { SearchBar } from '@/features/search/search-bar'
-import { useResourceRecommendations, useUnifiedResourceSearch } from '@/features/search/use-unified-resource-search'
+import { useUnifiedResourceSearch } from '@/features/search/use-unified-resource-search'
 import { useAuth } from '@/features/auth/use-auth'
 import { namespaceApi, resourcesApi } from '@/api/client'
 import type { UnifiedResourceSearchItem, UnifiedResourceSearchType } from '@/api/types'
@@ -35,26 +35,10 @@ import { useViewMode } from '@/shared/hooks/use-view-mode'
 import { completeOnboardingJourneyUse, completeOnboardingTask, openOnboardingGuide } from '@/features/onboarding/onboarding-progress'
 import { CenterFeatureTour, type CenterTourTarget } from '@/features/onboarding/center-feature-tour'
 
-type DiscoveryMode = 'recommended' | 'downloads' | 'newest'
+type DiscoveryMode = 'downloads' | 'newest'
 type HomeScopeFilter = 'PUBLIC' | 'DEPARTMENT'
 
-const DISCOVERY_ITEMS: Array<{ key: DiscoveryMode; label: string }> = [
-  { key: 'recommended', label: '为你和所在部门推荐' },
-  { key: 'downloads', label: '下载热榜' },
-  { key: 'newest', label: '最近上新' },
-]
-
-const DISCOVERY_TITLES: Record<DiscoveryMode, string> = {
-  recommended: '为你和所在部门推荐',
-  downloads: '下载热榜',
-  newest: '最近上新',
-}
-
-const DISCOVERY_FILTER_LABELS: Record<DiscoveryMode, string> = {
-  recommended: '为你推荐',
-  downloads: '下载最多',
-  newest: '最新发布',
-}
+const DISCOVERY_ITEMS: DiscoveryMode[] = ['downloads', 'newest']
 
 const SCENARIOS: Array<{ code: ResourceCategoryCode; icon: LucideIcon }> = [
   { code: 'CREATIVE_MEDIA', icon: Palette },
@@ -151,8 +135,8 @@ export function LandingPage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { onboarding } = useSearch({ from: '/' })
-  const { isAuthenticated, user } = useAuth()
-  const [discoveryMode, setDiscoveryMode] = useState<DiscoveryMode>('recommended')
+  const { user } = useAuth()
+  const [discoveryMode, setDiscoveryMode] = useState<DiscoveryMode>('downloads')
   const [homeResourceType, setHomeResourceType] = useState<UnifiedResourceSearchType>('ALL')
   const [homeScenario, setHomeScenario] = useState<ResourceCategoryCode | undefined>()
   const [homeScopeFilter, setHomeScopeFilter] = useState<HomeScopeFilter>('PUBLIC')
@@ -165,17 +149,16 @@ export function LandingPage() {
   const { toolIds: commonToolIds, recordToolUse } = useCommonTools()
   const [viewMode, setViewMode] = useViewMode('home')
   const quickSearchRef = useRef<HTMLDivElement>(null)
-  const { data: recommendations = [] } = useResourceRecommendations(12)
   const { data: myNamespaces = [] } = useQuery({ queryKey: ['namespaces', 'mine'], queryFn: () => namespaceApi.listMine() })
   const { data: rankedResources } = useUnifiedResourceSearch(
     {
       q: '',
       categoryCode: homeScenario,
-      sort: discoveryMode === 'downloads' ? 'downloads' : 'newest',
+      type: homeResourceType,
+      sort: discoveryMode,
       page: 0,
-      size: 12,
+      size: homeScenario ? 24 : 12,
     },
-    discoveryMode !== 'recommended',
   )
   const { data: toolResources } = useUnifiedResourceSearch({
     q: '',
@@ -184,16 +167,6 @@ export function LandingPage() {
     page: 0,
     size: 100,
   })
-  const { data: scenarioResources } = useUnifiedResourceSearch(
-    {
-      q: '',
-      categoryCode: homeScenario,
-      sort: discoveryMode === 'downloads' ? 'downloads' : discoveryMode === 'newest' ? 'newest' : 'relevance',
-      page: 0,
-      size: 24,
-    },
-    Boolean(homeScenario),
-  )
   const { data: searchResults, isFetching: isSearching } = useUnifiedResourceSearch(
     {
       q: searchQuery,
@@ -204,14 +177,7 @@ export function LandingPage() {
     },
     Boolean(searchQuery),
   )
-  const discoveryResources = useMemo(
-    () => homeScenario
-      ? scenarioResources?.items ?? []
-      : discoveryMode === 'recommended'
-      ? recommendations.map(({ resource }) => resource)
-      : rankedResources?.items ?? [],
-    [discoveryMode, homeScenario, rankedResources?.items, recommendations, scenarioResources?.items],
-  )
+  const discoveryResources = rankedResources?.items ?? []
   const department = myNamespaces.find((namespace) => namespace.type === 'TEAM')
   const visibleDiscoveryResources = discoveryResources.filter((resource) => {
     if (homeResourceType !== 'ALL' && resource.resourceType !== homeResourceType) return false
@@ -417,17 +383,14 @@ export function LandingPage() {
       {!searchQuery ? <section className="border-b bg-[#f6f8fa] px-5 py-8 md:px-10">
         <div className="mx-auto grid max-w-7xl gap-9 lg:grid-cols-[13rem_minmax(0,1fr)]">
           <aside className="h-fit border-r border-border pr-5 lg:sticky lg:top-6">
-            <p className="px-2 pb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">精选</p>
-            <button type="button" onClick={() => { setDiscoveryMode('recommended'); setHomeResourceType('ALL') }} className={cn('relative block w-full rounded-md px-2.5 py-2 text-left text-sm transition-colors', discoveryMode === 'recommended' ? 'bg-slate-100 font-semibold text-foreground before:absolute before:-left-[13px] before:top-1.5 before:h-6 before:w-1 before:rounded-full before:bg-primary' : 'text-muted-foreground hover:bg-slate-100')}>为你推荐</button>
-            <div className="my-3 border-t" />
             <p className="px-2 pb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">能力类型</p>
             {RESOURCE_TYPES.map(({ type, labelKey, icon: Icon }) => <button key={type} type="button" onClick={() => setHomeResourceType(type)} className={cn('flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-sm transition-colors', homeResourceType === type ? 'bg-slate-100 font-semibold text-foreground' : 'text-muted-foreground hover:bg-slate-100')}><Icon className="h-4 w-4 text-primary" />{t(labelKey)}</button>)}
             <div className="my-3 border-t" /><p className="px-2 pb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">发现</p>
-            {DISCOVERY_ITEMS.map((item) => <button key={item.key} type="button" onClick={() => setDiscoveryMode(item.key)} className={`relative block w-full rounded-md px-2.5 py-2 text-left text-sm transition-colors ${discoveryMode === item.key ? 'bg-slate-100 font-semibold text-foreground before:absolute before:-left-[13px] before:top-1.5 before:h-6 before:w-1 before:rounded-full before:bg-primary' : 'text-muted-foreground hover:bg-slate-100'}`} aria-pressed={discoveryMode === item.key}>{item.label}</button>)}
+            {DISCOVERY_ITEMS.map((mode) => <button key={mode} type="button" onClick={() => setDiscoveryMode(mode)} className={`relative block w-full rounded-md px-2.5 py-2 text-left text-sm transition-colors ${discoveryMode === mode ? 'bg-slate-100 font-semibold text-foreground before:absolute before:-left-[13px] before:top-1.5 before:h-6 before:w-1 before:rounded-full before:bg-primary' : 'text-muted-foreground hover:bg-slate-100'}`} aria-pressed={discoveryMode === mode}>{t(`joyhubHome.discoverySort.${mode}`)}</button>)}
           </aside>
           <div>
           <div className="mb-5 flex items-end justify-between gap-4">
-            <div><p className="text-sm font-semibold text-primary">DISCOVER</p><h2 className="mt-1 text-2xl font-semibold">{discoveryMode === 'recommended' && !isAuthenticated ? '推荐能力' : DISCOVERY_TITLES[discoveryMode]}</h2></div>
+            <div><p className="text-sm font-semibold text-primary">DISCOVER</p><h2 className="mt-1 text-2xl font-semibold">{t(`joyhubHome.discoverySort.${discoveryMode}`)}</h2></div>
             <div className="flex items-center gap-3"><ViewModeToggle value={viewMode} onChange={setViewMode} /><Link to="/search" search={{ q: '', sort: 'relevance', page: 0, starredOnly: false }} className="text-sm font-medium text-primary">浏览全部 →</Link></div>
           </div>
           <div className="mb-5 flex flex-wrap items-center gap-2 border-b pb-4">
@@ -444,11 +407,10 @@ export function LandingPage() {
             </Select>
             <label className="sr-only" htmlFor="home-sort-filter">排序</label>
             <Select value={discoveryMode} onValueChange={(value) => setDiscoveryMode(value as DiscoveryMode)}>
-              <SelectTrigger id="home-sort-filter" className="w-48"><span>排序：{DISCOVERY_FILTER_LABELS[discoveryMode]}</span></SelectTrigger>
+              <SelectTrigger id="home-sort-filter" className="w-48"><span>排序：{t(`joyhubHome.discoverySort.${discoveryMode}`)}</span></SelectTrigger>
               <SelectContent>
-                <SelectItem value="recommended">为你推荐</SelectItem>
-                <SelectItem value="newest">最新发布</SelectItem>
-                <SelectItem value="downloads">下载最多</SelectItem>
+                <SelectItem value="downloads">{t('joyhubHome.discoverySort.downloads')}</SelectItem>
+                <SelectItem value="newest">{t('joyhubHome.discoverySort.newest')}</SelectItem>
               </SelectContent>
             </Select>
           </div>

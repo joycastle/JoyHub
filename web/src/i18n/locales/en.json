@@ -196,6 +196,10 @@
     }
   },
   "joyhubHome": {
+    "discoverySort": {
+      "downloads": "Most downloaded",
+      "newest": "Newest"
+    },
     "badge": "Your Company's Unified AI Platform",
     "title": "Find the capability. Start the work.",
     "description": "Discover and use internal Agents, Skills, plugins, MCP servers, online tools, and services from one place, each with a clear entry point and documentation.",

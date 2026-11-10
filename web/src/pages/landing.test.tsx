@@ -44,7 +44,6 @@ vi.mock('@/features/auth/use-auth', () => ({
 }))
 
 vi.mock('@/features/search/use-unified-resource-search', () => ({
-  useResourceRecommendations: () => ({ data: [] }),
   useUnifiedResourceSearch: () => ({ data: { items: [] } }),
 }))
 
