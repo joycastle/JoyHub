@@ -12,6 +12,40 @@ class HybridResourceSearchRankerTest {
             new ResourceSearchQueryInterpreter(new SearchTextTokenizer()));
 
     @Test
+    void everydayTasksRecallCapabilitiesWithoutReturningUnrelatedResources() {
+        var resources = List.of(
+                document("1", "TOOL", "AI Imagine CLI / MCP", "生成图片、视频、音频和 3D。", "OPEN"),
+                document("2", "SKILL", "视频制作", "完成脚本、配音、剪辑渲染，交付 MP4。", "INSTALL"),
+                document("3", "SKILL", "每周HTML报告生成", "把表格数据生成响应式HTML报告。", "INSTALL"),
+                document("4", "TOOL", "游戏构建包", "游戏构建包下载入口。", "DOWNLOAD"));
+
+        assertThat(ranker.rankWithinScope("画图", resources, 10, false))
+                .extracting(result -> result.document().id()).contains("1").doesNotContain("4");
+        assertThat(ranker.rankWithinScope("做视频", resources, 10, false))
+                .extracting(result -> result.document().id()).contains("1", "2").doesNotContain("4");
+        assertThat(ranker.rankWithinScope("整理报表", resources, 10, false))
+                .extracting(result -> result.document().id()).contains("3").doesNotContain("4");
+        assertThat(ranker.rankWithinScope("火星土壤检测", resources, 10, false)).isEmpty();
+    }
+
+    @Test
+    void taskExpansionsNeverRelaxResourceAndAccessConstraints() {
+        var resources = List.of(
+                document("1", "TOOL", "AI Imagine", "生成图片。", "OPEN"),
+                document("2", "SKILL", "图像生成", "生成图片。", "INSTALL"));
+
+        assertThat(ranker.rank("安装一个画图的 Skill", resources, 10, false))
+                .extracting(result -> result.document().id()).containsExactly("2");
+    }
+
+    @Test
+    void chartDrawingDoesNotExpandIntoImageGeneration() {
+        var interpreter = new ResourceSearchQueryInterpreter(new SearchTextTokenizer());
+        assertThat(interpreter.retrievalQueries("画图表"))
+                .contains("图表", "数据可视化").doesNotContain("图片生成", "生成图片");
+    }
+
+    @Test
     void explicitAgentIntentKeepsOnlyDirectlyUsableAgents() {
         var resources = List.of(
                 document("1", "AGENT", "通用王总", "就在飞书里处理工作", "OPEN"),
