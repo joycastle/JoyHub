@@ -15,6 +15,7 @@ import com.iflytek.skillhub.search.HashingSearchEmbeddingService;
 import com.iflytek.skillhub.search.HybridResourceSearchRanker;
 import com.iflytek.skillhub.search.ResourceSearchQueryInterpreter;
 import com.iflytek.skillhub.search.SearchTextTokenizer;
+import com.iflytek.skillhub.search.SearchEmbeddingService;
 import com.iflytek.skillhub.infra.jpa.ResourceSearchDocumentJpaRepository;
 import com.iflytek.skillhub.infra.jpa.ResourceCategoryCode;
 import com.iflytek.skillhub.infra.jpa.ResourceSearchDocumentEntity;
@@ -27,6 +28,8 @@ import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Pageable;
@@ -57,6 +60,63 @@ class UnifiedResourceSearchAppServiceTest {
                 searchDocumentRepository,
                 new ObjectMapper());
         viewer = new CatalogViewer("user-1", Map.of(), Set.of("USER"));
+    }
+
+    @Test
+    void capabilityEvidenceDoesNotBecomeACapabilityName() {
+        stubCapabilityDocument("[{\"value\":\"图像风格迁移\",\"evidence\":\"private-evidence-only\",\"confidence\":0.9}]");
+
+        var result = service.searchSkills("private-evidence-only", null, List.of(), null, "relevance",
+                0, 12, "user-1", Map.of());
+
+        assertThat(result.items()).isEmpty();
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "[{\"value\":\"图像风格迁移\",\"evidence\":\"支持迁移图片风格\",\"confidence\":0.9}]",
+            "[\"图像风格迁移\"]",
+            "[null,{\"value\":12},{\"value\":\"\"},{\"value\":\"图像风格迁移\"},\"兼容能力\"]"
+    })
+    void capabilityValuesAreSearchableWithoutASemanticMatch(String capabilities) {
+        stubCapabilityDocument(capabilities);
+
+        var result = service.searchSkills("图像风格迁移", null, List.of(), null, "relevance",
+                0, 12, "user-1", Map.of());
+
+        assertThat(result.items()).singleElement().extracting(SkillSummaryResponse::slug).isEqualTo("asset-studio");
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"null", "{}", "invalid-json", "[null,{\"value\":12}]"})
+    void invalidCapabilitiesDoNotBreakOtherSearchFields(String capabilities) {
+        stubCapabilityDocument(capabilities);
+
+        var result = service.searchSkills("Asset Studio", null, List.of(), null, "relevance",
+                0, 12, "user-1", Map.of());
+
+        assertThat(result.items()).singleElement().extracting(SkillSummaryResponse::slug).isEqualTo("asset-studio");
+    }
+
+    private void stubCapabilityDocument(String capabilities) {
+        SearchEmbeddingService noSemanticMatch = new SearchEmbeddingService() {
+            @Override public String embed(String text) { return ""; }
+            @Override public double similarity(String text, String vector) { return 0D; }
+        };
+        service = new UnifiedResourceSearchAppService(skillSearchAppService, catalogSearchAppService,
+                favoriteAppService, new HybridResourceSearchRanker(noSemanticMatch,
+                new ResourceSearchQueryInterpreter(new SearchTextTokenizer())), searchDocumentRepository,
+                new ObjectMapper());
+        ResourceSearchDocumentEntity document = ResourceSearchDocumentEntity.basic(
+                "SKILL", 1L, null, "user-1", "Asset Studio", "asset-studio", "美术资源处理。",
+                "[]", "INSTALL", "PUBLIC", "PUBLISHED", "支持迁移图片风格。", "hash");
+        document.applyGeneratedProfile(capabilities, "[]", "[]", "[]", "[]", "[]", "GENERAL",
+                "美术资源处理", "fixture", "fixture", null, ResourceCategoryCode.CREATIVE_MEDIA);
+        given(searchDocumentRepository.findBySearchEnabledTrue()).willReturn(List.of(document));
+        given(skillSearchAppService.searchInstallableLatest(
+                null, null, "newest", 0, 500, List.of(), "user-1", Map.of()))
+                .willReturn(new SkillSearchAppService.SearchResponse(
+                        List.of(skill(1L, "asset-studio", "Asset Studio", "美术资源处理。")), 1, 0, 500));
     }
 
     @Test
