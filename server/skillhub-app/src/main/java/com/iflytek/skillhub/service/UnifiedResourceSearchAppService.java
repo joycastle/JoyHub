@@ -2,6 +2,7 @@ package com.iflytek.skillhub.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.iflytek.skillhub.dto.CatalogResourceSummaryResponse;
 import com.iflytek.skillhub.dto.PageResponse;
 import com.iflytek.skillhub.dto.SkillSummaryResponse;
@@ -147,6 +148,23 @@ public class UnifiedResourceSearchAppService {
             Map<Long, NamespaceRole> namespaceRoles,
             CatalogViewer catalogViewer,
             Set<String> accessModes) {
+        return searchInternal(query, namespace, labels, categoryCode, sort, type, starredOnly, page, size,
+                userId, namespaceRoles, catalogViewer, accessModes, true);
+    }
+
+    /** AI-written query text cannot introduce resource/access restrictions the employee did not request. */
+    @Transactional(readOnly = true)
+    PageResponse<UnifiedResourceSearchItemResponse> searchForDiscovery(String query, UnifiedResourceSearchType type,
+            int size, String userId, Map<Long, NamespaceRole> roles, CatalogViewer viewer, Set<String> accessModes) {
+        return searchInternal(query, null, List.of(), null, "relevance", type, false, 0, size,
+                userId, roles, viewer, accessModes, false);
+    }
+
+    private PageResponse<UnifiedResourceSearchItemResponse> searchInternal(
+            String query, String namespace, List<String> labels, String categoryCode, String sort,
+            UnifiedResourceSearchType type, boolean starredOnly, int page, int size, String userId,
+            Map<Long, NamespaceRole> namespaceRoles, CatalogViewer catalogViewer, Set<String> accessModes,
+            boolean inferQueryConstraints) {
         UnifiedResourceSearchType scope = type == null ? UnifiedResourceSearchType.ALL : type;
         List<String> normalizedLabels = labels == null ? List.of() : labels.stream()
                 .filter(java.util.Objects::nonNull).map(String::trim).filter(value -> !value.isBlank()).toList();
@@ -188,7 +206,7 @@ public class UnifiedResourceSearchAppService {
             candidates.removeIf(candidate -> !normalizedAccessModes.contains(candidate.document().accessMode()));
         }
 
-        List<RankedCandidate> ranked = new ArrayList<>(rank(query, scope, candidates));
+        List<RankedCandidate> ranked = new ArrayList<>(rank(query, scope, candidates, inferQueryConstraints));
         sort(sort, ranked);
         int safePage = Math.max(page, 0);
         int safeSize = Math.min(Math.max(size, 1), 100);
@@ -202,7 +220,7 @@ public class UnifiedResourceSearchAppService {
 
     private List<RankedCandidate> rank(String query,
                                        UnifiedResourceSearchType scope,
-                                       List<Candidate> candidates) {
+                                       List<Candidate> candidates, boolean inferQueryConstraints) {
         if (query == null || query.isBlank()) {
             return candidates.stream()
                     .map(candidate -> new RankedCandidate(candidate, 0D))
@@ -210,7 +228,7 @@ public class UnifiedResourceSearchAppService {
         }
         Map<String, Candidate> candidatesByKey = new LinkedHashMap<>();
         candidates.forEach(candidate -> candidatesByKey.put(key(candidate.document()), candidate));
-        List<HybridResourceSearchRanker.RankedResource> matches = scope == UnifiedResourceSearchType.ALL
+        List<HybridResourceSearchRanker.RankedResource> matches = scope == UnifiedResourceSearchType.ALL && inferQueryConstraints
                 ? searchRanker.rank(query, candidates.stream().map(Candidate::document).toList(), candidates.size(), false)
                 : searchRanker.rankWithinScope(
                         query, candidates.stream().map(Candidate::document).toList(), candidates.size(), false);
@@ -247,7 +265,8 @@ public class UnifiedResourceSearchAppService {
                                      Map<String, IndexedDocument> indexedDocuments) {
         IndexedDocument indexed = indexedDocuments.get("SKILL:" + skill.id());
         if (indexed != null) {
-            return new Candidate(indexed.document(), skill, null, indexed.categoryCode());
+            return new Candidate(withQuality(indexed.document(), quality(skill.downloadCount(), skill.starCount())),
+                    skill, null, indexed.categoryCode());
         }
         String title = preferred(skill.localizedDisplayName(), skill.displayName());
         String summary = preferred(skill.localizedSummary(), skill.summary());
@@ -296,7 +315,7 @@ public class UnifiedResourceSearchAppService {
             ResourceSearchDocument document = new ResourceSearchDocument(
                     entity.getResourceId().toString(), entity.getResourceType(), entity.getTitle(), entity.getSlug(),
                     entity.getSummary(), merge(jsonList(entity.getScenariosJson()), jsonList(entity.getInputsJson()),
-                    jsonList(entity.getOutputsJson())), merge(jsonList(entity.getCapabilitiesJson()),
+                    jsonList(entity.getOutputsJson())), merge(capabilityValues(entity.getCapabilitiesJson()),
                     jsonList(entity.getSearchTermsJson())),
                     entity.getProfileText() + "\n" + entity.getRawDocumentation(), entity.getAccessMode(),
                     entity.getSemanticVector(), 0D);
@@ -305,6 +324,27 @@ public class UnifiedResourceSearchAppService {
                             : entity.getCategoryCode().name()));
         }
         return result;
+    }
+
+    private ResourceSearchDocument withQuality(ResourceSearchDocument document, double quality) {
+        return new ResourceSearchDocument(document.id(), document.resourceType(), document.title(), document.slug(),
+                document.summary(), document.scenarios(), document.tags(), document.documentation(),
+                document.accessMode(), document.semanticVector(), quality);
+    }
+
+    private List<String> capabilityValues(String value) {
+        try {
+            JsonNode capabilities = objectMapper.readTree(value == null ? "[]" : value);
+            if (capabilities == null || !capabilities.isArray()) return List.of();
+            List<String> values = new ArrayList<>();
+            for (JsonNode capability : capabilities) {
+                String text = capability.isTextual() ? capability.asText() : capability.path("value").asText("");
+                if (!text.isBlank()) values.add(text);
+            }
+            return List.copyOf(values);
+        } catch (com.fasterxml.jackson.core.JsonProcessingException exception) {
+            return List.of();
+        }
     }
 
     private String normalizeCategory(String categoryCode) {

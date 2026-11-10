@@ -5,7 +5,6 @@ import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -19,6 +18,59 @@ import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 class DiscoveryAssistantAppServiceTest {
+
+    @Test
+    void usesModelQueryRewritingBeforeSearchingAndKeepsUnknownSelectionsOut() {
+        DiscoveryAiClient aiClient = mock(DiscoveryAiClient.class);
+        DiscoveryKnowledgeRetriever retriever = mock(DiscoveryKnowledgeRetriever.class);
+        DiscoveryConversationStore conversations = mock(DiscoveryConversationStore.class);
+        DiscoveryAiProperties properties = new DiscoveryAiProperties();
+        properties.setEnabled(true);
+        properties.setApiKey("test-key");
+        when(conversations.load("user-1", null))
+                .thenReturn(new DiscoveryConversationStore.Conversation("rewritten", List.of()));
+        when(aiClient.plan(eq("画图"), eq("zh-CN"), anyList(), anyString()))
+                .thenReturn(new DiscoverySearchPlan("生成图片", List.of(
+                        new DiscoverySearchPlan.Step("生成图片", List.of("图片生成", "image generation")))));
+        DiscoverySuggestionResponse tool = new DiscoverySuggestionResponse("catalog", 33L, "AI Imagine CLI / MCP",
+                "生成图片和视频", "ONLINE_TOOL", "ai-imagine-cli", null, "https://example.com", null,
+                "支持生成图片", "资源文档");
+        when(retriever.retrieve(List.of("图片生成", "image generation", "画图"), principal(), Map.of(), "zh-CN", "画图"))
+                .thenReturn(List.of(tool));
+        when(aiClient.answer(anyString(), anyString(), anyList(), anyList(), anyString()))
+                .thenReturn(new DiscoveryAiClient.AiAnswer("可以使用 AI Imagine。", "gpt-test", false, List.of(
+                        new DiscoveryAiClient.StepSelection(0, List.of(
+                                new DiscoveryAiClient.ResourceRef("catalog", 33L, "生成图片", "打开入口"),
+                                new DiscoveryAiClient.ResourceRef("catalog", 999L, "不存在", "不可见"))))));
+
+        var response = new DiscoveryAssistantAppService(aiClient, properties, retriever, conversations)
+                .assist("画图", "zh-CN", null, principal(), Map.of());
+
+        assertThat(response.suggestions()).extracting(DiscoverySuggestionResponse::id).containsExactly(33L);
+        assertThat(response.modelGenerated()).isTrue();
+    }
+
+    @Test
+    void planningFailureStillUsesLocalSearchAndGeneratesAnAnswer() {
+        DiscoveryAiClient aiClient = mock(DiscoveryAiClient.class);
+        DiscoveryKnowledgeRetriever retriever = mock(DiscoveryKnowledgeRetriever.class);
+        DiscoveryConversationStore conversations = mock(DiscoveryConversationStore.class);
+        DiscoveryAiProperties properties = new DiscoveryAiProperties();
+        properties.setEnabled(true);
+        properties.setApiKey("test-key");
+        when(conversations.load("user-1", null))
+                .thenReturn(new DiscoveryConversationStore.Conversation("fallback", List.of()));
+        when(aiClient.plan(anyString(), anyString(), anyList(), anyString())).thenThrow(new AiRelayException("AI_TIMEOUT", true));
+        when(retriever.retrieve(List.of("画图"), principal(), Map.of(), "zh-CN", "画图")).thenReturn(List.of());
+        when(aiClient.answer(anyString(), anyString(), anyList(), anyList(), anyString()))
+                .thenReturn(new DiscoveryAiClient.AiAnswer("没有匹配资源。", "gpt-test", false, List.of()));
+
+        var response = new DiscoveryAssistantAppService(aiClient, properties, retriever, conversations)
+                .assist("画图", "zh-CN", null, principal(), Map.of());
+
+        assertThat(response.answer()).isEqualTo("没有匹配资源。");
+        verify(retriever).retrieve(List.of("画图"), principal(), Map.of(), "zh-CN", "画图");
+    }
 
     @Test
     void retrievesUnifiedCandidatesBeforeGeneratingAnswer() {
@@ -63,7 +115,7 @@ class DiscoveryAssistantAppServiceTest {
                 .extracting(DiscoverySuggestionResponse::usage)
                 .isEqualTo("打开后粘贴报告材料。");
         assertThat(response.modelGenerated()).isTrue();
-        verify(aiClient, never()).plan(anyString(), anyString(), anyList(), anyString());
+        verify(aiClient).plan(eq("那帮我整理一下"), eq("zh-CN"), eq(history), anyString());
         verify(aiClient).answer(
                 eq("那帮我整理一下"), eq("zh-CN"), anyList(), eq(history), anyString());
         verify(retriever).retrieve(
@@ -75,7 +127,7 @@ class DiscoveryAssistantAppServiceTest {
     }
 
     @Test
-    void keepsTopUnifiedSearchCandidatesWhenModelRejectsEveryCandidate() {
+    void respectsModelRejectionInsteadOfForcingWeakSearchCandidates() {
         DiscoveryAiClient aiClient = mock(DiscoveryAiClient.class);
         DiscoveryKnowledgeRetriever retriever = mock(DiscoveryKnowledgeRetriever.class);
         DiscoveryConversationStore conversationStore = mock(DiscoveryConversationStore.class);
@@ -102,11 +154,9 @@ class DiscoveryAssistantAppServiceTest {
         DiscoveryAssistResponse response = service.assist(
                 "我想生成一个有视频素材的报告", "zh-CN", null, principal(), Map.of());
 
-        assertThat(response.answer()).contains("匹配了你有权限查看的能力");
-        assertThat(response.suggestions()).singleElement()
-                .extracting(DiscoverySuggestionResponse::title)
-                .isEqualTo("通用王总");
-        assertThat(response.modelGenerated()).isFalse();
+        assertThat(response.answer()).isEqualTo("暂时没有找到匹配能力。");
+        assertThat(response.suggestions()).isEmpty();
+        assertThat(response.modelGenerated()).isTrue();
     }
 
     @Test

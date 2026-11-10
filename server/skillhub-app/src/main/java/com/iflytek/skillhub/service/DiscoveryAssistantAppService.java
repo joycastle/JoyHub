@@ -47,11 +47,20 @@ public class DiscoveryAssistantAppService {
         String safetyIdentifier = safetyIdentifier(principal.userId());
         DiscoveryConversationStore.Conversation conversation = conversationStore.load(
                 principal.userId(), conversationId);
-        // Keep retrieval deterministic and inside the web request budget. A local plan
-        // still separates compound outcomes without adding another model round trip.
+        boolean aiEnabled = properties.isEnabled() && properties.getApiKey() != null
+                && !properties.getApiKey().isBlank();
         DiscoverySearchPlan plan = DiscoverySearchPlan.localPlan(question, conversation.turns());
-        String constraintSource = DiscoverySearchPlan.isRefinementTurn(question)
-                ? question : plan.goal();
+        if (aiEnabled) {
+            try {
+                DiscoverySearchPlan planned = aiClient.plan(question, language, conversation.turns(), safetyIdentifier);
+                if (planned != null && !planned.steps().isEmpty()) plan = planned;
+            } catch (RuntimeException exception) {
+                log.warn("JoyHub AI query planning fell back to local planning [code={}]",
+                        AiRelayException.classify(exception).code());
+            }
+        }
+        // Generated retrieval queries must not change employee-supplied visibility/type preferences.
+        String constraintSource = question.trim().replaceFirst("[。！？!?]+$", "");
         List<DiscoveryPlanStepResponse> candidateSteps = retrieveSteps(
                 question, plan, language, principal, normalizedRoles, constraintSource);
         log.info("AI discovery candidates prepared [steps={}, candidates={}]",
@@ -60,7 +69,7 @@ public class DiscoveryAssistantAppService {
                         .sum());
         DiscoveryAssistResponse response;
 
-        if (!properties.isEnabled() || properties.getApiKey() == null || properties.getApiKey().isBlank()) {
+        if (!aiEnabled) {
             List<DiscoverySuggestionResponse> suggestions = flatten(candidateSteps);
             response = localFallback(conversation.id(), language, candidateSteps, suggestions);
         } else {
@@ -69,19 +78,13 @@ public class DiscoveryAssistantAppService {
                         question, language, candidateSteps, conversation.turns(), safetyIdentifier);
                 List<DiscoveryPlanStepResponse> steps = applySelections(candidateSteps, answer.selections());
                 List<DiscoverySuggestionResponse> suggestions = flatten(steps);
-                if (suggestions.isEmpty() && !flatten(candidateSteps).isEmpty()) {
-                    steps = limitCandidates(candidateSteps, 3);
-                    suggestions = flatten(steps);
-                    response = localFallback(conversation.id(), language, steps, suggestions);
-                } else {
-                    response = new DiscoveryAssistResponse(
-                            conversation.id(), answer.text(), suggestions, steps,
-                            answer.model(), true, answer.fallbackUsed());
-                }
+                response = new DiscoveryAssistResponse(
+                        conversation.id(), answer.text(), suggestions, steps,
+                        answer.model(), true, answer.fallbackUsed());
             } catch (RuntimeException exception) {
                 log.warn("JoyHub AI assistant degraded to local guidance");
-                List<DiscoverySuggestionResponse> suggestions = flatten(candidateSteps);
-                response = localFallback(conversation.id(), language, candidateSteps, suggestions);
+                List<DiscoveryPlanStepResponse> steps = limitCandidates(candidateSteps, 3);
+                response = localFallback(conversation.id(), language, steps, flatten(steps));
             }
         }
         conversationStore.append(principal.userId(), conversation.id(),
