@@ -196,6 +196,10 @@
     }
   },
   "joyhubHome": {
+    "discoverySort": {
+      "downloads": "下载最多",
+      "newest": "最新发布"
+    },
     "badge": "公司统一 AI 能力平台",
     "title": "找到能力，直接开始工作",
     "description": "在一个入口发现和使用公司内部的 Agent、Skill、插件、MCP、在线工具与服务，每项能力都配有清晰的入口和对应文档。",
