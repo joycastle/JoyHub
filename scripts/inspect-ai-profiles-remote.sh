@@ -9,6 +9,18 @@ if docker ps >/dev/null 2>"$diagnostic_stderr"; then
 elif sudo -n docker ps >/dev/null 2>>"$diagnostic_stderr"; then
   docker_cmd=(sudo -n docker)
 else
+  # The deploy account may read the journal even when it cannot access Docker.
+  # Emit only the worker's structured, allowlisted diagnostic fields.
+  if command -v journalctl >/dev/null 2>&1; then
+    journalctl --no-pager --quiet --since '2 days ago' -n 2000 \
+      CONTAINER_NAME=joyhub-server-1 2>/dev/null | python3 -c '
+import re,sys
+pattern=r"Search profile generation failed \[type=(?:TOOL|SKILL|AGENT), resourceId=[0-9]+, attempt=[0-9]+, code=[A-Z0-9_]+, retryAt=[A-Za-z0-9:.+\-]+\]"
+matches=re.findall(pattern,sys.stdin.read())
+for match in matches[-20:]: print(match)
+print("journal_profile_failures="+str(len(matches)))
+' || true
+  fi
   python3 - "$diagnostic_stderr" <<'PYERR'
 import sys
 text=open(sys.argv[1]).read().lower()
