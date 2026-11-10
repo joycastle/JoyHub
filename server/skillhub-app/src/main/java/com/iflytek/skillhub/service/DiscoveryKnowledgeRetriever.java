@@ -8,9 +8,7 @@ import com.iflytek.skillhub.dto.UnifiedResourceSearchType;
 import com.iflytek.skillhub.infra.jpa.ResourceSearchDocumentEntity;
 import com.iflytek.skillhub.infra.jpa.ResourceSearchDocumentJpaRepository;
 import com.iflytek.skillhub.search.SearchTextTokenizer;
-import com.iflytek.skillhub.search.ResourceSearchQueryInterpreter;
 import java.util.LinkedHashMap;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -54,28 +52,20 @@ public class DiscoveryKnowledgeRetriever {
         Map<String, ResourceSearchDocumentEntity> documents = new LinkedHashMap<>();
         documentRepository.findBySearchEnabledTrue().forEach(document ->
                 documents.put(document.getResourceType() + ":" + document.getResourceId(), document));
-        Map<String, RankedSuggestion> suggestions = new LinkedHashMap<>();
-        SearchConstraints constraints = SearchConstraints.from(constraintSource, tokenizer);
+        Map<String, DiscoverySuggestionResponse> suggestions = new LinkedHashMap<>();
+        SearchConstraints constraints = SearchConstraints.from(constraintSource);
         List<String> queries = searchQueries == null ? List.of() : searchQueries;
         queries.stream().filter(query -> query != null && !query.isBlank()).map(String::trim).distinct()
                 .limit(4).forEach(query -> {
-                    unifiedSearchAppService.searchForDiscovery(query,
-                        constraints.resourceType(), RESULT_LIMIT, principal.userId(), roles, viewer,
+                    unifiedSearchAppService.search(query, null, null, "relevance",
+                        constraints.resourceType(), false, 0, RESULT_LIMIT, principal.userId(), roles, viewer,
                         constraints.accessModes())
-                        .items().stream()
-                        .filter(item -> constraints.allowedTypes().isEmpty()
-                                || constraints.allowedTypes().contains(item.resourceType()))
-                        .forEach(item -> {
+                        .items().forEach(item -> {
                             DiscoverySuggestionResponse suggestion = toSuggestion(query, item, documents, language);
-                            if (suggestion != null) {
-                                RankedSuggestion candidate = new RankedSuggestion(suggestion, item.relevanceScore());
-                                suggestions.merge(suggestion.type() + ":" + suggestion.id(), candidate,
-                                        (previous, next) -> next.score() > previous.score() ? next : previous);
-                            }
+                            if (suggestion != null) suggestions.putIfAbsent(suggestion.type() + ":" + suggestion.id(), suggestion);
                         });
                 });
-        return suggestions.values().stream().sorted(Comparator.comparingDouble(RankedSuggestion::score).reversed())
-                .limit(RESULT_LIMIT).map(RankedSuggestion::suggestion).toList();
+        return suggestions.values().stream().limit(RESULT_LIMIT).toList();
     }
 
     @Transactional(readOnly = true)
@@ -107,28 +97,18 @@ public class DiscoveryKnowledgeRetriever {
 
     private String evidence(String query, ResourceSearchDocumentEntity document, String fallback) {
         if (document == null) return fallback;
-        return bestExcerpt(query, String.join("\n\n", safe(document.getProfileText()),
-                safe(document.getRawDocumentation())), fallback, tokenizer);
+        return bestExcerpt(query, String.join("\n", safe(document.getEvidenceJson()), safe(document.getProfileText())), fallback);
     }
 
     static String bestExcerpt(String question, String document, String fallback) {
-        return bestExcerpt(question, document, fallback, new SearchTextTokenizer());
-    }
-
-    private static String bestExcerpt(String question, String document, String fallback, SearchTextTokenizer tokenizer) {
         if (document == null || document.isBlank()) return fallback;
-        List<String> terms = tokenizer.tokenizeForQuery(question).stream().filter(term -> term.length() > 1).toList();
-        String excerpt = java.util.Arrays.stream(document.split("(?:\\R\\s*){2,}|(?=#+\\s)"))
+        List<String> terms = new SearchTextTokenizer().tokenizeForQuery(question);
+        return java.util.Arrays.stream(document.split("(?:\\R\\s*){2,}|(?=#+\\s)"))
                 .map(part -> part.replaceAll("\\s+", " ").trim()).filter(part -> !part.isBlank())
-                .distinct()
-                .sorted(Comparator.comparingLong((String part) -> terms.stream()
-                        .filter(term -> part.toLowerCase(Locale.ROOT).contains(term.toLowerCase(Locale.ROOT))).count()).reversed())
-                .limit(3).map(part -> part.length() <= 360 ? part : part.substring(0, 357) + "…")
-                .collect(java.util.stream.Collectors.joining("\n\n"));
-        return excerpt.isBlank() ? fallback : excerpt;
+                .max(java.util.Comparator.comparingLong(part -> terms.stream()
+                        .filter(term -> part.toLowerCase(Locale.ROOT).contains(term.toLowerCase(Locale.ROOT))).count()))
+                .map(part -> part.length() <= 220 ? part : part.substring(0, 217) + "…").orElse(fallback);
     }
-
-    private record RankedSuggestion(DiscoverySuggestionResponse suggestion, double score) { }
 
     private String localized(String language, String localized, String fallback) {
         return language != null && language.toLowerCase(Locale.ROOT).startsWith("en")
@@ -138,14 +118,25 @@ public class DiscoveryKnowledgeRetriever {
 
     private String safe(String value) { return value == null ? "" : value; }
 
-    private record SearchConstraints(UnifiedResourceSearchType resourceType, Set<String> allowedTypes,
-                                     Set<String> accessModes) {
-        static SearchConstraints from(String query, SearchTextTokenizer tokenizer) {
-            var intent = new ResourceSearchQueryInterpreter(tokenizer).interpret(query);
-            UnifiedResourceSearchType type = intent.resourceTypes().size() == 1
-                    ? UnifiedResourceSearchType.valueOf(intent.resourceTypes().iterator().next())
-                    : UnifiedResourceSearchType.ALL;
-            return new SearchConstraints(type, intent.resourceTypes(), intent.accessModes());
+    private record SearchConstraints(UnifiedResourceSearchType resourceType, Set<String> accessModes) {
+        static SearchConstraints from(String query) {
+            String normalized = query == null ? "" : query.toLowerCase(Locale.ROOT);
+            // A specific positive request wins over a resource type merely mentioned in a
+            // negative comparison, e.g. "优先 Skill，不要只推荐通用 Agent".
+            boolean wantsSkill = normalized.contains("skill") || normalized.contains("技能");
+            boolean wantsTool = normalized.contains("tool") || normalized.contains("工具");
+            boolean wantsAgent = normalized.contains("agent") || normalized.contains("智能体");
+            UnifiedResourceSearchType type = wantsSkill
+                    ? UnifiedResourceSearchType.SKILL
+                    : wantsTool ? UnifiedResourceSearchType.TOOL
+                    : wantsAgent ? UnifiedResourceSearchType.AGENT : UnifiedResourceSearchType.ALL;
+            Set<String> accessModes = normalized.contains("安装") || normalized.contains("install")
+                    ? Set.of("INSTALL")
+                    : normalized.contains("下载") || normalized.contains("download")
+                            ? Set.of("DOWNLOAD")
+                            : normalized.contains("在线") || normalized.contains("打开") || normalized.contains("open")
+                                    ? Set.of("OPEN") : Set.of();
+            return new SearchConstraints(type, accessModes);
         }
     }
 }
