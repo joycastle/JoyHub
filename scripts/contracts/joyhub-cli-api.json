@@ -6,7 +6,7 @@
     "bin": "joyhub"
   },
   "defaultRegistry": "https://joyhub.toolnets.net",
-  "authorizationPolicyReview": "Public repository display reads remain outside the CLI/API contract.",
+  "authorizationPolicyReview": "CLI and remote MCP share JoyHub OAuth authorization codes with PKCE S256, rotating refresh and revocation. Existing explicit API tokens and legacy-registry device login remain compatible; resource visibility and publish permissions are unchanged.",
   "commands": [
     "auth ensure --json",
     "search --query <query> --limit <n> --json",
@@ -85,8 +85,42 @@
     "server/skillhub-app/src/main/java/com/iflytek/skillhub/controller/cli/",
     "server/skillhub-app/src/main/java/com/iflytek/skillhub/dto/cli/",
     "server/skillhub-app/src/main/java/com/iflytek/skillhub/service/cli/",
+    "server/skillhub-auth/src/main/java/com/iflytek/skillhub/auth/authorization/",
     "server/skillhub-auth/src/main/java/com/iflytek/skillhub/auth/device/",
     "server/skillhub-auth/src/main/java/com/iflytek/skillhub/auth/policy/RouteSecurityPolicyRegistry.java",
     "server/skillhub-auth/src/main/java/com/iflytek/skillhub/auth/token/ApiTokenScopeService.java"
-  ]
+  ],
+  "oauth": {
+    "protocol": "Authorization Code with PKCE S256",
+    "discovery": "/.well-known/oauth-authorization-server",
+    "resource": "/mcp",
+    "endpoints": [
+      {
+        "id": "oauth-discovery",
+        "method": "GET",
+        "path": "/.well-known/oauth-authorization-server"
+      },
+      {
+        "id": "oauth-register",
+        "method": "POST",
+        "path": "/oauth2/register"
+      },
+      {
+        "id": "oauth-authorize",
+        "method": "GET",
+        "path": "/oauth2/authorize"
+      },
+      {
+        "id": "oauth-token",
+        "method": "POST",
+        "path": "/oauth2/token"
+      },
+      {
+        "id": "oauth-revoke",
+        "method": "POST",
+        "path": "/oauth2/revoke"
+      }
+    ],
+    "implementation": "Spring Authorization Server; protocol endpoints are validated by SharedOAuthFlowIntegrationTest rather than controller-source matching."
+  }
 }

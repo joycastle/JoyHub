@@ -13,4 +13,9 @@ public record PlatformPrincipal(
     String avatarUrl,
     String oauthProvider,
     Set<String> platformRoles
-) implements Serializable {}
+) implements Serializable, java.security.Principal {
+    @Override
+    public String getName() {
+        return userId;
+    }
+}

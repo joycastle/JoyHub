@@ -69,6 +69,10 @@ public class ApiTokenAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
+        if (Boolean.TRUE.equals(request.getAttribute("joyhub.oauth.authenticated"))) {
+            filterChain.doFilter(request, response);
+            return;
+        }
         String authHeader = request.getHeader(AUTH_HEADER);
         if (authHeader != null && isBearerAuthorization(authHeader)) {
             String rawToken = extractBearerToken(authHeader);

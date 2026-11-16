@@ -4,6 +4,14 @@ All notable CLI behavior changes are documented in this file.
 
 ## Unreleased
 
+### Added
+
+- Reuse JoyHub's shared OAuth authorization service for browser login with PKCE S256,
+  automatic credential refresh and revocation on logout. Keep explicit API tokens
+  and device-code login for registries without OAuth discovery compatible.
+- Serialize credential refresh across processes and atomically persist credentials
+  with owner-only file permissions.
+
 ### Fixed
 
 - Resolve `namespace/slug`, `@namespace/slug`, and `namespace--slug`

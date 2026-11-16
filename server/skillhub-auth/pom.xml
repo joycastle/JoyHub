@@ -12,6 +12,10 @@
     <artifactId>skillhub-auth</artifactId>
     <dependencies>
         <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-oauth2-authorization-server</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.iflytek.skillhub</groupId>
             <artifactId>skillhub-domain</artifactId>
         </dependency>
