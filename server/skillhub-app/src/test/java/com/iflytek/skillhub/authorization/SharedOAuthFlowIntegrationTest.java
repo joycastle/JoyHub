@@ -94,11 +94,18 @@ class SharedOAuthFlowIntegrationTest {
     }
 
     JsonNode exchange(String code) throws Exception {
-        return mapper.readTree(mvc.perform(post("/oauth2/token").contentType("application/x-www-form-urlencoded")
+        var request = post("/oauth2/token").contentType("application/x-www-form-urlencoded")
                 .param("grant_type", "authorization_code").param("code", code).param("code_verifier", verifier)
-                .param("redirect_uri", callback).param("resource", resource).param("client_id", client.get("client_id").asText())
-                .param("client_secret", client.get("client_secret").asText()))
-                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+                .param("redirect_uri", callback).param("resource", resource).param("client_id", client.get("client_id").asText());
+        if (client.has("client_secret")) request.param("client_secret", client.get("client_secret").asText());
+        return mapper.readTree(mvc.perform(request).andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+    }
+
+    JsonNode registerPublicClient() throws Exception {
+        return mapper.readTree(mvc.perform(post("/oauth2/register").contentType("application/json").content(mapper.writeValueAsString(Map.of(
+                "client_name", "Native MCP", "redirect_uris", List.of(callback),
+                "scope", "resource:read skill:read offline_access", "token_endpoint_auth_method", "none"))))
+                .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString());
     }
 
     @Test
@@ -236,5 +243,67 @@ class SharedOAuthFlowIntegrationTest {
         JsonNode token = exchange(org.springframework.web.util.UriUtils.decode(result.getFirst("code"), StandardCharsets.UTF_8));
         mvc.perform(get("/api/cli/v1/auth/whoami").header("Authorization", "Bearer " + token.get("access_token").asText()))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.data.handle").value(userId));
+    }
+
+    @Test
+    void publicClientRefreshesExpiredAccessWithoutSessionOrClientSecret() throws Exception {
+        client = registerPublicClient();
+        assertThat(client.get("token_endpoint_auth_method").asText()).isEqualTo("none");
+        assertThat(client.has("client_secret")).isFalse();
+        JsonNode token = exchange(authorize());
+        assertThat(token.get("refresh_token").asText()).isNotBlank();
+        var grant = grants.findByToken(token.get("access_token").asText(), org.springframework.security.oauth2.server.authorization.OAuth2TokenType.ACCESS_TOKEN);
+        var expired = new org.springframework.security.oauth2.core.OAuth2AccessToken(
+                org.springframework.security.oauth2.core.OAuth2AccessToken.TokenType.BEARER, token.get("access_token").asText(),
+                java.time.Instant.now().minusSeconds(3600), java.time.Instant.now().minusSeconds(1800), grant.getAuthorizedScopes());
+        grants.save(org.springframework.security.oauth2.server.authorization.OAuth2Authorization.from(grant)
+                .token(expired, metadata -> metadata.putAll(grant.getAccessToken().getMetadata())).build());
+        mvc.perform(get("/api/cli/v1/auth/whoami").header("Authorization", "Bearer " + expired.getTokenValue()))
+                .andExpect(status().isUnauthorized());
+        // A different native installation cannot redeem this client's refresh token.
+        JsonNode other = registerPublicClient();
+        mvc.perform(post("/oauth2/token").contentType("application/x-www-form-urlencoded")
+                .param("grant_type", "refresh_token").param("refresh_token", token.get("refresh_token").asText())
+                .param("client_id", other.get("client_id").asText())).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("invalid_grant"));
+        JsonNode refreshed = mapper.readTree(mvc.perform(post("/oauth2/token").contentType("application/x-www-form-urlencoded")
+                .param("grant_type", "refresh_token").param("refresh_token", token.get("refresh_token").asText())
+                .param("resource", resource).param("client_id", client.get("client_id").asText()))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+        assertThat(refreshed.get("refresh_token").asText()).isNotEqualTo(token.get("refresh_token").asText());
+        mvc.perform(get("/api/cli/v1/auth/whoami").header("Authorization", "Bearer " + refreshed.get("access_token").asText()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.handle").value(userId));
+        mvc.perform(post("/oauth2/token").contentType("application/x-www-form-urlencoded")
+                .param("grant_type", "refresh_token").param("refresh_token", token.get("refresh_token").asText())
+                .param("client_id", client.get("client_id").asText())).andExpect(status().isBadRequest());
+        mvc.perform(post("/oauth2/revoke").contentType("application/x-www-form-urlencoded")
+                .param("token", refreshed.get("refresh_token").asText()).param("token_type_hint", "refresh_token")
+                .param("client_id", client.get("client_id").asText())).andExpect(status().isOk());
+        mvc.perform(get("/api/cli/v1/auth/whoami").header("Authorization", "Bearer " + refreshed.get("access_token").asText()))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void confidentialClientsStillRequireTheirSecretAndReturnJsonErrors() throws Exception {
+        JsonNode token = exchange(authorize());
+        mvc.perform(post("/oauth2/token").contentType("application/x-www-form-urlencoded")
+                .param("grant_type", "refresh_token").param("refresh_token", token.get("refresh_token").asText())
+                .param("client_id", client.get("client_id").asText()))
+                .andExpect(status().isUnauthorized()).andExpect(jsonPath("$.error").value("invalid_client"))
+                .andExpect(header().doesNotExist("Location"));
+        mvc.perform(post("/oauth2/token").contentType("application/x-www-form-urlencoded")
+                .param("grant_type", "refresh_token").param("refresh_token", "invalid"))
+                .andExpect(status().isUnauthorized()).andExpect(jsonPath("$.error").value("invalid_client"))
+                .andExpect(header().doesNotExist("Location"));
+    }
+
+    @Test
+    void nativeAuthorizationCodeStillRequiresCorrectPkce() throws Exception {
+        client = registerPublicClient();
+        String code = authorize();
+        mvc.perform(post("/oauth2/token").contentType("application/x-www-form-urlencoded")
+                .param("grant_type", "authorization_code").param("code", code).param("code_verifier", verifier + "wrong")
+                .param("redirect_uri", callback).param("client_id", client.get("client_id").asText()))
+                .andExpect(status().isBadRequest());
     }
 }

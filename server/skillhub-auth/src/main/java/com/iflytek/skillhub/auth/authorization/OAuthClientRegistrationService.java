@@ -52,12 +52,19 @@ public class OAuthClientRegistrationService {
         String secret = Base64.getUrlEncoder().withoutPadding().encodeToString(secretBytes);
         String clientId = UUID.randomUUID().toString();
         String name = request.client_name() == null || request.client_name().isBlank() ? "MCP client" : request.client_name();
-        // Authentication method is selected by the server and returned in registration metadata.
-        // Per-installation secrets allow standard refresh/revocation without weakening PKCE for public clients.
+        // Native MCP clients use PKCE and do not retain a DCR client secret across restarts.
+        boolean publicClient = "none".equals(request.token_endpoint_auth_method());
+        String authenticationMethod = publicClient ? "none" : "client_secret_post";
         RegisteredClient client = RegisteredClient.withId(UUID.randomUUID().toString()).clientId(clientId)
-                .clientIdIssuedAt(Instant.now()).clientName(name).clientSecret(passwords.encode(secret))
-                .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_POST)
-                .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+                .clientIdIssuedAt(Instant.now()).clientName(name)
+                .clientSecret(publicClient ? null : passwords.encode(secret))
+                .clientAuthenticationMethods(methods -> {
+                    if (publicClient) methods.add(ClientAuthenticationMethod.NONE);
+                    else {
+                        methods.add(ClientAuthenticationMethod.CLIENT_SECRET_POST);
+                        methods.add(ClientAuthenticationMethod.CLIENT_SECRET_BASIC);
+                    }
+                })
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
                 .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
                 .redirectUris(uris -> uris.addAll(request.redirect_uris()))
@@ -67,10 +74,20 @@ public class OAuthClientRegistrationService {
                         .accessTokenTimeToLive(Duration.ofMinutes(30)).authorizationCodeTimeToLive(Duration.ofMinutes(3))
                         .refreshTokenTimeToLive(Duration.ofDays(30)).reuseRefreshTokens(false).build()).build();
         clients.save(client);
-        return Map.of("client_id", clientId, "client_secret", secret, "client_id_issued_at", Instant.now().getEpochSecond(),
-                "client_secret_expires_at", 0, "client_name", name, "redirect_uris", request.redirect_uris(),
-                "grant_types", List.of("authorization_code", "refresh_token"), "response_types", List.of("code"),
-                "token_endpoint_auth_method", "client_secret_post", "scope", String.join(" ", scopes));
+        Map<String, Object> response = new java.util.LinkedHashMap<>();
+        response.put("client_id", clientId);
+        response.put("client_id_issued_at", Instant.now().getEpochSecond());
+        response.put("client_name", name);
+        response.put("redirect_uris", request.redirect_uris());
+        response.put("grant_types", List.of("authorization_code", "refresh_token"));
+        response.put("response_types", List.of("code"));
+        response.put("token_endpoint_auth_method", authenticationMethod);
+        response.put("scope", String.join(" ", scopes));
+        if (!publicClient) {
+            response.put("client_secret", secret);
+            response.put("client_secret_expires_at", 0);
+        }
+        return response;
     }
 
     static void validate(Registration request) {
