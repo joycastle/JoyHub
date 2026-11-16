@@ -32,7 +32,16 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest(properties = {"spring.sql.init.mode=always",
-        "spring.sql.init.schema-locations=classpath:db/migration/V62__shared_oauth_authorization.sql"})
+        "spring.sql.init.schema-locations=classpath:db/migration/V62__shared_oauth_authorization.sql",
+        "spring.security.oauth2.client.registration.feishu.client-id=cli_test",
+        "spring.security.oauth2.client.registration.feishu.client-secret=test-secret",
+        "spring.security.oauth2.client.registration.feishu.authorization-grant-type=authorization_code",
+        "spring.security.oauth2.client.registration.feishu.redirect-uri={baseUrl}/login/oauth2/code/{registrationId}",
+        "spring.security.oauth2.client.registration.feishu.scope=contact:user.base:readonly",
+        "spring.security.oauth2.client.provider.feishu.authorization-uri=https://accounts.feishu.cn/open-apis/authen/v1/authorize",
+        "spring.security.oauth2.client.provider.feishu.token-uri=https://open.feishu.cn/open-apis/authen/v2/oauth/token",
+        "spring.security.oauth2.client.provider.feishu.user-info-uri=https://open.feishu.cn/open-apis/authen/v1/user_info",
+        "spring.security.oauth2.client.provider.feishu.user-name-attribute=open_id"})
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 class SharedOAuthFlowIntegrationTest {
@@ -42,6 +51,8 @@ class SharedOAuthFlowIntegrationTest {
     @Autowired org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService grants;
     @Autowired PlatformSessionService sessions;
     @MockBean StringRedisTemplate redis;
+    @MockBean com.iflytek.skillhub.auth.oauth.FeishuOAuth2AccessTokenResponseClient upstreamTokens;
+    @MockBean com.iflytek.skillhub.auth.oauth.CustomOAuth2UserService upstreamUsers;
     JsonNode client;
     MockHttpSession session;
     final String callback = "http://127.0.0.1:14567/callback";
@@ -185,5 +196,45 @@ class SharedOAuthFlowIntegrationTest {
                 .queryParam("code_challenge", verifier).queryParam("code_challenge_method", "S256"))
                 .andExpect(status().is3xxRedirection()).andExpect(redirectedUrlPattern(callback + "?error=invalid_request*"));
         mvc.perform(post("/mcp")).andExpect(status().isUnauthorized()).andExpect(header().string("WWW-Authenticate", org.hamcrest.Matchers.containsString("resource_metadata")));
+    }
+
+    @Test
+    void firstFeishuLoginCompletesMcpConnectionWithoutStartingLoginAgain() throws Exception {
+        String challenge = Base64.getUrlEncoder().withoutPadding().encodeToString(MessageDigest.getInstance("SHA-256")
+                .digest(verifier.getBytes(StandardCharsets.US_ASCII)));
+        String target = UriComponentsBuilder.fromPath("/oauth2/authorize")
+                .queryParam("response_type", "code").queryParam("client_id", client.get("client_id").asText())
+                .queryParam("redirect_uri", callback).queryParam("scope", "resource:read skill:read offline_access")
+                .queryParam("resource", resource).queryParam("state", "first-login-state")
+                .queryParam("code_challenge", challenge).queryParam("code_challenge_method", "S256")
+                .build().encode().toUriString();
+        MockHttpSession anonymous = new MockHttpSession();
+        mvc.perform(get(java.net.URI.create(target)).session(anonymous))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrlPattern("http://localhost:8080/login?returnTo=*"));
+        String providerUrl = mvc.perform(get("/oauth2/authorization/feishu").session(anonymous).param("returnTo", target))
+                .andExpect(status().is3xxRedirection()).andReturn().getResponse().getRedirectedUrl();
+        String providerState = org.springframework.web.util.UriUtils.decode(
+                UriComponentsBuilder.fromUriString(providerUrl).build().getQueryParams().getFirst("state"), StandardCharsets.UTF_8);
+        // A browser can load authentication methods while the provider login is in flight.
+        mvc.perform(get("/api/v1/auth/methods").session(anonymous)).andExpect(status().isOk());
+        when(upstreamTokens.getTokenResponse(any())).thenReturn(
+                org.springframework.security.oauth2.core.endpoint.OAuth2AccessTokenResponse.withToken("upstream-test-token")
+                        .tokenType(org.springframework.security.oauth2.core.OAuth2AccessToken.TokenType.BEARER).expiresIn(300).build());
+        var principal = new PlatformPrincipal(userId, "OAuth Test", null, null, "feishu", Set.of("USER"));
+        when(upstreamUsers.loadUser(any())).thenReturn(new org.springframework.security.oauth2.core.user.DefaultOAuth2User(
+                List.of(), Map.of("platformPrincipal", principal, "providerLogin", userId), "providerLogin"));
+        var login = mvc.perform(get("/login/oauth2/code/feishu").session(anonymous)
+                        .param("code", "upstream-test-code").param("state", providerState))
+                .andExpect(status().is3xxRedirection()).andExpect(redirectedUrl(target)).andReturn();
+        MockHttpSession loggedIn = (MockHttpSession) login.getRequest().getSession(false);
+        String callbackUrl = mvc.perform(get(java.net.URI.create(target)).session(loggedIn))
+                .andExpect(status().is3xxRedirection()).andReturn().getResponse().getRedirectedUrl();
+        assertThat(callbackUrl).startsWith(callback + "?");
+        var result = UriComponentsBuilder.fromUriString(callbackUrl).build().getQueryParams();
+        assertThat(result.getFirst("state")).isEqualTo("first-login-state");
+        JsonNode token = exchange(org.springframework.web.util.UriUtils.decode(result.getFirst("code"), StandardCharsets.UTF_8));
+        mvc.perform(get("/api/cli/v1/auth/whoami").header("Authorization", "Bearer " + token.get("access_token").asText()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.handle").value(userId));
     }
 }

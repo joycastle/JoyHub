@@ -29,14 +29,22 @@ public class SkillHubOAuth2AuthorizationRequestResolver
     @Override
     public OAuth2AuthorizationRequest resolve(HttpServletRequest request) {
         OAuth2AuthorizationRequest authorizationRequest = delegate.resolve(request);
-        oauthLoginFlowService.rememberReturnTo(request);
+        // The filter calls this resolver for every request, including the provider callback.
+        // Only a new provider authorization request may replace the pending return target.
+        if (authorizationRequest != null) {
+            oauthLoginFlowService.rememberReturnTo(request);
+        }
         return authorizationRequest;
     }
 
     @Override
     public OAuth2AuthorizationRequest resolve(HttpServletRequest request, String clientRegistrationId) {
         OAuth2AuthorizationRequest authorizationRequest = delegate.resolve(request, clientRegistrationId);
-        oauthLoginFlowService.rememberReturnTo(request);
+        // The filter calls this resolver for every request, including the provider callback.
+        // Only a new provider authorization request may replace the pending return target.
+        if (authorizationRequest != null) {
+            oauthLoginFlowService.rememberReturnTo(request);
+        }
         return authorizationRequest;
     }
 }

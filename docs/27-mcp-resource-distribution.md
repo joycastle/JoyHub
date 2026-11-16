@@ -7,7 +7,7 @@ It discovers and distributes registry resources; the host agent downloads and in
 
 Add an HTTP MCP with URL `https://joyhub.toolnets.net/mcp`, then choose login/connect.
 The browser opens JoyHub's existing Feishu login and returns directly to the client after login, without an additional confirmation page.
-A prior JoyHub browser login is reused and returns directly to the client. No JoyHub CLI or manually copied API token is needed.
+The pending client return URL is preserved through provider login, intervening page requests and the provider callback, so the first login completes the connection. A prior JoyHub browser login is reused and returns directly to the client. No JoyHub CLI or manually copied API token is needed.
 
 Equivalent Codex configuration:
 

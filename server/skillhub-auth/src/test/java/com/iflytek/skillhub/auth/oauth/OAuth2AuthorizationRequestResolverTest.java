@@ -69,4 +69,27 @@ class OAuth2AuthorizationRequestResolverTest {
         assertThat(session).isNotNull();
         assertThat(session.getAttribute(OAuthLoginRedirectSupport.SESSION_RETURN_TO_ATTRIBUTE)).isNull();
     }
+
+    @Test
+    void unrelatedRequestsDoNotClearThePendingLoginReturn() {
+        MockHttpServletRequest start = new MockHttpServletRequest("GET", "/oauth2/authorization/github");
+        String returnTo = "/oauth2/authorize?client_id=codex&state=original&code_challenge=pkce";
+        start.setParameter("returnTo", returnTo);
+        resolver.resolve(start, "github");
+
+        for (String path : java.util.List.of("/api/v1/auth/methods", "/login/oauth2/code/github")) {
+            MockHttpServletRequest request = new MockHttpServletRequest("GET", path);
+            request.setSession((org.springframework.mock.web.MockHttpSession) start.getSession(false));
+            assertThat(resolver.resolve(request)).isNull();
+            assertThat(request.getSession(false).getAttribute(OAuthLoginRedirectSupport.SESSION_RETURN_TO_ATTRIBUTE))
+                    .isEqualTo(returnTo);
+        }
+    }
+
+    @Test
+    void unrelatedRequestDoesNotCreateALoginSession() {
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/v1/auth/me");
+        assertThat(resolver.resolve(request)).isNull();
+        assertThat(request.getSession(false)).isNull();
+    }
 }
