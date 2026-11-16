@@ -25,8 +25,8 @@ export function createRequireAuth(getCurrentUser: () => Promise<unknown>) {
 
 /**
  * An OAuth callback can conservatively return to /login after the browser
- * session has been established. Send that browser to its intended in-app page
- * rather than making the employee press the login button a second time.
+ * session has been established. Return through a document navigation: the
+ * target can be a server-owned OAuth endpoint, and its query must stay intact.
  */
 export async function redirectAuthenticatedUser(
   getCurrentUser: () => Promise<unknown>,
@@ -36,7 +36,7 @@ export async function redirectAuthenticatedUser(
   if (!user) {
     return
   }
-  throw redirect({
-    to: returnTo.startsWith('/') && !returnTo.startsWith('//') ? returnTo : '/',
-  })
+  const safeTarget = returnTo.startsWith('/') && !returnTo.startsWith('//')
+    && !returnTo.includes('\\') && ![...returnTo].some((character) => character.charCodeAt(0) <= 0x20) ? returnTo : '/'
+  throw redirect({ href: safeTarget, reloadDocument: true })
 }

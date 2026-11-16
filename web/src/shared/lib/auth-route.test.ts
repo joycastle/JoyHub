@@ -48,8 +48,16 @@ describe('auth-route', () => {
     await expect(redirectAuthenticatedUser(async () => ({ userId: 'user-1' }), '/dashboard/resources'))
       .rejects.toSatisfy((error: unknown) => {
         expect(isRedirect(error)).toBe(true)
-        return isRedirect(error) && error.options.to === '/dashboard/resources'
+        return isRedirect(error) && error.options.href === '/dashboard/resources'
+          && error.options.reloadDocument === true
       })
+  })
+
+  it('returns server-owned authorization URLs to the server with their original query', async () => {
+    const target = '/oauth2/authorize?client_id=client&redirect_uri=http%3A%2F%2F127.0.0.1%3A12345%2Fcallback&state=a%2Bb%3D&code_challenge=challenge&scope=resource%3Aread+offline_access'
+    await expect(redirectAuthenticatedUser(async () => ({ userId: 'user-1' }), target))
+      .rejects.toSatisfy((error: unknown) => isRedirect(error)
+        && error.options.href === target && error.options.reloadDocument === true)
   })
 
   it('keeps the login route available when the browser has no session', async () => {
@@ -57,8 +65,8 @@ describe('auth-route', () => {
       .resolves.toBeUndefined()
   })
 
-  it('rejects unsafe authenticated return targets', async () => {
-    await expect(redirectAuthenticatedUser(async () => ({ userId: 'user-1' }), 'https://evil.example'))
-      .rejects.toSatisfy((error: unknown) => isRedirect(error) && error.options.to === '/')
+  it.each(['https://evil.example', '//evil.example', '/\\evil.example', '/\tevil.example', ''])('rejects unsafe authenticated return target %j', async (target) => {
+    await expect(redirectAuthenticatedUser(async () => ({ userId: 'user-1' }), target))
+      .rejects.toSatisfy((error: unknown) => isRedirect(error) && error.options.href === '/')
   })
 })
