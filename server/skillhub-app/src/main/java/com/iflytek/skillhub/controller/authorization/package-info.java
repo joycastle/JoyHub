@@ -1,2 +1,2 @@
-/** Shared OAuth discovery and browser consent endpoints. */
+/** Shared OAuth discovery endpoints. */
 package com.iflytek.skillhub.controller.authorization;
