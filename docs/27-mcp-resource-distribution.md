@@ -59,6 +59,7 @@ The old CLI device-code endpoints remain for compatibility; new OAuth credential
 ## Operations
 
 `SKILLHUB_PUBLIC_BASE_URL` must be the exact externally reachable HTTPS origin (local development defaults to `http://localhost:8080`).
+Consent redirects use this canonical origin so internal HTTP proxy ports cannot leak into public HTTPS authorization URLs.
 Keep OAuth discovery, `/oauth2/*`, `/mcp`, and `/api/mcp/downloads/*` uncached at any CDN/proxy. Forward request bodies and Authorization headers.
 The web Nginx template forwards `/mcp` without response buffering and already forwards OAuth/discovery paths.
 OAuth clients, consent and grants persist in PostgreSQL (migration V62). One-use download tickets and registration throttling use Redis.

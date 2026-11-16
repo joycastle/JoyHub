@@ -6,7 +6,7 @@
     "bin": "joyhub"
   },
   "defaultRegistry": "https://joyhub.toolnets.net",
-  "authorizationPolicyReview": "CLI and remote MCP share JoyHub OAuth authorization codes with PKCE S256, rotating refresh and revocation. Existing explicit API tokens and legacy-registry device login remain compatible; resource visibility and publish permissions are unchanged.",
+  "authorizationPolicyReview": "CLI and MCP share PKCE, rotating refresh and revocation. Authorization consent redirects use the configured canonical issuer rather than proxy-internal scheme/port. Existing API tokens, legacy-registry device login, resource visibility and publish permissions remain compatible.",
   "commands": [
     "auth ensure --json",
     "search --query <query> --limit <n> --json",
