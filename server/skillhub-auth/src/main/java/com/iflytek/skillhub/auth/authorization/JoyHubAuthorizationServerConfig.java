@@ -39,7 +39,6 @@ import org.springframework.security.oauth2.server.authorization.jackson2.OAuth2A
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
 import org.springframework.security.oauth2.server.authorization.token.DelegatingOAuth2TokenGenerator;
 import org.springframework.security.oauth2.server.authorization.token.OAuth2AccessTokenGenerator;
-import org.springframework.security.oauth2.server.authorization.token.OAuth2RefreshTokenGenerator;
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenGenerator;
 import org.springframework.security.web.SecurityFilterChain;
 
@@ -48,9 +47,12 @@ import org.springframework.security.web.SecurityFilterChain;
 public class JoyHubAuthorizationServerConfig {
     @Bean
     @Order(1)
-    SecurityFilterChain authorizationServerChain(HttpSecurity http, JoyHubOAuthSettings settings) throws Exception {
+    SecurityFilterChain authorizationServerChain(HttpSecurity http, JoyHubOAuthSettings settings, RegisteredClientRepository clients) throws Exception {
         OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
+        var publicClientAuthentication = new PublicOAuthClientAuthentication(clients);
         http.getConfigurer(OAuth2AuthorizationServerConfigurer.class)
+                .clientAuthentication(client -> client.authenticationConverter(publicClientAuthentication)
+                        .authenticationProvider(publicClientAuthentication))
                 .authorizationEndpoint(endpoint -> endpoint.authenticationProviders(providers -> providers.forEach(provider -> {
                     if (provider instanceof OAuth2AuthorizationCodeRequestAuthenticationProvider codeProvider) {
                         codeProvider.setAuthenticationValidator(new OAuth2AuthorizationCodeRequestAuthenticationValidator()
@@ -67,9 +69,16 @@ public class JoyHubAuthorizationServerConfig {
                 })))
                 .authorizationServerMetadataEndpoint(endpoint -> endpoint.authorizationServerMetadataCustomizer(builder ->
                         builder.claim("registration_endpoint", settings.issuer() + "/oauth2/register")
-                                .claim("token_endpoint_auth_methods_supported", List.of("client_secret_post", "client_secret_basic"))
+                                .claim("token_endpoint_auth_methods_supported", List.of("none", "client_secret_post", "client_secret_basic"))
                                 .claim("scopes_supported", List.of("resource:read", "offline_access"))));
         http.exceptionHandling(exceptions -> exceptions.authenticationEntryPoint((request, response, error) -> {
+            if (!"/oauth2/authorize".equals(request.getRequestURI())) {
+                response.setStatus(401);
+                response.setContentType("application/json");
+                response.setHeader("Cache-Control", "no-store");
+                response.getWriter().write("{\"error\":\"invalid_client\"}");
+                return;
+            }
             String returnTo = request.getRequestURI() + (request.getQueryString() == null ? "" : "?" + request.getQueryString());
             response.sendRedirect(settings.issuer() + "/login?returnTo=" + URLEncoder.encode(returnTo, StandardCharsets.UTF_8));
         }));
@@ -133,7 +142,19 @@ public class JoyHubAuthorizationServerConfig {
             if (token == null) return null;
             return new PrefixedAccessToken(token, ((org.springframework.security.oauth2.core.ClaimAccessor) token).getClaims());
         };
-        return new DelegatingOAuth2TokenGenerator(prefixedAccess, new OAuth2RefreshTokenGenerator());
+        var refreshValues = new org.springframework.security.crypto.keygen.Base64StringKeyGenerator(
+                java.util.Base64.getUrlEncoder().withoutPadding(), 96);
+        OAuth2TokenGenerator<org.springframework.security.oauth2.core.OAuth2RefreshToken> rotatingRefresh = context -> {
+            if (!org.springframework.security.oauth2.server.authorization.OAuth2TokenType.REFRESH_TOKEN.equals(context.getTokenType())) return null;
+            // Native clients cannot protect a static secret; mandatory refresh rotation protects their grants.
+            if (context.getRegisteredClient().getTokenSettings().isReuseRefreshTokens()) {
+                throw new OAuth2AuthenticationException("invalid_client");
+            }
+            java.time.Instant issuedAt = java.time.Instant.now();
+            return new org.springframework.security.oauth2.core.OAuth2RefreshToken(refreshValues.generateKey(), issuedAt,
+                    issuedAt.plus(context.getRegisteredClient().getTokenSettings().getRefreshTokenTimeToLive()));
+        };
+        return new DelegatingOAuth2TokenGenerator(prefixedAccess, rotatingRefresh);
     }
 
     private static final class PrefixedAccessToken extends org.springframework.security.oauth2.core.OAuth2AccessToken

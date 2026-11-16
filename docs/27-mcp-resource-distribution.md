@@ -43,14 +43,16 @@ Spring Authorization Server manages authorization codes, client credentials, opa
 Each CLI/MCP installation holds its own grant; signing into one client does not silently export its credentials to another.
 
 - Discovery: `/.well-known/oauth-protected-resource` and `/.well-known/oauth-authorization-server`.
-- Client registration: `POST /oauth2/register` (DCR); clients receive per-installation credentials and must use the returned authentication method.
+- Client registration: `POST /oauth2/register` (DCR); native MCP clients requesting `token_endpoint_auth_method=none` receive a public client ID without a client secret. Clients explicitly requesting a secret method retain per-installation credentials and must use the returned authentication method.
 - Browser authorization: `/oauth2/authorize`, authorization code with PKCE S256 and `resource=<public-base-url>/mcp`.
-- Token exchange/refresh: `POST /oauth2/token`. Refresh tokens rotate; old access tokens stop working after refresh.
+- Token exchange/refresh: `POST /oauth2/token`. Public native clients exchange codes with PKCE and refresh with their client ID and refresh token; no browser session or client secret is needed. Refresh tokens rotate; old refresh and access tokens stop working after refresh. Token authentication failures return OAuth JSON errors, never a browser login redirect.
 - Revocation: `POST /oauth2/revoke`. Revoking refresh credentials also prevents use of associated access credentials.
 - Access tokens last 30 minutes; refresh tokens last 30 days after issuance/rotation.
 - Default MCP scope: `resource:read`. CLI additionally requests `skill:read skill:publish`; existing publishing permissions still apply.
 - Every MCP request checks the token's issuer, audience, expiration, scope and current active user. Resource reads use current membership and permission rules.
 - Download ticket redemption checks the grant, active account, resource permissions and revision again. Expired, consumed or revoked tickets fail.
+
+Existing secret-based registrations are not silently converted to public clients. A native client registered before public-client support must reconnect once to obtain the correct registration; subsequent renewal uses its rotating refresh token.
 
 The CLI discovers this service and uses a loopback browser callback with PKCE. It refreshes credentials automatically and revokes them on logout.
 Existing explicit API tokens remain supported. Registries without OAuth discovery retain the legacy device-code login; protocol/network errors do not silently downgrade.
