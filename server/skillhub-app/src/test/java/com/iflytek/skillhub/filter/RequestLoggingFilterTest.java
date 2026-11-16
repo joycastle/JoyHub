@@ -181,10 +181,10 @@ class RequestLoggingFilterTest {
     @Test
     void oauthRequestsDoNotLogAuthorizationQueryValues() throws Exception {
         attachAppender();
-        var request = new MockHttpServletRequest("GET", "/oauth2/consent");
+        var request = new MockHttpServletRequest("GET", "/oauth2/authorize");
         request.setQueryString("state=private-state&client_id=private-client");
         new RequestLoggingFilter().doFilter(request, new MockHttpServletResponse(), (req, res) -> {});
-        assertThat(loggedMessages()).anyMatch(message -> message.contains("GET /oauth2/consent"));
+        assertThat(loggedMessages()).anyMatch(message -> message.contains("GET /oauth2/authorize"));
         assertThat(loggedMessages()).noneMatch(message -> message.contains("private-state") || message.contains("private-client"));
     }
 

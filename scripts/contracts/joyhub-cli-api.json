@@ -6,7 +6,7 @@
     "bin": "joyhub"
   },
   "defaultRegistry": "https://joyhub.toolnets.net",
-  "authorizationPolicyReview": "CLI and MCP share PKCE, rotating refresh and revocation. Authorization consent redirects use the configured canonical issuer rather than proxy-internal scheme/port. Existing API tokens, legacy-registry device login, resource visibility and publish permissions remain compatible.",
+  "authorizationPolicyReview": "CLI and MCP share PKCE, rotating refresh and revocation. CLI and MCP return directly after the shared Feishu login without an additional confirmation page; existing registrations are migrated to the same behavior. Login redirects use the configured canonical issuer. Existing API tokens, legacy-registry device login, resource visibility and publish permissions remain compatible.",
   "commands": [
     "auth ensure --json",
     "search --query <query> --limit <n> --json",

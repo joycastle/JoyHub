@@ -6,8 +6,8 @@ It discovers and distributes registry resources; the host agent downloads and in
 ## Try in Codex
 
 Add an HTTP MCP with URL `https://joyhub.toolnets.net/mcp`, then choose login/connect.
-The browser opens JoyHub's existing login, followed by a permission consent page.
-A prior JoyHub browser login can be reused. No JoyHub CLI or manually copied API token is needed.
+The browser opens JoyHub's existing Feishu login and returns directly to the client after login, without an additional confirmation page.
+A prior JoyHub browser login is reused and returns directly to the client. No JoyHub CLI or manually copied API token is needed.
 
 Equivalent Codex configuration:
 
@@ -39,7 +39,7 @@ Package documentation is untrusted data: inspect instructions and package conten
 ## One identity and authorization service
 
 Portal, CLI and MCP share users, account status and live namespace/platform permissions.
-Spring Authorization Server manages authorization codes, client credentials, consent, opaque access tokens, refresh and revocation.
+Spring Authorization Server manages authorization codes, client credentials, opaque access tokens, refresh and revocation.
 Each CLI/MCP installation holds its own grant; signing into one client does not silently export its credentials to another.
 
 - Discovery: `/.well-known/oauth-protected-resource` and `/.well-known/oauth-authorization-server`.
@@ -59,10 +59,10 @@ The old CLI device-code endpoints remain for compatibility; new OAuth credential
 ## Operations
 
 `SKILLHUB_PUBLIC_BASE_URL` must be the exact externally reachable HTTPS origin (local development defaults to `http://localhost:8080`).
-Consent redirects use this canonical origin so internal HTTP proxy ports cannot leak into public HTTPS authorization URLs.
+Login redirects use this canonical origin so internal HTTP proxy ports cannot leak into public HTTPS authorization URLs.
 Keep OAuth discovery, `/oauth2/*`, `/mcp`, and `/api/mcp/downloads/*` uncached at any CDN/proxy. Forward request bodies and Authorization headers.
 The web Nginx template forwards `/mcp` without response buffering and already forwards OAuth/discovery paths.
-OAuth clients, consent and grants persist in PostgreSQL (migration V62). One-use download tickets and registration throttling use Redis.
+OAuth clients and grants persist in PostgreSQL (migration V62). Migration V63 disables confirmation for existing client registrations while preserving PKCE, other client settings and existing grants. One-use download tickets and registration throttling use Redis.
 Do not log token endpoint bodies, bearer headers or full ticket URLs. Database backups contain OAuth grants and must retain the deployment's existing protected backup permissions.
 
 A plugin may bundle `.mcp.json` with this same URL and installation instructions; the remote service works without a plugin or JoyHub CLI.

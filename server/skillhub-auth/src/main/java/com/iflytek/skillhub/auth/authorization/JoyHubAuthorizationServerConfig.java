@@ -51,7 +51,7 @@ public class JoyHubAuthorizationServerConfig {
     SecurityFilterChain authorizationServerChain(HttpSecurity http, JoyHubOAuthSettings settings) throws Exception {
         OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
         http.getConfigurer(OAuth2AuthorizationServerConfigurer.class)
-                .authorizationEndpoint(endpoint -> endpoint.consentPage(settings.issuer() + "/oauth2/consent").authenticationProviders(providers -> providers.forEach(provider -> {
+                .authorizationEndpoint(endpoint -> endpoint.authenticationProviders(providers -> providers.forEach(provider -> {
                     if (provider instanceof OAuth2AuthorizationCodeRequestAuthenticationProvider codeProvider) {
                         codeProvider.setAuthenticationValidator(new OAuth2AuthorizationCodeRequestAuthenticationValidator()
                                 .andThen(context -> {

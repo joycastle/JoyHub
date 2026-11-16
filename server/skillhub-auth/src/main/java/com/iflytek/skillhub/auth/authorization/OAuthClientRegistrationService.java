@@ -23,7 +23,7 @@ import org.springframework.security.oauth2.server.authorization.settings.TokenSe
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-/** RFC 7591 registration: every installation receives its own client credential and requires user consent. */
+/** RFC 7591 registration: every installation receives its own client credential and reuses the JoyHub login. */
 @Service
 public class OAuthClientRegistrationService {
     private static final Set<String> SCOPES = Set.of("resource:read", "skill:read", "skill:publish", "offline_access");
@@ -62,7 +62,7 @@ public class OAuthClientRegistrationService {
                 .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
                 .redirectUris(uris -> uris.addAll(request.redirect_uris()))
                 .scopes(values -> values.addAll(scopes))
-                .clientSettings(ClientSettings.builder().requireProofKey(true).requireAuthorizationConsent(true).build())
+                .clientSettings(ClientSettings.builder().requireProofKey(true).requireAuthorizationConsent(false).build())
                 .tokenSettings(TokenSettings.builder().accessTokenFormat(OAuth2TokenFormat.REFERENCE)
                         .accessTokenTimeToLive(Duration.ofMinutes(30)).authorizationCodeTimeToLive(Duration.ofMinutes(3))
                         .refreshTokenTimeToLive(Duration.ofDays(30)).reuseRefreshTokens(false).build()).build();

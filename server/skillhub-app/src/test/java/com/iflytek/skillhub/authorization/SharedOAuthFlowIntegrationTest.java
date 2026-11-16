@@ -6,7 +6,6 @@ import com.iflytek.skillhub.auth.rbac.PlatformPrincipal;
 import com.iflytek.skillhub.auth.session.PlatformSessionService;
 import com.iflytek.skillhub.domain.user.UserAccount;
 import com.iflytek.skillhub.domain.user.UserAccountRepository;
-import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.Base64;
@@ -70,17 +69,13 @@ class SharedOAuthFlowIntegrationTest {
     String authorize() throws Exception {
         String challenge = Base64.getUrlEncoder().withoutPadding().encodeToString(MessageDigest.getInstance("SHA-256")
                 .digest(verifier.getBytes(StandardCharsets.US_ASCII)));
-        String consentUrl = mvc.perform(get("/oauth2/authorize").session(session)
+        String redirect = mvc.perform(get("/oauth2/authorize").session(session)
                 .queryParam("response_type", "code").queryParam("client_id", client.get("client_id").asText())
                 .queryParam("redirect_uri", callback).queryParam("scope", "resource:read skill:read offline_access")
                 .queryParam("resource", resource).queryParam("state", "original-client-state").queryParam("code_challenge", challenge)
                 .queryParam("code_challenge_method", "S256")).andExpect(status().is3xxRedirection()).andReturn().getResponse().getRedirectedUrl();
-        assertThat(consentUrl).startsWith("http://localhost:8080/oauth2/consent?");
-        var params = UriComponentsBuilder.fromUriString(consentUrl).build().getQueryParams();
-        String redirect = mvc.perform(post("/oauth2/authorize").session(session)
-                .param("client_id", client.get("client_id").asText()).param("state", org.springframework.web.util.UriUtils.decode(params.getFirst("state"), StandardCharsets.UTF_8))
-                .param("scope", "resource:read", "skill:read", "offline_access"))
-                .andExpect(status().is3xxRedirection()).andReturn().getResponse().getRedirectedUrl();
+        assertThat(redirect).startsWith(callback + "?");
+        assertThat(redirect).doesNotContain("/oauth2/consent");
         var result = UriComponentsBuilder.fromUriString(redirect).build().getQueryParams();
         assertThat(result.getFirst("state")).isEqualTo("original-client-state");
         assertThat(result.getFirst("code")).isNotBlank();
@@ -136,7 +131,7 @@ class SharedOAuthFlowIntegrationTest {
     }
 
     @Test
-    void consentUsesCanonicalIssuerBehindHttpsProxyWithInternalHttpPort() throws Exception {
+    void loggedInClientReturnsDirectlyToCallbackBehindHttpsProxyWithInternalHttpPort() throws Exception {
         String challenge = Base64.getUrlEncoder().withoutPadding().encodeToString(MessageDigest.getInstance("SHA-256")
                 .digest(verifier.getBytes(StandardCharsets.US_ASCII)));
         String location = mvc.perform(get("/oauth2/authorize").session(session)
@@ -151,8 +146,30 @@ class SharedOAuthFlowIntegrationTest {
                 .queryParam("resource", resource).queryParam("state", "proxy-state")
                 .queryParam("code_challenge", challenge).queryParam("code_challenge_method", "S256"))
                 .andExpect(status().is3xxRedirection()).andReturn().getResponse().getRedirectedUrl();
-        assertThat(location).startsWith("http://localhost:8080/oauth2/consent?");
+        assertThat(location).startsWith(callback + "?");
+        var params = UriComponentsBuilder.fromUriString(location).build().getQueryParams();
+        assertThat(params.getFirst("code")).isNotBlank();
+        assertThat(params.getFirst("state")).isEqualTo("proxy-state");
         assertThat(location).doesNotContain("joyhub-proxy.internal", ":80/");
+    }
+
+    @Test
+    void unauthenticatedClientMustUseExistingJoyHubLogin() throws Exception {
+        String challenge = Base64.getUrlEncoder().withoutPadding().encodeToString(MessageDigest.getInstance("SHA-256")
+                .digest(verifier.getBytes(StandardCharsets.US_ASCII)));
+        String location = mvc.perform(get("/oauth2/authorize")
+                .queryParam("response_type", "code").queryParam("client_id", client.get("client_id").asText())
+                .queryParam("redirect_uri", callback).queryParam("scope", "resource:read")
+                .queryParam("resource", resource).queryParam("state", "login-state")
+                .queryParam("code_challenge", challenge).queryParam("code_challenge_method", "S256"))
+                .andExpect(status().is3xxRedirection()).andReturn().getResponse().getRedirectedUrl();
+        assertThat(location).startsWith("http://localhost:8080/login?returnTo=");
+        assertThat(location).doesNotContain("code=", "/oauth2/consent");
+    }
+
+    @Test
+    void repeatedConnectionsReturnDirectlyWithoutConfirmation() throws Exception {
+        assertThat(authorize()).isNotEqualTo(authorize());
     }
 
     @Test

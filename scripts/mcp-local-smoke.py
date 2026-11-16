@@ -18,9 +18,7 @@ status,h,b=call('/api/v1/auth/me',headers={'X-Mock-User-Id':'local-user'});asser
 v=secrets.token_urlsafe(48);challenge=base64.urlsafe_b64encode(hashlib.sha256(v.encode()).digest()).rstrip(b'=').decode()
 params=dict(response_type='code',client_id=reg['client_id'],redirect_uri='http://127.0.0.1:12345/callback',scope='resource:read skill:read',resource=base+'/mcp',state='smoke',code_challenge=challenge,code_challenge_method='S256')
 status,h,b=call('/oauth2/authorize?'+urllib.parse.urlencode(params));assert status==302,(status,b)
-consent=urllib.parse.parse_qs(urllib.parse.urlparse(h['Location']).query)
-status,h,b=call(h['Location']);assert status==200 and 'JoyHub'.encode() in b,(status,b[:200])
-status,h,b=form('/oauth2/authorize',dict(client_id=reg['client_id'],state=consent['state'][0],scope=['resource:read','skill:read']));assert status==302,(status,b)
+assert h['Location'].startswith(params['redirect_uri']+'?'),h['Location']
 code=urllib.parse.parse_qs(urllib.parse.urlparse(h['Location']).query)['code'][0]
 status,h,b=form('/oauth2/token',dict(grant_type='authorization_code',code=code,code_verifier=v,redirect_uri=params['redirect_uri'],resource=base+'/mcp',client_id=reg['client_id'],client_secret=reg['client_secret']))
 assert status==200,(status,b[:1000]);tokens=json.loads(b);print('PASS OAuth authorization and token exchange')
