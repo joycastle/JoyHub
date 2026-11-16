@@ -56,6 +56,9 @@ public class SecurityConfig {
             "frame-ancestors 'none'",
             "form-action 'self'");
 
+    @org.springframework.beans.factory.annotation.Autowired
+    private ObjectProvider<com.iflytek.skillhub.auth.authorization.OAuthBearerAuthenticationFilter> oauthBearerFilterProvider;
+
     private final FeishuOAuth2AccessTokenResponseClient feishuAccessTokenResponseClient;
     private final CustomOAuth2UserService customOAuth2UserService;
     private final SkillHubOAuth2AuthorizationRequestResolver authorizationRequestResolver;
@@ -172,6 +175,12 @@ public class SecurityConfig {
             http.addFilterBefore(agentJwtAuthenticationFilter, ApiTokenAuthenticationFilter.class);
         } else {
             http.addFilterBefore(agentJwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+        }
+
+        var oauthBearerFilter = oauthBearerFilterProvider.getIfAvailable();
+        if (oauthBearerFilter != null) {
+            http.addFilterBefore(oauthBearerFilter, apiTokenAuthenticationFilter != null
+                    ? ApiTokenAuthenticationFilter.class : UsernamePasswordAuthenticationFilter.class);
         }
 
         MockAuthFilter mockAuthFilter = mockAuthFilterProvider.getIfAvailable();

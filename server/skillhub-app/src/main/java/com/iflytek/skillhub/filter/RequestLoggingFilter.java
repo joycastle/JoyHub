@@ -27,7 +27,7 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
 
     private static final Logger log = LoggerFactory.getLogger(RequestLoggingFilter.class);
     private static final Set<String> SKIP_PREFIXES = Set.of(
-            "/actuator", "/favicon.ico", "/assets/"
+            "/actuator", "/favicon.ico", "/assets/", "/api/mcp/downloads/"
     );
     private static final Set<String> SKIP_SUFFIXES = Set.of(
             "/sse"
@@ -65,7 +65,8 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
     private void logRequest(ContentCachingRequestWrapper request, ContentCachingResponseWrapper response, long duration) {
         String requestUri = request.getRequestURI();
         String queryString = request.getQueryString();
-        String fullUrl = queryString != null ? requestUri + "?" + queryString : requestUri;
+        String fullUrl = requestUri.startsWith("/oauth2/") ? requestUri
+                : queryString != null ? requestUri + "?" + queryString : requestUri;
 
         String contentType = request.getContentType();
         String userAgent = request.getHeader("User-Agent");

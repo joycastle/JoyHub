@@ -169,6 +169,25 @@ class RequestLoggingFilterTest {
         assertThat(response.getContentAsString()).isEqualTo("{\"count\":1}");
     }
 
+    @Test
+    void downloadTicketsBypassLoggingAndResponseBuffering() throws Exception {
+        attachAppender();
+        var response = new MockHttpServletResponse();
+        new RequestLoggingFilter().doFilter(new MockHttpServletRequest("GET", "/api/mcp/downloads/private-ticket"), response,
+                (request, seenResponse) -> assertThat(seenResponse).isSameAs(response));
+        assertThat(loggedMessages()).isEmpty();
+    }
+
+    @Test
+    void oauthRequestsDoNotLogAuthorizationQueryValues() throws Exception {
+        attachAppender();
+        var request = new MockHttpServletRequest("GET", "/oauth2/consent");
+        request.setQueryString("state=private-state&client_id=private-client");
+        new RequestLoggingFilter().doFilter(request, new MockHttpServletResponse(), (req, res) -> {});
+        assertThat(loggedMessages()).anyMatch(message -> message.contains("GET /oauth2/consent"));
+        assertThat(loggedMessages()).noneMatch(message -> message.contains("private-state") || message.contains("private-client"));
+    }
+
     private void attachAppender() {
         logger.setLevel(Level.INFO);
         appender = new ListAppender<>();

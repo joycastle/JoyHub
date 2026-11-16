@@ -29,6 +29,8 @@ public class RouteSecurityPolicyRegistry {
             RouteAuthorizationPolicy.permitAll(null, "/v3/api-docs/**"),
             RouteAuthorizationPolicy.permitAll(null, "/swagger-ui/**"),
             RouteAuthorizationPolicy.permitAll(null, "/.well-known/**"),
+            RouteAuthorizationPolicy.permitAll(HttpMethod.POST, "/oauth2/register"),
+            RouteAuthorizationPolicy.permitAll(HttpMethod.GET, "/api/mcp/downloads/*"),
             RouteAuthorizationPolicy.roles(null, "/actuator/prometheus", "SUPER_ADMIN", "AUDITOR"),
             RouteAuthorizationPolicy.authenticated(HttpMethod.GET, "/api/v1/skills/*/star"),
             RouteAuthorizationPolicy.authenticated(HttpMethod.GET, "/api/v1/skills/*/rating"),
@@ -203,7 +205,8 @@ public class RouteSecurityPolicyRegistry {
         if (!"POST".equalsIgnoreCase(method)) {
             return false;
         }
-        return "/api/v1/auth/device/code".equals(path)
+        return "/oauth2/register".equals(path)
+                || "/api/v1/auth/device/code".equals(path)
                 || "/api/v1/auth/device/token".equals(path)
                 || isResourceStatsMutation(path);
     }
