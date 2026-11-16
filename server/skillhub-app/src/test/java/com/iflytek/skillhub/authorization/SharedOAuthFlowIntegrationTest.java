@@ -75,6 +75,7 @@ class SharedOAuthFlowIntegrationTest {
                 .queryParam("redirect_uri", callback).queryParam("scope", "resource:read skill:read offline_access")
                 .queryParam("resource", resource).queryParam("state", "original-client-state").queryParam("code_challenge", challenge)
                 .queryParam("code_challenge_method", "S256")).andExpect(status().is3xxRedirection()).andReturn().getResponse().getRedirectedUrl();
+        assertThat(consentUrl).startsWith("http://localhost:8080/oauth2/consent?");
         var params = UriComponentsBuilder.fromUriString(consentUrl).build().getQueryParams();
         String redirect = mvc.perform(post("/oauth2/authorize").session(session)
                 .param("client_id", client.get("client_id").asText()).param("state", org.springframework.web.util.UriUtils.decode(params.getFirst("state"), StandardCharsets.UTF_8))
@@ -132,6 +133,26 @@ class SharedOAuthFlowIntegrationTest {
                 .param("grant_type", "authorization_code").param("code", code).param("code_verifier", verifier)
                 .param("redirect_uri", callback).param("client_id", client.get("client_id").asText())
                 .param("client_secret", client.get("client_secret").asText())).andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void consentUsesCanonicalIssuerBehindHttpsProxyWithInternalHttpPort() throws Exception {
+        String challenge = Base64.getUrlEncoder().withoutPadding().encodeToString(MessageDigest.getInstance("SHA-256")
+                .digest(verifier.getBytes(StandardCharsets.US_ASCII)));
+        String location = mvc.perform(get("/oauth2/authorize").session(session)
+                .with(request -> {
+                    request.setScheme("https");
+                    request.setServerName("joyhub-proxy.internal");
+                    request.setServerPort(80);
+                    return request;
+                })
+                .queryParam("response_type", "code").queryParam("client_id", client.get("client_id").asText())
+                .queryParam("redirect_uri", callback).queryParam("scope", "resource:read")
+                .queryParam("resource", resource).queryParam("state", "proxy-state")
+                .queryParam("code_challenge", challenge).queryParam("code_challenge_method", "S256"))
+                .andExpect(status().is3xxRedirection()).andReturn().getResponse().getRedirectedUrl();
+        assertThat(location).startsWith("http://localhost:8080/oauth2/consent?");
+        assertThat(location).doesNotContain("joyhub-proxy.internal", ":80/");
     }
 
     @Test
