@@ -58,6 +58,11 @@ export function handleApiError(error: unknown): void {
   }
 
   if (status === 401) {
+    // A failed login-entry request must not reload this same page or discard its OAuth return URL.
+    if (window.location.pathname === '/login') {
+      toast.error(isAccountDisabledError(error) ? i18n.t('apiError.auth.accountDisabled') : i18n.t('apiError.unauthorized'))
+      return
+    }
     if (isAccountDisabledError(error)) {
       window.location.href = `/login?reason=${ACCOUNT_DISABLED_REASON}`
       return

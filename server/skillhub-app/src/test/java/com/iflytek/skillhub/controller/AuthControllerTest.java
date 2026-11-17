@@ -166,4 +166,40 @@ class AuthControllerTest {
             .andExpect(jsonPath("$.data[0].actionUrl")
                 .value("/oauth2/authorization/feishu?returnTo=%2Fdashboard%2Fpublish"));
     }
+
+    @Test
+    void expiredSessionStillAllowsLoginDiscoveryButCannotReadProtectedResources() throws Exception {
+        for (String path : List.of("/api/v1/auth/methods", "/api/v1/auth/providers")) {
+            mockMvc.perform(get(path).with(request -> {
+                request.setRequestedSessionId("expired-session");
+                request.setRequestedSessionIdValid(false);
+                request.setCookies(new jakarta.servlet.http.Cookie("SESSION", "expired-session"));
+                return request;
+            })).andExpect(status().isOk()).andExpect(jsonPath("$.data[0].id").value(path.endsWith("/methods") ? "oauth-feishu" : "feishu"));
+        }
+        mockMvc.perform(get("/api/v1/auth/me").with(request -> {
+            request.setRequestedSessionId("expired-session");
+            request.setRequestedSessionIdValid(false);
+            return request;
+        })).andExpect(status().isUnauthorized());
+        mockMvc.perform(get("/api/v1/namespaces").with(request -> {
+            request.setRequestedSessionId("expired-session");
+            request.setRequestedSessionIdValid(false);
+            return request;
+        })).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void expiredSessionCanStartFeishuLoginAndPreserveTheMcpReturn() throws Exception {
+        String returnTo = "/oauth2/authorize?client_id=codex&state=original";
+        mockMvc.perform(get("/oauth2/authorization/feishu").param("returnTo", returnTo).with(request -> {
+            request.setRequestedSessionId("expired-session");
+            request.setRequestedSessionIdValid(false);
+            request.setCookies(new jakarta.servlet.http.Cookie("SESSION", "expired-session"));
+            return request;
+        })).andExpect(status().is3xxRedirection())
+                .andExpect(header().string("Location", org.hamcrest.Matchers.startsWith("https://accounts.feishu.cn/")))
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.request().sessionAttribute(
+                        com.iflytek.skillhub.auth.oauth.OAuthLoginRedirectSupport.SESSION_RETURN_TO_ATTRIBUTE, returnTo));
+    }
 }

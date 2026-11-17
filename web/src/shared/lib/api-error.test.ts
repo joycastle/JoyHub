@@ -49,6 +49,20 @@ describe('handleApiError', () => {
     expect(window.location.href).toBe('/login?reason=accountDisabled')
   })
 
+  it.each([
+    ['apiError.unauthorized', undefined],
+    ['This account has been disabled', 'This account has been disabled'],
+  ])('does not reload the login page for a 401: %s', async (message, serverMessage) => {
+    const { ApiError, handleApiError } = await import('./api-error')
+    const href = '/login?returnTo=%2Foauth2%2Fauthorize%3Fstate%3Doriginal'
+    vi.stubGlobal('window', { location: { href, pathname: '/login' } })
+
+    handleApiError(new ApiError(message, 401, serverMessage))
+
+    expect(window.location.href).toBe(href)
+    expect(errorSpy).toHaveBeenCalled()
+  })
+
   it('falls back to the server message for non-standard api errors', async () => {
     const { ApiError, handleApiError } = await import('./api-error')
 

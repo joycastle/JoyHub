@@ -12,12 +12,10 @@ import com.iflytek.skillhub.auth.token.ApiTokenAuthenticationFilter;
 import com.iflytek.skillhub.auth.token.ApiTokenScopeFilter;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.AuthenticationEntryPoint;
@@ -27,6 +25,11 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.authentication.InsufficientAuthenticationException;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.csrf.CsrfFilter;
+import org.springframework.security.config.annotation.ObjectPostProcessor;
 import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.AnonymousAuthenticationFilter;
@@ -120,6 +123,23 @@ public class SecurityConfig {
                 .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                 .csrfTokenRequestHandler(csrfHandler)
                 .ignoringRequestMatchers(csrfIgnoreMatcher)
+                .withObjectPostProcessor(new ObjectPostProcessor<CsrfFilter>() {
+                    @Override
+                    public <O extends CsrfFilter> O postProcess(O filter) {
+                        filter.setAccessDeniedHandler((request, response, error) -> {
+                            // Session expiry must still report unauthenticated API writes as 401.
+                            // Authenticated requests missing a valid CSRF token remain forbidden.
+                            var authentication = SecurityContextHolder.getContext().getAuthentication();
+                            if (authentication == null || authentication instanceof AnonymousAuthenticationToken) {
+                                apiAuthenticationEntryPoint.commence(request, response,
+                                        new InsufficientAuthenticationException("Authentication required", error));
+                            } else {
+                                apiAccessDeniedHandler.handle(request, response, error);
+                            }
+                        });
+                        return filter;
+                    }
+                })
             )
             .authorizeHttpRequests(auth -> {
                 configureRoutePolicies(auth);
@@ -142,13 +162,10 @@ public class SecurityConfig {
                     .maxAgeInSeconds(31536000))
                 .referrerPolicy(referrer -> referrer.policy(ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN))
             )
+            // Expired session IDs are anonymous, not a failure of every public endpoint.
+            // Normal route authorization still protects resources and allows a fresh OAuth login.
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
-                .invalidSessionStrategy((request, response) -> {
-                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                    response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-                    response.getWriter().write("{\"code\":401,\"msg\":\"Session expired\"}");
-                })
             )
             .exceptionHandling(exceptions -> exceptions
                 .accessDeniedHandler(apiAccessDeniedHandler)
