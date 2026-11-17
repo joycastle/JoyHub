@@ -4327,6 +4327,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/cli/v1/resources/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["search_7"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/cli/v1/namespaces/publish-targets": {
         parameters: {
             query?: never;
@@ -4414,7 +4430,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["search_7"];
+        get: operations["search_8"];
         put?: never;
         post?: never;
         delete?: never;
@@ -6814,6 +6830,34 @@ export interface components {
             total?: number;
             /** Format: int32 */
             limit?: number;
+        };
+        ApiResponsePageResponseResourceDiscoveryItem: {
+            /** Format: int32 */
+            code?: number;
+            msg?: string;
+            data?: components["schemas"]["PageResponseResourceDiscoveryItem"];
+            /** Format: date-time */
+            timestamp?: string;
+            requestId?: string;
+        };
+        PageResponseResourceDiscoveryItem: {
+            items?: components["schemas"]["ResourceDiscoveryItem"][];
+            /** Format: int64 */
+            total?: number;
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+        };
+        ResourceDiscoveryItem: {
+            resourceId?: string;
+            kind?: string;
+            name?: string;
+            summary?: string;
+            accessMode?: string;
+            slug?: string;
+            namespace?: string;
+            version?: string;
         };
         ApiResponseCliWhoAmIResponse: {
             /** Format: int32 */
@@ -14568,6 +14612,29 @@ export interface operations {
             };
         };
     };
+    search_7: {
+        parameters: {
+            query?: {
+                q?: string;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponsePageResponseResourceDiscoveryItem"];
+                };
+            };
+        };
+    };
     publishTargets_2: {
         parameters: {
             query?: never;
@@ -14680,7 +14747,7 @@ export interface operations {
             };
         };
     };
-    search_7: {
+    search_8: {
         parameters: {
             query?: {
                 q?: string;
