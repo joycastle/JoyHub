@@ -1,27 +1,25 @@
 # Official Agent Skills and JoyHub CLI Release
 
 This guide covers the two checked-in official agent skills and the release controls for
-`@toolnets/joyhub-cli`. The supported CLI compatibility pin is `0.3.0`; the executable is
-`joyhub`.
+`@toolnets/joyhub-cli`. The CLI source and API contract are version `0.3.0`; npm publication is
+pending publisher authorization. The currently published CLI pin used by the sharing skill is `0.2.0`.
 
 ## Official skills
 
-- `official-agent-skills/find-skills-joyhub/SKILL.md` searches first and installs only after the user
-  chooses an exact coordinate and target.
-- `official-agent-skills/share-skill-joyhub/SKILL.md` validates with `--dry-run`, shows the result, and
-  publishes only after a separate user confirmation.
+- `official-agent-skills/find-skills-joyhub/SKILL.md` discovers every resource type through the
+  connected JoyHub MCP. It reads details and uses revision-bound downloads and update checks;
+  installation follows the user's resource and target selection. It has no npm CLI dependency.
+- `official-agent-skills/share-skill-joyhub/SKILL.md` uses the published CLI `0.2.0` for validation
+  and publication. Its network commands explicitly pass `--registry https://joyhub.toolnets.net`,
+  parse JSON, and delegate authentication to the CLI.
 
-Both skills pin CLI 0.3.0. Resource discovery prefers a connected JoyHub MCP and otherwise invokes:
+Connect discovery clients to `https://joyhub.toolnets.net/mcp`. If MCP tools are unavailable, the
+finder explains how to connect; it must not use the legacy Skill-only search endpoint to conclude
+that no tool resource exists. Neither skill reads or copies credentials.
 
-```bash
-npx --yes --package=@toolnets/joyhub-cli@0.3.0 \
-  joyhub auth ensure --registry https://joyhub.toolnets.net --json
-```
-
-Every network command explicitly passes `--registry https://joyhub.toolnets.net`; the skills must
-not depend on the general-purpose CLI's fallback registry. They must not read JoyHub credentials,
-request tokens, call the API directly, or silently switch to `latest`. CLI stdout is parsed as JSON
-and authentication errors stop the workflow. CLI search covers all resource types; only SKILL results have install coordinates, while catalog packages use resource IDs and MCP download inspection.
+CLI `0.3.0` adds all-resource search through `/api/cli/v1/resources/search`; the legacy endpoint
+remains Skill-only. Keep runtime skill dependencies on available distribution channels, and do not
+advance the sharing skill's npm pin until npm actually serves the release.
 
 ### Install for Codex
 
