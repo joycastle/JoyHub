@@ -2,6 +2,7 @@ package com.iflytek.skillhub.service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.iflytek.skillhub.dto.CatalogResourceSummaryResponse;
 import com.iflytek.skillhub.dto.PageResponse;
 import com.iflytek.skillhub.dto.SkillSummaryResponse;
@@ -296,7 +297,7 @@ public class UnifiedResourceSearchAppService {
             ResourceSearchDocument document = new ResourceSearchDocument(
                     entity.getResourceId().toString(), entity.getResourceType(), entity.getTitle(), entity.getSlug(),
                     entity.getSummary(), merge(jsonList(entity.getScenariosJson()), jsonList(entity.getInputsJson()),
-                    jsonList(entity.getOutputsJson())), merge(jsonList(entity.getCapabilitiesJson()),
+                    jsonList(entity.getOutputsJson())), merge(capabilityValues(entity.getCapabilitiesJson()),
                     jsonList(entity.getSearchTermsJson())),
                     entity.getProfileText() + "\n" + entity.getRawDocumentation(), entity.getAccessMode(),
                     entity.getSemanticVector(), 0D);
@@ -324,6 +325,22 @@ public class UnifiedResourceSearchAppService {
             return objectMapper.readValue(value == null || value.isBlank() ? "[]" : value,
                     new TypeReference<List<String>>() { });
         } catch (Exception ignored) {
+            return List.of();
+        }
+    }
+
+    /** Capabilities are evidence-backed objects; only their value is a searchable capability name. */
+    private List<String> capabilityValues(String value) {
+        try {
+            JsonNode capabilities = objectMapper.readTree(value == null ? "[]" : value);
+            if (capabilities == null || !capabilities.isArray()) return List.of();
+            List<String> values = new ArrayList<>();
+            for (JsonNode capability : capabilities) {
+                JsonNode name = capability.isTextual() ? capability : capability.path("value");
+                if (name.isTextual() && !name.asText().isBlank()) values.add(name.asText());
+            }
+            return List.copyOf(values);
+        } catch (com.fasterxml.jackson.core.JsonProcessingException exception) {
             return List.of();
         }
     }
