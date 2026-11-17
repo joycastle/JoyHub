@@ -53,13 +53,12 @@ public class DiscoveryKnowledgeRetriever {
         documentRepository.findBySearchEnabledTrue().forEach(document ->
                 documents.put(document.getResourceType() + ":" + document.getResourceId(), document));
         Map<String, DiscoverySuggestionResponse> suggestions = new LinkedHashMap<>();
-        SearchConstraints constraints = SearchConstraints.from(constraintSource);
         List<String> queries = searchQueries == null ? List.of() : searchQueries;
         queries.stream().filter(query -> query != null && !query.isBlank()).map(String::trim).distinct()
                 .limit(4).forEach(query -> {
                     unifiedSearchAppService.search(query, null, null, "relevance",
-                        constraints.resourceType(), false, 0, RESULT_LIMIT, principal.userId(), roles, viewer,
-                        constraints.accessModes())
+                        UnifiedResourceSearchType.ALL, false, 0, RESULT_LIMIT, principal.userId(), roles, viewer,
+                        Set.of())
                         .items().forEach(item -> {
                             DiscoverySuggestionResponse suggestion = toSuggestion(query, item, documents, language);
                             if (suggestion != null) suggestions.putIfAbsent(suggestion.type() + ":" + suggestion.id(), suggestion);
@@ -118,25 +117,4 @@ public class DiscoveryKnowledgeRetriever {
 
     private String safe(String value) { return value == null ? "" : value; }
 
-    private record SearchConstraints(UnifiedResourceSearchType resourceType, Set<String> accessModes) {
-        static SearchConstraints from(String query) {
-            String normalized = query == null ? "" : query.toLowerCase(Locale.ROOT);
-            // A specific positive request wins over a resource type merely mentioned in a
-            // negative comparison, e.g. "优先 Skill，不要只推荐通用 Agent".
-            boolean wantsSkill = normalized.contains("skill") || normalized.contains("技能");
-            boolean wantsTool = normalized.contains("tool") || normalized.contains("工具");
-            boolean wantsAgent = normalized.contains("agent") || normalized.contains("智能体");
-            UnifiedResourceSearchType type = wantsSkill
-                    ? UnifiedResourceSearchType.SKILL
-                    : wantsTool ? UnifiedResourceSearchType.TOOL
-                    : wantsAgent ? UnifiedResourceSearchType.AGENT : UnifiedResourceSearchType.ALL;
-            Set<String> accessModes = normalized.contains("安装") || normalized.contains("install")
-                    ? Set.of("INSTALL")
-                    : normalized.contains("下载") || normalized.contains("download")
-                            ? Set.of("DOWNLOAD")
-                            : normalized.contains("在线") || normalized.contains("打开") || normalized.contains("open")
-                                    ? Set.of("OPEN") : Set.of();
-            return new SearchConstraints(type, accessModes);
-        }
-    }
 }

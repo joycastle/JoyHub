@@ -1,7 +1,7 @@
 # Official Agent Skills and JoyHub CLI Release
 
 This guide covers the two checked-in official agent skills and the release controls for
-`@toolnets/joyhub-cli`. The supported CLI compatibility pin is `0.2.0`; the executable is
+`@toolnets/joyhub-cli`. The supported CLI compatibility pin is `0.3.0`; the executable is
 `joyhub`.
 
 ## Official skills
@@ -11,17 +11,17 @@ This guide covers the two checked-in official agent skills and the release contr
 - `official-agent-skills/share-skill-joyhub/SKILL.md` validates with `--dry-run`, shows the result, and
   publishes only after a separate user confirmation.
 
-Both skills invoke:
+Both skills pin CLI 0.3.0. Resource discovery prefers a connected JoyHub MCP and otherwise invokes:
 
 ```bash
-npx --yes --package=@toolnets/joyhub-cli@0.2.0 \
+npx --yes --package=@toolnets/joyhub-cli@0.3.0 \
   joyhub auth ensure --registry https://joyhub.toolnets.net --json
 ```
 
 Every network command explicitly passes `--registry https://joyhub.toolnets.net`; the skills must
 not depend on the general-purpose CLI's fallback registry. They must not read JoyHub credentials,
 request tokens, call the API directly, or silently switch to `latest`. CLI stdout is parsed as JSON
-and authentication errors stop the workflow.
+and authentication errors stop the workflow. CLI search covers all resource types; only SKILL results have install coordinates, while catalog packages use resource IDs and MCP download inspection.
 
 ### Install for Codex
 

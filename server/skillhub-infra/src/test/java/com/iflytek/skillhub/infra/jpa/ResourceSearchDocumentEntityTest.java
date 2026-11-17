@@ -40,6 +40,16 @@ class ResourceSearchDocumentEntityTest {
         assertThat(document.getGenerationStatus()).isEqualTo("PENDING");
     }
 
+    @Test
+    void unchangedSourceSyncPreservesGeneratedScenarios() {
+        var document = basicDocument();
+        document.applyGeneratedProfile("[]", "[\"generated-scenario\"]", "[]", "[]", "[]", "[]", "GENERAL",
+                "profile", "model", "v1", "vector", ResourceCategoryCode.OTHER);
+        document.refreshBasic(null, "owner", "title", "slug", "summary", "[]", "INSTALL", "PUBLIC", "PUBLISHED",
+                "docs", document.getSourceHash(), true);
+        assertThat(document.getScenariosJson()).isEqualTo("[\"generated-scenario\"]");
+    }
+
     private ResourceSearchDocumentEntity basicDocument() {
         return ResourceSearchDocumentEntity.basic("SKILL", 1L, null, "owner", "title", "slug", "summary",
                 "[]", "INSTALL", "PUBLIC", "ACTIVE", "documentation", "hash");

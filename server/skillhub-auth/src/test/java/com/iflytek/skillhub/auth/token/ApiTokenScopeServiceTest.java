@@ -126,4 +126,13 @@ class ApiTokenScopeServiceTest {
 
         assertTrue(decision.allowed());
     }
+
+    @Test
+    void unifiedCliDiscoveryRequiresReadScope() {
+        String path = "/api/cli/v1/resources/search";
+        assertTrue(scopeService.authorize("GET", path, Set.of("skill:read")).allowed());
+        assertTrue(scopeService.authorize("GET", path, Set.of("resource:read")).allowed());
+        assertFalse(scopeService.authorize("GET", path, Set.of("skill:publish")).allowed());
+        assertFalse(scopeService.authorize("GET", path, Set.of()).allowed());
+    }
 }

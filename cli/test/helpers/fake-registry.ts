@@ -319,7 +319,7 @@ export async function startFakeRegistry(options: FakeRegistryOptions = {}) {
       // ------------------------------------------------------------------ //
       // GET /api/cli/v1/skills/search
       // ------------------------------------------------------------------ //
-      if (path === '/api/cli/v1/skills/search') {
+      if (path === '/api/cli/v1/skills/search' || path === '/api/cli/v1/resources/search') {
         state.searchRequests += 1
         if (options.failures?.search) return failureResponse(options.failures.search)
         if (state.searchRequests <= (options.searchUnauthorizedCount ?? 0)) {
@@ -330,7 +330,10 @@ export async function startFakeRegistry(options: FakeRegistryOptions = {}) {
         return Response.json({
           code: 0,
           data: {
-            items: options.searchItems ?? [],
+            items: path === '/api/cli/v1/resources/search'
+              ? (options.searchItems ?? []).map((item, index) => ({ ...item, resourceId: `skill:${index + 1}`,
+                kind: 'SKILL', name: item.slug, version: item.latestVersion, accessMode: 'INSTALL' }))
+              : options.searchItems ?? [],
             total: options.searchItems?.length ?? 0,
             limit: 20
           }

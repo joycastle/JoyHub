@@ -2,11 +2,11 @@
   "schemaVersion": 1,
   "package": {
     "name": "@toolnets/joyhub-cli",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "bin": "joyhub"
   },
   "defaultRegistry": "https://joyhub.toolnets.net",
-  "authorizationPolicyReview": "CLI and MCP share PKCE, rotating refresh and revocation. Native MCP registrations honor auth method none without a client secret and refresh after access expiry; explicit confidential registrations still require their secret. Legacy native connections must reconnect once to register correctly. CLI and MCP return directly after the shared Feishu login without an additional confirmation page; existing registrations are migrated to the same behavior. Login redirects use the configured canonical issuer. Existing API tokens, legacy-registry device login, resource visibility and publish permissions remain compatible.",
+  "authorizationPolicyReview": "CLI 0.3.0 searches all resource types via the MCP projection and shared permissions/ranking. Legacy Skill search remains compatible. Resource IDs, kinds and nullable namespace distinguish tools from installable Skills; read scope is required. OAuth PKCE, rotating refresh, legacy tokens and publish permissions remain unchanged.",
   "commands": [
     "auth ensure --json",
     "search --query <query> --limit <n> --json",
@@ -30,6 +30,11 @@
       "id": "whoami",
       "method": "GET",
       "path": "/api/cli/v1/auth/whoami"
+    },
+    {
+      "id": "resource-search",
+      "method": "GET",
+      "path": "/api/cli/v1/resources/search"
     },
     {
       "id": "search",

@@ -12,7 +12,7 @@ class HybridResourceSearchRankerTest {
             new ResourceSearchQueryInterpreter(new SearchTextTokenizer()));
 
     @Test
-    void explicitAgentIntentKeepsOnlyDirectlyUsableAgents() {
+    void agentWordsPreferAgentsWithoutImplicitlyFilteringOtherTypes() {
         var resources = List.of(
                 document("1", "AGENT", "通用王总", "就在飞书里处理工作", "OPEN"),
                 document("2", "TOOL", "九宫切图", "UI 图片九宫格切图工具", "OPEN"),
@@ -21,7 +21,7 @@ class HybridResourceSearchRankerTest {
 
         assertThat(ranker.rank("帮我找一个能直接使用的 Agent", resources, 10, true))
                 .extracting(result -> result.document().title())
-                .containsExactly("通用王总");
+                .startsWith("通用王总").hasSize(3);
     }
 
     @Test
@@ -37,7 +37,7 @@ class HybridResourceSearchRankerTest {
     }
 
     @Test
-    void installIntentNeverReturnsNonInstallableResources() {
+    void installWordsPreferInstallableResourcesWithoutRemovingNamedTools() {
         var resources = List.of(
                 document("1", "AGENT", "通用王总", "生成日报", "OPEN"),
                 document("2", "SKILL", "每日站会日志", "生成每日站会、日报和复盘", "INSTALL")
@@ -45,7 +45,7 @@ class HybridResourceSearchRankerTest {
 
         assertThat(ranker.rank("安装一个写日报的技能", resources, 10, true))
                 .extracting(result -> result.document().title())
-                .containsExactly("每日站会日志");
+                .startsWith("每日站会日志").hasSize(2);
     }
 
     @Test
@@ -102,6 +102,58 @@ class HybridResourceSearchRankerTest {
         assertThat(semanticRanker.rank("生成报告", resources, 10, false))
                 .extracting(result -> result.document().title())
                 .containsExactly("每周HTML报告生成", "通用王总");
+    }
+
+    @Test
+    void addingOtherHitsOrChangingScopeCannotRemoveARelevantResource() {
+        SearchEmbeddingService fixed = new SearchEmbeddingService() {
+            public String embed(String text) { return text; }
+            public double similarity(String text, String vector) { return Double.parseDouble(vector); }
+        };
+        var stable = new HybridResourceSearchRanker(fixed, new ResourceSearchQueryInterpreter(new SearchTextTokenizer()));
+        var tool = new ResourceSearchDocument("1", "TOOL", "AI Imagine CLI", "ai-imagine", "生成图片",
+                List.of(), List.of(), "", "OPEN", "0.566", 0D);
+        var skill = new ResourceSearchDocument("2", "SKILL", "AI Image prompts", "image-prompts", "Write prompts",
+                List.of(), List.of(), "", "INSTALL", "0.70", 0D);
+        assertThat(stable.rank("AI image", List.of(tool, skill), 10, false))
+                .extracting(result -> result.document().id()).contains("1");
+        assertThat(stable.rankWithinScope("AI image", List.of(tool), 10, false))
+                .extracting(result -> result.document().id()).containsExactly("1");
+    }
+
+    @Test
+    void productIdentityBeatsIncidentalMentionsAndRequestWordsDoNotExcludeIt() {
+        var tool = document("1", "TOOL", "Nova Imagine CLI", "生成图片与视频", "OPEN");
+        var clip = new ResourceSearchDocument("2", "SKILL", "Video prompts", "video-prompts", "AI image prompts",
+                List.of("gameplay clips"), List.of(), "", "INSTALL", embeddings.embed("AI image prompts gameplay clips"), 0D);
+        for (String query : List.of("nova image cli", "安装 Nova Imagine", "下载 Nova Imagine", "Nova Imagine skill")) {
+            assertThat(ranker.rank(query, List.of(clip, tool), 10, false))
+                    .extracting(result -> result.document().id()).startsWith("1");
+        }
+    }
+
+    @Test
+    void approximateProductNameOutranksPopularDocumentationMentions() {
+        SearchEmbeddingService fixed = new SearchEmbeddingService() {
+            public String embed(String text) { return "0.65"; }
+            public double similarity(String text, String vector) { return Double.parseDouble(vector); }
+        };
+        var stable = new HybridResourceSearchRanker(fixed, new ResourceSearchQueryInterpreter(new SearchTextTokenizer()));
+        var product = new ResourceSearchDocument("1", "TOOL", "Nova Canvas CLI", "nova-canvas", "Create illustrations",
+                List.of(), List.of(), "", "OPEN", "0.60", 0D);
+        var guide = new ResourceSearchDocument("2", "SKILL", "Prompt guide", "prompt-guide", "Write prompts",
+                List.of("Nova canva"), List.of("Nova canva"), "Nova canva prompts", "INSTALL", "0.70", 1D);
+        assertThat(stable.rank("Nova canva", List.of(guide, product), 10, false))
+                .extracting(result -> result.document().id()).startsWith("1");
+    }
+
+    @Test
+    void directCapabilityPhraseOutranksScatteredTerms() {
+        var direct = document("1", "TOOL", "Canvas studio", "生成图片和视频", "OPEN");
+        var indirect = new ResourceSearchDocument("2", "SKILL", "写作指南", "writing-guide", "撰写创意提示词",
+                List.of("图片", "生成"), List.of("图片", "生成"), "", "INSTALL", embeddings.embed("图片生成提示"), 0D);
+        assertThat(ranker.rank("生成图片", List.of(indirect, direct), 10, false))
+                .extracting(result -> result.document().id()).startsWith("1");
     }
 
     private ResourceSearchDocument document(String id, String type, String title, String summary, String accessMode) {

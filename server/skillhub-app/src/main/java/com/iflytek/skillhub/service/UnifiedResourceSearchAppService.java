@@ -1,6 +1,5 @@
 package com.iflytek.skillhub.service;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.iflytek.skillhub.dto.CatalogResourceSummaryResponse;
 import com.iflytek.skillhub.dto.PageResponse;
@@ -155,9 +154,12 @@ public class UnifiedResourceSearchAppService {
         Map<String, IndexedDocument> indexedDocuments = indexedDocuments();
 
         if (scope == UnifiedResourceSearchType.ALL || scope == UnifiedResourceSearchType.SKILL) {
-            SkillSearchAppService.SearchResponse skills = skillSearchAppService.searchInstallableLatest(
-                    null, namespace, "newest", 0, MAX_SKILL_CANDIDATES, normalizedLabels, userId, namespaceRoles);
-            skills.items().forEach(skill -> candidates.add(skillCandidate(skill, indexedDocuments)));
+            for (int candidatePage = 0; ; candidatePage++) {
+                SkillSearchAppService.SearchResponse skills = skillSearchAppService.searchInstallableLatest(
+                        null, namespace, "newest", candidatePage, MAX_SKILL_CANDIDATES, normalizedLabels, userId, namespaceRoles);
+                skills.items().forEach(skill -> candidates.add(skillCandidate(skill, indexedDocuments)));
+                if ((long) (candidatePage + 1) * MAX_SKILL_CANDIDATES >= skills.total()) break;
+            }
         }
 
         boolean skillSpecificFilter = (namespace != null && !namespace.isBlank())
@@ -168,10 +170,13 @@ public class UnifiedResourceSearchAppService {
             String center = scope == UnifiedResourceSearchType.AGENT
                     ? "AGENT"
                     : scope == UnifiedResourceSearchType.TOOL ? "TOOL" : null;
-            PageResponse<CatalogResourceSummaryResponse> catalog = catalogSearchAppService.search(
-                    null, center, null, null, null, null, catalogViewer,
-                    PageRequest.of(0, MAX_CATALOG_CANDIDATES));
-            catalog.items().forEach(resource -> candidates.add(catalogCandidate(resource, indexedDocuments)));
+            for (int candidatePage = 0; ; candidatePage++) {
+                PageResponse<CatalogResourceSummaryResponse> catalog = catalogSearchAppService.search(
+                        null, center, null, null, null, null, catalogViewer,
+                        PageRequest.of(candidatePage, MAX_CATALOG_CANDIDATES));
+                catalog.items().forEach(resource -> candidates.add(catalogCandidate(resource, indexedDocuments)));
+                if ((long) (candidatePage + 1) * MAX_CATALOG_CANDIDATES >= catalog.total()) break;
+            }
         }
 
         if (normalizedCategory != null) {
@@ -185,7 +190,7 @@ public class UnifiedResourceSearchAppService {
         if (accessModes != null && !accessModes.isEmpty()) {
             Set<String> normalizedAccessModes = accessModes.stream().filter(java.util.Objects::nonNull)
                     .map(value -> value.trim().toUpperCase(Locale.ROOT)).collect(java.util.stream.Collectors.toSet());
-            candidates.removeIf(candidate -> !normalizedAccessModes.contains(candidate.document().accessMode()));
+            candidates.removeIf(candidate -> java.util.Collections.disjoint(normalizedAccessModes, candidate.document().accessModes()));
         }
 
         List<RankedCandidate> ranked = new ArrayList<>(rank(query, scope, candidates));
@@ -210,10 +215,8 @@ public class UnifiedResourceSearchAppService {
         }
         Map<String, Candidate> candidatesByKey = new LinkedHashMap<>();
         candidates.forEach(candidate -> candidatesByKey.put(key(candidate.document()), candidate));
-        List<HybridResourceSearchRanker.RankedResource> matches = scope == UnifiedResourceSearchType.ALL
-                ? searchRanker.rank(query, candidates.stream().map(Candidate::document).toList(), candidates.size(), false)
-                : searchRanker.rankWithinScope(
-                        query, candidates.stream().map(Candidate::document).toList(), candidates.size(), false);
+        List<HybridResourceSearchRanker.RankedResource> matches = searchRanker.rank(
+                query, candidates.stream().map(Candidate::document).toList(), candidates.size(), false);
         return matches.stream()
                 .map(match -> new RankedCandidate(candidatesByKey.get(key(match.document())), match.score()))
                 .filter(result -> result.candidate() != null)
@@ -247,7 +250,8 @@ public class UnifiedResourceSearchAppService {
                                      Map<String, IndexedDocument> indexedDocuments) {
         IndexedDocument indexed = indexedDocuments.get("SKILL:" + skill.id());
         if (indexed != null) {
-            return new Candidate(indexed.document(), skill, null, indexed.categoryCode());
+            return new Candidate(withAvailability(indexed.document(), Set.of("INSTALL", "DOWNLOAD"),
+                    quality(skill.downloadCount(), skill.starCount())), skill, null, indexed.categoryCode());
         }
         String title = preferred(skill.localizedDisplayName(), skill.displayName());
         String summary = preferred(skill.localizedSummary(), skill.summary());
@@ -255,7 +259,8 @@ public class UnifiedResourceSearchAppService {
                 skill.id().toString(), "SKILL", title, skill.slug(), summary,
                 List.of(), List.of(), String.join("\n", safe(skill.displayName()), safe(skill.summary())),
                 "INSTALL", null, quality(skill.downloadCount(), skill.starCount()));
-        return new Candidate(document, skill, null, ResourceCategoryCode.OTHER.name());
+        return new Candidate(withAvailability(document, Set.of("INSTALL", "DOWNLOAD"), document.qualityScore()),
+                skill, null, ResourceCategoryCode.OTHER.name());
     }
 
     private Candidate catalogCandidate(CatalogResourceSummaryResponse resource,
@@ -263,7 +268,8 @@ public class UnifiedResourceSearchAppService {
         String resourceType = "AGENT".equals(resource.kind()) ? "AGENT" : "TOOL";
         IndexedDocument indexed = indexedDocuments.get(resourceType + ":" + resource.id());
         if (indexed != null) {
-            return new Candidate(indexed.document(), null, resource, indexed.categoryCode());
+            return new Candidate(withAvailability(indexed.document(), catalogAccessModes(resource), 0D),
+                    null, resource, indexed.categoryCode());
         }
         String accessMode = resource.accessUrl() != null && !resource.accessUrl().isBlank()
                 ? "OPEN"
@@ -273,7 +279,24 @@ public class UnifiedResourceSearchAppService {
                 resource.scenarios() == null ? List.of() : List.copyOf(resource.scenarios()),
                 resource.tags() == null ? List.of() : List.copyOf(resource.tags()),
                 "", accessMode, null, 0D);
-        return new Candidate(document, null, resource, ResourceCategoryCode.OTHER.name());
+        return new Candidate(withAvailability(document, catalogAccessModes(resource), 0D),
+                null, resource, ResourceCategoryCode.OTHER.name());
+    }
+
+    private Set<String> catalogAccessModes(CatalogResourceSummaryResponse resource) {
+        Set<String> modes = new java.util.LinkedHashSet<>();
+        if (resource.accessUrl() != null && !resource.accessUrl().isBlank()) modes.add("OPEN");
+        if (resource.artifactAvailable()) {
+            modes.add("DOWNLOAD");
+            if ("RESOURCE_PACK".equals(resource.kind())) modes.add("INSTALL");
+        }
+        return Set.copyOf(modes);
+    }
+
+    private ResourceSearchDocument withAvailability(ResourceSearchDocument document, Set<String> modes, double quality) {
+        return new ResourceSearchDocument(document.id(), document.resourceType(), document.title(), document.slug(),
+                document.summary(), document.scenarios(), document.tags(), document.documentation(), document.accessMode(),
+                document.semanticVector(), quality, modes);
     }
 
     private double quality(Long downloads, Integer stars) {
@@ -321,10 +344,16 @@ public class UnifiedResourceSearchAppService {
 
     private List<String> jsonList(String value) {
         try {
-            return objectMapper.readValue(value == null || value.isBlank() ? "[]" : value,
-                    new TypeReference<List<String>>() { });
-        } catch (Exception ignored) {
-            return List.of();
+            var array = objectMapper.readTree(value == null || value.isBlank() ? "[]" : value);
+            if (!array.isArray()) return List.of();
+            List<String> values = new ArrayList<>();
+            for (var entry : array) {
+                String text = entry.isTextual() ? entry.asText() : entry.path("value").asText("");
+                if (!text.isBlank()) values.add(text);
+            }
+            return List.copyOf(values);
+        } catch (com.fasterxml.jackson.core.JsonProcessingException exception) {
+            throw new IllegalStateException("Invalid JSON in resource search projection", exception);
         }
     }
 

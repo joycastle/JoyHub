@@ -50,7 +50,7 @@ describe('search command', () => {
       port: 0,
       fetch(req) {
         const url = new URL(req.url)
-        if (url.pathname === '/api/cli/v1/skills/search') {
+        if (url.pathname === '/api/cli/v1/resources/search') {
           capturedQuery = url.searchParams.get('q') ?? ''
           return Response.json({ code: 0, data: { items: [], total: 0, limit: 20 } })
         }
@@ -77,12 +77,12 @@ describe('search command', () => {
       port: 0,
       fetch(req) {
         const url = new URL(req.url)
-        if (url.pathname === '/api/cli/v1/skills/search') {
+        if (url.pathname === '/api/cli/v1/resources/search') {
           capturedAuth = req.headers.get('authorization') ?? ''
           return Response.json({
             code: 0,
             data: {
-              items: [{ namespace: 'global', slug: 'pdf-parser', latestVersion: '1.2.0', summary: 'Parse PDFs' }],
+              items: [{ namespace: 'global', slug: 'pdf-parser', latestVersion: '1.2.0', version: '1.2.0', summary: 'Parse PDFs', resourceId: 'skill:1', kind: 'SKILL', name: 'pdf-parser', accessMode: 'INSTALL' }],
               total: 1,
               limit: 20
             }
@@ -212,13 +212,13 @@ describe('search command', () => {
   })
 
   // P1: empty result set
-  test('prints "No skills found." when registry returns empty list', async () => {
+  test('prints "No resources found." when registry returns empty list', async () => {
     registry = await startFakeRegistry({ searchItems: [] })
 
     const result = await runCli(['search', 'nonexistent', '--registry', registry.url])
 
     expect(result.exitCode).toBe(0)
-    expect(result.stdout).toBe('No skills found.')
+    expect(result.stdout).toBe('No resources found.')
   })
 
   // P1: --limit forwarding — unit-level assertion that limit=5 appears in URL
@@ -230,7 +230,7 @@ describe('search command', () => {
       port: 0,
       fetch(req) {
         const url = new URL(req.url)
-        if (url.pathname === '/api/cli/v1/skills/search') {
+        if (url.pathname === '/api/cli/v1/resources/search') {
           capturedUrl = req.url
           return Response.json({
             code: 0,
@@ -276,7 +276,7 @@ describe('search command', () => {
       port: 0,
       fetch(req) {
         const url = new URL(req.url)
-        if (url.pathname === '/api/cli/v1/skills/search') {
+        if (url.pathname === '/api/cli/v1/resources/search') {
           capturedUrl = req.url
           return Response.json({ code: 0, data: { items: [], total: 0, limit: 20 } })
         }
@@ -304,7 +304,7 @@ describe('search command', () => {
       port: 0,
       fetch(req) {
         const url = new URL(req.url)
-        if (url.pathname === '/api/cli/v1/skills/search') {
+        if (url.pathname === '/api/cli/v1/resources/search') {
           capturedUrl = req.url
           return Response.json({ code: 0, data: { items: [], total: 0, limit: 20 } })
         }
@@ -336,7 +336,7 @@ describe('search command', () => {
       port: 0,
       fetch(req) {
         const url = new URL(req.url)
-        if (url.pathname === '/api/cli/v1/skills/search') {
+        if (url.pathname === '/api/cli/v1/resources/search') {
           capturedUrl = req.url
           return Response.json({ code: 0, data: { items: [], total: 0, limit: 0 } })
         }
@@ -348,7 +348,7 @@ describe('search command', () => {
       const result = await runCli(['search', 'pdf', '--limit', '0', '--registry', registryUrl])
       expect(result.exitCode).toBe(0)
       expect(capturedUrl).toContain('limit=0')
-      expect(result.stdout).toBe('No skills found.')
+      expect(result.stdout).toBe('No resources found.')
     } finally {
       server.stop()
     }
@@ -381,7 +381,7 @@ describe('search command', () => {
       port: 0,
       fetch(req) {
         const url = new URL(req.url)
-        if (url.pathname === '/api/cli/v1/skills/search') {
+        if (url.pathname === '/api/cli/v1/resources/search') {
           capturedUrl = req.url
           return Response.json({ code: 0, data: { items: [], total: 0, limit: 100 } })
         }
@@ -403,7 +403,7 @@ describe('search command', () => {
       port: 0,
       fetch(req) {
         const url = new URL(req.url)
-        if (url.pathname === '/api/cli/v1/skills/search') {
+        if (url.pathname === '/api/cli/v1/resources/search') {
           capturedUrl = req.url
           return Response.json({ code: 0, data: { items: [], total: 0, limit: 20 } })
         }
@@ -427,7 +427,7 @@ describe('search command', () => {
       port: 0,
       fetch(req) {
         const url = new URL(req.url)
-        if (url.pathname === '/api/cli/v1/skills/search') {
+        if (url.pathname === '/api/cli/v1/resources/search') {
           capturedUrl = req.url
           return Response.json({ code: 0, data: { items: [], total: 0, limit: 20 } })
         }
@@ -451,7 +451,7 @@ describe('search command', () => {
       port: 0,
       fetch(req) {
         const url = new URL(req.url)
-        if (url.pathname === '/api/cli/v1/skills/search') {
+        if (url.pathname === '/api/cli/v1/resources/search') {
           capturedUrl = req.url
           return Response.json({ code: 0, data: { items: [], total: 0, limit: 20 } })
         }
@@ -478,7 +478,7 @@ describe('search command', () => {
       port: 0,
       fetch(req) {
         const url = new URL(req.url)
-        if (url.pathname === '/api/cli/v1/skills/search') {
+        if (url.pathname === '/api/cli/v1/resources/search') {
           capturedUrl = req.url
           return Response.json({ code: 0, data: { items: [], total: 0, limit: 20 } })
         }
@@ -495,4 +495,22 @@ describe('search command', () => {
       server.stop()
     }
   })
+})
+
+test('unified search displays resource packages without a fabricated Skill coordinate', async () => {
+  const server = Bun.serve({ port: 0, fetch(req) {
+    const url = new URL(req.url)
+    if (url.pathname !== '/api/cli/v1/resources/search') return new Response(null, { status: 404 })
+    return Response.json({ code: 0, data: { items: [{ resourceId: 'catalog:9', kind: 'RESOURCE_PACK',
+      name: 'Image Utility CLI', slug: 'image-utility', namespace: null, version: '1.0.0',
+      summary: 'Generate images', accessMode: 'OPEN' }], total: 1, page: 0, size: 20 } })
+  } })
+  try {
+    const result = await runCli(['search', 'image', '--registry', `http://localhost:${server.port}`])
+    expect(result.exitCode).toBe(0)
+    expect(result.stdout).toContain('catalog:9')
+    expect(result.stdout).toContain('Image Utility CLI')
+    expect(result.stdout).not.toContain('@null/')
+    expect(result.stdout).not.toContain('@undefined/')
+  } finally { server.stop() }
 })

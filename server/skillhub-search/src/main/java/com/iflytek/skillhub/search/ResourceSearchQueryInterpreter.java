@@ -14,10 +14,12 @@ public class ResourceSearchQueryInterpreter {
             "有没有", "有", "没有", "什么", "哪个", "哪些", "可以", "能够", "能", "找", "找到",
             "推荐", "使用", "直接", "的", "了", "吗", "呢",
             "i", "want", "need", "please", "help", "make", "find", "a", "an", "the", "for", "me",
-            "can", "could", "use", "using", "directly");
+            "can", "could", "use", "using", "directly", "安装", "install", "下载", "download", "在线", "打开", "open");
     private static final Set<String> TYPE_TERMS = Set.of(
             "agent", "agents", "assistant", "assistants", "智能体", "机器人", "助手",
             "tool", "tools", "工具", "skill", "skills", "技能");
+
+    private static final Set<String> ACCESS_TERMS = Set.of("安装", "install", "下载", "download", "在线", "打开", "open");
 
     private final SearchTextTokenizer tokenizer;
 
@@ -54,6 +56,7 @@ public class ResourceSearchQueryInterpreter {
                 .filter(term -> term.length() > 1)
                 .filter(term -> !STOP_WORDS.contains(term))
                 .filter(term -> !TYPE_TERMS.contains(term))
+                .filter(term -> !ACCESS_TERMS.contains(term))
                 .distinct()
                 .limit(12)
                 .toList();
@@ -62,7 +65,7 @@ public class ResourceSearchQueryInterpreter {
 
     private boolean containsAny(String value, String... terms) {
         for (String term : terms) {
-            if (value.contains(term)) {
+            if (SearchTermMatcher.contains(value, term)) {
                 return true;
             }
         }

@@ -95,32 +95,32 @@ class DiscoveryKnowledgeRetrieverTest {
     }
 
     @Test
-    void extractsResourceTypeAndAccessModeBeforeUsingUnifiedSearch() {
+    void leavesLanguagePreferencesToTheSharedRanker() {
         UnifiedResourceSearchAppService unifiedSearch = mock(UnifiedResourceSearchAppService.class);
         ResourceSearchDocumentJpaRepository documents = mock(ResourceSearchDocumentJpaRepository.class);
         PlatformPrincipal principal = new PlatformPrincipal(
                 "user-1", "User", "user@example.com", null, "feishu", Set.of("USER"));
         CatalogViewer viewer = new CatalogViewer("user-1", Map.of(), Set.of("USER"));
         when(unifiedSearch.search("找一个可安装的Skill", null, null, "relevance",
-                UnifiedResourceSearchType.SKILL, false, 0, 24, "user-1", Map.of(), viewer, Set.of("INSTALL")))
+                UnifiedResourceSearchType.ALL, false, 0, 24, "user-1", Map.of(), viewer, Set.of()))
                 .thenReturn(new PageResponse<>(List.of(), 0, 0, 24));
 
         new DiscoveryKnowledgeRetriever(unifiedSearch, documents, new SearchTextTokenizer())
                 .retrieve(List.of("找一个可安装的Skill"), principal, Map.of(), "zh-CN");
 
         verify(unifiedSearch).search("找一个可安装的Skill", null, null, "relevance",
-                UnifiedResourceSearchType.SKILL, false, 0, 24, "user-1", Map.of(), viewer, Set.of("INSTALL"));
+                UnifiedResourceSearchType.ALL, false, 0, 24, "user-1", Map.of(), viewer, Set.of());
     }
 
     @Test
-    void prefersExplicitSkillConstraintWhenAgentIsMentionedNegatively() {
+    void doesNotInventHardFiltersFromTheOriginalRequest() {
         UnifiedResourceSearchAppService unifiedSearch = mock(UnifiedResourceSearchAppService.class);
         ResourceSearchDocumentJpaRepository documents = mock(ResourceSearchDocumentJpaRepository.class);
         PlatformPrincipal principal = new PlatformPrincipal(
                 "user-1", "User", "user@example.com", null, "feishu", Set.of("USER"));
         CatalogViewer viewer = new CatalogViewer("user-1", Map.of(), Set.of("USER"));
         when(unifiedSearch.search("生成周报", null, null, "relevance",
-                UnifiedResourceSearchType.SKILL, false, 0, 24, "user-1", Map.of(), viewer, Set.of()))
+                UnifiedResourceSearchType.ALL, false, 0, 24, "user-1", Map.of(), viewer, Set.of()))
                 .thenReturn(new PageResponse<>(List.of(), 0, 0, 24));
 
         new DiscoveryKnowledgeRetriever(unifiedSearch, documents, new SearchTextTokenizer())
@@ -128,6 +128,6 @@ class DiscoveryKnowledgeRetrieverTest {
                         "优先推荐 Skill，不要只推荐通用 Agent");
 
         verify(unifiedSearch).search("生成周报", null, null, "relevance",
-                UnifiedResourceSearchType.SKILL, false, 0, 24, "user-1", Map.of(), viewer, Set.of());
+                UnifiedResourceSearchType.ALL, false, 0, 24, "user-1", Map.of(), viewer, Set.of());
     }
 }

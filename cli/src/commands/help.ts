@@ -32,7 +32,7 @@ export const commands = {
     examples: ['joyhub whoami', 'joyhub whoami --json']
   },
   search: {
-    summary: 'Search published skills',
+    summary: 'Search Skills, Agents and tools',
     usage: 'joyhub search [query] [--query <query>] [--limit <n>] [--registry <url>] [--token <token>] [--json]',
     examples: ['joyhub search --query pdf', 'joyhub search pdf --token jh_xxx']
   },

@@ -9,6 +9,8 @@ import com.iflytek.skillhub.domain.skill.SkillRepository;
 import com.iflytek.skillhub.domain.skill.service.SkillQueryService;
 import com.iflytek.skillhub.domain.user.UserAccountRepository;
 import com.iflytek.skillhub.dto.UnifiedResourceSearchType;
+import com.iflytek.skillhub.dto.PageResponse;
+import com.iflytek.skillhub.dto.ResourceDiscoveryItem;
 import com.iflytek.skillhub.service.CatalogResourceQueryAppService;
 import com.iflytek.skillhub.service.CatalogViewer;
 import com.iflytek.skillhub.service.ResourceReference;
@@ -17,7 +19,6 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.HexFormat;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -54,21 +55,21 @@ public class McpResourceQueryRepository {
     }
 
     @Transactional(readOnly = true)
-    public Object search(String userId, String query, String type, int page, int size) {
+    public PageResponse<ResourceDiscoveryItem> search(String userId, String query, String type, int page, int size) {
         CatalogViewer viewer = viewer(userId);
         if (query.length() > 1000 || page < 0 || page > 10000 || size < 1 || size > 50) throw invalid();
         var result = search.search(query, null, null, "relevance", UnifiedResourceSearchType.valueOf(type), false,
                 page, size, userId, viewer.namespaceRoles(), viewer);
-        var items = result.items().stream().map(item -> {
-            Map<String, Object> row = new LinkedHashMap<>();
-            row.put("resourceId", item.skill() != null ? "skill:" + item.skill().id() : "catalog:" + item.catalogResource().id());
-            row.put("kind", item.skill() != null ? "SKILL" : item.catalogResource().kind());
-            row.put("name", item.skill() != null ? item.skill().displayName() : item.catalogResource().name());
-            row.put("summary", item.skill() != null ? item.skill().summary() : item.catalogResource().summary());
-            row.put("accessMode", item.accessMode());
-            return row;
-        }).toList();
-        return Map.of("items", items, "total", result.total(), "page", result.page(), "size", result.size());
+        var items = result.items().stream().map(item -> new ResourceDiscoveryItem(
+                item.skill() != null ? "skill:" + item.skill().id() : "catalog:" + item.catalogResource().id(),
+                item.skill() != null ? "SKILL" : item.catalogResource().kind(),
+                item.skill() != null ? item.skill().displayName() : item.catalogResource().name(),
+                item.skill() != null ? item.skill().summary() : item.catalogResource().summary(), item.accessMode(),
+                item.skill() != null ? item.skill().slug() : item.catalogResource().slug(),
+                item.skill() != null ? item.skill().namespace() : null,
+                item.skill() != null && item.skill().publishedVersion() != null ? item.skill().publishedVersion().version()
+                        : item.catalogResource() != null ? item.catalogResource().version() : null)).toList();
+        return new PageResponse<>(items, result.total(), result.page(), result.size());
     }
 
     @Transactional(readOnly = true)

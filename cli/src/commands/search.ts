@@ -27,7 +27,7 @@ export async function searchCommand(query: string, options: SearchCommandOptions
 
   let result
   try {
-    result = await new JoyHubClient(registry, token).search(query ?? '', options.limit ?? 20)
+    result = await new JoyHubClient(registry, token).searchResources(query ?? '', options.limit ?? 20)
   } catch (error) {
     if (
       reauthenticated ||
@@ -38,13 +38,16 @@ export async function searchCommand(query: string, options: SearchCommandOptions
     }
     await credentialsStore.deleteToken(registry)
     const auth = await authService.ensure(registry)
-    result = await new JoyHubClient(registry, auth.token).search(query ?? '', options.limit ?? 20)
+    result = await new JoyHubClient(registry, auth.token).searchResources(query ?? '', options.limit ?? 20)
   }
   if (options.json) {
     return JSON.stringify({ ok: true, items: result.items, total: result.total })
   }
-  if (result.items.length === 0) return 'No skills found.'
+  if (result.items.length === 0) return 'No resources found.'
   return result.items
-    .map(item => `@${item.namespace}/${item.slug}  ${item.latestVersion ?? '-'}  ${item.summary ?? ''}`)
+    .map(item => {
+      const identity = item.kind === 'SKILL' ? `@${item.namespace}/${item.slug}` : item.resourceId
+      return `${identity}  ${item.version ?? '-'}  ${item.name}  ${item.summary ?? ''}`
+    })
     .join('\n')
 }
