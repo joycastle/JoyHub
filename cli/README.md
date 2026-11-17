@@ -15,6 +15,8 @@ npx @toolnets/joyhub-cli@latest version
 bun add -g @toolnets/joyhub-cli
 ```
 
+Search in 0.3.0 covers Skills, Agents and tool packages through `/api/cli/v1/resources/search`. JSON results include `resourceId`, `kind`, `name`, `slug`, `namespace` (Skills only) and `version`. Install Skills with their coordinate; inspect tool packages through JoyHub MCP before downloading. The old `/skills/search` API remains Skill-only for compatibility.
+
 ## 🚀 Quick Start
 
 ```bash
@@ -382,7 +384,7 @@ Update mechanism:
 | `joyhub login --token <token> [--registry <url>] [--json]` | Save token and registry configuration |
 | `joyhub logout [--registry <url>] [--json]` | Remove token for specified registry |
 | `joyhub whoami [--registry <url>] [--token <token>] [--json]` | Validate current token and display user information |
-| `joyhub search <query> [--registry <url>] [--token <token>] [--limit <n>] [--json]` | Search published skills |
+| `joyhub search <query> [--registry <url>] [--token <token>] [--limit <n>] [--json]` | Search Skills, Agents and tools |
 | `joyhub install <coordinate> [--scope <user\|project>] [--namespace <slug>] [--version <v>] [--agent <profile>] [--dir <path>] [--force] [--registry <url>] [--token <token>] [--json]` | Install a skill |
 | `joyhub list [--agent <profile>] [--dir <path>] [--registry <url>] [--json]` | List installed skills |
 | `joyhub remove <coordinate> [--agent <profile>] [--all] [--remote] [--hard] [--namespace <slug>] [--registry <url>] [--token <token>] [--json]` | Remove a skill |
@@ -419,7 +421,7 @@ request ID when asking a registry operator to investigate.
 
 ```bash
 # Check if registry is accessible
-curl https://joyhub.toolnets.net/api/cli/v1/skills/search?q=test&limit=1
+curl https://joyhub.toolnets.net/api/cli/v1/resources/search?q=test&limit=1
 
 # Use alternative registry
 joyhub search test --registry https://joyhub.example.com

@@ -70,12 +70,16 @@ class RegistryHandler(BaseHTTPRequestHandler):
                 "email": "semantic@example.com",
             })
             return
-        if path == "/api/cli/v1/skills/search":
+        if path == "/api/cli/v1/resources/search":
             self.send_json({
                 "items": [{
                     "namespace": "global",
                     "slug": "ad-insights",
-                    "latestVersion": "1.4.0",
+                    "version": "1.4.0",
+                    "resourceId": "skill:1",
+                    "kind": "SKILL",
+                    "name": "Advertising insights",
+                    "accessMode": "INSTALL",
                     "summary": "Analyze advertising performance and attribution.",
                 }],
                 "total": 1,

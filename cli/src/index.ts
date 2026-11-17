@@ -236,7 +236,7 @@ cli
   })
 
 cli
-  .command('search [query]', 'Search published skills')
+  .command('search [query]', 'Search Skills, Agents and tools')
   .option('--query <query>', 'Search query')
   .option('--registry <url>', 'Registry URL')
   .option('--token <token>', 'API token')

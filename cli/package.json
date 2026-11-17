@@ -1,7 +1,7 @@
 {
   "name": "@toolnets/joyhub-cli",
-  "version": "0.2.0",
-  "description": "Manage and install JoyHub skills for AI coding agents",
+  "version": "0.3.0",
+  "description": "Discover JoyHub resources and manage agent skills",
   "keywords": [
     "joyhub",
     "ai",

@@ -178,6 +178,10 @@ public class RouteSecurityPolicyRegistry {
             return ApiTokenAuthorizationDecision.allow();
         }
 
+        if ("GET".equalsIgnoreCase(method) && "/api/cli/v1/resources/search".equals(path)) {
+            return tokenScopes.contains("resource:read") || tokenScopes.contains("skill:read")
+                    ? ApiTokenAuthorizationDecision.allow() : ApiTokenAuthorizationDecision.missingScope("resource:read");
+        }
         for (ApiTokenPolicy policy : API_TOKEN_POLICIES) {
             if (!policy.matches(method, path, pathMatcher)) {
                 continue;

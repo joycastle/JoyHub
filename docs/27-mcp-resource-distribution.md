@@ -25,7 +25,7 @@ Later: “检查这些已安装的 JoyHub 资源有没有更新，覆盖前检�
 
 ## Tools
 
-- `search_resources`: same visibility checks and ranking as unified web search. Supports ALL/SKILL/AGENT/TOOL.
+- `search_resources`: same visibility checks and ranking as unified web search and CLI 0.3.0 resource discovery. Supports ALL/SKILL/AGENT/TOOL.
 - `get_resource`: resource documentation, version, revision, download availability and external access URL.
 - `get_download`: issue a five-minute single-use URL for the selected revision. The URL grants access to that file; keep it private.
 - `check_updates`: compare caller-supplied installed records with visible server revisions. The server cannot inspect local files.

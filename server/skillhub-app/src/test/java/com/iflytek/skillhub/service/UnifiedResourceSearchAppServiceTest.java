@@ -193,6 +193,37 @@ class UnifiedResourceSearchAppServiceTest {
         assertThat(result.total()).isZero();
     }
 
+    @Test
+    void readsStructuredCapabilityValuesAndSupportsEveryAvailableAccessMode() {
+        ResourceSearchDocumentEntity document = ResourceSearchDocumentEntity.basic(
+                "TOOL", 9L, null, "user-1", "Asset utility", "asset-utility", "Asset processing",
+                "[]", "OPEN", "COMPANY", "PUBLISHED", "", "source-hash");
+        document.applyGeneratedProfile("[{\"value\":\"矢量描摹\",\"evidence\":\"原文\",\"confidence\":0.9}]",
+                "[]", "[]", "[]", "[]", "[]", "GENERAL", "Asset utility", "model", "v1", null, ResourceCategoryCode.OTHER);
+        given(searchDocumentRepository.findBySearchEnabledTrue()).willReturn(List.of(document));
+        var resource = new CatalogResourceSummaryResponse(9L, "asset-utility", "Asset utility", "Asset processing",
+                "RESOURCE_PACK", null, "https://example.com", "1.0.0", null, null, "PUBLISHED", "MAINTAINED", "COMPANY",
+                Set.of(), Set.of(), true, Instant.EPOCH);
+        given(catalogSearchAppService.search(eq(null), eq("TOOL"), eq(null), eq(null), eq(null), eq(null), eq(viewer), any(Pageable.class)))
+                .willReturn(new PageResponse<>(List.of(resource), 1, 0, 500));
+        for (String mode : List.of("OPEN", "DOWNLOAD", "INSTALL")) {
+            var result = service.search("矢量描摹", null, null, null, "relevance", UnifiedResourceSearchType.TOOL,
+                    false, 0, 12, "user-1", Map.of(), viewer, Set.of(mode));
+            assertThat(result.items()).singleElement().extracting(item -> item.catalogResource().slug()).isEqualTo("asset-utility");
+        }
+    }
+
+    @Test
+    void olderCandidatesPastFirstPageRemainSearchable() {
+        given(skillSearchAppService.searchInstallableLatest(null, null, "newest", 0, 500, List.of(), "user-1", Map.of()))
+                .willReturn(new SkillSearchAppService.SearchResponse(List.of(skill(1L, "newer", "Newer", "unrelated")), 501, 0, 500));
+        given(skillSearchAppService.searchInstallableLatest(null, null, "newest", 1, 500, List.of(), "user-1", Map.of()))
+                .willReturn(new SkillSearchAppService.SearchResponse(List.of(skill(2L, "older-tool", "Older tool", "specific conversion")), 501, 1, 500));
+        var result = service.search("older-tool", null, null, "relevance", UnifiedResourceSearchType.SKILL,
+                false, 0, 12, "user-1", Map.of(), null);
+        assertThat(result.items()).extracting(item -> item.skill().slug()).contains("older-tool");
+    }
+
     private SkillSummaryResponse skill(Long id, String slug, String name, String summary) {
         return new SkillSummaryResponse(
                 id, slug, name, summary, null, null, "PUBLIC", "ACTIVE", 0L, 0,

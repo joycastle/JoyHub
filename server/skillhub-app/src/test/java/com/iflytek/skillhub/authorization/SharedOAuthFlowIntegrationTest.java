@@ -122,6 +122,9 @@ class SharedOAuthFlowIntegrationTest {
         assertThat(grant.getAccessToken().getClaims().get("aud")).isEqualTo(List.of(resource));
         mvc.perform(get("/api/cli/v1/auth/whoami").header("Authorization", "Bearer " + token.get("access_token").asText()))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.data.handle").value(userId));
+        mvc.perform(get("/api/cli/v1/resources/search").param("q", "search-contract-probe")
+                        .header("Authorization", "Bearer " + token.get("access_token").asText()))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.items").isArray());
         JsonNode refreshed = mapper.readTree(mvc.perform(post("/oauth2/token").contentType("application/x-www-form-urlencoded")
                 .param("grant_type", "refresh_token").param("refresh_token", token.get("refresh_token").asText())
                 .param("resource", resource).param("client_id", client.get("client_id").asText())

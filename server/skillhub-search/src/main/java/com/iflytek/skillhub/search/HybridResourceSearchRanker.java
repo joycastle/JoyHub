@@ -12,9 +12,6 @@ import org.springframework.stereotype.Service;
 @Service
 public class HybridResourceSearchRanker {
     private static final double MIN_SEMANTIC_RECALL = 0.50D;
-    private static final double MIN_SEMANTIC_WITH_STRONG_LEXICAL_RESULTS = 0.62D;
-    private static final double SEMANTIC_RECALL_MARGIN = 0.08D;
-    private static final double SEMANTIC_RECALL_MARGIN_WITH_STRONG_LEXICAL_RESULTS = 0.04D;
     private static final int VECTOR_CACHE_SIZE = 1024;
 
     private final SearchEmbeddingService embeddingService;
@@ -50,10 +47,7 @@ public class HybridResourceSearchRanker {
                                                 List<ResourceSearchDocument> documents,
                                                 int limit,
                                                 boolean includeAllEligible) {
-        ResourceSearchIntent parsed = interpreter.interpret(query);
-        return rank(new ResourceSearchIntent(
-                parsed.normalizedQuery(), parsed.terms(), java.util.Set.of(), java.util.Set.of()),
-                documents, limit, includeAllEligible);
+        return rank(query, documents, limit, includeAllEligible);
     }
 
     private List<RankedResource> rank(ResourceSearchIntent intent,
@@ -68,42 +62,23 @@ public class HybridResourceSearchRanker {
                     .toList();
         }
 
-        List<RankedResource> scored = documents.stream()
-                .filter(document -> matchesStructuredConstraints(intent, document))
+        // Qualification is per document: another hit or a type filter cannot change its eligibility.
+        return documents.stream()
                 .map(document -> score(intent, document))
-                .toList();
-        boolean hasStrongLexicalResult = scored.stream().anyMatch(RankedResource::strongLexicalMatch);
-        double bestSemanticScore = scored.stream()
-                .mapToDouble(RankedResource::semanticScore)
-                .max()
-                .orElse(0D);
-        return scored.stream()
-                .filter(result -> qualifies(
-                        intent, result, includeAllEligible, hasStrongLexicalResult, bestSemanticScore))
+                .filter(result -> includeAllEligible || result.strongLexicalMatch()
+                        || result.semanticScore() >= semanticMinimum(intent)
+                        || intent.terms().isEmpty() && intent.hasStructuredConstraint())
                 .sorted(ordering())
                 .limit(limit)
                 .toList();
     }
 
-    private boolean qualifies(ResourceSearchIntent intent,
-                              RankedResource result,
-                              boolean includeAllEligible,
-                              boolean hasStrongLexicalResult,
-                              double bestSemanticScore) {
-        if (includeAllEligible || result.strongLexicalMatch()) {
-            return true;
-        }
-        if (intent.terms().isEmpty() && intent.hasStructuredConstraint()) {
-            return true;
-        }
-        double minimumSemantic = hasStrongLexicalResult
-                ? MIN_SEMANTIC_WITH_STRONG_LEXICAL_RESULTS
-                : MIN_SEMANTIC_RECALL;
-        double margin = hasStrongLexicalResult
-                ? SEMANTIC_RECALL_MARGIN_WITH_STRONG_LEXICAL_RESULTS
-                : SEMANTIC_RECALL_MARGIN;
-        return result.semanticScore() >= minimumSemantic
-                && result.semanticScore() >= bestSemanticScore - margin;
+    private double semanticMinimum(ResourceSearchIntent intent) {
+        // The deployed embedding model is Chinese; English-only semantic noise needs a stricter floor.
+        // This floor depends on the query, never on which other resources or types are present.
+        return intent.terms().stream().anyMatch(term -> term.codePoints()
+                .anyMatch(codePoint -> Character.UnicodeScript.of(codePoint) == Character.UnicodeScript.HAN))
+                ? MIN_SEMANTIC_RECALL : 0.62D;
     }
 
     private RankedResource score(ResourceSearchIntent intent, ResourceSearchDocument document) {
@@ -115,63 +90,72 @@ public class HybridResourceSearchRanker {
         String documentation = normalize(document.documentation());
         String fullText = searchableText(document);
         String highSignalText = String.join("\n", title, slug, summary, scenarios, tags);
+        String identity = title + " " + slug;
+        long identityMatches = intent.terms().stream().filter(term -> SearchTermMatcher.contains(identity, term)).count();
+        long approximateIdentityMatches = intent.terms().stream()
+                .filter(term -> SearchTermMatcher.contains(identity, term) || SearchTermMatcher.similarIdentityWord(identity, term)).count();
+        double identityCoverage = intent.terms().isEmpty() ? 0D : (double) identityMatches / intent.terms().size();
+        boolean approximateIdentity = !intent.terms().isEmpty() && identityMatches > 0
+                && approximateIdentityMatches == intent.terms().size();
 
         double lexical = 0D;
         if (!intent.normalizedQuery().isBlank()) {
             if (title.equals(intent.normalizedQuery()) || slug.equals(intent.normalizedQuery())) {
                 lexical += 4D;
-            } else if (title.contains(intent.normalizedQuery()) || slug.contains(intent.normalizedQuery())) {
+            } else if (SearchTermMatcher.contains(title, intent.normalizedQuery()) || SearchTermMatcher.contains(slug, intent.normalizedQuery())) {
                 lexical += 2.5D;
             }
         }
         for (String term : intent.terms()) {
-            if (title.contains(term)) {
+            if (SearchTermMatcher.contains(title, term)) {
                 lexical += 1.8D;
+            } else if (approximateIdentity && SearchTermMatcher.similarIdentityWord(title, term)) {
+                lexical += 0.9D;
             }
-            if (slug.contains(term)) {
+            if (SearchTermMatcher.contains(slug, term)) {
                 lexical += 1.4D;
+            } else if (approximateIdentity && SearchTermMatcher.similarIdentityWord(slug, term)) {
+                lexical += 0.7D;
             }
-            if (tags.contains(term)) {
+            if (SearchTermMatcher.contains(tags, term)) {
                 lexical += 1.2D;
             }
-            if (scenarios.contains(term)) {
+            if (SearchTermMatcher.contains(scenarios, term)) {
                 lexical += 1.1D;
             }
-            if (summary.contains(term)) {
+            if (SearchTermMatcher.contains(summary, term)) {
                 lexical += 0.8D;
             }
-            if (documentation.contains(term)) {
+            if (SearchTermMatcher.contains(documentation, term)) {
                 lexical += 0.25D;
             }
         }
         double semantic = similarity(intent.normalizedQuery(), document, fullText);
         long matchedHighSignalTerms = intent.terms().stream()
-                .filter(highSignalText::contains)
+                .filter(term -> SearchTermMatcher.contains(highSignalText, term))
                 .count();
         double termCoverage = intent.terms().isEmpty()
                 ? 0D
                 : (double) matchedHighSignalTerms / intent.terms().size();
         boolean phraseMatch = !intent.normalizedQuery().isBlank()
-                && highSignalText.contains(intent.normalizedQuery());
-        boolean strongLexicalMatch = phraseMatch
+                && SearchTermMatcher.contains(highSignalText, intent.normalizedQuery());
+        boolean strongLexicalMatch = phraseMatch || approximateIdentity
                 || (intent.terms().size() == 1 && termCoverage == 1D)
                 || (intent.terms().size() > 1 && termCoverage >= 0.66D);
-        double normalizedLexical = Math.min(lexical / 6D, 1D);
-        // Type and access are hard filters.  Ranking follows the shared 55/30/10/5 policy.
-        double score = normalizedLexical * 0.55D
-                + semantic * 0.30D
-                + termCoverage * 0.10D
-                + Math.min(Math.max(document.qualityScore(), 0D), 1D) * 0.05D;
+        // Saturating normalization keeps title evidence distinct from repeated low-signal mentions.
+        double normalizedLexical = lexical / (lexical + 6D);
+        // A near word contributes half an exact word, and only for a fully matched product identity.
+        double identityScore = approximateIdentity
+                ? (identityMatches + (approximateIdentityMatches - identityMatches) * 0.5D) / intent.terms().size()
+                : identityCoverage;
+        double preference = (intent.resourceTypes().contains(document.resourceType()) ? 0.15D : 0D)
+                + (intent.accessModes().stream().anyMatch(document.accessModes()::contains) ? 0.05D : 0D);
+        double directPhrase = !intent.normalizedQuery().isBlank()
+                && SearchTermMatcher.contains(summary, intent.normalizedQuery()) ? 0.16D : 0D;
+        double score = normalizedLexical * 0.40D + semantic * 0.25D + termCoverage * 0.10D
+                + identityScore * 0.20D + Math.min(Math.max(document.qualityScore(), 0D), 1D) * 0.05D
+                + preference + directPhrase;
         return new RankedResource(document, score, semantic, lexical, strongLexicalMatch);
-    }
-
-    private boolean matchesStructuredConstraints(ResourceSearchIntent intent, ResourceSearchDocument document) {
-        if (!intent.resourceTypes().isEmpty()
-                && !intent.resourceTypes().contains(normalizeType(document.resourceType()))) {
-            return false;
-        }
-        return intent.accessModes().isEmpty()
-                || intent.accessModes().contains(normalizeType(document.accessMode()));
     }
 
     private double similarity(String query, ResourceSearchDocument document, String fullText) {

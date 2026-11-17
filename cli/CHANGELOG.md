@@ -1,3 +1,9 @@
+## 0.3.0
+
+- Search Skills, Agents and tool packages through the same resource discovery endpoint as MCP.
+- Include resource IDs, kinds and names in search results. Catalog resources are never rendered as Skill coordinates.
+- Preserve the legacy Skill client API for callers requiring only Skills.
+
 # Changelog
 
 All notable CLI behavior changes are documented in this file.

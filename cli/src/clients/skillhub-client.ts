@@ -14,6 +14,24 @@ export interface SearchItem {
   summary: string
 }
 
+export interface ResourceSearchItem {
+  resourceId: string
+  kind: string
+  name: string
+  summary?: string
+  slug: string
+  namespace?: string
+  version?: string
+  accessMode: string
+}
+
+export interface ResourceSearchResponse {
+  items: ResourceSearchItem[]
+  total: number
+  page: number
+  size: number
+}
+
 export interface SearchResponse {
   items: SearchItem[]
   total: number
@@ -96,6 +114,11 @@ export class JoyHubClient {
   async search(query: string, limit: number): Promise<SearchResponse> {
     const params = new URLSearchParams({ q: query, limit: String(limit) })
     return this.getJson(`/skills/search?${params}`)
+  }
+
+  async searchResources(query: string, limit: number): Promise<ResourceSearchResponse> {
+    const params = new URLSearchParams({ q: query, limit: String(limit) })
+    return this.getJson(`/resources/search?${params}`)
   }
 
   async requestDeviceCode(): Promise<DeviceCodeResponse> {

@@ -93,7 +93,7 @@ public class ResourceSearchDocumentEntity {
         this.title = title;
         this.slug = slug;
         this.summary = summary;
-        this.scenariosJson = scenariosJson;
+        if (changed || !"READY".equals(this.generationStatus)) this.scenariosJson = scenariosJson;
         this.accessMode = accessMode;
         this.visibility = visibility;
         this.status = status;
