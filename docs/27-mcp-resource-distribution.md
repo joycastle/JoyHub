@@ -68,3 +68,5 @@ OAuth clients and grants persist in PostgreSQL (migration V62). Migration V63 di
 Do not log token endpoint bodies, bearer headers or full ticket URLs. Database backups contain OAuth grants and must retain the deployment's existing protected backup permissions.
 
 A plugin may bundle `.mcp.json` with this same URL and installation instructions; the remote service works without a plugin or JoyHub CLI.
+
+The official find-skills-joyhub agent skill uses this MCP directly for discovery, details, downloads and update checks. It does not require an npm CLI release. CLI 0.3.0 remains a separate distribution channel whose npm publication requires publisher authorization.

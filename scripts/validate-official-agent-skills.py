@@ -15,10 +15,11 @@ CONTRACT_PATH = ROOT / "scripts/contracts/joyhub-cli-api.json"
 PACKAGE_JSON = ROOT / "cli/package.json"
 EXPECTED_PACKAGE = "@toolnets/joyhub-cli"
 EXPECTED_VERSION = "0.3.0"
+RELEASED_SKILL_CLI_VERSION = "0.2.0"
 EXPECTED_BIN = "joyhub"
 EXPECTED_REGISTRY = "https://joyhub.toolnets.net"
 NPX_PREFIX = (
-    f"npx --yes --package={EXPECTED_PACKAGE}@{EXPECTED_VERSION} {EXPECTED_BIN}"
+    f"npx --yes --package={EXPECTED_PACKAGE}@{RELEASED_SKILL_CLI_VERSION} {EXPECTED_BIN}"
 )
 EXPECTED_COMMANDS = [
     "auth ensure --json",
@@ -31,7 +32,8 @@ EXPECTED_COMMANDS = [
 
 REQUIRED_SKILLS = {
     "find-skills-joyhub": {
-        "commands": ("auth ensure", "search", "install"),
+        "transport": "mcp",
+        "commands": ("search_resources", "get_resource", "get_download", "check_updates"),
         "gates": ("明确选择", "在用户明确确认这两项选择前，禁止执行安装命令"),
     },
     "share-skill-joyhub": {
@@ -151,8 +153,11 @@ def main() -> int:
         elif not description.isascii():
             errors.append(f"{path}: frontmatter description must be English")
         normalized_text = re.sub(r"[ \t]*\\\n[ \t]*", " ", text)
-        if NPX_PREFIX not in normalized_text:
+        uses_cli = requirements.get("transport", "cli") == "cli"
+        if uses_cli and NPX_PREFIX not in normalized_text:
             errors.append(f"{path}: missing pinned npx invocation")
+        if not uses_cli and ("npx " in normalized_text or "@toolnets/joyhub-cli@" in text):
+            errors.append(f"{path}: MCP discovery must not depend on an npm CLI version")
         command_lines = re.findall(
             rf"{re.escape(NPX_PREFIX)}[^\n]*",
             normalized_text,
@@ -170,7 +175,7 @@ def main() -> int:
         for gate in requirements["gates"]:
             if gate not in text:
                 errors.append(f"{path}: missing user gate {gate!r}")
-        if "将 CLI 标准输出解析为 JSON" not in text:
+        if uses_cli and "将 CLI 标准输出解析为 JSON" not in text:
             errors.append(f"{path}: must require JSON stdout parsing")
         if "禁止读取" not in text or "credentials.json" not in text:
             errors.append(f"{path}: must forbid credential reads")
@@ -205,8 +210,8 @@ def main() -> int:
         return 1
 
     print(
-        f"validated {len(REQUIRED_SKILLS)} official skills against "
-        f"{EXPECTED_PACKAGE}@{EXPECTED_VERSION}"
+        f"validated {len(REQUIRED_SKILLS)} official skills: MCP discovery, "
+        f"sharing CLI {RELEASED_SKILL_CLI_VERSION}; source contract {EXPECTED_VERSION}"
     )
     return 0
 

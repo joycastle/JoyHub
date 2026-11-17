@@ -9,7 +9,7 @@ description: Validate and publish a local skill to JoyHub only after namespace s
 `latest`。
 
 ```bash
-npx --yes --package=@toolnets/joyhub-cli@0.3.0 \
+npx --yes --package=@toolnets/joyhub-cli@0.2.0 \
   joyhub auth ensure --registry https://joyhub.toolnets.net --json
 ```
 
@@ -28,7 +28,7 @@ npx --yes --package=@toolnets/joyhub-cli@0.3.0 \
 3. 列出 JoyHub 返回的可发布 Namespace：
 
    ```bash
-   npx --yes --package=@toolnets/joyhub-cli@0.3.0 \
+   npx --yes --package=@toolnets/joyhub-cli@0.2.0 \
      joyhub namespaces --publishable \
        --registry https://joyhub.toolnets.net --json
    ```
@@ -39,7 +39,7 @@ npx --yes --package=@toolnets/joyhub-cli@0.3.0 \
    除非用户要求 `namespace-only` 或 `private`，否则使用 `public`。dry-run 与正式发布必须显式传入同一个可见性参数，避免用户确认后的操作发生漂移。
 
    ```bash
-   npx --yes --package=@toolnets/joyhub-cli@0.3.0 \
+   npx --yes --package=@toolnets/joyhub-cli@0.2.0 \
      joyhub publish "<directory>" --namespace "<slug>" \
        --visibility "<visibility>" --dry-run \
        --registry https://joyhub.toolnets.net --json
@@ -50,7 +50,7 @@ npx --yes --package=@toolnets/joyhub-cli@0.3.0 \
 7. 只有在用户确认后，才能使用相同目录和 Namespace 正式发布：
 
    ```bash
-   npx --yes --package=@toolnets/joyhub-cli@0.3.0 \
+   npx --yes --package=@toolnets/joyhub-cli@0.2.0 \
      joyhub publish "<directory>" --namespace "<slug>" \
        --visibility "<visibility>" \
        --registry https://joyhub.toolnets.net --json
